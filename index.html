@@ -76,6 +76,7 @@
   .cpd-card .meta .pill.low      { color: #d8a657; border-color: #d8a657; }
   .cpd-card .meta .pill.medium   { color: #89b482; border-color: #89b482; }
   .cpd-card .meta .pill.high     { color: #7daea3; border-color: #7daea3; }
+  .cpd-card .meta .pill.signature { color: #d3869b; border-color: #d3869b; font-weight: 600; }
 
   .cpd-card .scores { margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 6px; }
   .cpd-card .score-row { display: grid; grid-template-columns: 70px 1fr 32px; gap: 6px; align-items: center;
@@ -95,6 +96,33 @@
   .compounds-header .sort button { border: none; border-radius: 0; padding: 4px 10px; background: transparent;
     color: var(--ink-dim); font-size: 11px; cursor: pointer; }
   .compounds-header .sort button.active { background: var(--panel-2); color: var(--ink); }
+
+  /* Legend */
+  .legend { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 10px; margin-bottom: 12px; }
+  .legend-header { display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; color: var(--ink-dim); text-transform: uppercase;
+    letter-spacing: 0.08em; user-select: none; font-size: 10px; padding: 2px 0; }
+  .legend.collapsed .legend-body { display: none; }
+  .legend.collapsed .caret { transform: rotate(-90deg); }
+  .legend-body { margin-top: 8px; }
+  .legend-section { margin-bottom: 10px; }
+  .legend-section:last-child { margin-bottom: 0; }
+  .legend-section-title { font-size: 10px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; margin: 4px 0 4px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .legend-section-title .toggle-all { font-size: 9px; cursor: pointer; color: var(--accent);
+    text-transform: none; letter-spacing: 0; }
+  .legend-section-title .toggle-all:hover { text-decoration: underline; }
+  .legend-item { display: grid; grid-template-columns: 14px 10px 1fr 22px;
+    gap: 6px; align-items: center; padding: 2px 0; cursor: pointer; font-size: 11px; }
+  .legend-item input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .legend-item .swatch { width: 10px; height: 10px; border-radius: 2px; }
+  .legend-item .count { font-size: 10px; color: var(--ink-dim);
+    text-align: right; font-variant-numeric: tabular-nums; }
+  .legend-item.off .label, .legend-item.off .swatch { opacity: 0.35; }
+  .legend-item:hover { background: var(--bg); border-radius: 3px; }
+  .caret { transition: transform 0.2s; font-size: 10px; }
 
   aside.notes { grid-area: notes; background: var(--panel); border-right: 1px solid var(--line);
     overflow-y: auto; padding: 12px; }
@@ -161,11 +189,40 @@
     <button data-profile="typical" class="active">Typical</button>
     <button data-profile="sensitive">Sensitive</button>
   </div>
+  <div class="profile-toggle" id="notefilter-toggle" title="Filter to widely-recognized notes vs. include niche/specialist descriptors">
+    <span class="label">Notes</span>
+    <button data-filter="common" class="active">Common</button>
+    <button data-filter="all">All</button>
+  </div>
   <button id="reset">Reset</button>
   <button id="demo-coffee">Demo: Coffee</button>
   <button id="demo-mocktail">Demo: Citrus mocktail</button>
 </header>
-<aside class="notes" id="notes-panel"></aside>
+<aside class="notes" id="left-panel">
+  <div class="legend" id="legend">
+    <div class="legend-header" id="legend-toggle">
+      <span>Legend &amp; visibility</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="legend-body">
+      <div class="legend-section">
+        <div class="legend-section-title">
+          <span>Note groups</span>
+          <span class="toggle-all" data-target="groups">toggle all</span>
+        </div>
+        <div id="legend-groups"></div>
+      </div>
+      <div class="legend-section">
+        <div class="legend-section-title">
+          <span>Compound classes</span>
+          <span class="toggle-all" data-target="classes">toggle all</span>
+        </div>
+        <div id="legend-classes"></div>
+      </div>
+    </div>
+  </div>
+  <div id="notes-panel"></div>
+</aside>
 <main class="wheel"><svg id="svg"></svg></main>
 <main class="compounds" id="compounds-view">
   <div class="compounds-header">
@@ -199,101 +256,109 @@ const GROUPS = [
   { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" }
 ];
 
-// ~40 sensory notes
+// Sensory notes. `common: true` = widely recognizable across cultures/diets.
+// `common: false` = niche / requires familiarity (specialty fruits, professional descriptors).
+// Toggle "Common / All" in the header filters niche notes out of the panel and wheel.
 const NOTES = [
   // fruity
-  { id: "lemon",       label: "Lemon",          group: "fruity" },
-  { id: "orange",      label: "Orange",         group: "fruity" },
-  { id: "grapefruit",  label: "Grapefruit",     group: "fruity" },
-  { id: "berry",       label: "Berry",          group: "fruity" },
-  { id: "blackcurrant",label: "Blackcurrant",   group: "fruity" },
-  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity" },
-  { id: "apple",       label: "Apple / pear",   group: "fruity" },
-  { id: "tropical",    label: "Tropical",       group: "fruity" },
-  { id: "driedfruit",  label: "Dried fruit",    group: "fruity" },
+  { id: "lemon",       label: "Lemon",              group: "fruity",   common: true  },
+  { id: "orange",      label: "Orange",             group: "fruity",   common: true  },
+  { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true  },
+  { id: "berry",       label: "Berry",              group: "fruity",   common: true  },
+  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true  },
+  { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true  },
+  { id: "banana",      label: "Banana",             group: "fruity",   common: true  },
+  { id: "mango",       label: "Mango",              group: "fruity",   common: false },
+  { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false },
   // floral
-  { id: "rose",        label: "Rose",           group: "floral" },
-  { id: "jasmine",     label: "Jasmine",        group: "floral" },
-  { id: "orangeblossom",label: "Orange blossom",group: "floral" },
-  { id: "violet",      label: "Violet",         group: "floral" },
+  { id: "rose",        label: "Rose",               group: "floral",   common: true  },
+  { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
+  { id: "lavender",    label: "Lavender",           group: "floral",   common: true  },
+  { id: "chamomile",   label: "Chamomile",          group: "floral",   common: true  },
+  { id: "violet",      label: "Violet",             group: "floral",   common: false },
   // roasted
-  { id: "coffee",      label: "Coffee / roast", group: "roasted" },
-  { id: "toast",       label: "Toast / bread",  group: "roasted" },
-  { id: "smoky",       label: "Smoky",          group: "roasted" },
-  { id: "burnt",       label: "Burnt sugar",    group: "roasted" },
+  { id: "coffee",      label: "Coffee / roast",     group: "roasted",  common: true  },
+  { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true  },
+  { id: "smoky",       label: "Smoky",              group: "roasted",  common: true  },
+  { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true  },
   // spice
-  { id: "clove",       label: "Clove",          group: "spice" },
-  { id: "cinnamon",    label: "Cinnamon",       group: "spice" },
-  { id: "pepper",      label: "Black pepper",   group: "spice" },
-  { id: "anise",       label: "Anise / licorice", group: "spice" },
+  { id: "clove",       label: "Clove",              group: "spice",    common: true  },
+  { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true  },
+  { id: "pepper",      label: "Black pepper",       group: "spice",    common: true  },
+  { id: "anise",       label: "Anise / licorice",   group: "spice",    common: true  },
   // nutty
-  { id: "almond",      label: "Almond",         group: "nutty" },
-  { id: "hazelnut",    label: "Hazelnut",       group: "nutty" },
-  { id: "peanut",      label: "Peanut",         group: "nutty" },
+  { id: "almond",      label: "Almond",             group: "nutty",    common: true  },
+  { id: "hazelnut",    label: "Hazelnut",           group: "nutty",    common: false },
+  { id: "peanut",      label: "Peanut",             group: "nutty",    common: true  },
   // earthy
-  { id: "woody",       label: "Woody / cedar",  group: "earthy" },
-  { id: "pine",        label: "Pine / resin",   group: "earthy" },
-  { id: "mushroom",    label: "Mushroom",       group: "earthy" },
-  { id: "green",       label: "Green / grassy", group: "earthy" },
-  { id: "bellpepper",  label: "Bell pepper",    group: "earthy" },
+  { id: "woody",       label: "Woody / cedar",      group: "earthy",   common: true  },
+  { id: "pine",        label: "Pine / resin",       group: "earthy",   common: true  },
+  { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false },
+  { id: "green",       label: "Green / grassy",     group: "earthy",   common: true  },
+  { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true  },
   // sweet
-  { id: "vanilla",     label: "Vanilla",        group: "sweet" },
-  { id: "caramel",     label: "Caramel",        group: "sweet" },
-  { id: "honey",       label: "Honey",          group: "sweet" },
-  { id: "chocolate",   label: "Chocolate / cocoa", group: "sweet" },
-  { id: "maple",       label: "Maple / brown sugar", group: "sweet" },
+  { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true  },
+  { id: "caramel",     label: "Caramel",            group: "sweet",    common: true  },
+  { id: "honey",       label: "Honey",              group: "sweet",    common: true  },
+  { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true  },
+  { id: "maple",       label: "Maple / brown sugar",group: "sweet",    common: true  },
   // fermented
-  { id: "winey",       label: "Winey",          group: "fermented" },
-  { id: "buttery",     label: "Buttery",        group: "fermented" },
-  { id: "yeasty",      label: "Yeasty / bready",group: "fermented" },
-  { id: "sulfury",     label: "Sulfury",        group: "fermented" },
-  { id: "cardboard",   label: "Cardboard / stale", group: "fermented" }
+  { id: "winey",       label: "Winey",              group: "fermented",common: false },
+  { id: "buttery",     label: "Buttery",            group: "fermented",common: true  },
+  { id: "yeasty",      label: "Yeasty / bready",    group: "fermented",common: true  },
+  { id: "sulfury",     label: "Sulfury",            group: "fermented",common: false },
+  { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false }
 ];
 
-// ~30 compounds with class, short literature anchor, and odor-threshold tier.
+// Compounds with class, literature anchor, odor-threshold tier, and specificity.
 // threshold tiers: "very-low" (sub-ppt to ppt — everyone smells trace amounts),
 //                  "low"      (ppt to low-ppb — most smellers detect),
 //                  "medium"   (mid-ppb — typical smellers detect at modest concentrations),
 //                  "high"     (ppm-range — mainly sensitive smellers / requires real concentration).
+// specificity:    "signature" (compound is essentially the marker of one note — e.g. cinnamaldehyde→cinnamon),
+//                 "shared"    (compound contributes to several notes across categories).
 const COMPOUNDS = [
   // terpenes
-  { id: "limonene",      label: "Limonene",          class: "terpene",   threshold: "medium",   thresholdSrc: "~10 ppb in water (Buettner & Schieberle 1999).", note: "Major citrus-peel monoterpene." },
-  { id: "linalool",      label: "Linalool",          class: "terpene",   threshold: "low",      thresholdSrc: "~0.6–6 ppb (Buttery 1981).", note: "Floral-citrus monoterpenoid; abundant in arabica coffee." },
-  { id: "myrcene",       label: "Myrcene",           class: "terpene",   threshold: "medium",   thresholdSrc: "~13–15 ppb (Buttery 1981).", note: "Earthy/resinous monoterpene; mango, hops, cannabis." },
-  { id: "geraniol",      label: "Geraniol",          class: "terpene",   threshold: "low",      thresholdSrc: "~3.2 ppb (Buttery 1981).", note: "Rose-like monoterpenoid." },
-  { id: "bcaryo",        label: "β-Caryophyllene",   class: "terpene",   threshold: "high",     thresholdSrc: "~64 ppb (Jirovetz et al. 2002).", note: "Woody-spicy sesquiterpene; pepper." },
-  { id: "apinene",       label: "α-Pinene",          class: "terpene",   threshold: "medium",   thresholdSrc: "~6 ppb (Buttery 1981).", note: "Pine-resinous monoterpene." },
+  { id: "limonene",      label: "Limonene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~10 ppb in water (Buettner & Schieberle 1999).", note: "Major citrus-peel monoterpene." },
+  { id: "linalool",      label: "Linalool",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~0.6–6 ppb (Buttery 1981).", note: "Floral-citrus monoterpenoid; abundant in coffee, lavender, chamomile." },
+  { id: "myrcene",       label: "Myrcene",           class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~13–15 ppb (Buttery 1981).", note: "Earthy/resinous monoterpene; mango, hops, cannabis." },
+  { id: "geraniol",      label: "Geraniol",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~3.2 ppb (Buttery 1981).", note: "Rose-like monoterpenoid." },
+  { id: "bcaryo",        label: "β-Caryophyllene",   class: "terpene",   threshold: "high",     specificity: "shared",    thresholdSrc: "~64 ppb (Jirovetz et al. 2002).", note: "Woody-spicy sesquiterpene; pepper." },
+  { id: "apinene",       label: "α-Pinene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~6 ppb (Buttery 1981).", note: "Pine-resinous monoterpene." },
+  { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002).", note: "Lavender principal — ~40% of lavender oil; floral-fresh." },
+  { id: "bisabolol",     label: "α-Bisabolol",       class: "terpene",   threshold: "medium",   specificity: "signature", thresholdSrc: "~22 ppb (Mann & Staba 1986).", note: "Chamomile principal sesquiterpenol; soft floral-herbal." },
   // pyrazines
-  { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", thresholdSrc: "~2 ng/L water (Allen, Lacey, Boyd 1991).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
-  { id: "edmpyr",        label: "2-Ethyl-3,5-dimethylpyrazine", class: "pyrazine", threshold: "low", thresholdSrc: "~0.04 ppb in water (Czerny et al. 2008).", note: "Earthy-roasted; key coffee odorant (Czerny et al.)." },
-  { id: "dempyr",        label: "2,3-Diethyl-5-methylpyrazine", class: "pyrazine", threshold: "very-low", thresholdSrc: "~0.001 ppb (Czerny et al. 2008).", note: "Earthy-nutty roast; potent coffee aroma." },
+  { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", specificity: "signature", thresholdSrc: "~2 ng/L water (Allen, Lacey, Boyd 1991).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
+  { id: "edmpyr",        label: "2-Ethyl-3,5-dimethylpyrazine", class: "pyrazine", threshold: "low", specificity: "shared", thresholdSrc: "~0.04 ppb in water (Czerny et al. 2008).", note: "Earthy-roasted; key coffee odorant (Czerny et al.)." },
+  { id: "dempyr",        label: "2,3-Diethyl-5-methylpyrazine", class: "pyrazine", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.001 ppb (Czerny et al. 2008).", note: "Earthy-nutty roast; potent coffee aroma." },
   // furans / thiols
-  { id: "furfural",      label: "Furfural",          class: "furan",     threshold: "high",     thresholdSrc: "~3000 ppb (Buttery 1981).", note: "Bready-almond Maillard furan." },
-  { id: "fft",           label: "Furfurylthiol",     class: "thiol",     threshold: "very-low", thresholdSrc: "~0.005 ppb (Blank, Sen, Grosch 1992).", note: "2-furfurylthiol; signature roasted-coffee thiol." },
-  { id: "mh3",           label: "3-Mercaptohexanol", class: "thiol",     threshold: "very-low", thresholdSrc: "~60 ng/L (Tominaga et al. 1998).", note: "Tropical/grapefruit varietal thiol." },
-  { id: "mmp4",          label: "4MMP",              class: "thiol",     threshold: "very-low", thresholdSrc: "~0.8 ng/L water (Tominaga et al. 1998).", note: "4-methyl-4-mercaptopentan-2-one; blackcurrant/box-tree." },
-  { id: "mfthiol",       label: "Methanethiol",      class: "thiol",     threshold: "very-low", thresholdSrc: "~0.02 ppb (Mayer, Czerny, Grosch 2000).", note: "Volatile S; coffee freshness, cabbage at high levels." },
+  { id: "furfural",      label: "Furfural",          class: "furan",     threshold: "high",     specificity: "shared",    thresholdSrc: "~3000 ppb (Buttery 1981).", note: "Bready-almond Maillard furan." },
+  { id: "fft",           label: "Furfurylthiol",     class: "thiol",     threshold: "very-low", specificity: "signature", thresholdSrc: "~0.005 ppb (Blank, Sen, Grosch 1992).", note: "2-furfurylthiol; signature roasted-coffee thiol." },
+  { id: "mh3",           label: "3-Mercaptohexanol", class: "thiol",     threshold: "very-low", specificity: "shared",    thresholdSrc: "~60 ng/L (Tominaga et al. 1998).", note: "Polyfunctional thiol; passionfruit, grapefruit." },
+  { id: "mmp4",          label: "4MMP",              class: "thiol",     threshold: "very-low", specificity: "shared",    thresholdSrc: "~0.8 ng/L water (Tominaga et al. 1998).", note: "4-methyl-4-mercaptopentan-2-one; passionfruit/box-tree thiol." },
+  { id: "mfthiol",       label: "Methanethiol",      class: "thiol",     threshold: "very-low", specificity: "signature", thresholdSrc: "~0.02 ppb (Mayer, Czerny, Grosch 2000).", note: "Volatile S; coffee freshness, cabbage at high levels." },
   // esters
-  { id: "etbut",         label: "Ethyl butanoate",   class: "ester",     threshold: "low",      thresholdSrc: "~1 ppb (Buttery 1981).", note: "Pineapple-apple fruity ester." },
-  { id: "ethex",         label: "Ethyl hexanoate",   class: "ester",     threshold: "low",      thresholdSrc: "~1 ppb (Buttery 1981).", note: "Berry-apple ester; fermentation." },
-  { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     threshold: "low",      thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
+  { id: "etbut",         label: "Ethyl butanoate",   class: "ester",     threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Pineapple-apple fruity ester." },
+  { id: "ethex",         label: "Ethyl hexanoate",   class: "ester",     threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Berry-apple ester; fermentation." },
+  { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     threshold: "low",      specificity: "signature", thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
   // lactones
-  { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone." },
-  { id: "gnonal",        label: "γ-Nonalactone",     class: "lactone",   threshold: "low",      thresholdSrc: "~30 ppb (Schwab et al. 2008).", note: "Coconut-creamy lactone; aged spirits." },
-  { id: "sotolon",       label: "Sotolon",           class: "lactone",   threshold: "very-low", thresholdSrc: "~0.3 ppb (Pham et al. 1995).", note: "Maple/fenugreek/curry; aged sake, vin jaune." },
+  { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone; also mango." },
+  { id: "gnonal",        label: "γ-Nonalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~30 ppb (Schwab et al. 2008).", note: "Coconut-creamy lactone; aged spirits." },
+  { id: "sotolon",       label: "Sotolon",           class: "lactone",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.3 ppb (Pham et al. 1995).", note: "Maple/fenugreek/curry; aged sake, vin jaune." },
   // aldehydes
-  { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
-  { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
-  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", thresholdSrc: "~0.08 ppb (Lermusieau & Collin 2003).", note: "Cardboard/stale; beer & coffee staling marker." },
-  { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
-  { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
+  { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
+  { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal — >50% of cinnamon bark oil." },
+  { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
+  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau & Collin 2003).", note: "Cardboard/stale; beer & coffee staling marker." },
+  { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
+  { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
   // ketones / norisoprenoids
-  { id: "diacetyl",      label: "Diacetyl",          class: "ketone",    threshold: "low",      thresholdSrc: "~5–15 ppb in beer (Bartowsky & Henschke 2004).", note: "2,3-butanedione; buttery, malolactic." },
-  { id: "bdam",          label: "β-Damascenone",     class: "norisoprenoid", threshold: "very-low", thresholdSrc: "~0.002 ppb (Sefton et al. 2011).", note: "Cooked-apple/honey/tobacco; potent across wine & coffee." },
+  { id: "diacetyl",      label: "Diacetyl",          class: "ketone",    threshold: "low",      specificity: "signature", thresholdSrc: "~5–15 ppb in beer (Bartowsky & Henschke 2004).", note: "2,3-butanedione; buttery, malolactic." },
+  { id: "bdam",          label: "β-Damascenone",     class: "norisoprenoid", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.002 ppb (Sefton et al. 2011).", note: "Cooked-apple/honey/tobacco; potent across wine & coffee." },
   // phenols
-  { id: "guaiacol",      label: "Guaiacol",          class: "phenol",    threshold: "low",      thresholdSrc: "~3 ppb (Maga 1978).", note: "Smoky-medicinal; roast and wood." },
-  { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
-  { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." }
+  { id: "guaiacol",      label: "Guaiacol",          class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Maga 1978).", note: "Smoky-medicinal; roast and wood." },
+  { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
+  { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -305,27 +370,33 @@ const EDGES = [
   { note: "grapefruit",  cpd: "mh3",       w: 0.80, cite: "Tominaga et al. 1998 (3-MH in Sauvignon = grapefruit/passionfruit)." },
   { note: "grapefruit",  cpd: "limonene",  w: 0.55, cite: "Shaw 1979." },
   { note: "lemon",       cpd: "linalool",  w: 0.35, cite: "Flament 2002 (Coffee Flavor Chemistry)." },
-  // Berry / blackcurrant
+  // Berry
   { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Jiang & Zhang 2010 (berry esters)." },
   { note: "berry",       cpd: "bdam",      w: 0.55, cite: "Sefton et al. 2011 (β-damascenone in wine/fruit)." },
-  { note: "blackcurrant",cpd: "mmp4",      w: 0.90, cite: "Tominaga et al. 1998 (4MMP, box-tree/cassis)." },
-  // Stonefruit / apple / tropical
+  // Stonefruit / apple
   { note: "stonefruit",  cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
   { note: "stonefruit",  cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
   { note: "apple",       cpd: "etbut",     w: 0.75, cite: "Dimick & Hoskin 1983 (apple esters)." },
   { note: "apple",       cpd: "bdam",      w: 0.45, cite: "Sefton et al. 2011." },
-  { note: "tropical",    cpd: "iaac",      w: 0.70, cite: "Pino et al. 2005 (banana/mango esters)." },
-  { note: "tropical",    cpd: "mh3",       w: 0.60, cite: "Tominaga et al. 1998." },
-  { note: "tropical",    cpd: "ethex",     w: 0.50, cite: "Pino et al. 2005." },
-  { note: "driedfruit",  cpd: "bdam",      w: 0.70, cite: "Sefton et al. 2011." },
-  { note: "driedfruit",  cpd: "sotolon",   w: 0.55, cite: "Pham et al. 1995 (sotolon, vin jaune)." },
+  // Banana / mango / passionfruit (replacing generic "tropical")
+  { note: "banana",      cpd: "iaac",      w: 0.95, cite: "Salmon et al. 1996 (isoamyl acetate, banana signature)." },
+  { note: "banana",      cpd: "etbut",     w: 0.40, cite: "Salmon et al. 1996." },
+  { note: "mango",       cpd: "myrcene",   w: 0.65, cite: "Pino & Mesa 2006 (mango monoterpene profile)." },
+  { note: "mango",       cpd: "gdecal",    w: 0.55, cite: "Pino & Mesa 2006 (ripe-mango lactones)." },
+  { note: "mango",       cpd: "iaac",      w: 0.30, cite: "Pino & Mesa 2006." },
+  { note: "passionfruit",cpd: "mh3",       w: 0.90, cite: "Tominaga et al. 1998; Engel & Tressl 1991 (3-MH/3-MHA in passionfruit)." },
+  { note: "passionfruit",cpd: "mmp4",      w: 0.55, cite: "Tominaga et al. 2000 (4MMP also found in passionfruit)." },
+  { note: "passionfruit",cpd: "ethex",     w: 0.45, cite: "Engel & Tressl 1991 (passionfruit esters)." },
 
   // Floral
   { note: "rose",          cpd: "geraniol",   w: 0.90, cite: "Ohloff 1994 (Scent & Chemistry)." },
   { note: "rose",          cpd: "linalool",   w: 0.55, cite: "Ohloff 1994." },
   { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
   { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
-  { note: "orangeblossom", cpd: "linalool",   w: 0.85, cite: "Boelens 1991 (neroli/orange-blossom)." },
+  { note: "lavender",      cpd: "linalool",       w: 0.80, cite: "Lis-Balchin 2002 (linalool ~30% lavender oil)." },
+  { note: "lavender",      cpd: "linalylacetate", w: 0.90, cite: "Lis-Balchin 2002 (linalyl acetate ~40% lavender oil)." },
+  { note: "chamomile",     cpd: "bisabolol",      w: 0.85, cite: "Mann & Staba 1986 (α-bisabolol, chamomile principal)." },
+  { note: "chamomile",     cpd: "linalool",       w: 0.35, cite: "Mann & Staba 1986 (minor chamomile constituent)." },
   { note: "violet",        cpd: "bdam",       w: 0.65, cite: "Sefton et al. 2011 (damascones/ionones)." },
 
   // Roasted / coffee / toast / smoky
@@ -343,7 +414,8 @@ const EDGES = [
   // Spice
   { note: "clove",    cpd: "eugenol",  w: 0.95, cite: "Ohloff 1994." },
   { note: "clove",    cpd: "vinguai",  w: 0.75, cite: "Tressl & Friese 1978 (4-vinylguaiacol, clove note)." },
-  { note: "cinnamon", cpd: "benzald",  w: 0.40, cite: "Friedman 2017 (cinnamaldehyde-adjacent aromatics)." },
+  { note: "cinnamon", cpd: "cinnamald", w: 0.95, cite: "Friedman 2017 (cinnamaldehyde >50% of cinnamon bark oil)." },
+  { note: "cinnamon", cpd: "benzald",   w: 0.25, cite: "Friedman 2017 (minor cinnamon constituent)." },
   { note: "pepper",   cpd: "bcaryo",   w: 0.85, cite: "Jirovetz et al. 2002 (β-caryophyllene in pepper)." },
   { note: "anise",    cpd: "eugenol",  w: 0.35, cite: "Ohloff 1994 (phenylpropene class)." },
 
@@ -385,6 +457,22 @@ const EDGES = [
   { note: "cardboard", cpd: "e2non",  w: 0.95, cite: "Lermusieau & Collin 2003 ((E)-2-nonenal, beer staling)." }
 ];
 
+// Per-class colors for compound nodes + legend. Distinct per class so the legend
+// reads unambiguously even though several classes overlap aroma-family palettes.
+const COMPOUND_CLASS_COLOR = {
+  "terpene":           "#89b482",  // green
+  "pyrazine":          "#a9624a",  // brown
+  "furan":             "#d8a657",  // yellow
+  "thiol":             "#e78a4e",  // orange
+  "ester":             "#d3869b",  // pink
+  "lactone":           "#c79460",  // tan
+  "phenolic-aldehyde": "#bdae93",  // sand
+  "aldehyde":          "#7daea3",  // aqua
+  "ketone":            "#ea6962",  // red
+  "norisoprenoid":     "#e8a0bf",  // light pink
+  "phenol":            "#928374"   // grey
+};
+
 // ---------- INDEXING ----------
 const NOTE_BY_ID = Object.fromEntries(NOTES.map(n => [n.id, n]));
 const CPD_BY_ID  = Object.fromEntries(COMPOUNDS.map(c => [c.id, c]));
@@ -409,8 +497,30 @@ const state = {
   hoveredNote: null,
   view: "sensory",       // "sensory" | "compounds"
   profile: "typical",    // "typical" | "sensitive"
-  sortBy: "intensity"    // "intensity" | "confidence" | "class"
+  sortBy: "intensity",   // "intensity" | "confidence" | "class"
+  noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
+  hiddenGroups: new Set(),   // note-group ids hidden via legend
+  hiddenClasses: new Set()   // compound-class names hidden via legend
 };
+
+function isNoteVisible(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  if (!n) return false;
+  if (state.hiddenGroups.has(n.group)) return false;
+  if (state.noteFilter === "common" && !n.common) return false;
+  return true;
+}
+function getVisibleNotes() {
+  return NOTES.filter(n => isNoteVisible(n.id));
+}
+function isCompoundVisible(cpdId) {
+  const c = CPD_BY_ID[cpdId];
+  if (!c) return false;
+  return !state.hiddenClasses.has(c.class);
+}
+function getVisibleCompoundNodes() {
+  return compoundNodes.filter(n => isCompoundVisible(n.id));
+}
 
 // Perception multipliers by smeller profile × odor-threshold tier.
 // Sensitive smellers detect more across the board for low-threshold compounds;
@@ -450,12 +560,12 @@ function layout() {
   updateSimulationCenter();
 }
 
-// Distribute notes around the ring, grouped contiguously
+// Distribute visible notes around the ring, grouped contiguously
 function computeNotePositions() {
-  // group sizes
+  const visible = getVisibleNotes();
   const counts = {};
-  GROUPS.forEach(g => counts[g.id] = NOTES.filter(n => n.group === g.id).length);
-  const total = NOTES.length;
+  GROUPS.forEach(g => counts[g.id] = visible.filter(n => n.group === g.id).length);
+  const total = visible.length || 1;
   let angle = -Math.PI / 2; // start at top
   const groupAngles = {};
   GROUPS.forEach(g => {
@@ -463,9 +573,8 @@ function computeNotePositions() {
     groupAngles[g.id] = { start: angle, end: angle + span, span };
     angle += span;
   });
-  // assign each note an angle = group.start + (i+0.5)/count * span
   const byGroupCounter = {};
-  NOTES.forEach(n => {
+  visible.forEach(n => {
     byGroupCounter[n.group] = (byGroupCounter[n.group] || 0);
     const i = byGroupCounter[n.group]++;
     const g = groupAngles[n.group];
@@ -474,7 +583,8 @@ function computeNotePositions() {
     n._x = CX + Math.cos(a) * R_NOTE;
     n._y = CY + Math.sin(a) * R_NOTE;
   });
-  // expose groupAngles for arcs
+  // Hidden notes get null positions (and won't render)
+  NOTES.forEach(n => { if (!isNoteVisible(n.id)) { n._angle = null; n._x = null; n._y = null; } });
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
@@ -484,7 +594,8 @@ function drawGroupArcs() {
     .startAngle(d => d._arc.start + Math.PI/2)
     .endAngle(d => d._arc.end + Math.PI/2);
 
-  const sel = gArcs.selectAll("path.group-arc").data(GROUPS, d => d.id);
+  const visibleGroups = GROUPS.filter(g => g._arc && g._arc.span > 0.001);
+  const sel = gArcs.selectAll("path.group-arc").data(visibleGroups, d => d.id);
   sel.join(
     enter => enter.append("path").attr("class", "group-arc"),
     update => update,
@@ -495,7 +606,8 @@ function drawGroupArcs() {
   .attr("stroke", d => getComputedStyle(document.documentElement).getPropertyValue(d.cssVar).trim());
 
   // group labels at midpoint
-  const labels = gArcs.selectAll("text.group-arc-label").data(GROUPS, d => d.id);
+  const labels = gArcs.selectAll("text.group-arc-label").data(visibleGroups, d => d.id);
+  labels.exit().remove();
   labels.join("text")
     .attr("class", "group-arc-label")
     .attr("text-anchor", "middle")
@@ -511,7 +623,8 @@ function drawGroupArcs() {
 }
 
 function drawNotes() {
-  const sel = gNotes.selectAll("g.note").data(NOTES, d => d.id);
+  const sel = gNotes.selectAll("g.note").data(getVisibleNotes(), d => d.id);
+  sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "note")
     .on("mouseenter", (e, d) => { state.hoveredNote = d.id; updateEdges(); })
     .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
@@ -582,6 +695,7 @@ function targetForce(strength) {
       const edges = CPD_EDGES[node.id];
       let wx = 0, wy = 0, wsum = 0;
       edges.forEach(e => {
+        if (!isNoteVisible(e.note)) return;
         const noteW = state.noteWeights[e.note] / 10;
         if (noteW <= 0) return;
         const contrib = noteW * e.w;
@@ -626,8 +740,9 @@ function tick() {
     }
   });
 
-  // render compounds
-  const sel = gComps.selectAll("g.compound").data(compoundNodes, d => d.id);
+  // render compounds (filtered by class visibility)
+  const sel = gComps.selectAll("g.compound").data(getVisibleCompoundNodes(), d => d.id);
+  sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "compound")
     .on("click", (e, d) => { state.selectedCompound = d.id; renderDetail(); render(); })
     .call(d3.drag()
@@ -657,20 +772,7 @@ function tick() {
 function hoveredCompound() { return null; } // placeholder for future hover-on-compound
 
 function compoundColor(c) {
-  switch (c.class) {
-    case "terpene":           return "#89b482";
-    case "pyrazine":          return "#a9624a";
-    case "furan":             return "#d8a657";
-    case "thiol":             return "#e78a4e";
-    case "ester":             return "#d3869b";
-    case "lactone":           return "#c79460";
-    case "phenolic-aldehyde": return "#d8a657";
-    case "aldehyde":          return "#7daea3";
-    case "ketone":            return "#ea6962";
-    case "norisoprenoid":     return "#d3869b";
-    case "phenol":            return "#a9624a";
-    default: return "#aaa";
-  }
+  return COMPOUND_CLASS_COLOR[c.class] || "#aaa";
 }
 
 // ---------- EDGES rendering ----------
@@ -678,6 +780,8 @@ function updateEdges() {
   // only draw edges where note has weight > 0 OR note is hovered OR compound is selected
   const drawn = [];
   EDGES.forEach(e => {
+    if (!isNoteVisible(e.note)) return;
+    if (!isCompoundVisible(e.cpd)) return;
     const noteW = state.noteWeights[e.note];
     const isHovered = state.hoveredNote === e.note || state.selectedCompound === e.cpd;
     const w = noteW / 10 * e.w;
@@ -719,6 +823,7 @@ function recompute() {
     let activeCount = 0;
     let peakActive = 0;
     edges.forEach(e => {
+      if (!isNoteVisible(e.note)) return; // hidden note contributes nothing in current filter
       const nw = state.noteWeights[e.note] / 10;
       if (nw > 0) {
         s += nw * e.w;
@@ -763,8 +868,10 @@ function buildNotesPanel() {
     sw.style.background = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
     header.appendChild(sw);
     header.appendChild(document.createTextNode(g.label));
+    const visible = getVisibleNotes().filter(n => n.group === g.id);
+    if (visible.length === 0) return; // skip empty group when filter hides all
     notesPanel.appendChild(header);
-    NOTES.filter(n => n.group === g.id).forEach(n => {
+    visible.forEach(n => {
       const row = document.createElement("div");
       row.className = "note-row";
       row.dataset.note = n.id;
@@ -825,7 +932,7 @@ function renderCompoundDetail(cpdId, banner) {
   detailPanel.innerHTML = `
     ${banner ? `<div class="empty" style="margin-bottom:10px;">${banner}</div>` : ""}
     <h2>${c.label}</h2>
-    <div class="compound-class">${c.class}</div>
+    <div class="compound-class">${c.class}${c.specificity === "signature" ? ' · signature' : ''}</div>
     <div style="font-size:12px; line-height:1.5; color:var(--ink-dim);">${c.note}</div>
 
     <div class="section">
@@ -874,8 +981,8 @@ function renderCompoundDetail(cpdId, banner) {
 // ---------- COMPOUND GRID ----------
 const cpdGrid = document.getElementById("cpd-grid");
 function renderCompoundGrid() {
-  // sort nodes
-  let nodes = compoundNodes.slice();
+  // filter by class visibility, then sort
+  let nodes = compoundNodes.filter(n => isCompoundVisible(n.id));
   if (state.sortBy === "intensity") {
     nodes.sort((a,b) => b.score - a.score);
   } else if (state.sortBy === "confidence") {
@@ -902,6 +1009,7 @@ function renderCompoundGrid() {
         <div class="meta">
           <span class="pill">${c.class}</span>
           <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
+          ${c.specificity === "signature" ? `<span class="pill signature" title="This compound is essentially the marker of one note">signature</span>` : ''}
           ${n.active_edges > 0 ? `<span class="pill">${n.active_edges} cite${n.active_edges>1?'s':''}</span>` : ''}
         </div>
         <div class="scores">
@@ -960,6 +1068,20 @@ document.querySelectorAll("#profile-toggle button").forEach(b => {
   });
 });
 
+document.querySelectorAll("#notefilter-toggle button").forEach(b => {
+  b.addEventListener("click", () => {
+    state.noteFilter = b.dataset.filter;
+    document.querySelectorAll("#notefilter-toggle button").forEach(x =>
+      x.classList.toggle("active", x.dataset.filter === state.noteFilter));
+    // Rebuild panel, recompute angles, redraw wheel, refresh scoring/edges
+    buildNotesPanel();
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+    recompute();
+  });
+});
+
 document.querySelectorAll("#sort-toggle button").forEach(b => {
   b.addEventListener("click", () => {
     state.sortBy = b.dataset.sort;
@@ -969,10 +1091,108 @@ document.querySelectorAll("#sort-toggle button").forEach(b => {
   });
 });
 
+// ---------- LEGEND ----------
+function buildLegend() {
+  const groupsBox = document.getElementById("legend-groups");
+  const classesBox = document.getElementById("legend-classes");
+
+  // Note groups
+  groupsBox.innerHTML = GROUPS.map(g => {
+    const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+    const total = NOTES.filter(n => n.group === g.id).length;
+    const hidden = state.hiddenGroups.has(g.id);
+    return `
+      <label class="legend-item ${hidden ? 'off' : ''}" data-kind="group" data-id="${g.id}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} />
+        <span class="swatch" style="background:${color}"></span>
+        <span class="label">${g.label}</span>
+        <span class="count">${total}</span>
+      </label>
+    `;
+  }).join("");
+
+  // Compound classes — derive list of unique classes present in COMPOUNDS, in stable order
+  const classOrder = Array.from(new Set(COMPOUNDS.map(c => c.class)));
+  classesBox.innerHTML = classOrder.map(cls => {
+    const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+    const total = COMPOUNDS.filter(c => c.class === cls).length;
+    const hidden = state.hiddenClasses.has(cls);
+    return `
+      <label class="legend-item ${hidden ? 'off' : ''}" data-kind="class" data-id="${cls}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} />
+        <span class="swatch" style="background:${color}"></span>
+        <span class="label">${cls}</span>
+        <span class="count">${total}</span>
+      </label>
+    `;
+  }).join("");
+
+  // Wire checkboxes
+  document.querySelectorAll(".legend-item input").forEach(input => {
+    input.addEventListener("change", () => {
+      const item = input.closest(".legend-item");
+      const kind = item.dataset.kind;
+      const id = item.dataset.id;
+      const set = kind === "group" ? state.hiddenGroups : state.hiddenClasses;
+      if (input.checked) set.delete(id); else set.add(id);
+      item.classList.toggle("off", !input.checked);
+      applyVisibilityChange(kind);
+    });
+  });
+}
+
+function applyVisibilityChange(kind) {
+  if (kind === "group") {
+    // Layout depends on which notes are visible
+    buildNotesPanel();
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+  }
+  // both kinds affect scoring/render of compounds and edges
+  recompute();
+}
+
+// Collapse / expand legend
+document.getElementById("legend-toggle").addEventListener("click", () => {
+  document.getElementById("legend").classList.toggle("collapsed");
+});
+
+// "toggle all" links
+document.querySelectorAll(".toggle-all").forEach(el => {
+  el.addEventListener("click", e => {
+    e.stopPropagation();
+    const target = el.dataset.target;
+    if (target === "groups") {
+      const allHidden = state.hiddenGroups.size === GROUPS.length;
+      state.hiddenGroups = allHidden ? new Set() : new Set(GROUPS.map(g => g.id));
+      buildLegend();
+      applyVisibilityChange("group");
+    } else {
+      const classes = Array.from(new Set(COMPOUNDS.map(c => c.class)));
+      const allHidden = state.hiddenClasses.size === classes.length;
+      state.hiddenClasses = allHidden ? new Set() : new Set(classes);
+      buildLegend();
+      applyVisibilityChange("class");
+    }
+  });
+});
+
 // ---------- DEMOS ----------
 function setNotes(map) {
   Object.keys(state.noteWeights).forEach(k => state.noteWeights[k] = 0);
   Object.entries(map).forEach(([k,v]) => { if (k in state.noteWeights) state.noteWeights[k] = v; });
+  // If any non-zero note is niche, auto-flip filter to "all" so the user can see it.
+  const needsAll = Object.entries(map).some(([k,v]) => v > 0 && NOTE_BY_ID[k] && !NOTE_BY_ID[k].common);
+  if (needsAll && state.noteFilter !== "all") {
+    state.noteFilter = "all";
+    document.querySelectorAll("#notefilter-toggle button").forEach(x =>
+      x.classList.toggle("active", x.dataset.filter === "all"));
+    buildNotesPanel();
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+  }
   syncSliders();
   recompute();
 }
@@ -981,10 +1201,11 @@ document.getElementById("demo-coffee").addEventListener("click", () => setNotes(
   coffee: 9, toast: 6, chocolate: 7, caramel: 5, stonefruit: 4, honey: 3, smoky: 2
 }));
 document.getElementById("demo-mocktail").addEventListener("click", () => setNotes({
-  grapefruit: 9, orange: 7, lemon: 6, rose: 4, honey: 3, green: 2, tropical: 5
+  grapefruit: 9, orange: 7, lemon: 6, passionfruit: 6, rose: 4, honey: 3, green: 2
 }));
 
 // ---------- INIT ----------
+buildLegend();
 buildNotesPanel();
 layout();
 startSim();
