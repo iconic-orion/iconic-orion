@@ -184,11 +184,6 @@
     <button data-view="sensory" class="active">Sensory</button>
     <button data-view="compounds">Compounds</button>
   </div>
-  <div class="profile-toggle" id="profile-toggle" title="Smeller perception profile">
-    <span class="label">Profile</span>
-    <button data-profile="typical" class="active">Typical</button>
-    <button data-profile="sensitive">Sensitive</button>
-  </div>
   <div class="profile-toggle" id="notefilter-toggle" title="Filter to widely-recognized notes vs. include niche/specialist descriptors">
     <span class="label">Notes</span>
     <button data-filter="common" class="active">Common</button>
@@ -228,7 +223,7 @@
   <div class="compounds-header">
     <div>
       <h2>Compound inference</h2>
-      <div class="help">Greyed-out = no support from your current notes. Intensity = perceived presence given your sliders and selected profile. Confidence = literature breadth × strength behind that inference.</div>
+      <div class="help">Greyed-out = no support from your current notes. Intensity = perceived presence given your sliders, modulated by each compound's odor-threshold tier. Confidence = literature breadth × strength behind that inference.</div>
     </div>
     <div class="sort" id="sort-toggle">
       <button data-sort="intensity" class="active">Sort: Intensity</button>
@@ -496,7 +491,6 @@ const state = {
   selectedCompound: null,
   hoveredNote: null,
   view: "sensory",       // "sensory" | "compounds"
-  profile: "typical",    // "typical" | "sensitive"
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
@@ -522,13 +516,10 @@ function getVisibleCompoundNodes() {
   return compoundNodes.filter(n => isCompoundVisible(n.id));
 }
 
-// Perception multipliers by smeller profile × odor-threshold tier.
-// Sensitive smellers detect more across the board for low-threshold compounds;
-// typical smellers under-report high-threshold compounds.
-const PERCEPTION = {
-  typical:   { "very-low": 1.20, "low": 1.00, "medium": 0.80, "high": 0.45 },
-  sensitive: { "very-low": 1.35, "low": 1.20, "medium": 1.05, "high": 0.80 }
-};
+// Perception multiplier by odor-threshold tier. Low-threshold compounds still
+// punch above their raw evidence (a few molecules of furfurylthiol read as
+// "roasted coffee"); high-threshold compounds need real concentration to register.
+const PERCEPTION = { "very-low": 1.20, "low": 1.00, "medium": 0.85, "high": 0.55 };
 
 // ---------- LAYOUT ----------
 const svg = d3.select("#svg");
@@ -811,10 +802,9 @@ function updateEdges() {
 
 // ---------- SCORING ----------
 // For each compound we compute:
-//   intensity_raw   : Σ (noteWeight/10 × edge.w) — raw evidence of presence
-//   intensity_typ   : intensity_raw × perception multiplier (typical profile)
-//   intensity_sens  : intensity_raw × perception multiplier (sensitive profile)
-//   confidence      : literature support — blend of (# active edges) and (peak active edge weight)
+//   intensity_raw : Σ (noteWeight/10 × edge.w) — raw evidence of presence
+//   intensity    : intensity_raw × threshold-tier perception multiplier
+//   confidence   : literature support — blend of (# active edges) and (peak active edge weight)
 function recompute() {
   compoundNodes.forEach(node => {
     const cpdMeta = CPD_BY_ID[node.id];
@@ -823,7 +813,7 @@ function recompute() {
     let activeCount = 0;
     let peakActive = 0;
     edges.forEach(e => {
-      if (!isNoteVisible(e.note)) return; // hidden note contributes nothing in current filter
+      if (!isNoteVisible(e.note)) return;
       const nw = state.noteWeights[e.note] / 10;
       if (nw > 0) {
         s += nw * e.w;
@@ -832,22 +822,19 @@ function recompute() {
       }
     });
     node.intensity_raw = s;
-    node.intensity_typ  = s * PERCEPTION.typical[cpdMeta.threshold];
-    node.intensity_sens = s * PERCEPTION.sensitive[cpdMeta.threshold];
-    node.active_edges  = activeCount;
-    node.peak_edge     = peakActive;
+    node.intensity    = s * PERCEPTION[cpdMeta.threshold];
+    node.active_edges = activeCount;
+    node.peak_edge    = peakActive;
 
-    // confidence: 0 if no active edges; otherwise blend breadth (count) and strength (peak edge w)
     if (activeCount === 0) {
       node.confidence = 0;
     } else {
-      const breadth = Math.min(1, activeCount / 3);          // 1+,2+,3+ corroborating notes
-      const strength = peakActive;                            // 0..1
+      const breadth = Math.min(1, activeCount / 3);
+      const strength = peakActive;
       node.confidence = Math.min(1, 0.55 * breadth + 0.45 * strength);
     }
 
-    // The sim/score still drives node sizing — pick whichever profile is selected.
-    node.score = state.profile === "sensitive" ? node.intensity_sens : node.intensity_typ;
+    node.score = node.intensity;
     node.radius = 5 + Math.min(12, node.score * 8);
   });
   gNotes.selectAll("g.note").classed("active", d => state.noteWeights[d.id] > 0);
@@ -938,17 +925,11 @@ function renderCompoundDetail(cpdId, banner) {
     <div class="section">
       <div class="section-title">Perception scores</div>
       <div style="display:grid; grid-template-columns: 90px 1fr 32px; gap:6px; align-items:center; font-size:11px;">
-        <span style="color:var(--ink-dim)">Typical</span>
+        <span style="color:var(--ink-dim)">Intensity</span>
         <div class="bar" style="height:6px; background:var(--bg); border-radius:3px;">
-          <div style="height:100%; background:var(--accent); width:${pct(node.intensity_typ)}%"></div>
+          <div style="height:100%; background:var(--accent); width:${pct(node.intensity)}%"></div>
         </div>
-        <span style="text-align:right; font-variant-numeric:tabular-nums;">${pct(node.intensity_typ)}</span>
-
-        <span style="color:var(--ink-dim)">Sensitive</span>
-        <div class="bar" style="height:6px; background:var(--bg); border-radius:3px;">
-          <div style="height:100%; background:var(--accent); opacity:0.7; width:${pct(node.intensity_sens)}%"></div>
-        </div>
-        <span style="text-align:right; font-variant-numeric:tabular-nums;">${pct(node.intensity_sens)}</span>
+        <span style="text-align:right; font-variant-numeric:tabular-nums;">${pct(node.intensity)}</span>
 
         <span style="color:var(--ink-dim)">Confidence</span>
         <div class="bar" style="height:6px; background:var(--bg); border-radius:3px;">
@@ -999,9 +980,6 @@ function renderCompoundGrid() {
     const c = CPD_BY_ID[n.id];
     const inactive = n.intensity_raw <= 0.001;
     const selected = state.selectedCompound === n.id;
-    const intensity = state.profile === "sensitive" ? n.intensity_sens : n.intensity_typ;
-    const otherProfile = state.profile === "sensitive" ? n.intensity_typ : n.intensity_sens;
-    const otherLabel = state.profile === "sensitive" ? "Typical" : "Sensitive";
     const pct = v => Math.round(Math.min(1, v) * 100);
     return `
       <div class="cpd-card ${inactive ? 'inactive' : ''} ${selected ? 'selected' : ''}" data-cpd="${n.id}">
@@ -1015,20 +993,14 @@ function renderCompoundGrid() {
         <div class="scores">
           <div class="score-row">
             <span class="lbl">Intensity</span>
-            <div class="bar"><div class="intensity" style="width:${pct(intensity)}%"></div></div>
-            <span class="val">${pct(intensity)}</span>
+            <div class="bar"><div class="intensity" style="width:${pct(n.intensity)}%"></div></div>
+            <span class="val">${pct(n.intensity)}</span>
           </div>
           <div class="score-row">
             <span class="lbl">Confidence</span>
             <div class="bar"><div class="confidence" style="width:${pct(n.confidence)}%"></div></div>
             <span class="val">${pct(n.confidence)}</span>
           </div>
-          ${inactive ? '' : `
-          <div class="score-row" title="Same intensity computed under the other smeller profile">
-            <span class="lbl" style="opacity:0.6">${otherLabel}</span>
-            <div class="bar"><div class="intensity" style="width:${pct(otherProfile)}%; opacity:0.4"></div></div>
-            <span class="val" style="opacity:0.6">${pct(otherProfile)}</span>
-          </div>`}
         </div>
       </div>
     `;
@@ -1057,15 +1029,6 @@ function setView(v) {
 }
 document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
-});
-
-document.querySelectorAll("#profile-toggle button").forEach(b => {
-  b.addEventListener("click", () => {
-    state.profile = b.dataset.profile;
-    document.querySelectorAll("#profile-toggle button").forEach(x =>
-      x.classList.toggle("active", x.dataset.profile === state.profile));
-    recompute();
-  });
 });
 
 document.querySelectorAll("#notefilter-toggle button").forEach(b => {
