@@ -1107,16 +1107,20 @@ function updateRowPhaseButtons(row, noteId) {
   row.classList.toggle("has-entries", hasAnyEntry(noteId));
 }
 
-// All phase buttons (Add / Ortho / Retro) are text-only. The upper-airway
-// icons live in the legend's phase filter where they serve as the visual
-// reference; the row buttons rely on their text labels for distinction.
+// Default (null phase) Add button: text-only — "Add" or "Added · N". The
+// ortho/retro buttons get the upper-airway icon + their phase name.
+// (The Edit/Delete callout strips icons for visual quiet — see openEntryCallout.)
 function renderPhaseBtnContent(noteId, phase) {
   const entry = getEntry(noteId, phase);
-  const label = phase === null ? "Add" : phase;
-  if (entry !== undefined) {
-    return `<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`;
+  if (phase === null) {
+    return entry !== undefined
+      ? `<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`
+      : `<span class="phase-label">Add</span>`;
   }
-  return `<span class="phase-label">${label}</span>`;
+  if (entry !== undefined) {
+    return `${PHASE_ICON[phase]}<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`;
+  }
+  return `${PHASE_ICON[phase]}<span class="phase-label">${phase}</span>`;
 }
 
 // Re-render just one note row in place (after confirm/edit/delete) without rebuilding the whole panel.
