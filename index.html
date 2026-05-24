@@ -1107,19 +1107,16 @@ function updateRowPhaseButtons(row, noteId) {
   row.classList.toggle("has-entries", hasAnyEntry(noteId));
 }
 
-// Default (null phase) Add button: text-only — "Add" or "Added · N". The
-// ortho/retro buttons get the upper-airway icon + their phase name.
+// All phase buttons (Add / Ortho / Retro) are text-only. The upper-airway
+// icons live in the legend's phase filter where they serve as the visual
+// reference; the row buttons rely on their text labels for distinction.
 function renderPhaseBtnContent(noteId, phase) {
   const entry = getEntry(noteId, phase);
-  if (phase === null) {
-    return entry !== undefined
-      ? `<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`
-      : `<span class="phase-label">Add</span>`;
-  }
+  const label = phase === null ? "Add" : phase;
   if (entry !== undefined) {
-    return `${PHASE_ICON[phase]}<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`;
+    return `<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`;
   }
-  return `${PHASE_ICON[phase]}<span class="phase-label">${phase}</span>`;
+  return `<span class="phase-label">${label}</span>`;
 }
 
 // Re-render just one note row in place (after confirm/edit/delete) without rebuilding the whole panel.
@@ -1143,11 +1140,10 @@ function openEntryCallout(btn, noteId, phase) {
 
   const callout = document.createElement("div");
   callout.className = "entry-callout";
-  // Default (null) phase has no icon — only ortho/retro do.
-  const iconHtml = phase ? PHASE_ICON[phase] : "";
+  // Callout is text-only too — icons stay solely in the legend.
   callout.innerHTML = `
-    <button data-action="edit" type="button">${iconHtml}<span>Edit?</span></button>
-    <button data-action="delete" type="button" class="danger">${iconHtml}<span>Delete?</span></button>
+    <button data-action="edit" type="button"><span>Edit?</span></button>
+    <button data-action="delete" type="button" class="danger"><span>Delete?</span></button>
     <button data-action="cancel" type="button" class="nevermind">nevermind</button>
   `;
   // Anchor: above the button, left-aligned with it (within the row's relative box).
