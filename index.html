@@ -1143,9 +1143,11 @@ function openEntryCallout(btn, noteId, phase) {
 
   const callout = document.createElement("div");
   callout.className = "entry-callout";
+  // Default (null) phase has no icon — only ortho/retro do.
+  const iconHtml = phase ? PHASE_ICON[phase] : "";
   callout.innerHTML = `
-    <button data-action="edit" type="button">${PHASE_ICON[phase]}<span>Edit?</span></button>
-    <button data-action="delete" type="button" class="danger">${PHASE_ICON[phase]}<span>Delete?</span></button>
+    <button data-action="edit" type="button">${iconHtml}<span>Edit?</span></button>
+    <button data-action="delete" type="button" class="danger">${iconHtml}<span>Delete?</span></button>
     <button data-action="cancel" type="button" class="nevermind">nevermind</button>
   `;
   // Anchor: above the button, left-aligned with it (within the row's relative box).
