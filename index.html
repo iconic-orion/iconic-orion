@@ -136,13 +136,60 @@
     display: flex; align-items: center; gap: 8px; }
   .group-header .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
-  .note-row { display: grid; grid-template-columns: 1fr 28px; gap: 8px; align-items: center;
-    padding: 4px 4px; border-radius: 4px; }
+  /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
+     Each note can have up to two confirmed entries — one per phase —
+     each with its own intensity. Confirming requires intensity > 0.
+     Confirmed buttons show "Added"; clicking one opens edit/delete callout. */
+  .note-row { display: grid; grid-template-columns: 1fr 28px; gap: 4px 8px; align-items: center;
+    padding: 6px 4px; border-radius: 4px; position: relative; }
   .note-row:hover { background: var(--panel-2); }
-  .note-row label { font-size: 12px; cursor: pointer; }
-  .note-row .val { font-size: 11px; color: var(--ink-dim); text-align: right; font-variant-numeric: tabular-nums; }
-  .note-row input[type=range] { grid-column: 1 / span 2; width: 100%; accent-color: var(--accent); }
-  .note-row.active label { color: var(--accent); }
+  .note-row .note-label-text { font-size: 12px; cursor: pointer; grid-column: 1; }
+  .note-row .val { font-size: 11px; color: var(--ink-dim); text-align: right;
+    font-variant-numeric: tabular-nums; grid-column: 2; }
+  .note-row input[type=range] { grid-column: 1 / span 2; width: 100%; accent-color: var(--accent);
+    margin: 2px 0; }
+  .note-row.has-entries .note-label-text { color: var(--accent); }
+  .note-row.flash { background: rgba(216, 166, 87, 0.18); transition: background 0.6s; }
+
+  .phase-buttons { grid-column: 1 / span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .phase-btn { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line);
+    border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    transition: border-color 0.15s, color 0.15s, background 0.15s; }
+  .phase-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--ink); }
+  .phase-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .phase-btn.added { background: rgba(216, 166, 87, 0.12); border-color: var(--accent);
+    color: var(--accent); cursor: pointer; opacity: 1; }
+  .phase-btn.added:hover { background: rgba(216, 166, 87, 0.18); }
+  .phase-btn svg { width: 18px; height: 14px; flex-shrink: 0; }
+  .phase-btn .added-intensity { font-variant-numeric: tabular-nums; color: var(--ink);
+    font-weight: 600; margin-left: 2px; }
+
+  /* Edit/delete callout — appears anchored above an "Added" button on click */
+  .entry-callout { position: absolute; z-index: 50; background: var(--panel-2);
+    border: 1px solid var(--accent); border-radius: 6px; padding: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); min-width: 140px;
+    display: flex; flex-direction: column; gap: 4px; }
+  .entry-callout button { background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 4px; padding: 6px 10px; font-size: 11px; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 6px; }
+  .entry-callout button:hover { background: var(--bg); border-color: var(--accent); }
+  .entry-callout button.danger:hover { border-color: var(--warn); color: var(--warn); }
+  .entry-callout .nevermind { background: transparent; border: none; color: var(--ink-dim);
+    font-size: 10px; text-align: center; padding: 4px 0 0; margin-top: 2px;
+    border-top: 1px dotted var(--line); cursor: pointer; }
+  .entry-callout .nevermind:hover { color: var(--ink); background: transparent; }
+
+  /* Legend phase-filter rows (same shape as group/class items but with SVG icons) */
+  .legend-phase-item { display: grid; grid-template-columns: 14px 18px 1fr 22px;
+    gap: 6px; align-items: center; padding: 2px 0; cursor: pointer; font-size: 11px; }
+  .legend-phase-item input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .legend-phase-item svg { width: 18px; height: 14px; color: var(--ink-dim); }
+  .legend-phase-item.off .label, .legend-phase-item.off svg { opacity: 0.35; }
+  .legend-phase-item:hover { background: var(--bg); border-radius: 3px; }
+  .legend-phase-item .count { font-size: 10px; color: var(--ink-dim);
+    text-align: right; font-variant-numeric: tabular-nums; }
 
   aside.detail h2 { font-size: 13px; margin: 0 0 4px; letter-spacing: 0.02em; }
   aside.detail .compound-class { font-size: 11px; color: var(--ink-dim); text-transform: uppercase;
@@ -200,6 +247,12 @@
       <span class="caret">▼</span>
     </div>
     <div class="legend-body">
+      <div class="legend-section">
+        <div class="legend-section-title">
+          <span>Phase (ortho / retro)</span>
+        </div>
+        <div id="legend-phases"></div>
+      </div>
       <div class="legend-section">
         <div class="legend-section-title">
           <span>Note groups</span>
@@ -486,16 +539,65 @@ EDGES.forEach(e => {
 });
 
 // ---------- STATE ----------
+// Core input contract: each note can be confirmed independently for
+// orthonasal (sniff) and retronasal (swallow) phases — keyed on (noteId, phase).
+// - `entries`: confirmed (note, phase) → intensity 1..10. Composite key is unique;
+//   a note can have 0, 1, or 2 entries (one per phase).
+// - `pendingIntensity[noteId]`: current slider value before confirm. 0 = no commit.
+// - `hiddenPhases`: legend filter for ortho/retro visibility.
+const PHASES = ["ortho", "retro"];
+const entryKey = (noteId, phase) => `${noteId}:${phase}`;
+
 const state = {
-  noteWeights: Object.fromEntries(NOTES.map(n => [n.id, 0])), // 0..10
+  entries: new Map(),                                          // "noteId:phase" -> intensity (1..10)
+  pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
+  hiddenPhases: new Set(),    // entries whose phase is in here are filtered out
   selectedCompound: null,
   hoveredNote: null,
   view: "sensory",       // "sensory" | "compounds"
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
-  hiddenClasses: new Set()   // compound-class names hidden via legend
+  hiddenClasses: new Set(),  // compound-class names hidden via legend
+  openCalloutKey: null       // currently-open edit/delete callout's entry key, if any
 };
+
+// ---------- ENTRY HELPERS ----------
+function commitEntry(noteId, phase, intensity) {
+  if (intensity <= 0) return;
+  state.entries.set(entryKey(noteId, phase), intensity);
+}
+function deleteEntry(noteId, phase) {
+  state.entries.delete(entryKey(noteId, phase));
+}
+function getEntry(noteId, phase) {
+  return state.entries.get(entryKey(noteId, phase));
+}
+function hasAnyEntry(noteId) {
+  return PHASES.some(p => state.entries.has(entryKey(noteId, p)));
+}
+
+// noteSignal: per-note aggregate intensity used by scoring/rendering.
+// Sums intensities of visible entries (per group + phase filters), then divides
+// by 10 to match the old `noteWeights[id] / 10` shape. NOT capped — logging both
+// phases at high intensity is genuinely more evidence than one phase alone.
+function noteSignal(noteId) {
+  if (!isNoteVisible(noteId)) return 0;
+  let sum = 0;
+  for (const phase of PHASES) {
+    if (state.hiddenPhases.has(phase)) continue;
+    const v = state.entries.get(entryKey(noteId, phase));
+    if (v) sum += v;
+  }
+  return sum / 10;
+}
+
+// Count confirmed entries (across all notes) for a given phase — used by legend counts.
+function countEntriesForPhase(phase) {
+  let n = 0;
+  for (const k of state.entries.keys()) if (k.endsWith(":" + phase)) n++;
+  return n;
+}
 
 function isNoteVisible(noteId) {
   const n = NOTE_BY_ID[noteId];
@@ -515,6 +617,30 @@ function isCompoundVisible(cpdId) {
 function getVisibleCompoundNodes() {
   return compoundNodes.filter(n => isCompoundVisible(n.id));
 }
+
+// ---------- SVG ICONS (ortho/retro) ----------
+// Both icons share a nose-profile silhouette. The bold front arrow carries the
+// immediate in-vs-out signal; the lighter tracey internal arrows show the
+// anatomical path the volatiles take (inhale up into the nasal cavity for ortho,
+// post-swallow exhale rising from the nasopharynx through the nose for retro).
+const ICON_ORTHO = `<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M6 2 C 6 7 8 11 13 13 C 16 14 17 16 16 18" stroke-width="1.3"/>
+  <path d="M13 13 L 17 14" stroke-width="1.3"/>
+  <path d="M22.5 14.5 L 17 14.5" stroke-width="2.2"/>
+  <path d="M18.8 12.7 L 17 14.5 L 18.8 16.3" stroke-width="2.2"/>
+  <path d="M14 12 Q 11 8 9 4" stroke-width="0.7" stroke-dasharray="1.2 1.4"/>
+  <path d="M10 5 L 9 4 L 8 5.5" stroke-width="0.7"/>
+</svg>`;
+const ICON_RETRO = `<svg viewBox="0 0 24 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M6 2 C 6 7 8 11 13 13 C 16 14 17 16 16 18" stroke-width="1.3"/>
+  <path d="M13 13 L 17 14" stroke-width="1.3"/>
+  <path d="M17 14.5 L 22.5 14.5" stroke-width="2.2"/>
+  <path d="M20.7 12.7 L 22.5 14.5 L 20.7 16.3" stroke-width="2.2"/>
+  <path d="M11 19 Q 7 16 8 11 Q 10 9 14 11.5" stroke-width="0.7" stroke-dasharray="1.2 1.4"/>
+  <path d="M13 10.5 L 14 11.5 L 13 13" stroke-width="0.7"/>
+</svg>`;
+const PHASE_ICON = { ortho: ICON_ORTHO, retro: ICON_RETRO };
+const PHASE_LABEL = { ortho: "Ortho (sniff)", retro: "Retro (swallow)" };
 
 // Perception multiplier by odor-threshold tier. Low-threshold compounds still
 // punch above their raw evidence (a few molecules of furfurylthiol read as
@@ -620,10 +746,17 @@ function drawNotes() {
     .on("mouseenter", (e, d) => { state.hoveredNote = d.id; updateEdges(); })
     .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
     .on("click", (e, d) => {
-      const cur = state.noteWeights[d.id];
-      state.noteWeights[d.id] = cur > 0 ? 0 : 5;
-      syncSliders();
-      recompute();
+      // New input contract: phase choice is panel-only. Clicking a note on the
+      // wheel scrolls the panel to that row and focuses the slider, so the
+      // user can set intensity + pick a phase deliberately.
+      const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 600);
+        const slider = row.querySelector("input[type=range]");
+        if (slider) slider.focus();
+      }
     });
   enter.append("circle").attr("r", 5);
   enter.append("text").attr("class", "note-label");
@@ -687,7 +820,7 @@ function targetForce(strength) {
       let wx = 0, wy = 0, wsum = 0;
       edges.forEach(e => {
         if (!isNoteVisible(e.note)) return;
-        const noteW = state.noteWeights[e.note] / 10;
+        const noteW = noteSignal(e.note);
         if (noteW <= 0) return;
         const contrib = noteW * e.w;
         const n = NOTE_BY_ID[e.note];
@@ -773,16 +906,16 @@ function updateEdges() {
   EDGES.forEach(e => {
     if (!isNoteVisible(e.note)) return;
     if (!isCompoundVisible(e.cpd)) return;
-    const noteW = state.noteWeights[e.note];
+    const sig = noteSignal(e.note);
     const isHovered = state.hoveredNote === e.note || state.selectedCompound === e.cpd;
-    const w = noteW / 10 * e.w;
-    if (noteW > 0 || isHovered) {
+    const w = sig * e.w;
+    if (sig > 0 || isHovered) {
       drawn.push({
         ...e,
         n: NOTE_BY_ID[e.note],
         c: CPD_NODE_BY_ID[e.cpd],
         contrib: w,
-        lit: noteW > 0,
+        lit: sig > 0,
         focused: isHovered
       });
     }
@@ -814,7 +947,7 @@ function recompute() {
     let peakActive = 0;
     edges.forEach(e => {
       if (!isNoteVisible(e.note)) return;
-      const nw = state.noteWeights[e.note] / 10;
+      const nw = noteSignal(e.note);
       if (nw > 0) {
         s += nw * e.w;
         activeCount++;
@@ -837,7 +970,7 @@ function recompute() {
     node.score = node.intensity;
     node.radius = 5 + Math.min(12, node.score * 8);
   });
-  gNotes.selectAll("g.note").classed("active", d => state.noteWeights[d.id] > 0);
+  gNotes.selectAll("g.note").classed("active", d => hasAnyEntry(d.id));
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
@@ -846,49 +979,173 @@ function recompute() {
 
 // ---------- PANEL: notes ----------
 const notesPanel = document.getElementById("notes-panel");
+
 function buildNotesPanel() {
   notesPanel.innerHTML = "";
   GROUPS.forEach(g => {
+    const visible = getVisibleNotes().filter(n => n.group === g.id);
+    if (visible.length === 0) return;
     const header = document.createElement("div");
     header.className = "group-header";
     const sw = document.createElement("span"); sw.className = "swatch";
     sw.style.background = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
     header.appendChild(sw);
     header.appendChild(document.createTextNode(g.label));
-    const visible = getVisibleNotes().filter(n => n.group === g.id);
-    if (visible.length === 0) return; // skip empty group when filter hides all
     notesPanel.appendChild(header);
-    visible.forEach(n => {
-      const row = document.createElement("div");
-      row.className = "note-row";
-      row.dataset.note = n.id;
-      const lbl = document.createElement("label");
-      lbl.textContent = n.label; lbl.setAttribute("for", "slider-" + n.id);
-      const val = document.createElement("span"); val.className = "val"; val.textContent = state.noteWeights[n.id];
-      const slider = document.createElement("input");
-      slider.type = "range"; slider.min = 0; slider.max = 10; slider.step = 1; slider.id = "slider-" + n.id;
-      slider.value = state.noteWeights[n.id];
-      slider.addEventListener("input", () => {
-        state.noteWeights[n.id] = +slider.value;
-        val.textContent = slider.value;
-        row.classList.toggle("active", +slider.value > 0);
+    visible.forEach(n => notesPanel.appendChild(renderNoteRow(n)));
+  });
+}
+
+// Build a single note-row DOM element: label + intensity readout + slider + two phase-confirm buttons.
+function renderNoteRow(n) {
+  const row = document.createElement("div");
+  row.className = "note-row";
+  row.dataset.note = n.id;
+  if (hasAnyEntry(n.id)) row.classList.add("has-entries");
+
+  const lbl = document.createElement("label");
+  lbl.className = "note-label-text";
+  lbl.setAttribute("for", "slider-" + n.id);
+  lbl.textContent = n.label;
+
+  const val = document.createElement("span");
+  val.className = "val";
+  val.textContent = state.pendingIntensity[n.id] || 0;
+
+  const slider = document.createElement("input");
+  slider.type = "range"; slider.min = 0; slider.max = 10; slider.step = 1;
+  slider.id = "slider-" + n.id;
+  slider.value = state.pendingIntensity[n.id] || 0;
+  slider.addEventListener("input", () => {
+    state.pendingIntensity[n.id] = +slider.value;
+    val.textContent = slider.value;
+    updateRowPhaseButtons(row, n.id);
+  });
+
+  const btns = document.createElement("div");
+  btns.className = "phase-buttons";
+  PHASES.forEach(phase => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "phase-btn";
+    btn.dataset.phase = phase;
+    btn.title = PHASE_LABEL[phase];
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const existing = getEntry(n.id, phase);
+      if (existing !== undefined) {
+        // Already confirmed — open Edit / Delete / Nevermind callout.
+        openEntryCallout(btn, n.id, phase);
+      } else {
+        // Pre-confirm — commit if intensity > 0.
+        const intensity = state.pendingIntensity[n.id] || 0;
+        if (intensity > 0) {
+          commitEntry(n.id, phase, intensity);
+          renderNoteRowPanel(n.id);
+          recompute();
+        }
+      }
+    });
+    btns.appendChild(btn);
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(val);
+  row.appendChild(slider);
+  row.appendChild(btns);
+  updateRowPhaseButtons(row, n.id);
+  return row;
+}
+
+// Update the two phase buttons on a row based on entry state + slider value.
+function updateRowPhaseButtons(row, noteId) {
+  const intensity = state.pendingIntensity[noteId] || 0;
+  row.querySelectorAll(".phase-btn").forEach(btn => {
+    const phase = btn.dataset.phase;
+    const entry = getEntry(noteId, phase);
+    btn.classList.toggle("added", entry !== undefined);
+    btn.disabled = (entry === undefined && intensity <= 0);
+    btn.innerHTML = renderPhaseBtnContent(noteId, phase);
+  });
+  row.classList.toggle("has-entries", hasAnyEntry(noteId));
+}
+
+function renderPhaseBtnContent(noteId, phase) {
+  const entry = getEntry(noteId, phase);
+  if (entry !== undefined) {
+    return `${PHASE_ICON[phase]}<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`;
+  }
+  return `${PHASE_ICON[phase]}<span class="phase-label">${phase}</span>`;
+}
+
+// Re-render just one note row in place (after confirm/edit/delete) without rebuilding the whole panel.
+function renderNoteRowPanel(noteId) {
+  const oldRow = document.querySelector(`.note-row[data-note="${noteId}"]`);
+  if (!oldRow) return;
+  const newRow = renderNoteRow(NOTE_BY_ID[noteId]);
+  oldRow.replaceWith(newRow);
+}
+
+// Called after bulk entry changes (demos, reset) — full rebuild is simplest + safe.
+function syncSliders() { buildNotesPanel(); }
+
+// Callout anchored above a clicked "Added" button: Edit? / Delete? / Nevermind.
+// "Edit" restores the entry's intensity into the slider and removes the entry,
+// so the user adjusts and re-clicks the phase button to re-commit.
+function openEntryCallout(btn, noteId, phase) {
+  closeAllCallouts();
+  const row = btn.closest(".note-row");
+  if (!row) return;
+
+  const callout = document.createElement("div");
+  callout.className = "entry-callout";
+  callout.innerHTML = `
+    <button data-action="edit" type="button">${PHASE_ICON[phase]}<span>Edit?</span></button>
+    <button data-action="delete" type="button" class="danger">${PHASE_ICON[phase]}<span>Delete?</span></button>
+    <button data-action="cancel" type="button" class="nevermind">nevermind</button>
+  `;
+  // Anchor: above the button, left-aligned with it (within the row's relative box).
+  const btnRect = btn.getBoundingClientRect();
+  const rowRect = row.getBoundingClientRect();
+  callout.style.left = Math.max(0, btnRect.left - rowRect.left) + "px";
+  callout.style.bottom = (rowRect.height - (btnRect.top - rowRect.top) + 6) + "px";
+  row.appendChild(callout);
+  state.openCalloutKey = entryKey(noteId, phase);
+
+  callout.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const action = b.dataset.action;
+      if (action === "edit") {
+        const intensity = getEntry(noteId, phase);
+        state.pendingIntensity[noteId] = intensity;
+        deleteEntry(noteId, phase);
+        closeAllCallouts();
+        renderNoteRowPanel(noteId);
         recompute();
-      });
-      row.appendChild(lbl); row.appendChild(val); row.appendChild(slider);
-      notesPanel.appendChild(row);
+      } else if (action === "delete") {
+        deleteEntry(noteId, phase);
+        closeAllCallouts();
+        renderNoteRowPanel(noteId);
+        recompute();
+      } else {
+        closeAllCallouts();
+      }
     });
   });
 }
-function syncSliders() {
-  document.querySelectorAll(".note-row").forEach(row => {
-    const id = row.dataset.note;
-    const v = state.noteWeights[id];
-    const slider = row.querySelector("input");
-    const val = row.querySelector(".val");
-    slider.value = v; val.textContent = v;
-    row.classList.toggle("active", v > 0);
-  });
+
+function closeAllCallouts() {
+  document.querySelectorAll(".entry-callout").forEach(el => el.remove());
+  state.openCalloutKey = null;
 }
+
+// Click anywhere outside an open callout (or a phase button) closes it.
+document.addEventListener("click", (e) => {
+  if (!state.openCalloutKey) return;
+  if (e.target.closest(".entry-callout") || e.target.closest(".phase-btn")) return;
+  closeAllCallouts();
+});
 
 // ---------- PANEL: detail ----------
 const detailPanel = document.getElementById("detail-panel");
@@ -910,8 +1167,8 @@ function renderCompoundDetail(cpdId, banner) {
   const c = CPD_BY_ID[cpdId];
   const node = CPD_NODE_BY_ID[cpdId];
   const edges = CPD_EDGES[cpdId].slice().sort((a,b) => {
-    const wa = state.noteWeights[a.note]/10 * a.w;
-    const wb = state.noteWeights[b.note]/10 * b.w;
+    const wa = noteSignal(a.note) * a.w;
+    const wb = noteSignal(b.note) * b.w;
     if (wa !== wb) return wb - wa;
     return b.w - a.w;
   });
@@ -946,10 +1203,16 @@ function renderCompoundDetail(cpdId, banner) {
       <div class="section-title">Contributing notes (literature)</div>
       <ul>
         ${edges.map(e => {
-          const live = state.noteWeights[e.note] > 0;
-          const contrib = (state.noteWeights[e.note]/10 * e.w).toFixed(2);
+          const sig = noteSignal(e.note);
+          const live = sig > 0;
+          const contrib = (sig * e.w).toFixed(2);
+          // Show which phases contributed (small hint after the note name).
+          const phaseHints = PHASES
+            .filter(p => !state.hiddenPhases.has(p) && getEntry(e.note, p) !== undefined)
+            .map(p => `<span style="color:var(--ink-dim); font-size:10px;">${p}:${getEntry(e.note, p)}</span>`)
+            .join(" ");
           return `<li>
-            <span class="note-name">${NOTE_BY_ID[e.note].label}</span>
+            <span class="note-name">${NOTE_BY_ID[e.note].label}</span> ${phaseHints}
             <span class="weight" style="float:right">${live ? contrib : "—"} <span style="color:var(--ink-dim)">(base ${e.w.toFixed(2)})</span></span>
             <span class="cite">${e.cite}</span>
           </li>`;
@@ -1056,8 +1319,24 @@ document.querySelectorAll("#sort-toggle button").forEach(b => {
 
 // ---------- LEGEND ----------
 function buildLegend() {
-  const groupsBox = document.getElementById("legend-groups");
+  const phasesBox  = document.getElementById("legend-phases");
+  const groupsBox  = document.getElementById("legend-groups");
   const classesBox = document.getElementById("legend-classes");
+
+  // Phase filter — show ortho / show retro. Phase tagging itself happens in the
+  // slider panel; this row controls which tagged entries contribute to scoring.
+  phasesBox.innerHTML = PHASES.map(phase => {
+    const hidden = state.hiddenPhases.has(phase);
+    const count = countEntriesForPhase(phase);
+    return `
+      <label class="legend-phase-item ${hidden ? 'off' : ''}" data-phase="${phase}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} />
+        ${PHASE_ICON[phase]}
+        <span class="label">${PHASE_LABEL[phase]}</span>
+        <span class="count">${count}</span>
+      </label>
+    `;
+  }).join("");
 
   // Note groups
   groupsBox.innerHTML = GROUPS.map(g => {
@@ -1090,7 +1369,7 @@ function buildLegend() {
     `;
   }).join("");
 
-  // Wire checkboxes
+  // Wire group/class checkboxes
   document.querySelectorAll(".legend-item input").forEach(input => {
     input.addEventListener("change", () => {
       const item = input.closest(".legend-item");
@@ -1100,6 +1379,18 @@ function buildLegend() {
       if (input.checked) set.delete(id); else set.add(id);
       item.classList.toggle("off", !input.checked);
       applyVisibilityChange(kind);
+    });
+  });
+
+  // Wire phase-filter checkboxes
+  document.querySelectorAll(".legend-phase-item input").forEach(input => {
+    input.addEventListener("change", () => {
+      const item = input.closest(".legend-phase-item");
+      const phase = item.dataset.phase;
+      if (input.checked) state.hiddenPhases.delete(phase);
+      else state.hiddenPhases.add(phase);
+      item.classList.toggle("off", !input.checked);
+      recompute();
     });
   });
 }
@@ -1142,30 +1433,61 @@ document.querySelectorAll(".toggle-all").forEach(el => {
 });
 
 // ---------- DEMOS ----------
-function setNotes(map) {
-  Object.keys(state.noteWeights).forEach(k => state.noteWeights[k] = 0);
-  Object.entries(map).forEach(([k,v]) => { if (k in state.noteWeights) state.noteWeights[k] = v; });
-  // If any non-zero note is niche, auto-flip filter to "all" so the user can see it.
-  const needsAll = Object.entries(map).some(([k,v]) => v > 0 && NOTE_BY_ID[k] && !NOTE_BY_ID[k].common);
+// setNotes accepts an array of {note, phase, intensity}. Phase is required —
+// the input contract requires it. Demos pick sensible phase assignments based
+// on how each note tends to register; you can edit the demo arrays to taste.
+function setNotes(entries) {
+  state.entries.clear();
+  Object.keys(state.pendingIntensity).forEach(k => state.pendingIntensity[k] = 0);
+  closeAllCallouts();
+  entries.forEach(e => {
+    if (NOTE_BY_ID[e.note]) commitEntry(e.note, e.phase, e.intensity);
+  });
+  // Auto-flip the niche-notes filter if a demo includes any niche descriptor
+  const needsAll = entries.some(e => NOTE_BY_ID[e.note] && !NOTE_BY_ID[e.note].common);
   if (needsAll && state.noteFilter !== "all") {
     state.noteFilter = "all";
     document.querySelectorAll("#notefilter-toggle button").forEach(x =>
       x.classList.toggle("active", x.dataset.filter === "all"));
-    buildNotesPanel();
     computeNotePositions();
     drawGroupArcs();
     drawNotes();
   }
-  syncSliders();
+  buildLegend();   // refresh per-phase counts
+  syncSliders();   // rebuild panel to show new entries
   recompute();
 }
-document.getElementById("reset").addEventListener("click", () => setNotes({}));
-document.getElementById("demo-coffee").addEventListener("click", () => setNotes({
-  coffee: 9, toast: 6, chocolate: 7, caramel: 5, stonefruit: 4, honey: 3, smoky: 2
-}));
-document.getElementById("demo-mocktail").addEventListener("click", () => setNotes({
-  grapefruit: 9, orange: 7, lemon: 6, passionfruit: 6, rose: 4, honey: 3, green: 2
-}));
+
+document.getElementById("reset").addEventListener("click", () => setNotes([]));
+
+// Coffee: aroma-driven, much of it lives on both ortho (sniff over the cup)
+// and retro (post-sip exhale). Roasted/toast/smoky lean ortho (you smell them
+// before tasting); chocolate/caramel/stonefruit/honey lean retro (they
+// surface on the exhale after swallow). Edit freely.
+document.getElementById("demo-coffee").addEventListener("click", () => setNotes([
+  { note: "coffee",     phase: "ortho", intensity: 9 },
+  { note: "coffee",     phase: "retro", intensity: 8 },
+  { note: "toast",      phase: "ortho", intensity: 6 },
+  { note: "smoky",      phase: "ortho", intensity: 2 },
+  { note: "chocolate",  phase: "retro", intensity: 7 },
+  { note: "caramel",    phase: "retro", intensity: 5 },
+  { note: "stonefruit", phase: "retro", intensity: 4 },
+  { note: "honey",      phase: "retro", intensity: 3 }
+]));
+
+// Citrus mocktail: bright top-note citrus reads ortho-first; tropical fruit
+// and floral often unfold on the retro exhale; green/honey come through on
+// swallow. Orange logged twice to demonstrate dual-phase logging.
+document.getElementById("demo-mocktail").addEventListener("click", () => setNotes([
+  { note: "grapefruit",   phase: "ortho", intensity: 9 },
+  { note: "orange",       phase: "ortho", intensity: 7 },
+  { note: "orange",       phase: "retro", intensity: 5 },
+  { note: "lemon",        phase: "ortho", intensity: 6 },
+  { note: "rose",         phase: "ortho", intensity: 4 },
+  { note: "passionfruit", phase: "retro", intensity: 6 },
+  { note: "honey",        phase: "retro", intensity: 3 },
+  { note: "green",        phase: "retro", intensity: 2 }
+]));
 
 // ---------- INIT ----------
 buildLegend();
