@@ -555,7 +555,7 @@ EDGES.forEach(e => {
 // Input contract: each note can carry up to three independent confirmed entries:
 // - default (phase=null) — confirmed via the always-visible "Add" button.
 // - ortho (sniff) — confirmed via a button revealed by Go Deeper.
-// - retro (swallow) — confirmed via a button revealed by Go Deeper.
+// - retro (exhale) — confirmed via a button revealed by Go Deeper.
 // All three can coexist for the same note; their intensities aggregate as evidence.
 //
 // `entries` Map keys:
@@ -674,7 +674,7 @@ const ICON_RETRO = `<svg viewBox="0 0 28 24" fill="none" stroke="currentColor" s
   <path d="M 22 9 L 24 11 L 22 13" stroke-width="2.4"/>
 </svg>`;
 const PHASE_ICON = { ortho: ICON_ORTHO, retro: ICON_RETRO };
-const PHASE_LABEL = { ortho: "Ortho (sniff)", retro: "Retro (swallow)" };
+const PHASE_LABEL = { ortho: "Ortho (sniff)", retro: "Retro (exhale)" };
 
 // Perception multiplier by odor-threshold tier. Low-threshold compounds still
 // punch above their raw evidence (a few molecules of furfurylthiol read as
