@@ -1,10 +1,9 @@
 Ahoy hoy!
 
-This is a wonderful sandbox idea that I've been really excited by since moving to Portland and having ample access to such exquisite flavor parings and fusions. I want to know on a molecular level why I have even been able to taste coffee that straight up tastes like cotton candy. Importantly, the edges are seeded from real GC-MS landmarks, but the weights themselves are approximations, not extracted from a single paper. Easy to refine — every edge is one line in the `EDGES` array.
+This is a wonderful tool that I have been working on privately for about 8 months. I want to know on a molecular level why I have experienced coffee that straight up tastes like "cotton-candy grapes". Importantly, the edges are seeded from real Gas chromatography–mass spectrometry (GC–MS landmarks, but the weights themselves are approximations that have been normalized to a 1-10 scale, not a direct extraction from the cited papers. 
 
-Open it in the preview panel and try the Coffee demo first — furfurylthiol, the diethyl/ethyl-dimethyl pyrazines, and β-damascenone should bloom toward the roasted/sweet sectors.
+By rating how strongly you perceive different aromas, which are represented by common everyday sources, different aroma compounds swirl to the surface of the aroma note wheel.
 
-The tone of the entire project is: gustatory agnostic (it shouldn't matter when you use it) - tasting coffee, hops, wine... spaghetti? Can you taste the olive oil, the marinara, the spices? Your perceptions are real, and they are going to change depending on your individual preferences, tolerances, and interest in the study of the mechanics of aroma.
+The tone of the entire project is: gustatory agnostic (it shouldn't matter when you use it) - tasting coffee, hops, wine... spaghetti?  Your perceptions are real, and they are going to change depending on how you are defining your own individual preferences, tolerances, and interest in the mechanics of aroma.
 
-but honestly, use it however and whenever the curiosity strikes, "Just what am I smelling?"
-
+ use it whenever the curiosity strikes, "Just what am I smelling?"
