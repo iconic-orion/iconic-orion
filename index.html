@@ -148,7 +148,20 @@
   .wheel-overlay.inputs { left: 8px; }
   .wheel-overlay.compounds { right: 8px; }
   .wheel-overlay-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--ink-dim); margin-bottom: 4px; }
+    color: var(--ink-dim); margin-bottom: 4px;
+    display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  /* Tiny segmented toggle in the bottom-right overlay: switch list grouping
+     between individual compounds and chemical-class roll-up. */
+  .overlay-toggle { display: inline-flex; gap: 2px; }
+  .overlay-toggle button { background: transparent; border: 1px solid var(--line);
+    color: var(--ink-dim); padding: 1px 6px; border-radius: 3px; cursor: pointer;
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+    font-family: inherit; }
+  .overlay-toggle button.active { background: var(--accent); color: #1a1810;
+    border-color: var(--accent); }
+  .overlay-toggle button:hover:not(.active) { color: var(--ink); border-color: var(--accent); }
+  .wheel-overlay-list .class-dot { width: 8px; height: 8px; border-radius: 2px;
+    flex-shrink: 0; display: inline-block; }
   .wheel-overlay-list { list-style: none; padding: 0; margin: 0; }
   .wheel-overlay-list li { display: flex; align-items: center; gap: 6px;
     padding: 2px 0; font-size: 11px; }
@@ -510,7 +523,13 @@
     <ul class="wheel-overlay-list" id="overlay-inputs"></ul>
   </div>
   <div class="wheel-overlay compounds">
-    <div class="wheel-overlay-header">Top compounds</div>
+    <div class="wheel-overlay-header">
+      <span id="overlay-compounds-title">Top compounds</span>
+      <div class="overlay-toggle" id="overlay-by-toggle" title="Switch between individual compounds and chemical-class roll-up">
+        <button type="button" data-overlay-by="compound" class="active">by compound</button>
+        <button type="button" data-overlay-by="class">by class</button>
+      </div>
+    </div>
     <ul class="wheel-overlay-list" id="overlay-compounds"></ul>
   </div>
 </main>
@@ -1009,6 +1028,7 @@ const state = {
   pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
+  overlayBy: "compound",      // bottom-right wheel overlay grouping: "compound" | "class"
   selectedCompound: null,
   selectedNote: null,       // when set (Go Deeper only), analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
@@ -1923,18 +1943,46 @@ function renderWheelOverlays() {
         return `<li><span class="name">${n.label}</span>${phaseTag}<span class="val">${e.intensity}</span></li>`;
       }).join('');
 
-  // Top compounds: visible compounds with non-trivial intensity, sorted, top 12.
-  const top = compoundNodes
-    .filter(n => isCompoundVisible(n.id) && n.intensity > 0.05)
-    .sort((a, b) => b.intensity - a.intensity)
-    .slice(0, 12);
+  // Bottom-right overlay can group by individual compound (default) or by
+  // chemical class — gives a quick "what families am I picking up" read.
+  const titleEl = document.getElementById("overlay-compounds-title");
   const pct = v => Math.round(Math.min(1, v) * 100);
-  overlayCompoundsEl.innerHTML = top.length === 0
-    ? `<li class="empty">No compounds detected yet.</li>`
-    : top.map(n => {
-        const c = CPD_BY_ID[n.id];
-        return `<li><span class="name">${c.label}</span><span class="val">${pct(n.intensity)}%</span></li>`;
+
+  if (state.overlayBy === "class") {
+    if (titleEl) titleEl.textContent = "Top classes";
+    // Sum intensity per chemical class across visible, non-trivial compounds.
+    const sums = {};
+    for (const n of compoundNodes) {
+      if (!isCompoundVisible(n.id)) continue;
+      if (n.intensity <= 0.05) continue;
+      const cls = CPD_BY_ID[n.id].class;
+      sums[cls] = (sums[cls] || 0) + n.intensity;
+    }
+    const byClass = Object.entries(sums).sort((a, b) => b[1] - a[1]);
+    if (byClass.length === 0) {
+      overlayCompoundsEl.innerHTML = `<li class="empty">No compounds detected yet.</li>`;
+    } else {
+      // Normalize as % of the top-scoring class so magnitudes read at a glance.
+      const maxSum = byClass[0][1];
+      overlayCompoundsEl.innerHTML = byClass.map(([cls, sum]) => {
+        const p = Math.round((sum / maxSum) * 100);
+        const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+        return `<li><span class="class-dot" style="background:${color}"></span><span class="name">${cls}</span><span class="val">${p}%</span></li>`;
       }).join('');
+    }
+  } else {
+    if (titleEl) titleEl.textContent = "Top compounds";
+    const top = compoundNodes
+      .filter(n => isCompoundVisible(n.id) && n.intensity > 0.05)
+      .sort((a, b) => b.intensity - a.intensity)
+      .slice(0, 12);
+    overlayCompoundsEl.innerHTML = top.length === 0
+      ? `<li class="empty">No compounds detected yet.</li>`
+      : top.map(n => {
+          const c = CPD_BY_ID[n.id];
+          return `<li><span class="name">${c.label}</span><span class="val">${pct(n.intensity)}%</span></li>`;
+        }).join('');
+  }
 }
 
 // ---------- VIEW SWITCHING / PANE VISIBILITY ----------
@@ -2201,6 +2249,16 @@ function setGoDeeper(on) {
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   setGoDeeper(!state.goDeeper);
+});
+
+// Overlay-by toggle (bottom-right wheel overlay: compound vs class grouping)
+document.querySelectorAll("#overlay-by-toggle button").forEach(b => {
+  b.addEventListener("click", () => {
+    state.overlayBy = b.dataset.overlayBy;
+    document.querySelectorAll("#overlay-by-toggle button").forEach(x =>
+      x.classList.toggle("active", x.dataset.overlayBy === state.overlayBy));
+    renderWheelOverlays();
+  });
 });
 
 // ---------- INFO ("i") TAB ----------
