@@ -1937,34 +1937,25 @@ function renderAbout() {
 function renderHowToUse() {
   return `
     <h2>How to use</h2>
-    <p class="lede">The wheel is always the center of the screen. Everything else is about giving it input or reading its output.</p>
 
-    <h3>1. Report what you notice</h3>
-    <p>On the left, every descriptor has a slider (0 = nothing, 10 = dominant). Drag a slider to the intensity you noticed, then click <strong>Add</strong> to confirm. The wheel and the analysis pane update live. You can click an "Added" button anytime to <strong>Edit</strong> or <strong>Delete</strong> the entry.</p>
+    <h3>The basic flow</h3>
+    <p>You pick descriptors you notice (lemon, vanilla, toast, smoky, whatever fits), slide an intensity from 1 to 10, and click <strong>Add</strong> to confirm. Every descriptor has known connections to specific aromatic compounds, drawn from published GC-MS work. When you confirm an entry, the connected compounds each get a weighted contribution from it. Several confirmed entries pointing at the same compound stack up. That's the whole inference loop.</p>
 
-    <h3>2. Read the wheel</h3>
-    <p>Notes you've reported sit around the perimeter in their group color (Fruity, Floral, Roasted, etc.). Compounds your reports point to migrate inward — the more lit edges connecting them to your notes, the more confident the match. Hover any compound for a bigger label; click to see its full detail in the analysis pane (right).</p>
+    <h3>Two views of the same thing</h3>
+    <p>The wheel and the analysis pane show the same data in two different shapes.</p>
+    <p>The <strong>wheel</strong> is spatial. Descriptors sit around the perimeter, colored by their group (Fruity, Floral, Roasted, and so on). Compounds float toward the center, pulled by whichever descriptors point to them. Edges light up between descriptors and compounds when both are active. Hover a compound for a bigger label, click for its full detail.</p>
+    <p>The <strong>analysis pane</strong> (the grey panel on the right) is ranked and textual. By default it's a sortable grid of every compound with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the literature citations behind each link.</p>
 
-    <h3>3. Inspect a compound</h3>
-    <p>The analysis pane (right) shows a sortable grid of compound suggestions by default — click any card for its odor threshold, contributing notes, and literature citations. Click "← All compounds" to return to the grid.</p>
-
-    <h3>4. Filter what you see</h3>
-    <p>The legend on the left isn't just a key — every row is a visibility toggle. Hide a note group, hide a compound class, hide ortho-tagged or retro-tagged entries. Useful when you want to stress-test the inference (turn off retro entries and see if the wheel still reflects what you noticed on the sniff).</p>
-
-    <h3>5. Switch view modes</h3>
-    <p>Three tabs in the header — <strong>Dashboard</strong>, <strong>Note Input</strong>, <strong>Analysis</strong> — reorganize the panes around the wheel:</p>
+    <h3>Controls</h3>
     <ul>
-      <li><strong>Dashboard</strong>: sliders + wheel + analysis, all visible. Best on wide screens.</li>
-      <li><strong>Note Input</strong>: sliders + wheel. Focus on logging.</li>
-      <li><strong>Analysis</strong>: wheel + analysis pane. Focus on results.</li>
+      <li><strong>Sliders pane (left).</strong> Your input. Each row is a slider plus an Add button. Click an "Added" button to Edit or Delete that entry.</li>
+      <li><strong>Legend (top of the sliders pane).</strong> Visibility filters. Toggle note groups, compound classes, and ortho/retro entries. Useful for stress-testing what's driving what.</li>
+      <li><strong>View tabs (header).</strong> <em>Dashboard</em> shows all three panes. <em>Note Input</em> hides the analysis pane to focus on logging. <em>Analysis</em> hides the sliders to focus on results. The wheel is always there.</li>
+      <li><strong>Go Deeper (header toggle).</strong> Reveals advanced inputs. Per-row <em>Ortho</em> (sniff) and <em>Retro</em> (exhale) buttons let you tag when in the bite you noticed each note. Two text overlays appear in the bottom corners of the wheel showing your inputs and the top compound suggestions in compact list form.</li>
     </ul>
-    <p>The tool auto-picks based on your viewport when you first load, but you can switch anytime.</p>
 
-    <h3>6. Go Deeper (optional)</h3>
-    <p>The <strong>Go Deeper</strong> toggle in the header reveals advanced inputs and additional analytical surfaces. The first thing it adds: per-row <strong>Ortho</strong> (sniff) and <strong>Retro</strong> (exhale) buttons, letting you tag <em>when in the bite</em> you noticed each note. The wheel also gets two text overlays in the bottom corners summarizing inputs (left) and compound suggestions (right) so you can cross-reference at a glance. More Go Deeper content arrives in future versions.</p>
-
-    <h3>Repeat-tasting is encouraged</h3>
-    <p>If you re-taste the same coffee tomorrow and get different results, that's a feature, not a bug. The tool is designed to honor perceptual variation — comparing your morning take to your afternoon take is exactly the kind of cross-reference this is built for.</p>
+    <h3>Repeat-tasting</h3>
+    <p>If you taste the same coffee tomorrow and report different things, that's expected. The tool is built to make those comparisons across moments legible, not collapse them.</p>
   `;
 }
 
