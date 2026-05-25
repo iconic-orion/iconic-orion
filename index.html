@@ -31,6 +31,13 @@
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   body { display: grid; grid-template-columns: 320px 1fr 360px; grid-template-rows: 48px 1fr;
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
+
+  /* View modes — wheel is always present; sliders pane and analysis pane toggle based on mode. */
+  body.view-note-input { grid-template-columns: 320px 1fr 0; }
+  body.view-note-input aside.detail { display: none; }
+  body.view-analysis { grid-template-columns: 0 1fr 360px; }
+  body.view-analysis aside.notes { display: none; }
+  /* body.view-dashboard (default) keeps all three panes */
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
@@ -53,13 +60,10 @@
   .profile-toggle .label { padding: 6px 8px; font-size: 11px; color: var(--ink-dim);
     text-transform: uppercase; letter-spacing: 0.08em; }
 
-  /* Compounds grid view */
-  main.compounds { grid-area: wheel; overflow-y: auto; padding: 16px; display: none; }
-  body.view-compounds main.wheel { display: none; }
-  body.view-compounds main.compounds { display: block; }
-
-  .compound-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 10px; }
+  /* Compound grid — lives inside the Analysis pane (right) as its default-state
+     view when no compound is selected. Narrower than V1's middle-pane grid so
+     cards stack as a single column in the 360px-wide analysis pane. */
+  .compound-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
   .cpd-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
     padding: 10px 12px; cursor: pointer; transition: opacity 0.2s, border-color 0.15s; position: relative; }
   .cpd-card:hover { border-color: var(--accent); }
@@ -88,14 +92,42 @@
   .cpd-card .bar .intensity { background: var(--accent); }
   .cpd-card .bar .confidence { background: var(--accent-2); }
 
-  .compounds-header { display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+  .compounds-header { display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 12px; }
   .compounds-header h2 { font-size: 13px; margin: 0; letter-spacing: 0.02em; }
-  .compounds-header .help { font-size: 11px; color: var(--ink-dim); }
-  .compounds-header .sort { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .compounds-header .help { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
+  .compounds-header .sort { display: inline-flex; border: 1px solid var(--line); border-radius: 6px;
+    overflow: hidden; align-self: flex-start; }
   .compounds-header .sort button { border: none; border-radius: 0; padding: 4px 10px; background: transparent;
     color: var(--ink-dim); font-size: 11px; cursor: pointer; }
   .compounds-header .sort button.active { background: var(--panel-2); color: var(--ink); }
+
+  /* "Back to all compounds" link in detail mode, anchored above the compound name */
+  .back-to-grid { background: transparent; color: var(--ink-dim); border: none; padding: 0 0 8px;
+    font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .back-to-grid:hover { color: var(--accent); }
+
+  /* Wheel-corner overlays — readable text view of inputs (bottom-left) and
+     compound suggestions (bottom-right). Hidden by default; shown in Go Deeper. */
+  .wheel-overlay { position: absolute; bottom: 8px;
+    background: rgba(31, 29, 35, 0.88); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; font-size: 11px; display: none; max-width: 38%;
+    max-height: 45%; overflow-y: auto; backdrop-filter: blur(4px); }
+  body.go-deeper .wheel-overlay { display: block; }
+  .wheel-overlay.inputs { left: 8px; }
+  .wheel-overlay.compounds { right: 8px; }
+  .wheel-overlay-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 4px; }
+  .wheel-overlay-list { list-style: none; padding: 0; margin: 0; }
+  .wheel-overlay-list li { display: flex; align-items: center; gap: 6px;
+    padding: 2px 0; font-size: 11px; }
+  .wheel-overlay-list li .name { flex: 1; color: var(--ink); }
+  .wheel-overlay-list li .phase { font-size: 9px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  .wheel-overlay-list li .val { color: var(--accent); font-variant-numeric: tabular-nums;
+    font-weight: 600; min-width: 28px; text-align: right; }
+  .wheel-overlay-list li.empty { color: var(--ink-dim); font-style: italic; padding: 4px 0; }
 
   /* Legend */
   .legend { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
@@ -239,9 +271,10 @@
   <h1>Aroma Wheel</h1>
   <span class="sub">Sensory notes → aroma compounds, weighted by GC-MS literature</span>
   <span class="spacer"></span>
-  <div class="tabs" id="view-tabs">
-    <button data-view="sensory" class="active">Sensory</button>
-    <button data-view="compounds">Compounds</button>
+  <div class="tabs" id="view-tabs" title="View mode — Wheel is always shown; tabs control which side panes are visible">
+    <button data-view="dashboard" class="active">Dashboard</button>
+    <button data-view="note-input">Note Input</button>
+    <button data-view="analysis">Analysis</button>
   </div>
   <div class="profile-toggle" id="notefilter-toggle" title="Filter to widely-recognized notes vs. include niche/specialist descriptors">
     <span class="label">Notes</span>
@@ -284,20 +317,20 @@
   </div>
   <div id="notes-panel"></div>
 </aside>
-<main class="wheel"><svg id="svg"></svg></main>
-<main class="compounds" id="compounds-view">
-  <div class="compounds-header">
-    <div>
-      <h2>Compound inference</h2>
-      <div class="help">Greyed-out = no support from your current notes. Intensity = perceived presence given your sliders, modulated by each compound's odor-threshold tier. Confidence = literature breadth × strength behind that inference.</div>
-    </div>
-    <div class="sort" id="sort-toggle">
-      <button data-sort="intensity" class="active">Sort: Intensity</button>
-      <button data-sort="confidence">Sort: Confidence</button>
-      <button data-sort="class">Sort: Class</button>
-    </div>
+<main class="wheel">
+  <svg id="svg"></svg>
+  <!-- Go Deeper overlays (hidden unless body.go-deeper). Readable text view of
+       the working data — bottom-left = inputs the user has confirmed,
+       bottom-right = compound suggestions popping up. Lets users cross-reference
+       notes ↔ compounds without needing the slider or analysis panes visible. -->
+  <div class="wheel-overlay inputs">
+    <div class="wheel-overlay-header">Your inputs</div>
+    <ul class="wheel-overlay-list" id="overlay-inputs"></ul>
   </div>
-  <div class="compound-grid" id="cpd-grid"></div>
+  <div class="wheel-overlay compounds">
+    <div class="wheel-overlay-header">Top compounds</div>
+    <ul class="wheel-overlay-list" id="overlay-compounds"></ul>
+  </div>
 </main>
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see contributing notes and citations. Move sliders on the left to weight perceived aromas — compounds light up as evidence accumulates.</div>
@@ -575,7 +608,7 @@ const state = {
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   selectedCompound: null,
   hoveredNote: null,
-  view: "sensory",       // "sensory" | "compounds"
+  view: "dashboard",     // "dashboard" | "note-input" | "analysis"
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
@@ -1008,7 +1041,7 @@ function recompute() {
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
-  if (state.view === "compounds") renderCompoundGrid();
+  renderWheelOverlays();
 }
 
 // ---------- PANEL: notes ----------
@@ -1193,22 +1226,96 @@ document.addEventListener("click", (e) => {
   closeAllCallouts();
 });
 
-// ---------- PANEL: detail ----------
+// ---------- PANEL: analysis (right pane) ----------
+// Two modes:
+//   - Grid mode (no compound selected): sortable cards of all compounds with
+//     intensity + confidence bars. Replaces V1's separate "Compounds" tab.
+//   - Detail mode (compound selected): per-compound deep dive with citations,
+//     contributing notes (with phase hints), threshold tier source.
+// Switching: clicking a card in grid mode → detail. "← All compounds" link in
+// detail mode returns to grid.
 const detailPanel = document.getElementById("detail-panel");
 function renderDetail() {
-  const id = state.selectedCompound;
-  if (!id) {
-    // fall back to top-scoring compound if any sliders are set
-    const top = compoundNodes.slice().sort((a,b) => b.score - a.score)[0];
-    if (top && top.score > 0.05) {
-      renderCompoundDetail(top.id, "Top-scoring compound from your current notes.");
-    } else {
-      detailPanel.innerHTML = `<div class="empty">Click a compound to see contributing notes and citations. Move sliders on the left to weight perceived aromas — compounds light up as evidence accumulates.</div>`;
-    }
-    return;
-  }
-  renderCompoundDetail(id);
+  if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
+  else renderAnalysisGrid();
 }
+
+function renderAnalysisGrid() {
+  let nodes = compoundNodes.filter(n => isCompoundVisible(n.id));
+  if (state.sortBy === "intensity") {
+    nodes.sort((a,b) => b.score - a.score);
+  } else if (state.sortBy === "confidence") {
+    nodes.sort((a,b) => b.confidence - a.confidence || b.score - a.score);
+  } else {
+    nodes.sort((a,b) => {
+      const ca = CPD_BY_ID[a.id].class, cb = CPD_BY_ID[b.id].class;
+      if (ca !== cb) return ca.localeCompare(cb);
+      return b.score - a.score;
+    });
+  }
+  const anyActive = compoundNodes.some(n => n.intensity_raw > 0.001);
+  const pct = v => Math.round(Math.min(1, v) * 100);
+
+  detailPanel.innerHTML = `
+    <div class="compounds-header">
+      <h2>Compounds</h2>
+      <div class="help">${anyActive
+        ? `Click a card for citations and contributing notes. Greyed-out = no support from current notes. Intensity is modulated by each compound's odor-threshold tier; Confidence reflects literature breadth × strength.`
+        : `Move sliders on the left to weight perceived aromas — compounds light up here as evidence accumulates.`}</div>
+      <div class="sort" id="analysis-sort">
+        <button type="button" data-sort="intensity" class="${state.sortBy === 'intensity' ? 'active' : ''}">Intensity</button>
+        <button type="button" data-sort="confidence" class="${state.sortBy === 'confidence' ? 'active' : ''}">Confidence</button>
+        <button type="button" data-sort="class" class="${state.sortBy === 'class' ? 'active' : ''}">Class</button>
+      </div>
+    </div>
+    <div class="compound-grid">
+      ${nodes.map(n => {
+        const c = CPD_BY_ID[n.id];
+        const inactive = n.intensity_raw <= 0.001;
+        return `
+          <div class="cpd-card ${inactive ? 'inactive' : ''}" data-cpd="${n.id}">
+            <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}</div>
+            <div class="meta">
+              <span class="pill">${c.class}</span>
+              <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
+              ${c.specificity === "signature" ? `<span class="pill signature" title="Marker compound for one note">signature</span>` : ''}
+              ${n.active_edges > 0 ? `<span class="pill">${n.active_edges} cite${n.active_edges>1?'s':''}</span>` : ''}
+            </div>
+            <div class="scores">
+              <div class="score-row">
+                <span class="lbl">Intensity</span>
+                <div class="bar"><div class="intensity" style="width:${pct(n.intensity)}%"></div></div>
+                <span class="val">${pct(n.intensity)}</span>
+              </div>
+              <div class="score-row">
+                <span class="lbl">Confidence</span>
+                <div class="bar"><div class="confidence" style="width:${pct(n.confidence)}%"></div></div>
+                <span class="val">${pct(n.confidence)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Wire card clicks → select compound (switches to detail mode on next render)
+  detailPanel.querySelectorAll(".cpd-card").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedCompound = el.dataset.cpd;
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
+    });
+  });
+  // Wire sort buttons
+  detailPanel.querySelectorAll("#analysis-sort button").forEach(b => {
+    b.addEventListener("click", () => {
+      state.sortBy = b.dataset.sort;
+      renderAnalysisGrid();
+    });
+  });
+}
+
 function renderCompoundDetail(cpdId, banner) {
   const c = CPD_BY_ID[cpdId];
   const node = CPD_NODE_BY_ID[cpdId];
@@ -1220,6 +1327,7 @@ function renderCompoundDetail(cpdId, banner) {
   });
   const pct = v => Math.round(Math.min(1, v) * 100);
   detailPanel.innerHTML = `
+    <button class="back-to-grid" type="button">← All compounds</button>
     ${banner ? `<div class="empty" style="margin-bottom:10px;">${banner}</div>` : ""}
     <h2>${c.label}</h2>
     <div class="compound-class">${c.class}${c.specificity === "signature" ? ' · signature' : ''}</div>
@@ -1266,79 +1374,84 @@ function renderCompoundDetail(cpdId, banner) {
       </ul>
     </div>
   `;
+  // Back to grid: deselect compound and re-render the analysis pane in grid mode.
+  const backBtn = detailPanel.querySelector(".back-to-grid");
+  if (backBtn) backBtn.addEventListener("click", () => {
+    state.selectedCompound = null;
+    gComps.selectAll("g.compound").classed("selected", false);
+    renderDetail();
+  });
 }
 
-// ---------- COMPOUND GRID ----------
-const cpdGrid = document.getElementById("cpd-grid");
-function renderCompoundGrid() {
-  // filter by class visibility, then sort
-  let nodes = compoundNodes.filter(n => isCompoundVisible(n.id));
-  if (state.sortBy === "intensity") {
-    nodes.sort((a,b) => b.score - a.score);
-  } else if (state.sortBy === "confidence") {
-    nodes.sort((a,b) => b.confidence - a.confidence || b.score - a.score);
-  } else { // class
-    nodes.sort((a,b) => {
-      const ca = CPD_BY_ID[a.id].class, cb = CPD_BY_ID[b.id].class;
-      if (ca !== cb) return ca.localeCompare(cb);
-      return b.score - a.score;
-    });
+// ---------- WHEEL CORNER OVERLAYS (Go Deeper) ----------
+// Two text overlays sitting in the bottom corners of the wheel, only visible
+// when Go Deeper is on. Bottom-left lists confirmed user inputs (entries);
+// bottom-right lists top compound suggestions. Lets users cross-reference
+// notes ↔ compounds without needing both side panes visible.
+const overlayInputsEl    = document.getElementById("overlay-inputs");
+const overlayCompoundsEl = document.getElementById("overlay-compounds");
+
+function renderWheelOverlays() {
+  // Inputs: all confirmed entries, filtered by visibility + phase hide,
+  // sorted by intensity (largest first).
+  const entries = [];
+  for (const [key, intensity] of state.entries) {
+    const sep = key.indexOf(":");
+    const noteId = sep < 0 ? key : key.slice(0, sep);
+    const phase  = sep < 0 ? null : key.slice(sep + 1);
+    if (!isNoteVisible(noteId)) continue;
+    if (phase && state.hiddenPhases.has(phase)) continue;
+    entries.push({ noteId, phase, intensity });
   }
+  entries.sort((a, b) => b.intensity - a.intensity);
+  overlayInputsEl.innerHTML = entries.length === 0
+    ? `<li class="empty">No notes confirmed yet.</li>`
+    : entries.map(e => {
+        const n = NOTE_BY_ID[e.noteId];
+        const phaseTag = e.phase ? `<span class="phase">${e.phase}</span>` : '';
+        return `<li><span class="name">${n.label}</span>${phaseTag}<span class="val">${e.intensity}</span></li>`;
+      }).join('');
 
-  cpdGrid.innerHTML = nodes.map(n => {
-    const c = CPD_BY_ID[n.id];
-    const inactive = n.intensity_raw <= 0.001;
-    const selected = state.selectedCompound === n.id;
-    const pct = v => Math.round(Math.min(1, v) * 100);
-    return `
-      <div class="cpd-card ${inactive ? 'inactive' : ''} ${selected ? 'selected' : ''}" data-cpd="${n.id}">
-        <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}</div>
-        <div class="meta">
-          <span class="pill">${c.class}</span>
-          <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
-          ${c.specificity === "signature" ? `<span class="pill signature" title="This compound is essentially the marker of one note">signature</span>` : ''}
-          ${n.active_edges > 0 ? `<span class="pill">${n.active_edges} cite${n.active_edges>1?'s':''}</span>` : ''}
-        </div>
-        <div class="scores">
-          <div class="score-row">
-            <span class="lbl">Intensity</span>
-            <div class="bar"><div class="intensity" style="width:${pct(n.intensity)}%"></div></div>
-            <span class="val">${pct(n.intensity)}</span>
-          </div>
-          <div class="score-row">
-            <span class="lbl">Confidence</span>
-            <div class="bar"><div class="confidence" style="width:${pct(n.confidence)}%"></div></div>
-            <span class="val">${pct(n.confidence)}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  cpdGrid.querySelectorAll(".cpd-card").forEach(el => {
-    el.addEventListener("click", () => {
-      state.selectedCompound = el.dataset.cpd;
-      renderDetail();
-      renderCompoundGrid();
-      // keep wheel selection in sync too
-      gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
-    });
-  });
+  // Top compounds: visible compounds with non-trivial intensity, sorted, top 12.
+  const top = compoundNodes
+    .filter(n => isCompoundVisible(n.id) && n.intensity > 0.05)
+    .sort((a, b) => b.intensity - a.intensity)
+    .slice(0, 12);
+  const pct = v => Math.round(Math.min(1, v) * 100);
+  overlayCompoundsEl.innerHTML = top.length === 0
+    ? `<li class="empty">No compounds detected yet.</li>`
+    : top.map(n => {
+        const c = CPD_BY_ID[n.id];
+        return `<li><span class="name">${c.label}</span><span class="val">${pct(n.intensity)}%</span></li>`;
+      }).join('');
 }
 
 // ---------- VIEW SWITCHING ----------
+// Three modes: "dashboard" (all 3 panes), "note-input" (sliders + wheel),
+// "analysis" (wheel + analysis pane). The wheel is the anchor in all three.
 function setView(v) {
   state.view = v;
-  document.body.classList.toggle("view-compounds", v === "compounds");
+  document.body.classList.remove("view-dashboard", "view-note-input", "view-analysis");
+  document.body.classList.add("view-" + v);
   document.querySelectorAll("#view-tabs button").forEach(b => {
     b.classList.toggle("active", b.dataset.view === v);
   });
-  if (v === "compounds") renderCompoundGrid();
-  else if (sim) sim.alpha(0.3).restart();
+  // Layout changed; tell d3 to relayout the wheel.
+  if (typeof layout === "function") layout();
+  if (sim) sim.alpha(0.5).restart();
 }
 document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
 });
+
+// Auto-detect initial view mode from viewport. Wide screens default to
+// Dashboard; narrow screens default to Note Input (it's where users start).
+// User can override anytime via the tabs; we don't auto-flip on resize.
+function autoDetectViewMode() {
+  const w = window.innerWidth;
+  if (w >= 900) setView("dashboard");
+  else setView("note-input");
+}
 
 document.querySelectorAll("#notefilter-toggle button").forEach(b => {
   b.addEventListener("click", () => {
@@ -1351,15 +1464,6 @@ document.querySelectorAll("#notefilter-toggle button").forEach(b => {
     drawGroupArcs();
     drawNotes();
     recompute();
-  });
-});
-
-document.querySelectorAll("#sort-toggle button").forEach(b => {
-  b.addEventListener("click", () => {
-    state.sortBy = b.dataset.sort;
-    document.querySelectorAll("#sort-toggle button").forEach(x =>
-      x.classList.toggle("active", x.dataset.sort === state.sortBy));
-    renderCompoundGrid();
   });
 });
 
@@ -1552,6 +1656,7 @@ buildNotesPanel();
 layout();
 startSim();
 recompute();
+autoDetectViewMode();  // pick Dashboard or Note Input based on viewport width
 
 window.addEventListener("resize", () => {
   layout();
