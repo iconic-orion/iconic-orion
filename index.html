@@ -277,6 +277,13 @@
   .info-view-on-wheel:hover { text-decoration: underline; }
   .info-no-results { color: var(--ink-dim); font-style: italic; padding: 16px 0; text-align: center; }
 
+  /* Inline link styled as button — opens the info overlay on a specific tab.
+     Used wherever we want to surface a one-click "go read the longer story" affordance
+     (e.g. the limitations disclaimer in the analysis pane help text). */
+  .inline-link { background: none; border: none; color: var(--accent); cursor: pointer;
+    padding: 0; font: inherit; text-decoration: none; }
+  .inline-link:hover { text-decoration: underline; }
+
   /* Edit/delete callout — appears anchored above an "Added" button on click */
   .entry-callout { position: absolute; z-index: 50; background: var(--panel-2);
     border: 1px solid var(--accent); border-radius: 6px; padding: 6px;
@@ -1468,7 +1475,8 @@ function renderAnalysisGrid() {
       <h2>Compounds</h2>
       <div class="help">${anyActive
         ? `Click a card for citations and contributing notes. Greyed-out = no support from current notes. Intensity is modulated by each compound's odor-threshold tier; Confidence reflects literature breadth × strength.`
-        : `Move sliders on the left to weight perceived aromas — compounds light up here as evidence accumulates.`}</div>
+        : `Move sliders on the left to weight perceived aromas — compounds light up here as evidence accumulates.`}
+        <span style="display:block; margin-top:6px;">Suggestions, not analysis — based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></span></div>
       <div class="sort" id="analysis-sort">
         <button type="button" data-sort="intensity" class="${state.sortBy === 'intensity' ? 'active' : ''}">Intensity</button>
         <button type="button" data-sort="confidence" class="${state.sortBy === 'confidence' ? 'active' : ''}">Confidence</button>
@@ -1907,9 +1915,21 @@ function renderAbout() {
       <li><strong>Citations</strong> — the published GC-MS or flavor-chemistry source for each note → compound link. Click any compound in the analysis pane to see them.</li>
     </ul>
 
+    <h3>What this isn't</h3>
+    <p>Important to say outright: <strong>Aroma Wheel is a suggestion engine, not a lab.</strong> There's no chromatograph in your browser. When you report apple at intensity 5 and the wheel lights up ethyl butanoate, that's saying <em>"given published GC-MS work on apple aroma, ethyl butanoate is a plausible contributor to what you're noticing."</em> It is <strong>not</strong> saying:</p>
+    <ul>
+      <li>"The substance you tasted contains this compound." (We didn't test the substance — we're inferring from common aroma knowledge and the citations attached to each edge.)</li>
+      <li>"This is <em>the</em> compound responsible for your perception." (Perception is multi-causal — the same molecule reads differently in different matrices, and several molecules can produce similar perceptions.)</li>
+      <li>"Other compounds aren't present." (Real samples often carry dozens or hundreds of volatiles; we model a curated set chosen for sensory utility, not exhaustive coverage.)</li>
+    </ul>
+    <p>What it <em>is</em>: a structured way to think about what could be going on chemically when you notice something — with literature citations as the receipts for every note → compound edge.</p>
+
     <h3>Behind the scenes</h3>
     <p>This is a public, educational project. The whole thing is a single static HTML file; the source is on GitHub. The interesting part isn't the tool itself — it's the thought process behind a humane, perception-affirming sensory inference UI. Comments in the source explain design choices as they come up.</p>
     <p>Current scope: things you ingest (coffee, hops/beer, wine, mocktails). Perfumery is a close adjacent the project may explore later, but it isn't supported yet — perfumery sits at the orthonasal end of the olfactory spectrum while the current tool is centered on the retronasal experience of food and drink.</p>
+
+    <h3>About the maker</h3>
+    <p>Built by Nolan, a generalist whose titles across the years include UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, and systems analyst. The aroma wheel sits at the intersection of all of those — a perception-honoring UI, an educational artifact about flavor chemistry, a spatial visualization of a structured knowledge graph, and a systems model of how sensory inference actually works. The repo source is on GitHub — corrections, suggestions, and additions welcome.</p>
   `;
 }
 
@@ -2075,6 +2095,17 @@ document.querySelectorAll("#info-tabs button").forEach(b => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && state.infoOpen) closeInfo();
+});
+
+// Delegated handler — any element with data-open-info="<tab>" opens the info
+// overlay on that tab. Lets us scatter "go read the longer story" links anywhere
+// in the UI (e.g. the limitations disclaimer in the analysis pane).
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-open-info]");
+  if (btn) {
+    e.preventDefault();
+    openInfo(btn.dataset.openInfo);
+  }
 });
 
 // ---------- INIT ----------
