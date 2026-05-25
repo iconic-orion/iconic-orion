@@ -32,12 +32,30 @@
   body { display: grid; grid-template-columns: 320px 1fr 360px; grid-template-rows: 48px 1fr;
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
 
-  /* View modes — wheel is always present; sliders pane and analysis pane toggle based on mode. */
-  body.view-note-input { grid-template-columns: 320px 1fr 0; }
-  body.view-note-input aside.detail { display: none; }
-  body.view-analysis { grid-template-columns: 0 1fr 360px; }
-  body.view-analysis aside.notes { display: none; }
-  /* body.view-dashboard (default) keeps all three panes */
+  /* Per-pane visibility. The wheel is always present; each side pane can be
+     independently hidden. The header view tabs (Dashboard / Note Input /
+     Analysis) are presets that flip these classes in combination; the small
+     pane-toggle tabs on the wheel's edges flip them one at a time. */
+  body.notes-hidden  { grid-template-columns: 0 1fr 360px; }
+  body.notes-hidden  aside.notes  { display: none; }
+  body.detail-hidden { grid-template-columns: 320px 1fr 0; }
+  body.detail-hidden aside.detail { display: none; }
+  body.notes-hidden.detail-hidden { grid-template-columns: 0 1fr 0; }
+
+  /* Small "hide / show" tab pinned to each inner edge of the wheel area.
+     Stays at the wheel's left/right edge whether the corresponding pane is
+     visible or not, so it's the same affordance to push the pane out and to
+     pull it back. Low-key by default; brighter on hover. */
+  .pane-toggle { position: absolute; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 56px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--ink-dim); font-size: 12px; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 6; opacity: 0.55;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s; }
+  .pane-toggle:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
+  .pane-toggle.left  { left: 0;  border-left: none;  border-radius: 0 6px 6px 0; }
+  .pane-toggle.right { right: 0; border-right: none; border-radius: 6px 0 0 6px; }
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
@@ -421,9 +439,14 @@
 </aside>
 <main class="wheel">
   <svg id="svg"></svg>
+  <!-- Per-pane hide/show toggles. Pinned to the wheel's inner edges so they're
+       visible whether the corresponding side pane is shown or hidden. Click to
+       collapse the pane against the screen edge; click again to bring it back. -->
+  <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
+  <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
   <!-- Go Deeper overlays (hidden unless body.go-deeper). Readable text view of
-       the working data — bottom-left = inputs the user has confirmed,
-       bottom-right = compound suggestions popping up. Lets users cross-reference
+       the working data: bottom-left = inputs the user has confirmed, bottom-right
+       = compound suggestions popping up. Lets users cross-reference
        notes ↔ compounds without needing the slider or analysis panes visible. -->
   <div class="wheel-overlay inputs">
     <div class="wheel-overlay-header">Your inputs</div>
@@ -808,7 +831,8 @@ const state = {
   infoOpen: false,        // is the "i" info overlay shown
   infoTab: "about",       // "about" | "how-to-use" | "types-of-aroma"
   infoSearch: "",         // current search query in Types of Aroma
-  view: "dashboard",     // "dashboard" | "note-input" | "analysis"
+  notesHidden:  false,   // is the left sliders pane hidden via toggle / view preset
+  detailHidden: false,   // is the right analysis pane hidden via toggle / view preset
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
@@ -1641,27 +1665,66 @@ function renderWheelOverlays() {
       }).join('');
 }
 
-// ---------- VIEW SWITCHING ----------
-// Three modes: "dashboard" (all 3 panes), "note-input" (sliders + wheel),
-// "analysis" (wheel + analysis pane). The wheel is the anchor in all three.
-function setView(v) {
-  state.view = v;
-  document.body.classList.remove("view-dashboard", "view-note-input", "view-analysis");
-  document.body.classList.add("view-" + v);
+// ---------- VIEW SWITCHING / PANE VISIBILITY ----------
+// Each side pane (sliders, analysis) can be hidden independently via its
+// pane-toggle tab on the wheel's edge. The three header view tabs are
+// presets that flip both per-pane states in combination.
+//   Dashboard   = both visible
+//   Note Input  = sliders visible, analysis hidden
+//   Analysis    = sliders hidden, analysis visible
+// "Both hidden" (wheel only) is reachable via the toggles but unnamed in
+// the header tabs — emergent state, no tab highlights as active there.
+
+function applyPaneState() {
+  document.body.classList.toggle("notes-hidden",  state.notesHidden);
+  document.body.classList.toggle("detail-hidden", state.detailHidden);
+
+  // Update the per-pane toggle chevrons so they always point toward where
+  // the pane would go if clicked (‹ = push left / hide; › = pull right / show).
+  const tn = document.getElementById("toggle-notes");
+  const td = document.getElementById("toggle-detail");
+  if (tn) tn.textContent = state.notesHidden  ? "›" : "‹";
+  if (td) td.textContent = state.detailHidden ? "‹" : "›";
+
+  // Derive which view-preset (if any) matches the current pane combo,
+  // and highlight that tab in the header.
+  let activeView = null;
+  if (!state.notesHidden && !state.detailHidden) activeView = "dashboard";
+  else if (!state.notesHidden &&  state.detailHidden) activeView = "note-input";
+  else if ( state.notesHidden && !state.detailHidden) activeView = "analysis";
   document.querySelectorAll("#view-tabs button").forEach(b => {
-    b.classList.toggle("active", b.dataset.view === v);
+    b.classList.toggle("active", b.dataset.view === activeView);
   });
+
   // Layout changed; tell d3 to relayout the wheel.
   if (typeof layout === "function") layout();
   if (sim) sim.alpha(0.5).restart();
 }
+
+function setView(v) {
+  if (v === "dashboard")        { state.notesHidden = false; state.detailHidden = false; }
+  else if (v === "note-input")  { state.notesHidden = false; state.detailHidden = true;  }
+  else if (v === "analysis")    { state.notesHidden = true;  state.detailHidden = false; }
+  applyPaneState();
+}
+
 document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
 });
 
-// Auto-detect initial view mode from viewport. Wide screens default to
-// Dashboard; narrow screens default to Note Input (it's where users start).
-// User can override anytime via the tabs; we don't auto-flip on resize.
+// Per-pane toggle handlers — independent of the view presets.
+document.getElementById("toggle-notes").addEventListener("click", () => {
+  state.notesHidden = !state.notesHidden;
+  applyPaneState();
+});
+document.getElementById("toggle-detail").addEventListener("click", () => {
+  state.detailHidden = !state.detailHidden;
+  applyPaneState();
+});
+
+// Auto-detect initial view from viewport. Wide screens default to Dashboard;
+// narrow screens default to Note Input. User can override via tabs or the
+// per-pane toggles anytime; we don't auto-flip on resize.
 function autoDetectViewMode() {
   const w = window.innerWidth;
   if (w >= 900) setView("dashboard");
