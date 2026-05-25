@@ -1476,7 +1476,7 @@ function renderAnalysisGrid() {
       <div class="help">${anyActive
         ? `Click a card for citations and contributing notes. Greyed-out = no support from current notes. Intensity is modulated by each compound's odor-threshold tier; Confidence reflects literature breadth × strength.`
         : `Move sliders on the left to weight perceived aromas — compounds light up here as evidence accumulates.`}
-        <span style="display:block; margin-top:6px;">Suggestions, not analysis — based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></span></div>
+        <span style="display:block; margin-top:6px;">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></span></div>
       <div class="sort" id="analysis-sort">
         <button type="button" data-sort="intensity" class="${state.sortBy === 'intensity' ? 'active' : ''}">Intensity</button>
         <button type="button" data-sort="confidence" class="${state.sortBy === 'confidence' ? 'active' : ''}">Confidence</button>
@@ -1901,35 +1901,36 @@ function renderInfo() {
 function renderAbout() {
   return `
     <h2>About this tool</h2>
-    <p class="lede">Aroma Wheel is a sensory-perception → aroma-compound inference tool. You report what you smell or taste; the wheel maps those perceptions to aromatic compounds backed by published gas-chromatography literature (GC-MS) on coffee, hops and beer, wine, and mocktails.</p>
+    <p class="lede">Aroma Wheel takes what you say you're smelling or tasting and maps it onto the aromatic compounds that are most likely contributing to that, based on published gas-chromatography (GC-MS) work in coffee, hops and beer, wine, and mocktails. You report perceptions, the wheel shows you compounds.</p>
 
     <h3>The stance</h3>
-    <p>Your perceptions are real, and they change with the moment. The same cup of coffee, the same glass of wine, can give you different results depending on the time of day, what you ate before, how alert you are, the ambient air. That variation isn't noise — it's signal.</p>
-    <p>This tool doesn't grade your perception against a "correct answer." What you smell or taste <em>is</em> the data. The compounds we surface are <em>plausible matches</em> for what you reported, weighted by literature evidence — not verdicts about what you should have noticed.</p>
+    <p>Your perceptions are real, and they change with the moment. The same cup of coffee or the same glass of wine can give you different results depending on the time of day, what you ate before, how alert you are, the ambient air. That variation isn't noise, it's signal.</p>
+    <p>This tool doesn't grade your perception against a "correct answer." What you smell or taste <em>is</em> the data. The compounds the wheel surfaces are plausible contributors to what you reported, weighted by what published literature says about that combination of notes, not verdicts about what you should have noticed.</p>
 
     <h3>What the results mean</h3>
-    <p>Each compound that lights up on the wheel has:</p>
+    <p>For each compound that lights up:</p>
     <ul>
-      <li><strong>Intensity</strong> — how strongly your reported notes point to it, modulated by its odor threshold (very-low-threshold compounds like furfurylthiol punch above their weight).</li>
-      <li><strong>Confidence</strong> — literature breadth × edge strength. High confidence means several well-cited notes converge on this compound; low confidence is a speculative single match worth flagging.</li>
-      <li><strong>Citations</strong> — the published GC-MS or flavor-chemistry source for each note → compound link. Click any compound in the analysis pane to see them.</li>
+      <li><strong>Intensity</strong> is how strongly your reported notes point to it, with an adjustment for how easily that compound gets perceived in the first place. Some compounds, like furfurylthiol in coffee, read strong even at trace amounts because they have very low odor thresholds.</li>
+      <li><strong>Confidence</strong> is a blend of how many of your notes point to a compound and how strongly each one points. Several solid notes converging on the same compound gives you high confidence. A single speculative match on its own is lower.</li>
+      <li><strong>Citations</strong> are the published source behind every note-to-compound link. Click any compound in the analysis pane to see them.</li>
     </ul>
 
     <h3>What this isn't</h3>
-    <p>Important to say outright: <strong>Aroma Wheel is a suggestion engine, not a lab.</strong> There's no chromatograph in your browser. When you report apple at intensity 5 and the wheel lights up ethyl butanoate, that's saying <em>"given published GC-MS work on apple aroma, ethyl butanoate is a plausible contributor to what you're noticing."</em> It is <strong>not</strong> saying:</p>
+    <p>Important to say outright: this is a <strong>suggestion engine, not a lab</strong>. There is no chromatograph in your browser. When you say apple at intensity 5 and the wheel lights up ethyl butanoate, that is saying <em>"given what is published about apple aroma, ethyl butanoate is one plausible thing you might be picking up."</em></p>
+    <p>It is <strong>not</strong> saying:</p>
     <ul>
-      <li>"The substance you tasted contains this compound." (We didn't test the substance — we're inferring from common aroma knowledge and the citations attached to each edge.)</li>
-      <li>"This is <em>the</em> compound responsible for your perception." (Perception is multi-causal — the same molecule reads differently in different matrices, and several molecules can produce similar perceptions.)</li>
-      <li>"Other compounds aren't present." (Real samples often carry dozens or hundreds of volatiles; we model a curated set chosen for sensory utility, not exhaustive coverage.)</li>
+      <li>"The substance you tasted contains this compound." We didn't test what you're drinking. We're inferring from common aroma knowledge and the citations behind each link.</li>
+      <li>"This is <em>the</em> compound responsible for your perception." Perception is multi-causal. The same molecule reads differently in different drinks, and several molecules can produce similar perceptions.</li>
+      <li>"Other compounds aren't present." Real samples often carry dozens or hundreds of volatiles. We model a curated set chosen for usefulness in tasting, not exhaustive coverage.</li>
     </ul>
-    <p>What it <em>is</em>: a structured way to think about what could be going on chemically when you notice something — with literature citations as the receipts for every note → compound edge.</p>
+    <p>What it actually is: a structured way to think about what might be going on chemically when you notice something, with the citations as the receipts.</p>
 
     <h3>Behind the scenes</h3>
-    <p>This is a public, educational project. The whole thing is a single static HTML file; the source is on GitHub. The interesting part isn't the tool itself — it's the thought process behind a humane, perception-affirming sensory inference UI. Comments in the source explain design choices as they come up.</p>
-    <p>Current scope: things you ingest (coffee, hops/beer, wine, mocktails). Perfumery is a close adjacent the project may explore later, but it isn't supported yet — perfumery sits at the orthonasal end of the olfactory spectrum while the current tool is centered on the retronasal experience of food and drink.</p>
+    <p>This is a public, educational project. The whole thing is a single static HTML file, and the source is on GitHub. The interesting part is probably not the tool itself, it's the thought process behind it. Comments in the source walk through design choices as they come up.</p>
+    <p>Current scope is things you ingest: coffee, hops and beer, wine, mocktails. Perfumery is a close adjacent the project might explore later, but it isn't supported yet. Perfumery sits at the orthonasal end of the olfactory spectrum (the sniff), while the current tool is centered on the retronasal end (post-swallow exhale), which is most of what you actually mean when you say "flavor."</p>
 
     <h3>About the maker</h3>
-    <p>Built by Nolan, a generalist whose titles across the years include UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, and systems analyst. The aroma wheel sits at the intersection of all of those — a perception-honoring UI, an educational artifact about flavor chemistry, a spatial visualization of a structured knowledge graph, and a systems model of how sensory inference actually works. The repo source is on GitHub — corrections, suggestions, and additions welcome.</p>
+    <p>Built by Nolan. I've gone by a lot of names across the various fields I've worked in: UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, systems analyst. The aroma wheel sits somewhere in the middle of all of those. A UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization on top of a structured knowledge graph, a systems model of how sensory inference actually works. The source is on GitHub. Corrections, suggestions, and additions are welcome.</p>
   `;
 }
 
