@@ -210,6 +210,73 @@
   #godeeper-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.go-deeper #godeeper-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Info button — small round "i" sitting next to Go Deeper */
+  #info-open-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    font-style: italic; font-family: ui-serif, Georgia, serif; font-size: 14px;
+    padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  #info-open-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Info overlay (the "i" tab content). Modal-style full-screen surface,
+     dim background, scrollable content. Closed by ✕ button or Escape key. */
+  .info-overlay { position: fixed; inset: 0; background: rgba(14, 13, 16, 0.85);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 4vh 4vw; backdrop-filter: blur(2px); }
+  .info-overlay[hidden] { display: none; }
+  .info-overlay-content { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; width: 100%; max-width: 980px; height: 100%; max-height: 92vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6); }
+  .info-overlay-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+  .info-tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .info-tabs button { border: none; border-radius: 0; padding: 6px 14px; background: transparent;
+    color: var(--ink-dim); font-size: 13px; cursor: pointer; }
+  .info-tabs button.active { background: var(--accent); color: #1a1810; }
+  .info-tabs button:not(.active):hover { background: var(--bg); color: var(--ink); }
+  .info-close { background: transparent; border: none; color: var(--ink-dim);
+    font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+  .info-close:hover { color: var(--accent); }
+
+  .info-overlay-body { padding: 20px 28px; overflow-y: auto; flex: 1; line-height: 1.55; }
+  .info-overlay-body h2 { font-size: 17px; margin: 0 0 12px; letter-spacing: 0.01em; }
+  .info-overlay-body h3 { font-size: 14px; margin: 18px 0 8px; color: var(--accent); letter-spacing: 0.02em; }
+  .info-overlay-body p { margin: 0 0 12px; color: var(--ink); font-size: 13px; }
+  .info-overlay-body p.lede { font-size: 14px; color: var(--ink); }
+  .info-overlay-body em { color: var(--ink-dim); font-style: italic; }
+  .info-overlay-body ol, .info-overlay-body ul { padding-left: 22px; margin: 0 0 12px; color: var(--ink); font-size: 13px; }
+  .info-overlay-body li { margin-bottom: 6px; }
+
+  /* Search field + filter row inside Types of Aroma */
+  .info-search-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .info-search { flex: 1; background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 8px 12px; font-size: 13px;
+    font-family: inherit; }
+  .info-search:focus { outline: none; border-color: var(--accent); }
+  .info-result-count { font-size: 11px; color: var(--ink-dim); white-space: nowrap; }
+
+  /* Types of Aroma entry blocks */
+  .info-section { margin-bottom: 22px; }
+  .info-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 10px; padding-bottom: 4px;
+    border-bottom: 1px solid var(--line); }
+  .info-entry { padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 6px; margin-bottom: 6px; }
+  .info-entry.hidden { display: none; }
+  .info-entry-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .info-entry-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .info-entry-pill { font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; }
+  .info-entry-pill.class-pill { color: var(--ink); }
+  .info-entry-body { font-size: 12px; color: var(--ink); line-height: 1.5; }
+  .info-entry-meta { font-size: 11px; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
+  .info-entry-meta strong { color: var(--ink); font-weight: 500; }
+  .info-view-on-wheel { font-size: 11px; color: var(--accent); cursor: pointer;
+    margin-top: 6px; display: inline-block; background: none; border: none; padding: 0; }
+  .info-view-on-wheel:hover { text-decoration: underline; }
+  .info-no-results { color: var(--ink-dim); font-style: italic; padding: 16px 0; text-align: center; }
+
   /* Edit/delete callout — appears anchored above an "Added" button on click */
   .entry-callout { position: absolute; z-index: 50; background: var(--panel-2);
     border: 1px solid var(--accent); border-radius: 6px; padding: 6px;
@@ -308,6 +375,7 @@
     <button data-filter="common" class="active">Common</button>
     <button data-filter="all">All</button>
   </div>
+  <button id="info-open-btn" title="About / How to Use / Types of Aroma — reference and glossary" aria-label="Open info">i</button>
   <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
   <button id="reset">Reset</button>
   <button id="demo-coffee">Demo: Coffee</button>
@@ -362,6 +430,22 @@
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see contributing notes and citations. Move sliders on the left to weight perceived aromas — compounds light up as evidence accumulates.</div>
 </aside>
+
+<!-- Info overlay (the "i" tab). Three sub-tabs: About / How to Use / Types of Aroma.
+     Hidden until #info-open-btn is clicked; closed via the ✕ button or Escape. -->
+<div id="info-overlay" class="info-overlay" role="dialog" aria-modal="true" aria-labelledby="info-title" hidden>
+  <div class="info-overlay-content">
+    <div class="info-overlay-header">
+      <div class="info-tabs" id="info-tabs" role="tablist">
+        <button type="button" data-info-tab="about" class="active" role="tab">About</button>
+        <button type="button" data-info-tab="how-to-use" role="tab">How to Use</button>
+        <button type="button" data-info-tab="types-of-aroma" role="tab">Types of Aroma</button>
+      </div>
+      <button type="button" id="info-close-btn" class="info-close" aria-label="Close info">✕</button>
+    </div>
+    <div class="info-overlay-body" id="info-body" role="tabpanel"></div>
+  </div>
+</div>
 
 <script>
 // ---------- DATA ----------
@@ -594,6 +678,84 @@ const COMPOUND_CLASS_COLOR = {
   "phenol":            "#928374"   // grey
 };
 
+// ---------- INFO-TAB CONTENT ----------
+// Per-compound natural-occurrence info. Per the project's editorial principle:
+// for an aromatic compound, *where it naturally occurs in general* is the most
+// useful per-compound information for a sensory-tasting audience — more useful
+// than molecular formula or biosynthetic pathway. Keyed by compound id.
+const COMPOUND_ORIGINS = {
+  limonene:      "Citrus peels (lemon, orange, grapefruit), pine needles, dill, caraway, hops.",
+  linalool:      "Coffee, lavender, chamomile, basil, mint, ginger, citrus peel oils.",
+  myrcene:       "Hops, mango, lemongrass, thyme, parsley, bay leaves.",
+  geraniol:      "Rose, geranium, citronella, palmarosa, lemon, ginger.",
+  bcaryo:        "Black pepper, clove, hops, basil, cinnamon, rosemary, oregano, copaiba.",
+  apinene:       "Pine resin, rosemary, basil, dill, eucalyptus, juniper.",
+  linalylacetate:"Lavender (≈40% of lavender oil), bergamot, sage, clary sage.",
+  bisabolol:     "Chamomile (principal sesquiterpenol), candeia tree (Brazilian source).",
+  ibmp:          "Bell pepper, Sauvignon Blanc grapes, robusta coffee, asparagus.",
+  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn.",
+  dempyr:        "Roasted coffee (key odorant), baked products.",
+  furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugars, baked goods.",
+  fft:           "Freshly brewed coffee — the signature roast-coffee thiol.",
+  mh3:           "Passionfruit, Sauvignon Blanc, grapefruit, blackcurrant, guava.",
+  mmp4:          "Sauvignon Blanc, passionfruit, boxwood, blackcurrant buds.",
+  mfthiol:       "Fresh coffee (freshness marker); cooked cabbage / cooked seafood at higher concentrations.",
+  etbut:         "Pineapple, apple, strawberry, banana — fruity ester from fermentation.",
+  ethex:         "Berry, apple, pineapple — fermentation ester common in wine and beer.",
+  iaac:          "Banana, pear — the classic ester produced by yeast in beer and wine fermentation.",
+  gdecal:        "Peach, mango, apricot, ripe stonefruit, dairy.",
+  gnonal:        "Coconut, creamy notes, aged spirits, oak-aged wines.",
+  sotolon:       "Maple syrup, fenugreek, curry, aged sake, vin jaune, lovage.",
+  vanillin:      "Vanilla pods, oak wood (extracted during barrel aging), some woody plants.",
+  cinnamald:     "Cinnamon bark (>50% of cinnamon bark essential oil).",
+  hexanal:       "Cut grass, green leaves, unripe fruits, fresh cucumber — produced from lipid oxidation.",
+  e2non:         "Stale beer, stale coffee, cucumber, cardboard — a marker for oxidative staling.",
+  benzald:       "Bitter almond, marzipan, cherry pits, stone-fruit kernels, almond extract.",
+  phenylacet:    "Honey, rose, hyacinth, cocoa — Strecker degradation aldehyde.",
+  diacetyl:      "Butter, buttery popcorn, butterscotch — from malolactic fermentation (wine/beer) and dairy.",
+  bdam:          "Cooked apple, honey, tobacco, black tea, wine (rose/raspberry/tobacco accents).",
+  guaiacol:      "Smoke, charred wood, roasted coffee, whisky, smoked foods.",
+  vinguai:       "Clove, smoke, wheat beer, robusta coffee.",
+  eugenol:       "Clove (principal aroma), allspice, cinnamon leaf, bay leaves, nutmeg."
+};
+
+// Per-class plain-English explanations. The class names themselves (ester, thiol,
+// pyrazine) ARE the kind of jargon worth defining; specific molecules live below.
+const COMPOUND_CLASS_INFO = {
+  terpene:             "Plant-made aroma compounds built from isoprene units. Monoterpenes (10 carbons) are smaller and more volatile — citrus, pine, lavender. Sesquiterpenes (15 carbons) are heavier and slower-release — pepper, chamomile.",
+  pyrazine:            "Nitrogen-containing rings formed during the Maillard reaction (browning). Roasted, nutty, sometimes vegetal. Dominant in coffee, cocoa, roasted nuts, and the unmistakable bell-pepper note (IBMP).",
+  furan:               "Oxygen-containing rings from sugar caramelization and Maillard browning. Bready, sweet, caramel. Furfural is the classic.",
+  thiol:               "Sulfur compounds — often potent at parts-per-trillion. Disproportionately responsible for tropical-fruit (passionfruit, grapefruit) and freshly-brewed-coffee notes.",
+  ester:               "Acids combined with alcohols. Often fruity and sweet; commonly produced during fermentation. Bananas (isoamyl acetate), apples (ethyl butanoate), berries (ethyl hexanoate).",
+  lactone:             "Cyclic esters. Creamy, coconut, peachy, maple. Stable in aging spirits and barrel-aged wines.",
+  aldehyde:            "Carbonyl group at the end of a carbon chain. Range widely: grassy (hexanal), bitter-almond (benzaldehyde), honey-floral (phenylacetaldehyde).",
+  "phenolic-aldehyde": "Aldehydes attached to an aromatic ring. Vanillin is the canonical example — the principal odorant of vanilla and a major contributor to oak-aged spirits and wines.",
+  ketone:              "Carbonyl group in the middle of a carbon chain. Diacetyl is the buttery one (malolactic fermentation); other ketones span cooked-apple, floral, and tobacco-like notes.",
+  norisoprenoid:       "Fragments of broken-down carotenoid pigments — the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
+  phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers."
+};
+
+// Jargon glossary — words people have heard in tasting circles but might not own.
+// Per [[project-information-access]]: define jargon, NOT baseline chemistry.
+// We're NOT defining "what is a carbon atom"; we ARE defining "what is a tannin."
+const JARGON = [
+  { term: "tannin",          def: "Astringent polyphenols (mostly from grape skins, oak, and tea leaves) that give the drying, gripping mouthfeel — not an aroma per se, but commonly conflated with flavor." },
+  { term: "terroir",          def: "The sense of place in an agricultural product — soil, climate, microbes, even the wind. Why two Sauvignon Blancs from different vineyards can taste meaningfully different." },
+  { term: "Maillard reaction", def: "Browning chemistry: amino acids reacting with sugars at high heat. The source of most roasted / toasted / baked aromas (pyrazines, furans, melanoidins)." },
+  { term: "Strecker degradation", def: "A branch of the Maillard reaction that produces small aldehydes — gives floral, malty, honey notes like phenylacetaldehyde." },
+  { term: "malolactic fermentation", def: "Secondary fermentation in wine (and many beers) where bacteria convert sharp malic acid to softer lactic acid — produces diacetyl, the buttery note." },
+  { term: "GC-MS",            def: "Gas chromatography mass spectrometry — the lab method that separates a sample into its volatile components and identifies each by molecular mass. The data source behind most 'what's actually in this aroma' claims." },
+  { term: "odor threshold",   def: "The minimum concentration at which a typical person can detect a compound. Very-low-threshold compounds (furfurylthiol, IBMP) punch far above their weight." },
+  { term: "signature compound", def: "A compound so distinctive that a trace alone reads as the source aroma. Cinnamaldehyde = cinnamon; vanillin = vanilla; sotolon = maple." },
+  { term: "orthonasal olfaction", def: "Smelling through the front of the nose on the inhale. What perfumery emphasizes; what you do when you sniff over the cup before drinking." },
+  { term: "retronasal olfaction", def: "Smelling through the back of the throat on the exhale, often post-swallow. Most of what people call 'flavor' is actually this." },
+  { term: "perception threshold", def: "Same as odor threshold but applied to taste/mouthfeel. The point at which you become aware of a stimulus, varying with body state and prior exposure." },
+  { term: "polyfunctional thiol", def: "A thiol with multiple reactive groups. Hugely impactful in wine and beer (3-MH for passionfruit/grapefruit, 4MMP for boxwood/blackcurrant) despite tiny concentrations." },
+  { term: "ppt / ppb / ppm",   def: "Parts per trillion / billion / million — concentration units used for odor thresholds. 1 ppt ≈ one drop in 20 Olympic swimming pools." },
+  { term: "volatile",          def: "Small enough to evaporate at room temperature and reach your nose. Aroma compounds are by definition volatile; non-volatile compounds contribute to taste/mouthfeel but not smell." },
+  { term: "Brettanomyces / 'Brett'", def: "A wild yeast genus. Produces phenolic, barnyard, leather, smoke notes — defect in most wines, signature in some beers and a few cult wines." }
+];
+
 // ---------- INDEXING ----------
 const NOTE_BY_ID = Object.fromEntries(NOTES.map(n => [n.id, n]));
 const CPD_BY_ID  = Object.fromEntries(COMPOUNDS.map(c => [c.id, c]));
@@ -636,6 +798,9 @@ const state = {
   selectedCompound: null,
   hoveredNote: null,
   hoveredCompound: null,
+  infoOpen: false,        // is the "i" info overlay shown
+  infoTab: "about",       // "about" | "how-to-use" | "types-of-aroma"
+  infoSearch: "",         // current search query in Types of Aroma
   view: "dashboard",     // "dashboard" | "note-input" | "analysis"
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
@@ -1690,6 +1855,226 @@ function setGoDeeper(on) {
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   setGoDeeper(!state.goDeeper);
+});
+
+// ---------- INFO ("i") TAB ----------
+// Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
+// Lives alongside Go Deeper as a top-menu surface. Per project-information-access,
+// nothing here is gated — the i tab is a reference / glossary the user opens
+// when they want it. The compound-origin info and jargon glossary inside
+// Types of Aroma are the main payoff (define jargon, not basics).
+const infoOverlayEl = document.getElementById("info-overlay");
+const infoBodyEl    = document.getElementById("info-body");
+
+function openInfo(tab) {
+  state.infoOpen = true;
+  if (tab) state.infoTab = tab;
+  infoOverlayEl.hidden = false;
+  renderInfo();
+}
+function closeInfo() {
+  state.infoOpen = false;
+  infoOverlayEl.hidden = true;
+}
+function setInfoTab(tab) {
+  state.infoTab = tab;
+  renderInfo();
+}
+function renderInfo() {
+  document.querySelectorAll("#info-tabs button").forEach(b => {
+    b.classList.toggle("active", b.dataset.infoTab === state.infoTab);
+  });
+  if (state.infoTab === "about")           infoBodyEl.innerHTML = renderAbout();
+  else if (state.infoTab === "how-to-use") infoBodyEl.innerHTML = renderHowToUse();
+  else                                     renderTypesOfAroma();   // wires search dynamically
+  infoBodyEl.scrollTop = 0;
+}
+
+function renderAbout() {
+  return `
+    <h2>About this tool</h2>
+    <p class="lede">Aroma Wheel is a sensory-perception → aroma-compound inference tool. You report what you smell or taste; the wheel maps those perceptions to aromatic compounds backed by published gas-chromatography literature (GC-MS) on coffee, hops and beer, wine, and mocktails.</p>
+
+    <h3>The stance</h3>
+    <p>Your perceptions are real, and they change with the moment. The same cup of coffee, the same glass of wine, can give you different results depending on the time of day, what you ate before, how alert you are, the ambient air. That variation isn't noise — it's signal.</p>
+    <p>This tool doesn't grade your perception against a "correct answer." What you smell or taste <em>is</em> the data. The compounds we surface are <em>plausible matches</em> for what you reported, weighted by literature evidence — not verdicts about what you should have noticed.</p>
+
+    <h3>What the results mean</h3>
+    <p>Each compound that lights up on the wheel has:</p>
+    <ul>
+      <li><strong>Intensity</strong> — how strongly your reported notes point to it, modulated by its odor threshold (very-low-threshold compounds like furfurylthiol punch above their weight).</li>
+      <li><strong>Confidence</strong> — literature breadth × edge strength. High confidence means several well-cited notes converge on this compound; low confidence is a speculative single match worth flagging.</li>
+      <li><strong>Citations</strong> — the published GC-MS or flavor-chemistry source for each note → compound link. Click any compound in the analysis pane to see them.</li>
+    </ul>
+
+    <h3>Behind the scenes</h3>
+    <p>This is a public, educational project. The whole thing is a single static HTML file; the source is on GitHub. The interesting part isn't the tool itself — it's the thought process behind a humane, perception-affirming sensory inference UI. Comments in the source explain design choices as they come up.</p>
+    <p>Current scope: things you ingest (coffee, hops/beer, wine, mocktails). Perfumery is a close adjacent the project may explore later, but it isn't supported yet — perfumery sits at the orthonasal end of the olfactory spectrum while the current tool is centered on the retronasal experience of food and drink.</p>
+  `;
+}
+
+function renderHowToUse() {
+  return `
+    <h2>How to use</h2>
+    <p class="lede">The wheel is always the center of the screen. Everything else is about giving it input or reading its output.</p>
+
+    <h3>1. Report what you notice</h3>
+    <p>On the left, every descriptor has a slider (0 = nothing, 10 = dominant). Drag a slider to the intensity you noticed, then click <strong>Add</strong> to confirm. The wheel and the analysis pane update live. You can click an "Added" button anytime to <strong>Edit</strong> or <strong>Delete</strong> the entry.</p>
+
+    <h3>2. Read the wheel</h3>
+    <p>Notes you've reported sit around the perimeter in their group color (Fruity, Floral, Roasted, etc.). Compounds your reports point to migrate inward — the more lit edges connecting them to your notes, the more confident the match. Hover any compound for a bigger label; click to see its full detail in the analysis pane (right).</p>
+
+    <h3>3. Inspect a compound</h3>
+    <p>The analysis pane (right) shows a sortable grid of compound suggestions by default — click any card for its odor threshold, contributing notes, and literature citations. Click "← All compounds" to return to the grid.</p>
+
+    <h3>4. Filter what you see</h3>
+    <p>The legend on the left isn't just a key — every row is a visibility toggle. Hide a note group, hide a compound class, hide ortho-tagged or retro-tagged entries. Useful when you want to stress-test the inference (turn off retro entries and see if the wheel still reflects what you noticed on the sniff).</p>
+
+    <h3>5. Switch view modes</h3>
+    <p>Three tabs in the header — <strong>Dashboard</strong>, <strong>Note Input</strong>, <strong>Analysis</strong> — reorganize the panes around the wheel:</p>
+    <ul>
+      <li><strong>Dashboard</strong>: sliders + wheel + analysis, all visible. Best on wide screens.</li>
+      <li><strong>Note Input</strong>: sliders + wheel. Focus on logging.</li>
+      <li><strong>Analysis</strong>: wheel + analysis pane. Focus on results.</li>
+    </ul>
+    <p>The tool auto-picks based on your viewport when you first load, but you can switch anytime.</p>
+
+    <h3>6. Go Deeper (optional)</h3>
+    <p>The <strong>Go Deeper</strong> toggle in the header reveals advanced inputs and additional analytical surfaces. The first thing it adds: per-row <strong>Ortho</strong> (sniff) and <strong>Retro</strong> (exhale) buttons, letting you tag <em>when in the bite</em> you noticed each note. The wheel also gets two text overlays in the bottom corners summarizing inputs (left) and compound suggestions (right) so you can cross-reference at a glance. More Go Deeper content arrives in future versions.</p>
+
+    <h3>Repeat-tasting is encouraged</h3>
+    <p>If you re-taste the same coffee tomorrow and get different results, that's a feature, not a bug. The tool is designed to honor perceptual variation — comparing your morning take to your afternoon take is exactly the kind of cross-reference this is built for.</p>
+  `;
+}
+
+function renderTypesOfAroma() {
+  // Render the structural shell + entries; search wiring happens after.
+  const q = (state.infoSearch || "").trim().toLowerCase();
+  const matches = (text) => !q || text.toLowerCase().includes(q);
+
+  // Per-compound entries grouped by class for navigability
+  const compoundsByClass = {};
+  COMPOUNDS.forEach(c => {
+    (compoundsByClass[c.class] = compoundsByClass[c.class] || []).push(c);
+  });
+  // Stable class order: match the COMPOUND_CLASS_INFO key order
+  const classOrder = Object.keys(COMPOUND_CLASS_INFO).filter(k => compoundsByClass[k]);
+
+  // Build matched-entry tracking for counts
+  let totalMatched = 0;
+
+  const jargonHtml = JARGON.map(j => {
+    const matched = matches(j.term) || matches(j.def);
+    if (matched) totalMatched++;
+    return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="jargon">
+      <div class="info-entry-head"><span class="info-entry-name">${j.term}</span></div>
+      <div class="info-entry-body">${j.def}</div>
+    </div>`;
+  }).join('');
+
+  const classesHtml = classOrder.map(cls => {
+    const info = COMPOUND_CLASS_INFO[cls];
+    const matched = matches(cls) || matches(info);
+    if (matched) totalMatched++;
+    const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+    return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="class">
+      <div class="info-entry-head">
+        <span class="info-entry-name">${cls}</span>
+        <span class="info-entry-pill class-pill" style="border-color:${color};color:${color}">${compoundsByClass[cls].length} compound${compoundsByClass[cls].length > 1 ? 's' : ''}</span>
+      </div>
+      <div class="info-entry-body">${info}</div>
+    </div>`;
+  }).join('');
+
+  const compoundsHtml = classOrder.map(cls => {
+    const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+    const items = compoundsByClass[cls].map(c => {
+      const origin = COMPOUND_ORIGINS[c.id] || "Origins not yet documented here.";
+      const matched = matches(c.label) || matches(c.id) || matches(c.class) || matches(origin) || matches(c.note || "");
+      if (matched) totalMatched++;
+      const sigPill = c.specificity === "signature"
+        ? `<span class="info-entry-pill" style="border-color:#d3869b;color:#d3869b">signature</span>` : '';
+      return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="compound" data-cpd="${c.id}">
+        <div class="info-entry-head">
+          <span class="info-entry-name">${c.label}</span>
+          <span class="info-entry-pill class-pill" style="border-color:${color};color:${color}">${c.class}</span>
+          <span class="info-entry-pill">thr: ${c.threshold}</span>
+          ${sigPill}
+        </div>
+        <div class="info-entry-body">${c.note || ''}</div>
+        <div class="info-entry-meta"><strong>Naturally occurs in:</strong> ${origin}</div>
+        <div class="info-entry-meta"><strong>Threshold source:</strong> ${c.thresholdSrc}</div>
+        <button type="button" class="info-view-on-wheel" data-cpd="${c.id}">→ View on wheel</button>
+      </div>`;
+    }).join('');
+    // Hide class header if all its compounds are filtered out
+    const anyVisible = compoundsByClass[cls].some(c => {
+      const origin = COMPOUND_ORIGINS[c.id] || "";
+      return matches(c.label) || matches(c.id) || matches(c.class) || matches(origin) || matches(c.note || "");
+    });
+    if (!anyVisible) return '';
+    return `<h3 style="color:${color}">${cls}</h3>${items}`;
+  }).join('');
+
+  infoBodyEl.innerHTML = `
+    <h2>Types of Aroma</h2>
+    <p class="lede">A reference for the compound space the wheel draws from, plus a glossary of jargon you'll hear in tasting circles. Search across compound names, classes, where things naturally occur, and definitions.</p>
+
+    <div class="info-search-row">
+      <input type="search" id="info-search-input" class="info-search" placeholder="Search compounds, classes, jargon, origins..." value="${q}" />
+      <span class="info-result-count" id="info-result-count">${totalMatched} match${totalMatched === 1 ? '' : 'es'}</span>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">Glossary — words worth owning</div>
+      ${jargonHtml || '<div class="info-no-results">No glossary entries match.</div>'}
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">Compound classes</div>
+      ${classesHtml || '<div class="info-no-results">No classes match.</div>'}
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">Individual compounds — where they occur in nature</div>
+      ${compoundsHtml || '<div class="info-no-results">No compounds match.</div>'}
+    </div>
+  `;
+
+  // Wire search input — live filter, no submit needed
+  const searchInput = document.getElementById("info-search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      state.infoSearch = searchInput.value;
+      const scrollPos = infoBodyEl.scrollTop;
+      renderTypesOfAroma();
+      // Restore caret + focus + scroll position so typing feels continuous
+      const newInput = document.getElementById("info-search-input");
+      if (newInput) { newInput.focus(); newInput.setSelectionRange(newInput.value.length, newInput.value.length); }
+      infoBodyEl.scrollTop = scrollPos;
+    });
+  }
+
+  // Wire "View on wheel" links — close overlay, select compound, surface in analysis
+  infoBodyEl.querySelectorAll(".info-view-on-wheel").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cpdId = btn.dataset.cpd;
+      closeInfo();
+      state.selectedCompound = cpdId;
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", x => x.id === cpdId);
+    });
+  });
+}
+
+// Wiring: open button, close button, tabs, Escape key
+document.getElementById("info-open-btn").addEventListener("click", () => openInfo("about"));
+document.getElementById("info-close-btn").addEventListener("click", closeInfo);
+document.querySelectorAll("#info-tabs button").forEach(b => {
+  b.addEventListener("click", () => setInfoTab(b.dataset.infoTab));
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && state.infoOpen) closeInfo();
 });
 
 // ---------- INIT ----------
