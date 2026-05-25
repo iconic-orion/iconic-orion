@@ -277,6 +277,9 @@
   .info-overlay-body em { color: var(--ink-dim); font-style: italic; }
   .info-overlay-body ol, .info-overlay-body ul { padding-left: 22px; margin: 0 0 12px; color: var(--ink); font-size: 13px; }
   .info-overlay-body li { margin-bottom: 6px; }
+  .info-overlay-body code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; background: var(--bg); color: var(--accent);
+    padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
 
   /* Search field + filter row inside Types of Aroma */
   .info-search-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
@@ -481,6 +484,7 @@
     <div class="info-overlay-header">
       <div class="info-tabs" id="info-tabs" role="tablist">
         <button type="button" data-info-tab="about" class="active" role="tab">About</button>
+        <button type="button" data-info-tab="methodology" role="tab">Methodology</button>
         <button type="button" data-info-tab="how-to-use" role="tab">How to Use</button>
         <button type="button" data-info-tab="types-of-aroma" role="tab">Types of Aroma</button>
       </div>
@@ -1968,9 +1972,10 @@ function renderInfo() {
   document.querySelectorAll("#info-tabs button").forEach(b => {
     b.classList.toggle("active", b.dataset.infoTab === state.infoTab);
   });
-  if (state.infoTab === "about")           infoBodyEl.innerHTML = renderAbout();
-  else if (state.infoTab === "how-to-use") infoBodyEl.innerHTML = renderHowToUse();
-  else                                     renderTypesOfAroma();   // wires search dynamically
+  if (state.infoTab === "about")            infoBodyEl.innerHTML = renderAbout();
+  else if (state.infoTab === "methodology") infoBodyEl.innerHTML = renderMethodology();
+  else if (state.infoTab === "how-to-use")  infoBodyEl.innerHTML = renderHowToUse();
+  else                                      renderTypesOfAroma();   // wires search dynamically
   infoBodyEl.scrollTop = 0;
 }
 
@@ -2007,6 +2012,57 @@ function renderAbout() {
 
     <h3>About the maker</h3>
     <p>Built by Nolan. I've gone by a lot of names across the various fields I've worked in: UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, systems analyst. The aroma wheel sits somewhere in the middle of all of those. A UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization on top of a structured knowledge graph, a systems model of how sensory inference actually works.</p>
+  `;
+}
+
+function renderMethodology() {
+  return `
+    <h2>Methodology</h2>
+    <p class="lede">This is what happens between "you slide a note" and "compounds light up." It's straightforward enough to fit on one page.</p>
+
+    <h3>The data model</h3>
+    <p>The tool ships with three kinds of data baked in:</p>
+    <ul>
+      <li><strong>Notes</strong> (~38 descriptors organized into 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
+      <li><strong>Compounds</strong> (~34 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class (terpene, ester, etc.), an odor-threshold tier, and a literature source for that threshold.</li>
+      <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight from 0 to 1 (how strongly that note maps to that compound in published GC-MS work) and a citation pointing at the paper supporting the link. Example: <em>lemon → limonene</em> with weight 0.95, citing Shaw 1979 on citrus peel oil.</li>
+    </ul>
+    <p>That's the knowledge graph. When you confirm a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them.</p>
+
+    <h3>From slider to compound score</h3>
+    <p>When you confirm a note at intensity 5, the tool reads that as a <code>noteSignal</code> of 0.5 (intensity divided by 10).</p>
+    <p>For each compound that note links to, the contribution is <code>noteSignal × edge.weight</code>. So <em>lemon</em> at 5 contributes 0.475 to <em>limonene</em> (0.5 × 0.95) and 0.175 to <em>linalool</em> (0.5 × 0.35), using the actual edge weights from the data.</p>
+    <p>If you confirm multiple notes that all point to the same compound, those contributions sum. <em>Lemon</em> at 5 plus <em>orange</em> at 7 both contribute to <em>limonene</em>; the compound's raw intensity is the sum of every contribution.</p>
+    <p>The phase model adds a wrinkle when Go Deeper is on. A single note can carry up to three independent entries: a default (no phase), an ortho-tagged one, and a retro-tagged one. All three contribute as separate signals that sum together. So logging <em>apple</em> as ortho:3 and retro:5 gives twice the evidence of just retro:5 alone.</p>
+
+    <h3>The perception multiplier</h3>
+    <p>The raw intensity isn't the final score. Compounds have very different odor thresholds, the minimum concentration at which a typical person can detect them. A trace of furfurylthiol reads loud; a much larger amount of furfural barely registers. The tool models this with a tier-based multiplier:</p>
+    <ul>
+      <li><strong>very-low</strong> threshold (sub-ppt to ppt range): <code>× 1.20</code>. Trace amounts read strong.</li>
+      <li><strong>low</strong> threshold (ppt to low-ppb): <code>× 1.00</code>. Baseline.</li>
+      <li><strong>medium</strong> threshold (mid-ppb): <code>× 0.85</code>. Needs modest concentration.</li>
+      <li><strong>high</strong> threshold (ppm range): <code>× 0.55</code>. Needs real concentration to register.</li>
+    </ul>
+    <p>So a compound's displayed Intensity is <code>raw sum × perception multiplier</code>.</p>
+
+    <h3>How confidence is computed</h3>
+    <p>Confidence is a blend of two things:</p>
+    <ul>
+      <li><strong>Breadth</strong>: how many of your reported notes contribute to this compound. Capped at 3 confirmed contributors (above 3 you've hit max breadth).</li>
+      <li><strong>Strength</strong>: the highest individual edge weight among the contributors.</li>
+    </ul>
+    <p>The formula: <code>0.55 × breadth + 0.45 × strength</code>. Both inputs are 0 to 1, so confidence is also 0 to 1.</p>
+    <p>Reading this: high confidence means several solidly-cited notes converging on one compound. Low confidence is a single speculative match worth flagging but not betting on.</p>
+
+    <h3>What's not modeled</h3>
+    <p>The tool is honest about its scope. Things it deliberately doesn't try to capture:</p>
+    <ul>
+      <li><strong>Concentration math.</strong> We don't know how much of a compound is in your cup. The threshold tier is a rough proxy for perceived loudness, not a quantitative claim.</li>
+      <li><strong>Matrix effects.</strong> Compounds smell differently in different drinks. Limonene in a citrus mocktail and limonene in a pine-forward gin both contribute equally in the model, but the actual perceived character can shift in ways the tool doesn't capture.</li>
+      <li><strong>Co-occurrence physics.</strong> Some compounds amplify or mask each other in reality. The model treats edges as independent contributions.</li>
+      <li><strong>Individual perceptual variation</strong> beyond the threshold-tier multiplier. Two people with the same sensory experience can produce different reports; the tool honors what you report and doesn't try to "correct" for it.</li>
+    </ul>
+    <p>These limits are exactly why this is a suggestion engine, not a lab. See <button type="button" class="inline-link" data-open-info="about">About → What this isn't</button> for the longer story.</p>
   `;
 }
 
