@@ -376,6 +376,13 @@
   aside.detail li .note-name { color: var(--ink); }
   aside.detail li .weight { color: var(--accent); font-variant-numeric: tabular-nums; }
   aside.detail li .cite { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 2px; font-style: italic; }
+  /* Expanded bibliographic citation (Go Deeper). More structured than the
+     short cite line: indented block, slight border accent, journal name
+     italicized. */
+  aside.detail li .cite-full { font-style: normal; padding: 6px 8px;
+    margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
+    border-radius: 0 3px 3px 0; line-height: 1.5; }
+  aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
 
   /* SVG text on the wheel. The paint-order trick draws a background-color
      stroke behind the fill so labels remain readable when they overlap each
@@ -802,6 +809,132 @@ const COMPOUND_CLASS_INFO = {
   norisoprenoid:       "Fragments of broken-down carotenoid pigments — the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
   phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers."
 };
+
+// Full bibliographic entries for the most-cited papers backing the note→compound
+// edges. Each edge's short `cite` string is matched against the prefixes in
+// CITE_TO_REF below to find a full entry. Edges without a match fall back to
+// rendering the short cite string as-is. The catalog is intentionally small
+// and conservative — only papers where the full citation is well-established.
+// Add more entries here as they're verified; no edge data changes needed.
+const REFERENCES = {
+  "blank1992": {
+    authors: "Blank, I., Sen, A., & Grosch, W.",
+    year: 1992,
+    title: "Potent odorants of the roasted powder and brew of Arabica coffee.",
+    journal: "Zeitschrift für Lebensmittel-Untersuchung und Forschung",
+    volume: "195", issue: "3", pages: "239–245"
+  },
+  "czerny1999coffee": {
+    authors: "Czerny, M., Mayer, F., & Grosch, W.",
+    year: 1999,
+    title: "Sensory study on the character impact odorants of roasted Arabica coffee.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "47", issue: "2", pages: "695–699"
+  },
+  "czerny2000raw": {
+    authors: "Czerny, M., & Grosch, W.",
+    year: 2000,
+    title: "Potent odorants of raw Arabica coffee. Their changes during roasting.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "48", issue: "3", pages: "868–872"
+  },
+  "czerny2008": {
+    authors: "Czerny, M., Christlbauer, M., Fischer, A., Granvogl, M., Hammer, M., Hartl, C., Hernandez, N.M., & Schieberle, P.",
+    year: 2008,
+    title: "Re-investigation on odour thresholds of key food aroma compounds and development of an aroma language based on odour qualities of defined aqueous odorant solutions.",
+    journal: "European Food Research and Technology",
+    volume: "228", issue: "2", pages: "265–273"
+  },
+  "tominaga1998": {
+    authors: "Tominaga, T., Furrer, A., Henry, R., & Dubourdieu, D.",
+    year: 1998,
+    title: "Identification of new volatile thiols in the aroma of Vitis vinifera L. var. Sauvignon blanc wines.",
+    journal: "Flavour and Fragrance Journal",
+    volume: "13", issue: "3", pages: "159–162"
+  },
+  "bartowsky2004": {
+    authors: "Bartowsky, E.J., & Henschke, P.A.",
+    year: 2004,
+    title: "The 'buttery' attribute of wine—diacetyl—desirability, spoilage and beyond.",
+    journal: "International Journal of Food Microbiology",
+    volume: "96", issue: "3", pages: "235–252"
+  },
+  "sefton2011": {
+    authors: "Sefton, M.A., Skouroumounis, G.K., Elsey, G.M., & Taylor, D.K.",
+    year: 2011,
+    title: "Occurrence, sensory impact, synthesis, and synthetic pathways of β-damascenone and related damascone derivatives.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "59", issue: "18", pages: "9717–9746"
+  },
+  "friedman2017": {
+    authors: "Friedman, M.",
+    year: 2017,
+    title: "Chemistry, antimicrobial mechanisms, and antibiotic activities of cinnamaldehyde against pathogenic bacteria in animal feeds and human foods.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "65", issue: "48", pages: "10406–10423"
+  },
+  "verstrepen2003": {
+    authors: "Verstrepen, K.J., Derdelinckx, G., Dufour, J.-P., Winderickx, J., Thevelein, J.M., Pretorius, I.S., & Delvaux, F.R.",
+    year: 2003,
+    title: "Flavor-active esters: adding fruitiness to beer.",
+    journal: "Journal of Bioscience and Bioengineering",
+    volume: "96", issue: "2", pages: "110–118"
+  },
+  "mayer2000": {
+    authors: "Mayer, F., Czerny, M., & Grosch, W.",
+    year: 2000,
+    title: "Sensory study of the character impact aroma compounds of a coffee beverage.",
+    journal: "European Food Research and Technology",
+    volume: "211", issue: "4", pages: "272–276"
+  },
+  "hatanaka1993": {
+    authors: "Hatanaka, A.",
+    year: 1993,
+    title: "The biogeneration of green odour by green leaves.",
+    journal: "Phytochemistry",
+    volume: "34", issue: "5", pages: "1201–1218"
+  },
+  "shaw1979": {
+    authors: "Shaw, P.E.",
+    year: 1979,
+    title: "Review of quantitative analyses of citrus essential oils.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "27", issue: "2", pages: "246–257"
+  }
+};
+
+// Map cite-string prefixes (or distinctive substrings) to REFERENCES keys.
+// Order matters when multiple prefixes could match — most specific first.
+const CITE_TO_REF = [
+  ["Blank, Sen, Grosch 1992",     "blank1992"],
+  ["Blank et al. 1992",           "blank1992"],
+  ["Blank 1992",                  "blank1992"],
+  ["Czerny et al. 1999",          "czerny1999coffee"],
+  ["Czerny, Mayer, Grosch 1999",  "czerny1999coffee"],
+  ["Czerny et al. 2008",          "czerny2008"],
+  ["Czerny & Grosch 2000",        "czerny2000raw"],
+  ["Tominaga et al. 1998",        "tominaga1998"],
+  ["Bartowsky & Henschke 2004",   "bartowsky2004"],
+  ["Sefton et al. 2011",          "sefton2011"],
+  ["Friedman 2017",               "friedman2017"],
+  ["Verstrepen et al. 2003",      "verstrepen2003"],
+  ["Mayer, Czerny, Grosch 2000",  "mayer2000"],
+  ["Hatanaka 1993",               "hatanaka1993"],
+  ["Shaw 1979",                   "shaw1979"]
+];
+
+function refForCite(citeString) {
+  if (!citeString) return null;
+  for (const [needle, refId] of CITE_TO_REF) {
+    if (citeString.includes(needle)) return REFERENCES[refId];
+  }
+  return null;
+}
+
+function formatRefFull(ref) {
+  const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
+  return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
+}
 
 // Jargon glossary — words people have heard in tasting circles but might not own.
 // Per [[project-information-access]]: define jargon, NOT baseline chemistry.
@@ -1642,10 +1775,16 @@ function renderCompoundDetail(cpdId, banner) {
             .filter(p => !state.hiddenPhases.has(p) && getEntry(e.note, p) !== undefined)
             .map(p => `<span style="color:var(--ink-dim); font-size:10px;">${p}:${getEntry(e.note, p)}</span>`)
             .join(" ");
+          // In Go Deeper mode, render the full bibliographic citation if we
+          // have one in REFERENCES; otherwise fall back to the short string.
+          const ref = state.goDeeper ? refForCite(e.cite) : null;
+          const citeHtml = ref
+            ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
+            : `<span class="cite">${e.cite}</span>`;
           return `<li>
             <span class="note-name">${NOTE_BY_ID[e.note].label}</span> ${phaseHints}
             <span class="weight" style="float:right">${live ? contrib : "—"} <span style="color:var(--ink-dim)">(base ${e.w.toFixed(2)})</span></span>
-            <span class="cite">${e.cite}</span>
+            ${citeHtml}
           </li>`;
         }).join("")}
       </ul>
@@ -1960,7 +2099,10 @@ document.getElementById("demo-mocktail").addEventListener("click", () => setNote
 function setGoDeeper(on) {
   state.goDeeper = !!on;
   document.body.classList.toggle("go-deeper", state.goDeeper);
-  // No row-rebuild needed — CSS handles show/hide of the .go-deeper-only buttons.
+  // CSS handles show/hide of .go-deeper-only buttons + wheel overlays. We
+  // also refresh the analysis pane so any open compound detail re-renders
+  // (full-citation expansion is gated on state.goDeeper).
+  renderDetail();
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   setGoDeeper(!state.goDeeper);
