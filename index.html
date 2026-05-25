@@ -383,6 +383,19 @@
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
   aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
+  /* Note-detail view (Go Deeper inverse mode) */
+  aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
+    border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  aside.detail .note-entries { font-size: 11px; color: var(--ink-dim); margin: 8px 0 14px;
+    padding: 8px 10px; background: var(--bg); border-radius: 4px;
+    border: 1px solid var(--line); }
+  aside.detail .entry-tag { display: inline-block; font-size: 10px;
+    background: var(--panel-2); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 3px; padding: 1px 6px; margin-left: 4px;
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  aside.detail li .view-cpd { cursor: pointer; color: var(--ink);
+    border-bottom: 1px dotted var(--ink-dim); }
+  aside.detail li .view-cpd:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* SVG text on the wheel. The paint-order trick draws a background-color
      stroke behind the fill so labels remain readable when they overlap each
@@ -997,6 +1010,7 @@ const state = {
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   selectedCompound: null,
+  selectedNote: null,       // when set (Go Deeper only), analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
   hoveredCompound: null,
   infoOpen: false,        // is the "i" info overlay shown
@@ -1212,9 +1226,7 @@ function drawNotes() {
     })
     .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
     .on("click", (e, d) => {
-      // New input contract: phase choice is panel-only. Clicking a note on the
-      // wheel scrolls the panel to that row and focuses the slider, so the
-      // user can set intensity + pick a phase deliberately.
+      // Default: scroll the slider panel to this note's row and focus its slider.
       const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
       if (row) {
         row.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1222,6 +1234,14 @@ function drawNotes() {
         setTimeout(() => row.classList.remove("flash"), 600);
         const slider = row.querySelector("input[type=range]");
         if (slider) slider.focus();
+      }
+      // Go Deeper: also surface this note's outbound compound graph in the
+      // analysis pane — the inverse of clicking a compound.
+      if (state.goDeeper) {
+        state.selectedNote = d.id;
+        state.selectedCompound = null;
+        gComps.selectAll("g.compound").classed("selected", false);
+        renderDetail();
       }
     });
   enter.append("circle").attr("r", 5);
@@ -1342,6 +1362,7 @@ function tick() {
     .on("mouseleave", () => { state.hoveredCompound = null; updateEdges(); })
     .on("click", (e, d) => {
       state.selectedCompound = d.id;
+      state.selectedNote = null;
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
     })
@@ -1645,8 +1666,81 @@ document.addEventListener("click", (e) => {
 // detail mode returns to grid.
 const detailPanel = document.getElementById("detail-panel");
 function renderDetail() {
-  if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
+  // Three modes: inverse note-view (Go Deeper, when a note is selected),
+  // compound detail (when a compound is selected), or the default grid.
+  if (state.selectedNote) renderNoteDetail(state.selectedNote);
+  else if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
   else renderAnalysisGrid();
+}
+
+// Inverse view (Go Deeper): show which compounds a given note maps to,
+// sorted by base edge weight. Clicking a compound name switches to that
+// compound's full detail. "← All compounds" returns to grid mode.
+function renderNoteDetail(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  const g = GROUP_BY_ID[n.group];
+  const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+  const edges = (NOTE_EDGES[noteId] || []).slice().sort((a, b) => b.w - a.w);
+
+  // Summarize currently-confirmed entries for this note (if any)
+  const entries = [];
+  for (const phase of INPUT_PHASES) {
+    const v = getEntry(noteId, phase);
+    if (v !== undefined) entries.push({ phase, intensity: v });
+  }
+  const entriesHtml = entries.length === 0
+    ? `<div class="empty" style="margin-bottom:12px;">Not currently logged. The graph below shows what compounds this descriptor would point to if you confirmed it.</div>`
+    : `<div class="note-entries">
+        Currently logged:
+        ${entries.map(e => `<span class="entry-tag">${e.phase || "default"} · ${e.intensity}</span>`).join(" ")}
+      </div>`;
+
+  detailPanel.innerHTML = `
+    <button class="back-to-grid" type="button">← All compounds</button>
+    <h2><span class="note-color-dot" style="background:${color}"></span>${n.label}</h2>
+    <div class="compound-class">Note · ${g.label}</div>
+
+    ${entriesHtml}
+
+    <div class="section">
+      <div class="section-title">Compounds this note maps to (literature)</div>
+      <ul>
+        ${edges.length === 0
+          ? `<li><span class="cite">No compounds linked to this note in the current data.</span></li>`
+          : edges.map(e => {
+              const cpd = CPD_BY_ID[e.cpd];
+              const ref = state.goDeeper ? refForCite(e.cite) : null;
+              const citeHtml = ref
+                ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
+                : `<span class="cite">${e.cite}</span>`;
+              return `<li>
+                <span class="note-name view-cpd" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}</span>
+                <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
+                <span style="font-size:10px; color:var(--ink-dim); display:block; margin-top:1px;">${cpd.class} · thr ${cpd.threshold}</span>
+                ${citeHtml}
+              </li>`;
+            }).join("")}
+      </ul>
+    </div>
+  `;
+
+  // Back to grid
+  const backBtn = detailPanel.querySelector(".back-to-grid");
+  if (backBtn) backBtn.addEventListener("click", () => {
+    state.selectedNote = null;
+    state.selectedCompound = null;
+    gComps.selectAll("g.compound").classed("selected", false);
+    renderDetail();
+  });
+  // Compound name clicks → jump to that compound's detail
+  detailPanel.querySelectorAll(".view-cpd").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedNote = null;
+      state.selectedCompound = el.dataset.cpd;
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+      renderDetail();
+    });
+  });
 }
 
 function renderAnalysisGrid() {
@@ -1713,6 +1807,7 @@ function renderAnalysisGrid() {
   detailPanel.querySelectorAll(".cpd-card").forEach(el => {
     el.addEventListener("click", () => {
       state.selectedCompound = el.dataset.cpd;
+      state.selectedNote = null;
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
     });
