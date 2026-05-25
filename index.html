@@ -248,16 +248,43 @@
   aside.detail li .weight { color: var(--accent); font-variant-numeric: tabular-nums; }
   aside.detail li .cite { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 2px; font-style: italic; }
 
-  .node-label { font-size: 10px; fill: var(--ink); pointer-events: none;
+  /* SVG text on the wheel. The paint-order trick draws a background-color
+     stroke behind the fill so labels remain readable when they overlap each
+     other or sit on top of compound dots / edges. Font sizes scale up on
+     hover and when active/selected so the focused element pops. */
+  .node-label, .note-label {
+    pointer-events: none;
+    fill: var(--ink);
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    transition: font-size 0.15s ease, font-weight 0.15s ease, fill-opacity 0.15s ease;
+  }
+  .node-label { font-size: 10px;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  .note-label { font-size: 11px; pointer-events: none; }
+  .note-label { font-size: 11px; }
+  .compound:hover .node-label,
+  .compound.selected .node-label {
+    font-size: 13px;
+    font-weight: 600;
+    fill-opacity: 1 !important;
+  }
+  .note:hover .note-label,
+  .note.active .note-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
   .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; }
   .edge.lit { stroke-opacity: 0.55; }
   .compound { cursor: pointer; }
-  .compound circle { stroke: var(--line); stroke-width: 1; }
+  .compound circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
+  .compound:hover circle { stroke: var(--accent); }
   .compound.selected circle { stroke: var(--accent); stroke-width: 2; }
   .note { cursor: pointer; }
-  .note circle { stroke: var(--line); stroke-width: 1; }
+  .note circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
+  .note:hover circle { stroke: var(--ink); }
   .note.active circle { stroke: var(--ink); stroke-width: 2; }
 
   .center-ring { fill: none; stroke: var(--line); stroke-dasharray: 2 4; }
@@ -608,6 +635,7 @@ const state = {
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   selectedCompound: null,
   hoveredNote: null,
+  hoveredCompound: null,
   view: "dashboard",     // "dashboard" | "note-input" | "analysis"
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
@@ -810,7 +838,11 @@ function drawNotes() {
   const sel = gNotes.selectAll("g.note").data(getVisibleNotes(), d => d.id);
   sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "note")
-    .on("mouseenter", (e, d) => { state.hoveredNote = d.id; updateEdges(); })
+    .on("mouseenter", function(e, d) {
+      state.hoveredNote = d.id;
+      d3.select(this).raise();  // pop hovered note + its label above siblings
+      updateEdges();
+    })
     .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
     .on("click", (e, d) => {
       // New input contract: phase choice is panel-only. Clicking a note on the
@@ -935,7 +967,17 @@ function tick() {
   const sel = gComps.selectAll("g.compound").data(getVisibleCompoundNodes(), d => d.id);
   sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "compound")
-    .on("click", (e, d) => { state.selectedCompound = d.id; renderDetail(); render(); })
+    .on("mouseenter", function(e, d) {
+      state.hoveredCompound = d.id;
+      d3.select(this).raise();  // pop hovered compound + its label above siblings
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredCompound = null; updateEdges(); })
+    .on("click", (e, d) => {
+      state.selectedCompound = d.id;
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+    })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
       .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
@@ -960,7 +1002,7 @@ function tick() {
 
   updateEdges();
 }
-function hoveredCompound() { return null; } // placeholder for future hover-on-compound
+function hoveredCompound() { return state.hoveredCompound; }
 
 function compoundColor(c) {
   return COMPOUND_CLASS_COLOR[c.class] || "#aaa";
