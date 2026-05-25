@@ -25,37 +25,50 @@
     --grp-earthy:  #89b482;
     --grp-sweet:   #d8a657;
     --grp-fermented: #7daea3;
+
+    /* Pane widths — referenced both by the body grid and by the pane-toggle
+       positions, so both stay in sync if these change. */
+    --notes-pane-w:  320px;
+    --detail-pane-w: 360px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  body { display: grid; grid-template-columns: 320px 1fr 360px; grid-template-rows: 48px 1fr;
+  body { display: grid;
+    grid-template-columns: var(--notes-pane-w) 1fr var(--detail-pane-w);
+    grid-template-rows: 48px 1fr;
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
      independently hidden. The header view tabs (Dashboard / Note Input /
      Analysis) are presets that flip these classes in combination; the small
-     pane-toggle tabs on the wheel's edges flip them one at a time. */
-  body.notes-hidden  { grid-template-columns: 0 1fr 360px; }
+     pane-toggle tabs on the screen's edges flip them one at a time. */
+  body.notes-hidden  { grid-template-columns: 0 1fr var(--detail-pane-w); }
   body.notes-hidden  aside.notes  { display: none; }
-  body.detail-hidden { grid-template-columns: 320px 1fr 0; }
+  body.detail-hidden { grid-template-columns: var(--notes-pane-w) 1fr 0; }
   body.detail-hidden aside.detail { display: none; }
   body.notes-hidden.detail-hidden { grid-template-columns: 0 1fr 0; }
 
-  /* Small "hide / show" tab pinned to each inner edge of the wheel area.
-     Stays at the wheel's left/right edge whether the corresponding pane is
-     visible or not, so it's the same affordance to push the pane out and to
-     pull it back. Low-key by default; brighter on hover. */
-  .pane-toggle { position: absolute; top: 25%; transform: translateY(-50%);
+  /* Small "hide / show" tab pinned to the viewport edges adjacent to each
+     side pane. position:fixed (relative to viewport, not to the wheel cell)
+     so they stay visible even when the wheel grid cell collapses on narrow
+     screens. When the corresponding pane is visible the tab sits at the
+     pane's inner edge; when hidden it sits flush against the screen edge.
+     Low-key by default; brighter on hover. */
+  .pane-toggle { position: fixed; top: calc(48px + (100vh - 48px) * 0.25);
+    transform: translateY(-50%);
     width: 16px; height: 56px;
     background: var(--panel-2); border: 1px solid var(--line);
     color: var(--ink-dim); font-size: 12px; cursor: pointer; padding: 0;
     display: flex; align-items: center; justify-content: center;
     z-index: 100; opacity: 0.55;
-    transition: opacity 0.15s, color 0.15s, border-color 0.15s; }
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s,
+                left 0.2s ease, right 0.2s ease; }
   .pane-toggle:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
-  .pane-toggle.left  { left: 0;  border-left: none;  border-radius: 0 6px 6px 0; }
-  .pane-toggle.right { right: 0; border-right: none; border-radius: 6px 0 0 6px; }
+  .pane-toggle.left  { left:  var(--notes-pane-w);  border-left: none;  border-radius: 0 6px 6px 0; }
+  .pane-toggle.right { right: var(--detail-pane-w); border-right: none; border-radius: 6px 0 0 6px; }
+  body.notes-hidden  .pane-toggle.left  { left:  0; }
+  body.detail-hidden .pane-toggle.right { right: 0; }
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
