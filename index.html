@@ -230,10 +230,12 @@
   .note-row.has-entries .note-label-text { color: var(--accent); }
   .note-row.flash { background: rgba(216, 166, 87, 0.18); transition: background 0.6s; }
 
-  /* Default mode: one "Add" button per row.
-     Go Deeper mode (body.go-deeper): row gains ortho + retro buttons alongside Add. */
-  .phase-buttons { grid-column: 1 / span 2; display: grid; grid-template-columns: 1fr; gap: 6px; }
-  body.go-deeper .phase-buttons { grid-template-columns: 1fr 1fr 1fr; }
+  /* Default mode: NO buttons. The slider directly commits / updates / deletes
+     the note's null-phase entry in real-time.
+     Go Deeper mode (body.go-deeper): the row reveals three commit buttons
+     (Add / Ortho / Retro). Slider becomes pending-intensity; buttons commit. */
+  .phase-buttons { grid-column: 1 / span 2; display: none; }
+  body.go-deeper .phase-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .phase-btn { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line);
     border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 4px;
@@ -247,9 +249,6 @@
   .phase-btn svg { width: 22px; height: 18px; flex-shrink: 0; }
   .phase-btn .added-intensity { font-variant-numeric: tabular-nums; color: var(--ink);
     font-weight: 600; margin-left: 2px; }
-  /* Ortho/retro buttons hidden by default; revealed when Go Deeper is on */
-  .phase-btn.go-deeper-only { display: none; }
-  body.go-deeper .phase-btn.go-deeper-only { display: flex; }
 
   /* Go Deeper top-menu toggle (active state has a subtle accent) */
   #godeeper-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
@@ -1550,20 +1549,31 @@ function renderNoteRow(n) {
   slider.id = "slider-" + n.id;
   slider.value = state.pendingIntensity[n.id] || 0;
   slider.addEventListener("input", () => {
-    state.pendingIntensity[n.id] = +slider.value;
-    val.textContent = slider.value;
-    updateRowPhaseButtons(row, n.id);
+    const v = +slider.value;
+    state.pendingIntensity[n.id] = v;
+    val.textContent = v;
+    if (state.goDeeper) {
+      // Go Deeper: slider sets pending intensity; user clicks a phase button
+      // to commit. Existing entries untouched until they explicitly act.
+      updateRowPhaseButtons(row, n.id);
+    } else {
+      // Default mode: slider directly creates / updates / deletes the
+      // null-phase entry in real-time. No commit step.
+      if (v > 0) commitEntry(n.id, null, v);
+      else       deleteEntry(n.id, null);
+      row.classList.toggle("has-entries", hasAnyEntry(n.id));
+      recompute();
+    }
   });
 
   const btns = document.createElement("div");
   btns.className = "phase-buttons";
-  // Always render in default-first order: [Add, Ortho, Retro]. Ortho/Retro carry
-  // .go-deeper-only and are hidden by CSS unless body.go-deeper is set.
+  // All three phase buttons render in the DOM but the whole .phase-buttons row
+  // is hidden by CSS unless body.go-deeper is set. Order: [Add, Ortho, Retro].
   INPUT_PHASES.forEach(phase => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "phase-btn";
-    if (phase !== null) btn.classList.add("go-deeper-only");
     btn.dataset.phase = phase === null ? "default" : phase;
     btn.title = phase === null
       ? "Add this note (no phase specified)"
@@ -2260,10 +2270,20 @@ document.getElementById("demo-mocktail").addEventListener("click", () => setNote
 
 // ---------- GO DEEPER TOGGLE ----------
 function setGoDeeper(on) {
+  const wasOn = state.goDeeper;
   state.goDeeper = !!on;
   document.body.classList.toggle("go-deeper", state.goDeeper);
-  // CSS handles show/hide of .go-deeper-only buttons + wheel overlays. We
-  // also refresh the analysis pane so any open compound detail re-renders
+  // Switching Go Deeper OFF: re-sync the slider working values to the
+  // existing null-phase entries so the slider faithfully represents the
+  // committed state. In default mode, slider IS the entry.
+  if (wasOn && !state.goDeeper) {
+    for (const noteId of Object.keys(state.pendingIntensity)) {
+      const nullEntry = getEntry(noteId, null);
+      state.pendingIntensity[noteId] = nullEntry !== undefined ? nullEntry : 0;
+    }
+    syncSliders();  // rebuild the panel so each slider snaps to its synced value
+  }
+  // Refresh analysis pane so any open compound detail re-renders
   // (full-citation expansion is gated on state.goDeeper).
   renderDetail();
 }
