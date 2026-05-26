@@ -40,9 +40,9 @@
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
-     independently hidden. The header view tabs (Dashboard / Note Input /
-     Analysis) are presets that flip these classes in combination; the small
-     pane-toggle tabs on the screen's edges flip them one at a time. */
+     independently hidden. The header view tabs (Notes / Reset View / Results)
+     are presets that flip these classes in combination; the small pane-toggle
+     tabs on the screen's edges flip them one at a time. */
   body.notes-hidden  { grid-template-columns: 0 1fr var(--detail-pane-w); }
   body.notes-hidden  aside.notes  { display: none; }
   body.detail-hidden { grid-template-columns: var(--notes-pane-w) 1fr 0; }
@@ -461,9 +461,9 @@
   <span class="sub">Sensory notes → aroma compounds, weighted by GC-MS literature</span>
   <span class="spacer"></span>
   <div class="tabs" id="view-tabs" title="View mode — Wheel is always shown; tabs control which side panes are visible">
-    <button data-view="dashboard" class="active">Dashboard</button>
-    <button data-view="note-input">Note Input</button>
-    <button data-view="analysis">Analysis</button>
+    <button data-view="note-input">Notes</button>
+    <button data-view="dashboard" class="active">Reset View</button>
+    <button data-view="analysis">Results</button>
   </div>
   <div class="profile-toggle" id="notefilter-toggle" title="Filter to widely-recognized notes vs. include niche/specialist descriptors">
     <span class="label">Notes</span>
@@ -1986,12 +1986,14 @@ function renderWheelOverlays() {
 }
 
 // ---------- VIEW SWITCHING / PANE VISIBILITY ----------
-// Each side pane (sliders, analysis) can be hidden independently via its
+// Each side pane (sliders, results) can be hidden independently via its
 // pane-toggle tab on the wheel's edge. The three header view tabs are
 // presets that flip both per-pane states in combination.
-//   Dashboard   = both visible
-//   Note Input  = sliders visible, analysis hidden
-//   Analysis    = sliders hidden, analysis visible
+//   Notes ("note-input")     = sliders visible, results hidden
+//   Reset View ("dashboard") = both visible (the default 3-pane view)
+//   Results ("analysis")     = sliders hidden, results visible
+// data-view keys keep their original names internally to avoid churning
+// every state reference; the user-facing labels are what changed.
 // "Both hidden" (wheel only) is reachable via the toggles but unnamed in
 // the header tabs — emergent state, no tab highlights as active there.
 
@@ -2042,9 +2044,10 @@ document.getElementById("toggle-detail").addEventListener("click", () => {
   applyPaneState();
 });
 
-// Auto-detect initial view from viewport. Wide screens default to Dashboard;
-// narrow screens default to Note Input. User can override via tabs or the
-// per-pane toggles anytime; we don't auto-flip on resize.
+// Auto-detect initial view from viewport. Wide screens default to Reset View
+// (the 3-pane dashboard); narrower screens default to Notes (sliders + wheel).
+// User can override via tabs or per-pane toggles anytime; we don't auto-flip
+// on resize.
 function autoDetectViewMode() {
   const w = window.innerWidth;
   if (w >= 900) setView("dashboard");
@@ -2419,7 +2422,7 @@ function renderHowToUse() {
     <ul>
       <li><strong>Sliders pane (left).</strong> Your input. Each row is a slider plus an Add button. Click an "Added" button to Edit or Delete that entry.</li>
       <li><strong>Legend (top of the sliders pane).</strong> Visibility filters. Toggle note groups, compound classes, and ortho/retro entries. Useful for stress-testing what's driving what.</li>
-      <li><strong>View tabs (header).</strong> <em>Dashboard</em> shows all three panes. <em>Note Input</em> hides the analysis pane to focus on logging. <em>Analysis</em> hides the sliders to focus on results. The wheel is always there.</li>
+      <li><strong>View tabs (header).</strong> <em>Notes</em> hides the results pane (sliders + wheel). <em>Reset View</em> shows all three panes. <em>Results</em> hides the sliders (wheel + results pane). The wheel is always there.</li>
       <li><strong>Go Deeper (header toggle).</strong> Reveals advanced inputs. Per-row <em>Ortho</em> (sniff) and <em>Retro</em> (exhale) buttons let you tag when in the bite you noticed each note. Two text overlays appear in the bottom corners of the wheel showing your inputs and the top compound suggestions in compact list form.</li>
     </ul>
 
@@ -2575,7 +2578,7 @@ buildNotesPanel();
 layout();
 startSim();
 recompute();
-autoDetectViewMode();  // pick Dashboard or Note Input based on viewport width
+autoDetectViewMode();  // pick Reset View or Notes based on viewport width
 
 window.addEventListener("resize", () => {
   layout();
