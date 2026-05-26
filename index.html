@@ -73,6 +73,9 @@
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
   header .sub { font-size: 12px; color: var(--ink-dim); }
+  /* Hide the long subtitle on phone-sized viewports so the title + tabs + buttons
+     don't fight for horizontal space. Tablets and laptops still see it. */
+  @media (max-width: 900px) { header .sub { display: none; } }
   header .spacer { flex: 1; }
   header button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
