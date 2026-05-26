@@ -251,13 +251,15 @@
     overflow-y: auto; padding: 12px; }
   /* Subtle search field at the top of the notes pane (below the legend).
      Filters note rows as the user types. */
-  /* "What am I smelling?" trigger button — subtle text link at top of notes pane */
-  .wais-open-btn { width: 100%; background: transparent; color: var(--accent);
-    border: 1px dashed var(--line); border-radius: 4px;
-    padding: 6px 10px; font-size: 11px; font-family: inherit; cursor: pointer;
-    margin-bottom: 8px; text-align: left;
-    transition: border-color 0.15s, background 0.15s; }
-  .wais-open-btn:hover { border-color: var(--accent); background: rgba(216, 166, 87, 0.06); }
+  /* "Describe what you're tasting →" trigger button at the top of the notes
+     pane. Solid button, not a text-link, so it reads as a clear action. */
+  .wais-open-btn { width: 100%; background: var(--panel-2); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 6px;
+    padding: 9px 12px; font-size: 12px; font-family: inherit; cursor: pointer;
+    margin-bottom: 10px; text-align: center; font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  .wais-open-btn:hover { background: var(--accent); color: #1a1810; }
 
   /* WAIS modal content */
   .wais-content { max-width: 640px; max-height: 80vh; }
@@ -615,7 +617,7 @@
   <!-- Discovery aid: opens a modal of evocative descriptors that suggest which
        specific notes to try. Subtle text button so it's there for people who
        want it without crowding the pane for people who don't. -->
-  <button type="button" id="wais-open-btn" class="wais-open-btn">What am I smelling? →</button>
+  <button type="button" id="wais-open-btn" class="wais-open-btn">Describe what you're tasting →</button>
   <!-- Subtle search field at the top of the notes pane. Filters which note rows
        are visible as the user types. Empty query = show all. -->
   <input type="search" id="notes-search" class="notes-search" placeholder="Search notes…" autocomplete="off" />
