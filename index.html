@@ -72,10 +72,6 @@
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
-  header .sub { font-size: 12px; color: var(--ink-dim); }
-  /* Hide the long subtitle on phone-sized viewports so the title + tabs + buttons
-     don't fight for horizontal space. Tablets and laptops still see it. */
-  @media (max-width: 900px) { header .sub { display: none; } }
   /* On mid-width viewports (tablet landscape, half-screen browser windows), the
      results pane flexes a bit narrower so the wheel has more room. Sliders pane
      stays at 320 for usability — slider labels and the per-row buttons need it. */
@@ -465,7 +461,6 @@
 <body>
 <header>
   <h1>Aroma Wheel</h1>
-  <span class="sub">Sensory notes → aroma compounds, weighted by GC-MS literature</span>
   <span class="spacer"></span>
   <div class="tabs" id="view-tabs" title="View mode — Wheel is always shown; tabs control which side panes are visible">
     <button data-view="note-input">Notes</button>
