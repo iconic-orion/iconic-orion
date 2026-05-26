@@ -291,6 +291,12 @@
   .wais-suggestion-item .name { color: var(--ink); }
   .wais-suggestion-item .group { font-size: 10px; color: var(--ink-dim);
     text-transform: uppercase; letter-spacing: 0.06em; }
+  /* Small info icon shown next to the group label when a note's grouping
+     isn't obvious from everyday perception (e.g. why is Buttery in Fermented).
+     Cursor:help signals "hover for explanation"; tooltip carries the answer. */
+  .rationale-info { background: transparent; border: none; padding: 0 0 0 4px;
+    color: var(--ink-dim); cursor: help; font-size: 11px; font-family: inherit; }
+  .rationale-info:hover { color: var(--accent); }
   .wais-suggestion-item { grid-template-columns: 10px 1fr auto auto !important; }
   .wais-suggestion-count { font-size: 10px; color: var(--accent); font-weight: 600;
     font-variant-numeric: tabular-nums; margin-left: 6px;
@@ -2969,6 +2975,14 @@ const waisOverlayEl     = document.getElementById("wais-overlay");
 const waisChipsEl       = document.getElementById("wais-chips");
 const waisSuggestionsEl = document.getElementById("wais-suggestions");
 
+// Per-note rationale shown as a tooltip in the Note Suggester when a note's
+// group assignment isn't obvious from everyday perception. The chemistry
+// reason lives here so users who wonder "why is X in this group?" have a
+// one-hover answer without us having to restructure the groups themselves.
+const NOTE_GROUP_RATIONALE = {
+  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation."
+};
+
 // Multi-select: which descriptor chips are currently active. Cleared each
 // time the modal opens fresh.
 let waisSelected = new Set();
@@ -3049,10 +3063,14 @@ function renderWaisSuggestionsMulti() {
       ${sorted.map(({ note, count, intensity }) => {
         const g = GROUP_BY_ID[note.group];
         const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+        const rationale = NOTE_GROUP_RATIONALE[note.id];
+        const rationaleIcon = rationale
+          ? `<button type="button" class="rationale-info" title="${rationale.replace(/"/g, '&quot;')}" aria-label="Why is ${note.label} in ${g.label}?">ⓘ</button>`
+          : '';
         return `<li class="wais-suggestion-item" data-note="${note.id}" title="${count} of your selected descriptors suggest this. Starting intensity if you add: ${intensity}.">
           <span class="dot" style="background:${color}"></span>
           <span class="name">${note.label}</span>
-          <span class="group">${g.label}</span>
+          <span class="group">${g.label}${rationaleIcon}</span>
           <span class="wais-suggestion-count">×${count} → ${intensity}</span>
         </li>`;
       }).join('')}
@@ -3060,6 +3078,11 @@ function renderWaisSuggestionsMulti() {
     <button type="button" id="wais-add-all-btn" class="wais-add-all-btn">Add suggested flavor notes →</button>
   `;
 
+  // Stop info-icon clicks from bubbling to the row (which would scroll to
+  // the slider). Tooltip shows on hover regardless.
+  waisSuggestionsEl.querySelectorAll(".rationale-info").forEach(btn => {
+    btn.addEventListener("click", (e) => e.stopPropagation());
+  });
   // Clicking an individual suggestion still scrolls + focuses that slider
   // (doesn't auto-set intensity — the explicit "Add suggested flavor notes"
   // button does that for the whole set).
