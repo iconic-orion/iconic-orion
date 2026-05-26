@@ -251,6 +251,41 @@
     overflow-y: auto; padding: 12px; }
   /* Subtle search field at the top of the notes pane (below the legend).
      Filters note rows as the user types. */
+  /* "What am I smelling?" trigger button — subtle text link at top of notes pane */
+  .wais-open-btn { width: 100%; background: transparent; color: var(--accent);
+    border: 1px dashed var(--line); border-radius: 4px;
+    padding: 6px 10px; font-size: 11px; font-family: inherit; cursor: pointer;
+    margin-bottom: 8px; text-align: left;
+    transition: border-color 0.15s, background 0.15s; }
+  .wais-open-btn:hover { border-color: var(--accent); background: rgba(216, 166, 87, 0.06); }
+
+  /* WAIS modal content */
+  .wais-content { max-width: 640px; max-height: 80vh; }
+  .wais-title { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: 0.01em; }
+  .wais-body { padding: 18px 22px; }
+  .wais-lede { font-size: 12px; color: var(--ink-dim); margin: 0 0 14px; line-height: 1.5; }
+  .wais-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .wais-chip { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+    font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+  .wais-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .wais-chip.active { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  .wais-suggestions { font-size: 12px; color: var(--ink); line-height: 1.6; }
+  .wais-suggestions-empty { color: var(--ink-dim); font-style: italic; padding: 8px 0; }
+  .wais-suggestion-heading { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 8px; }
+  .wais-suggestion-list { list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 4px; }
+  .wais-suggestion-item { display: grid; grid-template-columns: 10px 1fr auto;
+    gap: 8px; align-items: center; padding: 6px 10px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px;
+    cursor: pointer; transition: border-color 0.15s; }
+  .wais-suggestion-item:hover { border-color: var(--accent); }
+  .wais-suggestion-item .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .wais-suggestion-item .name { color: var(--ink); }
+  .wais-suggestion-item .group { font-size: 10px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; }
+
   .notes-search { width: 100%; background: var(--bg); color: var(--ink);
     border: 1px solid var(--line); border-radius: 4px;
     padding: 6px 10px; font-size: 12px; font-family: inherit;
@@ -559,6 +594,10 @@
       </div>
     </div>
   </div>
+  <!-- Discovery aid: opens a modal of evocative descriptors that suggest which
+       specific notes to try. Subtle text button so it's there for people who
+       want it without crowding the pane for people who don't. -->
+  <button type="button" id="wais-open-btn" class="wais-open-btn">What am I smelling? →</button>
   <!-- Subtle search field at the top of the notes pane. Filters which note rows
        are visible as the user types. Empty query = show all. -->
   <input type="search" id="notes-search" class="notes-search" placeholder="Search notes…" autocomplete="off" />
@@ -604,6 +643,22 @@
       <button type="button" id="info-close-btn" class="info-close" aria-label="Close info">✕</button>
     </div>
     <div class="info-overlay-body" id="info-body" role="tabpanel"></div>
+  </div>
+</div>
+
+<!-- "What am I smelling?" modal — translates evocative descriptors to suggested
+     notes from the existing vocabulary. Closed by ✕ button or Escape. -->
+<div id="wais-overlay" class="info-overlay" role="dialog" aria-modal="true" aria-labelledby="wais-title" hidden>
+  <div class="info-overlay-content wais-content">
+    <div class="info-overlay-header">
+      <span id="wais-title" class="wais-title">What am I smelling?</span>
+      <button type="button" id="wais-close-btn" class="info-close" aria-label="Close">✕</button>
+    </div>
+    <div class="info-overlay-body wais-body">
+      <p class="wais-lede">Click a word that describes what you're noticing. We'll suggest specific notes to try.</p>
+      <div id="wais-chips" class="wais-chips"></div>
+      <div id="wais-suggestions" class="wais-suggestions"></div>
+    </div>
   </div>
 </div>
 
@@ -1020,6 +1075,37 @@ function formatRefFull(ref) {
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
 }
+
+// "What am I smelling?" descriptor map. Translates evocative everyday words
+// (floral, cheesey, petting zoo, musty…) to specific notes from the existing
+// vocabulary. The tool surfaces these as suggested sliders to try — it does
+// NOT auto-set intensities; the user picks. Each descriptor maps to a curated
+// subset of NOTES ids. Add/edit freely as the note set grows.
+const WAIS_DESCRIPTORS = [
+  { word: "floral",          notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
+  { word: "citrusy",         notes: ["lemon", "orange", "grapefruit"] },
+  { word: "fruity",          notes: ["berry", "apple", "stonefruit", "banana", "mango", "passionfruit"] },
+  { word: "tropical",        notes: ["mango", "passionfruit", "banana"] },
+  { word: "spicy / pungent", notes: ["clove", "cinnamon", "pepper", "anise"] },
+  { word: "roasty",          notes: ["coffee", "toast", "smoky", "burnt"] },
+  { word: "burnt / charred", notes: ["smoky", "burnt"] },
+  { word: "sweet / dessert", notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
+  { word: "musty",           notes: ["mushroom", "woody", "cardboard"] },
+  { word: "dusty",           notes: ["woody", "cardboard"] },
+  { word: "earthy / dirt",   notes: ["mushroom", "woody", "bellpepper"] },
+  { word: "green / vegetal", notes: ["green", "bellpepper"] },
+  { word: "herbal",          notes: ["lavender", "chamomile", "anise", "pine"] },
+  { word: "woody",           notes: ["woody", "pine"] },
+  { word: "nutty",           notes: ["almond", "hazelnut", "peanut"] },
+  { word: "cheesey / dairy", notes: ["buttery", "sulfury"] },
+  { word: "petting zoo",     notes: ["sulfury", "yeasty", "mushroom", "woody"] },
+  { word: "fermented",       notes: ["winey", "yeasty", "buttery"] },
+  { word: "stale / oxidized",notes: ["cardboard", "mushroom"] },
+  { word: "medicinal",       notes: ["clove", "anise"] },
+  { word: "smoky",           notes: ["smoky", "woody", "burnt"] },
+  { word: "fresh",           notes: ["lemon", "lavender", "pine"] },
+  { word: "resinous",        notes: ["pine", "woody"] }
+];
 
 // Jargon glossary — words people have heard in tasting circles but might not own.
 // Per [[project-information-access]]: define jargon, NOT baseline chemistry.
@@ -2725,6 +2811,86 @@ document.addEventListener("click", (e) => {
     e.preventDefault();
     openInfo(btn.dataset.openInfo);
   }
+});
+
+// ---------- "WHAT AM I SMELLING?" ----------
+// Vocabulary translator: user picks an evocative descriptor (floral, cheesey,
+// petting zoo...) and the tool suggests specific notes from the existing
+// vocabulary to try. Click a suggested note → modal closes, panel scrolls to
+// that slider with a flash highlight. No auto-set of intensity; the user
+// chooses how strong it actually is.
+const waisOverlayEl     = document.getElementById("wais-overlay");
+const waisChipsEl       = document.getElementById("wais-chips");
+const waisSuggestionsEl = document.getElementById("wais-suggestions");
+
+function openWais() {
+  waisOverlayEl.hidden = false;
+  renderWaisChips();
+  waisSuggestionsEl.innerHTML = '';
+}
+function closeWais() { waisOverlayEl.hidden = true; }
+
+function renderWaisChips() {
+  waisChipsEl.innerHTML = WAIS_DESCRIPTORS.map(d =>
+    `<button type="button" class="wais-chip" data-wais-word="${d.word}">${d.word}</button>`
+  ).join('');
+  waisChipsEl.querySelectorAll(".wais-chip").forEach(b => {
+    b.addEventListener("click", () => {
+      waisChipsEl.querySelectorAll(".wais-chip").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      renderWaisSuggestions(b.dataset.waisWord);
+    });
+  });
+}
+
+function renderWaisSuggestions(word) {
+  const entry = WAIS_DESCRIPTORS.find(d => d.word === word);
+  if (!entry) { waisSuggestionsEl.innerHTML = ''; return; }
+  // Filter to visible notes (respect Common/All filter)
+  const notes = entry.notes
+    .map(id => NOTE_BY_ID[id])
+    .filter(n => n && isNoteVisible(n.id));
+  if (notes.length === 0) {
+    waisSuggestionsEl.innerHTML = `
+      <div class="wais-suggestion-heading">Try these notes</div>
+      <div class="wais-suggestions-empty">All matches are niche notes that are currently filtered out. Switch the header to "All" to see them.</div>
+    `;
+    return;
+  }
+  waisSuggestionsEl.innerHTML = `
+    <div class="wais-suggestion-heading">Try these notes</div>
+    <ul class="wais-suggestion-list">
+      ${notes.map(n => {
+        const g = GROUP_BY_ID[n.group];
+        const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+        return `<li class="wais-suggestion-item" data-note="${n.id}">
+          <span class="dot" style="background:${color}"></span>
+          <span class="name">${n.label}</span>
+          <span class="group">${g.label}</span>
+        </li>`;
+      }).join('')}
+    </ul>
+  `;
+  waisSuggestionsEl.querySelectorAll(".wais-suggestion-item").forEach(li => {
+    li.addEventListener("click", () => {
+      const noteId = li.dataset.note;
+      closeWais();
+      const row = document.querySelector(`.note-row[data-note="${noteId}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 600);
+        const slider = row.querySelector("input[type=range]");
+        if (slider) slider.focus();
+      }
+    });
+  });
+}
+
+document.getElementById("wais-open-btn").addEventListener("click", openWais);
+document.getElementById("wais-close-btn").addEventListener("click", closeWais);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !waisOverlayEl.hidden) closeWais();
 });
 
 // ---------- INIT ----------
