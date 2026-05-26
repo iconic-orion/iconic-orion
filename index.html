@@ -141,6 +141,51 @@
     font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
   .back-to-grid:hover { color: var(--accent); }
 
+  /* Default Results pane: three stacked sections (Your inputs / Top compounds /
+     All possible compounds). Each section has its own heading + help line. */
+  .results-section { margin-bottom: 22px; }
+  .results-section:last-of-type { margin-bottom: 8px; }
+  .results-h { font-size: 13px; margin: 0 0 4px; letter-spacing: 0.02em; color: var(--ink); }
+  .results-section-help { font-size: 11px; color: var(--ink-dim); line-height: 1.4; margin-bottom: 10px; }
+  .results-disclaimer { font-size: 11px; color: var(--ink-dim); line-height: 1.5;
+    padding-top: 10px; border-top: 1px dotted var(--line); margin-top: 8px; }
+
+  /* Section 1 — Your inputs → arrows to key compounds */
+  .input-arrows { list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 8px; }
+  .input-arrow-row { display: grid; grid-template-columns: minmax(70px, auto) auto 1fr;
+    gap: 6px; align-items: baseline; font-size: 12px; line-height: 1.5; }
+  .input-name { color: var(--ink); font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .input-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .arrow { color: var(--ink-dim); font-size: 13px; }
+  .arrow-targets { color: var(--ink-dim); }
+  .arrow-target { background: transparent; border: none; padding: 0;
+    color: var(--accent); cursor: pointer; font: inherit;
+    border-bottom: 1px dotted transparent; }
+  .arrow-target:hover { border-bottom-color: var(--accent); }
+  .arrow-sep { color: var(--ink-dim); margin: 0 1px; }
+
+  /* Section 3 — Compact list of all active compounds */
+  .compound-compact { list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 4px; }
+  .compact-row { display: grid;
+    grid-template-columns: 8px minmax(0, 1.5fr) minmax(0, 1fr) 1fr 36px;
+    gap: 8px; align-items: center; padding: 4px 6px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px;
+    cursor: pointer; font-size: 11px;
+    transition: border-color 0.15s; }
+  .compact-row:hover { border-color: var(--accent); }
+  .compact-swatch { width: 8px; height: 8px; border-radius: 50%; }
+  .compact-name { color: var(--ink); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  .compact-class { color: var(--ink-dim); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .compact-bar { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+  .compact-bar > div { height: 100%; }
+  .compact-val { font-variant-numeric: tabular-nums; color: var(--accent);
+    text-align: right; font-weight: 600; }
+
   /* Wheel-corner overlays — readable text view of inputs (bottom-left) and
      compound suggestions (bottom-right). Hidden by default; shown in Go Deeper. */
   .wheel-overlay { position: absolute; bottom: 8px;
@@ -148,7 +193,6 @@
     padding: 6px 10px; font-size: 11px; display: none; max-width: 38%;
     max-height: 45%; overflow-y: auto; backdrop-filter: blur(4px); }
   body.go-deeper .wheel-overlay { display: block; }
-  .wheel-overlay.inputs { left: 8px; }
   .wheel-overlay.compounds { right: 8px; }
   .wheel-overlay-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--ink-dim); margin-bottom: 4px;
@@ -515,14 +559,10 @@
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
-  <!-- Go Deeper overlays (hidden unless body.go-deeper). Readable text view of
-       the working data: bottom-left = inputs the user has confirmed, bottom-right
-       = compound suggestions popping up. Lets users cross-reference
-       notes ↔ compounds without needing the slider or analysis panes visible. -->
-  <div class="wheel-overlay inputs">
-    <div class="wheel-overlay-header">Your inputs</div>
-    <ul class="wheel-overlay-list" id="overlay-inputs"></ul>
-  </div>
+  <!-- Go Deeper overlay (hidden unless body.go-deeper). Bottom-right shows the
+       top compound suggestions in compact list form. The "Your inputs" overlay
+       was moved into the Results pane as a stacked "Your inputs → compounds"
+       section, since it belongs with the rest of the results readout. -->
   <div class="wheel-overlay compounds">
     <div class="wheel-overlay-header">
       <span id="overlay-compounds-title">Top compounds</span>
@@ -1789,80 +1829,134 @@ function renderNoteDetail(noteId) {
   });
 }
 
+// Default Results-pane view (no compound selected). Three stacked sections:
+//   1. Your inputs — for each confirmed note, the compounds it maps to in
+//      literature, shown as direct arrows. Clickable to jump to that compound.
+//   2. Top compounds (by confidence) — ranked card grid of the top 6 active
+//      compounds, sorted by confidence (where the literature converges).
+//   3. All possible compounds — compact list of every active compound with a
+//      small intensity bar, sorted by intensity desc. The completeness layer.
 function renderAnalysisGrid() {
-  let nodes = compoundNodes.filter(n => isCompoundVisible(n.id));
-  if (state.sortBy === "intensity") {
-    nodes.sort((a,b) => b.score - a.score);
-  } else if (state.sortBy === "confidence") {
-    nodes.sort((a,b) => b.confidence - a.confidence || b.score - a.score);
-  } else {
-    nodes.sort((a,b) => {
-      const ca = CPD_BY_ID[a.id].class, cb = CPD_BY_ID[b.id].class;
-      if (ca !== cb) return ca.localeCompare(cb);
-      return b.score - a.score;
-    });
-  }
-  const anyActive = compoundNodes.some(n => n.intensity_raw > 0.001);
   const pct = v => Math.round(Math.min(1, v) * 100);
+  const activeNotes = NOTES.filter(n => hasAnyEntry(n.id) && isNoteVisible(n.id));
+  const allActive = compoundNodes
+    .filter(n => isCompoundVisible(n.id) && n.intensity_raw > 0);
+  const byConfidence = allActive.slice()
+    .sort((a, b) => b.confidence - a.confidence || b.intensity - a.intensity);
+  const topByConf = byConfidence.slice(0, 6);
+  const byIntensity = allActive.slice().sort((a, b) => b.intensity - a.intensity);
+
+  const disclaimerLine = `<div class="results-disclaimer">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></div>`;
+
+  // Empty state — nothing logged yet
+  if (activeNotes.length === 0 && allActive.length === 0) {
+    detailPanel.innerHTML = `
+      <div class="empty">Slide notes on the left to see what compounds they map to, ranked by literature confidence.</div>
+      ${disclaimerLine}
+    `;
+    return;
+  }
+
+  // SECTION 1: Your inputs → compound arrows
+  const section1 = activeNotes.length === 0
+    ? `<div class="empty" style="padding:8px 0;">Slide a note above 0 to see what compounds it maps to.</div>`
+    : `<ul class="input-arrows">
+        ${activeNotes.map(n => {
+          const edges = (NOTE_EDGES[n.id] || []).slice().sort((a, b) => b.w - a.w).slice(0, 3);
+          if (edges.length === 0) return '';
+          const g = GROUP_BY_ID[n.group];
+          const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+          const arrows = edges.map(e => {
+            const cpd = CPD_BY_ID[e.cpd];
+            return `<button type="button" class="arrow-target view-cpd" data-cpd="${cpd.id}" title="${cpd.class} · base weight ${e.w.toFixed(2)}">${cpd.label}</button>`;
+          }).join('<span class="arrow-sep"> · </span>');
+          return `<li class="input-arrow-row">
+            <span class="input-name"><span class="input-dot" style="background:${color}"></span>${n.label}</span>
+            <span class="arrow">→</span>
+            <span class="arrow-targets">${arrows}</span>
+          </li>`;
+        }).join('')}
+      </ul>`;
+
+  // SECTION 2: Top compounds by confidence (cards)
+  const section2 = topByConf.length === 0
+    ? ''
+    : `<div class="compound-grid">
+        ${topByConf.map(n => {
+          const c = CPD_BY_ID[n.id];
+          return `
+            <div class="cpd-card" data-cpd="${n.id}">
+              <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}</div>
+              <div class="meta">
+                <span class="pill">${c.class}</span>
+                <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
+                ${c.specificity === "signature" ? `<span class="pill signature" title="Marker compound for one note">signature</span>` : ''}
+                ${n.active_edges > 0 ? `<span class="pill">${n.active_edges} cite${n.active_edges>1?'s':''}</span>` : ''}
+              </div>
+              <div class="scores">
+                <div class="score-row">
+                  <span class="lbl">Intensity</span>
+                  <div class="bar"><div class="intensity" style="width:${pct(n.intensity)}%"></div></div>
+                  <span class="val">${pct(n.intensity)}</span>
+                </div>
+                <div class="score-row">
+                  <span class="lbl">Confidence</span>
+                  <div class="bar"><div class="confidence" style="width:${pct(n.confidence)}%"></div></div>
+                  <span class="val">${pct(n.confidence)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>`;
+
+  // SECTION 3: All possible compounds (compact list)
+  const section3 = byIntensity.length === 0
+    ? ''
+    : `<ul class="compound-compact">
+        ${byIntensity.map(n => {
+          const c = CPD_BY_ID[n.id];
+          const color = compoundColor(c);
+          return `<li class="compact-row view-cpd" data-cpd="${c.id}">
+            <span class="compact-swatch" style="background:${color}"></span>
+            <span class="compact-name">${c.label}</span>
+            <span class="compact-class">${c.class}</span>
+            <span class="compact-bar"><div style="width:${pct(n.intensity)}%; background:${color}"></div></span>
+            <span class="compact-val">${pct(n.intensity)}%</span>
+          </li>`;
+        }).join('')}
+      </ul>`;
 
   detailPanel.innerHTML = `
-    <div class="compounds-header">
-      <h2>Compounds</h2>
-      <div class="help">${anyActive
-        ? `Click a card for citations and contributing notes. Greyed-out = no support from current notes. Intensity is modulated by each compound's odor-threshold tier; Confidence reflects literature breadth × strength.`
-        : `Move sliders on the left to weight perceived aromas — compounds light up here as evidence accumulates.`}
-        <span style="display:block; margin-top:6px;">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></span></div>
-      <div class="sort" id="analysis-sort">
-        <button type="button" data-sort="intensity" class="${state.sortBy === 'intensity' ? 'active' : ''}">Intensity</button>
-        <button type="button" data-sort="confidence" class="${state.sortBy === 'confidence' ? 'active' : ''}">Confidence</button>
-        <button type="button" data-sort="class" class="${state.sortBy === 'class' ? 'active' : ''}">Class</button>
-      </div>
+    <div class="results-section">
+      <h3 class="results-h">Your inputs</h3>
+      <div class="results-section-help">The compounds most often associated with each note you've reported, from the literature.</div>
+      ${section1}
     </div>
-    <div class="compound-grid">
-      ${nodes.map(n => {
-        const c = CPD_BY_ID[n.id];
-        const inactive = n.intensity_raw <= 0.001;
-        return `
-          <div class="cpd-card ${inactive ? 'inactive' : ''}" data-cpd="${n.id}">
-            <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}</div>
-            <div class="meta">
-              <span class="pill">${c.class}</span>
-              <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
-              ${c.specificity === "signature" ? `<span class="pill signature" title="Marker compound for one note">signature</span>` : ''}
-              ${n.active_edges > 0 ? `<span class="pill">${n.active_edges} cite${n.active_edges>1?'s':''}</span>` : ''}
-            </div>
-            <div class="scores">
-              <div class="score-row">
-                <span class="lbl">Intensity</span>
-                <div class="bar"><div class="intensity" style="width:${pct(n.intensity)}%"></div></div>
-                <span class="val">${pct(n.intensity)}</span>
-              </div>
-              <div class="score-row">
-                <span class="lbl">Confidence</span>
-                <div class="bar"><div class="confidence" style="width:${pct(n.confidence)}%"></div></div>
-                <span class="val">${pct(n.confidence)}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+
+    ${section2 ? `<div class="results-section">
+      <h3 class="results-h">Top compounds (by confidence)</h3>
+      <div class="results-section-help">Where your notes converge with literature backing. Click for citations.</div>
+      ${section2}
+    </div>` : ''}
+
+    ${section3 ? `<div class="results-section">
+      <h3 class="results-h">All possible compounds</h3>
+      <div class="results-section-help">Everything with any signal from your current notes, ranked by intensity.</div>
+      ${section3}
+    </div>` : ''}
+
+    ${disclaimerLine}
   `;
 
-  // Wire card clicks → select compound (switches to detail mode on next render)
-  detailPanel.querySelectorAll(".cpd-card").forEach(el => {
+  // Wire all compound-target clicks (cards in section 2, compact rows in
+  // section 3, arrow targets in section 1) → select that compound.
+  detailPanel.querySelectorAll("[data-cpd]").forEach(el => {
     el.addEventListener("click", () => {
       state.selectedCompound = el.dataset.cpd;
       state.selectedNote = null;
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
-    });
-  });
-  // Wire sort buttons
-  detailPanel.querySelectorAll("#analysis-sort button").forEach(b => {
-    b.addEventListener("click", () => {
-      state.sortBy = b.dataset.sort;
-      renderAnalysisGrid();
     });
   });
 }
@@ -1940,35 +2034,13 @@ function renderCompoundDetail(cpdId, banner) {
   });
 }
 
-// ---------- WHEEL CORNER OVERLAYS (Go Deeper) ----------
-// Two text overlays sitting in the bottom corners of the wheel, only visible
-// when Go Deeper is on. Bottom-left lists confirmed user inputs (entries);
-// bottom-right lists top compound suggestions. Lets users cross-reference
-// notes ↔ compounds without needing both side panes visible.
-const overlayInputsEl    = document.getElementById("overlay-inputs");
+// ---------- WHEEL CORNER OVERLAY (Go Deeper) ----------
+// Bottom-right of the wheel only — top compound suggestions in compact list
+// form, only visible when Go Deeper is on. The previous bottom-left "Your
+// inputs" overlay was moved into the Results pane as its own stacked section.
 const overlayCompoundsEl = document.getElementById("overlay-compounds");
 
 function renderWheelOverlays() {
-  // Inputs: all confirmed entries, filtered by visibility + phase hide,
-  // sorted by intensity (largest first).
-  const entries = [];
-  for (const [key, intensity] of state.entries) {
-    const sep = key.indexOf(":");
-    const noteId = sep < 0 ? key : key.slice(0, sep);
-    const phase  = sep < 0 ? null : key.slice(sep + 1);
-    if (!isNoteVisible(noteId)) continue;
-    if (phase && state.hiddenPhases.has(phase)) continue;
-    entries.push({ noteId, phase, intensity });
-  }
-  entries.sort((a, b) => b.intensity - a.intensity);
-  overlayInputsEl.innerHTML = entries.length === 0
-    ? `<li class="empty">No notes confirmed yet.</li>`
-    : entries.map(e => {
-        const n = NOTE_BY_ID[e.noteId];
-        const phaseTag = e.phase ? `<span class="phase">${e.phase}</span>` : '';
-        return `<li><span class="name">${n.label}</span>${phaseTag}<span class="val">${e.intensity}</span></li>`;
-      }).join('');
-
   // Bottom-right overlay can group by individual compound (default) or by
   // chemical class — gives a quick "what families am I picking up" read.
   const titleEl = document.getElementById("overlay-compounds-title");
