@@ -549,7 +549,7 @@
 <header>
   <h1>Aroma Wheel</h1>
   <span class="spacer"></span>
-  <div class="tabs" id="view-tabs" title="View mode — Wheel is always shown; tabs control which side panes are visible">
+  <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
     <button data-view="note-input">Notes</button>
     <button data-view="dashboard" class="active">Reset View</button>
     <button data-view="analysis">Results</button>
@@ -559,7 +559,7 @@
     <button data-filter="common" class="active">Common</button>
     <button data-filter="all">All</button>
   </div>
-  <button id="info-open-btn" title="About / How to Use / Types of Aroma — reference and glossary" aria-label="Open info">i</button>
+  <button id="info-open-btn" title="About, Methodology, How to Use, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
   <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
   <button id="reset">Reset</button>
   <button id="demo-coffee">Demo: Coffee</button>
@@ -626,7 +626,7 @@
   </div>
 </main>
 <aside class="detail" id="detail-panel">
-  <div class="empty">Click a compound to see contributing notes and citations. Move sliders on the left to weight perceived aromas — compounds light up as evidence accumulates.</div>
+  <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
 </aside>
 
 <!-- Info overlay (the "i" tab). Three sub-tabs: About / How to Use / Types of Aroma.
@@ -745,7 +745,7 @@ const COMPOUNDS = [
   { id: "geraniol",      label: "Geraniol",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~3.2 ppb (Buttery 1981).", note: "Rose-like monoterpenoid." },
   { id: "bcaryo",        label: "β-Caryophyllene",   class: "terpene",   threshold: "high",     specificity: "shared",    thresholdSrc: "~64 ppb (Jirovetz et al. 2002).", note: "Woody-spicy sesquiterpene; pepper." },
   { id: "apinene",       label: "α-Pinene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~6 ppb (Buttery 1981).", note: "Pine-resinous monoterpene." },
-  { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002).", note: "Lavender principal — ~40% of lavender oil; floral-fresh." },
+  { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002).", note: "Lavender principal. About 40% of lavender oil. Floral-fresh." },
   { id: "bisabolol",     label: "α-Bisabolol",       class: "terpene",   threshold: "medium",   specificity: "signature", thresholdSrc: "~22 ppb (Mann & Staba 1986).", note: "Chamomile principal sesquiterpenol; soft floral-herbal." },
   // pyrazines
   { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", specificity: "signature", thresholdSrc: "~2 ng/L water (Allen, Lacey, Boyd 1991).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
@@ -767,7 +767,7 @@ const COMPOUNDS = [
   { id: "sotolon",       label: "Sotolon",           class: "lactone",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.3 ppb (Pham et al. 1995).", note: "Maple/fenugreek/curry; aged sake, vin jaune." },
   // aldehydes
   { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
-  { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal — >50% of cinnamon bark oil." },
+  { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
   { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
   { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau & Collin 2003).", note: "Cardboard/stale; beer & coffee staling marker." },
   { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
@@ -911,23 +911,23 @@ const COMPOUND_ORIGINS = {
   edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn.",
   dempyr:        "Roasted coffee (key odorant), baked products.",
   furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugars, baked goods.",
-  fft:           "Freshly brewed coffee — the signature roast-coffee thiol.",
+  fft:           "Freshly brewed coffee. The signature roast-coffee thiol.",
   mh3:           "Passionfruit, Sauvignon Blanc, grapefruit, blackcurrant, guava.",
   mmp4:          "Sauvignon Blanc, passionfruit, boxwood, blackcurrant buds.",
   mfthiol:       "Fresh coffee (freshness marker); cooked cabbage / cooked seafood at higher concentrations.",
-  etbut:         "Pineapple, apple, strawberry, banana — fruity ester from fermentation.",
-  ethex:         "Berry, apple, pineapple — fermentation ester common in wine and beer.",
-  iaac:          "Banana, pear — the classic ester produced by yeast in beer and wine fermentation.",
+  etbut:         "Pineapple, apple, strawberry, banana. A fruity ester from fermentation.",
+  ethex:         "Berry, apple, pineapple. Fermentation ester common in wine and beer.",
+  iaac:          "Banana, pear. The classic ester produced by yeast in beer and wine fermentation.",
   gdecal:        "Peach, mango, apricot, ripe stonefruit, dairy.",
   gnonal:        "Coconut, creamy notes, aged spirits, oak-aged wines.",
   sotolon:       "Maple syrup, fenugreek, curry, aged sake, vin jaune, lovage.",
   vanillin:      "Vanilla pods, oak wood (extracted during barrel aging), some woody plants.",
   cinnamald:     "Cinnamon bark (>50% of cinnamon bark essential oil).",
-  hexanal:       "Cut grass, green leaves, unripe fruits, fresh cucumber — produced from lipid oxidation.",
-  e2non:         "Stale beer, stale coffee, cucumber, cardboard — a marker for oxidative staling.",
+  hexanal:       "Cut grass, green leaves, unripe fruits, fresh cucumber. Produced from lipid oxidation.",
+  e2non:         "Stale beer, stale coffee, cucumber, cardboard. A marker for oxidative staling.",
   benzald:       "Bitter almond, marzipan, cherry pits, stone-fruit kernels, almond extract.",
-  phenylacet:    "Honey, rose, hyacinth, cocoa — Strecker degradation aldehyde.",
-  diacetyl:      "Butter, buttery popcorn, butterscotch — from malolactic fermentation (wine/beer) and dairy.",
+  phenylacet:    "Honey, rose, hyacinth, cocoa. Strecker degradation aldehyde.",
+  diacetyl:      "Butter, buttery popcorn, butterscotch. From malolactic fermentation (wine/beer) and dairy.",
   bdam:          "Cooked apple, honey, tobacco, black tea, wine (rose/raspberry/tobacco accents).",
   guaiacol:      "Smoke, charred wood, roasted coffee, whisky, smoked foods.",
   vinguai:       "Clove, smoke, wheat beer, robusta coffee.",
@@ -937,16 +937,16 @@ const COMPOUND_ORIGINS = {
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
 // pyrazine) ARE the kind of jargon worth defining; specific molecules live below.
 const COMPOUND_CLASS_INFO = {
-  terpene:             "Plant-made aroma compounds built from isoprene units. Monoterpenes (10 carbons) are smaller and more volatile — citrus, pine, lavender. Sesquiterpenes (15 carbons) are heavier and slower-release — pepper, chamomile.",
+  terpene:             "Plant-made aroma compounds built from isoprene units. Monoterpenes (10 carbons) are smaller and more volatile: think citrus, pine, lavender. Sesquiterpenes (15 carbons) are heavier and slower-release: think pepper, chamomile.",
   pyrazine:            "Nitrogen-containing rings formed during the Maillard reaction (browning). Roasted, nutty, sometimes vegetal. Dominant in coffee, cocoa, roasted nuts, and the unmistakable bell-pepper note (IBMP).",
   furan:               "Oxygen-containing rings from sugar caramelization and Maillard browning. Bready, sweet, caramel. Furfural is the classic.",
-  thiol:               "Sulfur compounds — often potent at parts-per-trillion. Disproportionately responsible for tropical-fruit (passionfruit, grapefruit) and freshly-brewed-coffee notes.",
+  thiol:               "Sulfur compounds, often potent at parts-per-trillion. Disproportionately responsible for tropical-fruit (passionfruit, grapefruit) and freshly-brewed-coffee notes.",
   ester:               "Acids combined with alcohols. Often fruity and sweet; commonly produced during fermentation. Bananas (isoamyl acetate), apples (ethyl butanoate), berries (ethyl hexanoate).",
   lactone:             "Cyclic esters. Creamy, coconut, peachy, maple. Stable in aging spirits and barrel-aged wines.",
   aldehyde:            "Carbonyl group at the end of a carbon chain. Range widely: grassy (hexanal), bitter-almond (benzaldehyde), honey-floral (phenylacetaldehyde).",
-  "phenolic-aldehyde": "Aldehydes attached to an aromatic ring. Vanillin is the canonical example — the principal odorant of vanilla and a major contributor to oak-aged spirits and wines.",
+  "phenolic-aldehyde": "Aldehydes attached to an aromatic ring. Vanillin is the canonical example: the principal odorant of vanilla and a major contributor to oak-aged spirits and wines.",
   ketone:              "Carbonyl group in the middle of a carbon chain. Diacetyl is the buttery one (malolactic fermentation); other ketones span cooked-apple, floral, and tobacco-like notes.",
-  norisoprenoid:       "Fragments of broken-down carotenoid pigments — the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
+  norisoprenoid:       "Fragments of broken-down carotenoid pigments, the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
   phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers."
 };
 
@@ -1111,21 +1111,21 @@ const WAIS_DESCRIPTORS = [
 // Per [[project-information-access]]: define jargon, NOT baseline chemistry.
 // We're NOT defining "what is a carbon atom"; we ARE defining "what is a tannin."
 const JARGON = [
-  { term: "tannin",          def: "Astringent polyphenols (mostly from grape skins, oak, and tea leaves) that give the drying, gripping mouthfeel — not an aroma per se, but commonly conflated with flavor." },
-  { term: "terroir",          def: "The sense of place in an agricultural product — soil, climate, microbes, even the wind. Why two Sauvignon Blancs from different vineyards can taste meaningfully different." },
+  { term: "tannin",          def: "Astringent polyphenols (mostly from grape skins, oak, and tea leaves) that give the drying, gripping mouthfeel. Not an aroma per se, but commonly conflated with flavor." },
+  { term: "terroir",          def: "The sense of place in an agricultural product. Soil, climate, microbes, even the wind. Why two Sauvignon Blancs from different vineyards can taste meaningfully different." },
   { term: "Maillard reaction", def: "Browning chemistry: amino acids reacting with sugars at high heat. The source of most roasted / toasted / baked aromas (pyrazines, furans, melanoidins)." },
-  { term: "Strecker degradation", def: "A branch of the Maillard reaction that produces small aldehydes — gives floral, malty, honey notes like phenylacetaldehyde." },
-  { term: "malolactic fermentation", def: "Secondary fermentation in wine (and many beers) where bacteria convert sharp malic acid to softer lactic acid — produces diacetyl, the buttery note." },
-  { term: "GC-MS",            def: "Gas chromatography mass spectrometry — the lab method that separates a sample into its volatile components and identifies each by molecular mass. The data source behind most 'what's actually in this aroma' claims." },
+  { term: "Strecker degradation", def: "A branch of the Maillard reaction that produces small aldehydes. Gives floral, malty, honey notes like phenylacetaldehyde." },
+  { term: "malolactic fermentation", def: "Secondary fermentation in wine (and many beers) where bacteria convert sharp malic acid to softer lactic acid. Produces diacetyl, the buttery note." },
+  { term: "GC-MS",            def: "Gas chromatography mass spectrometry: the lab method that separates a sample into its volatile components and identifies each by molecular mass. The data source behind most 'what's actually in this aroma' claims." },
   { term: "odor threshold",   def: "The minimum concentration at which a typical person can detect a compound. Very-low-threshold compounds (furfurylthiol, IBMP) punch far above their weight." },
   { term: "signature compound", def: "A compound so distinctive that a trace alone reads as the source aroma. Cinnamaldehyde = cinnamon; vanillin = vanilla; sotolon = maple." },
   { term: "orthonasal olfaction", def: "Smelling through the front of the nose on the inhale. What perfumery emphasizes; what you do when you sniff over the cup before drinking." },
   { term: "retronasal olfaction", def: "Smelling through the back of the throat on the exhale, often post-swallow. Most of what people call 'flavor' is actually this." },
   { term: "perception threshold", def: "Same as odor threshold but applied to taste/mouthfeel. The point at which you become aware of a stimulus, varying with body state and prior exposure." },
   { term: "polyfunctional thiol", def: "A thiol with multiple reactive groups. Hugely impactful in wine and beer (3-MH for passionfruit/grapefruit, 4MMP for boxwood/blackcurrant) despite tiny concentrations." },
-  { term: "ppt / ppb / ppm",   def: "Parts per trillion / billion / million — concentration units used for odor thresholds. 1 ppt ≈ one drop in 20 Olympic swimming pools." },
+  { term: "ppt / ppb / ppm",   def: "Parts per trillion / billion / million: concentration units used for odor thresholds. 1 ppt is roughly one drop in 20 Olympic swimming pools." },
   { term: "volatile",          def: "Small enough to evaporate at room temperature and reach your nose. Aroma compounds are by definition volatile; non-volatile compounds contribute to taste/mouthfeel but not smell." },
-  { term: "Brettanomyces / 'Brett'", def: "A wild yeast genus. Produces phenolic, barnyard, leather, smoke notes — defect in most wines, signature in some beers and a few cult wines." }
+  { term: "Brettanomyces / 'Brett'", def: "A wild yeast genus. Produces phenolic, barnyard, leather, smoke notes. Considered a defect in most wines, signature in some beers and a few cult wines." }
 ];
 
 // ---------- INDEXING ----------
@@ -2094,7 +2094,7 @@ function renderCompoundDetail(cpdId, banner) {
         <span style="text-align:right; font-variant-numeric:tabular-nums;">${pct(node.confidence)}</span>
       </div>
       <div style="font-size:11px; color:var(--ink-dim); margin-top:8px; line-height:1.5;">
-        Odor threshold: <strong style="color:var(--ink)">${c.threshold}</strong> — ${c.thresholdSrc}
+        Odor threshold: <strong style="color:var(--ink)">${c.threshold}</strong>. ${c.thresholdSrc}
       </div>
     </div>
 
@@ -2751,7 +2751,7 @@ function renderTypesOfAroma() {
     </div>
 
     <div class="info-section">
-      <div class="info-section-title">Glossary — words worth owning</div>
+      <div class="info-section-title">Glossary: words worth owning</div>
       ${jargonHtml || '<div class="info-no-results">No glossary entries match.</div>'}
     </div>
 
@@ -2761,7 +2761,7 @@ function renderTypesOfAroma() {
     </div>
 
     <div class="info-section">
-      <div class="info-section-title">Individual compounds — where they occur in nature</div>
+      <div class="info-section-title">Individual compounds: where they occur in nature</div>
       ${compoundsHtml || '<div class="info-no-results">No compounds match.</div>'}
     </div>
   `;
