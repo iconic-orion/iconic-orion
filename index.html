@@ -458,8 +458,8 @@
 
   .center-ring { fill: none; stroke: var(--line); stroke-dasharray: 2 4; }
   .group-arc { fill: none; stroke-width: 18; opacity: 0.7; }
-  .group-arc-label { font-size: 10px; fill: var(--ink-dim); text-transform: uppercase;
-    letter-spacing: 0.15em; }
+  .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
+    letter-spacing: 0.15em; opacity: 0.7; }
 </style>
 </head>
 <body>
@@ -1243,9 +1243,18 @@ function drawGroupArcs() {
 }
 
 function drawNotes() {
-  const sel = gNotes.selectAll("g.note").data(getVisibleNotes(), d => d.id);
+  // Only render notes that have at least one confirmed entry. The wheel
+  // populates as the user inputs perceptions on the left; group arcs and
+  // category labels remain visible so the spatial map is always legible.
+  // Positions are still computed for ALL visible notes (so a confirmed
+  // note appears at its consistent group-sector position), only the
+  // rendering is gated on hasAnyEntry.
+  const renderable = getVisibleNotes().filter(n => hasAnyEntry(n.id));
+  const sel = gNotes.selectAll("g.note").data(renderable, d => d.id);
   sel.exit().remove();
-  const enter = sel.enter().append("g").attr("class", "note")
+  // Every rendered note has at least one entry by definition, so the .active
+  // styling (heavier stroke) applies to all of them from the start.
+  const enter = sel.enter().append("g").attr("class", "note active")
     .on("mouseenter", function(e, d) {
       state.hoveredNote = d.id;
       d3.select(this).raise();  // pop hovered note + its label above siblings
@@ -1377,8 +1386,11 @@ function tick() {
     }
   });
 
-  // render compounds (filtered by class visibility)
-  const sel = gComps.selectAll("g.compound").data(getVisibleCompoundNodes(), d => d.id);
+  // Render compounds with non-trivial evidence only. Empty state of the wheel
+  // shows just the group arcs + labels; compounds populate as confirmed notes
+  // feed them. Filtered by class visibility AND intensity_raw > 0.
+  const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
   sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "compound")
     .on("mouseenter", function(e, d) {
@@ -1494,7 +1506,9 @@ function recompute() {
     node.score = node.intensity;
     node.radius = 5 + Math.min(12, node.score * 8);
   });
-  gNotes.selectAll("g.note").classed("active", d => hasAnyEntry(d.id));
+  // Update which notes are rendered on the wheel. The set changes whenever
+  // entries are added or removed, so drawNotes belongs in the recompute loop.
+  drawNotes();
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
