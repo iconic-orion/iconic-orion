@@ -289,6 +289,20 @@
   .wais-suggestion-item .name { color: var(--ink); }
   .wais-suggestion-item .group { font-size: 10px; color: var(--ink-dim);
     text-transform: uppercase; letter-spacing: 0.06em; }
+  .wais-suggestion-item { grid-template-columns: 10px 1fr auto auto !important; }
+  .wais-suggestion-count { font-size: 10px; color: var(--accent); font-weight: 600;
+    font-variant-numeric: tabular-nums; margin-left: 6px;
+    border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+    background: var(--bg); }
+
+  /* "Add suggested flavor notes" — the submit at the bottom of the
+     suggestions list. Prominent so the user sees it as the next action. */
+  .wais-add-all-btn { display: block; width: 100%; margin-top: 16px;
+    background: var(--accent); color: #1a1810; border: 1px solid var(--accent);
+    border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s; }
+  .wais-add-all-btn:hover { background: #e8b667; border-color: #e8b667; }
 
   .notes-search { width: 100%; background: var(--bg); color: var(--ink);
     border: 1px solid var(--line); border-radius: 4px;
@@ -2953,12 +2967,25 @@ const waisOverlayEl     = document.getElementById("wais-overlay");
 const waisChipsEl       = document.getElementById("wais-chips");
 const waisSuggestionsEl = document.getElementById("wais-suggestions");
 
+// Multi-select: which descriptor chips are currently active. Cleared each
+// time the modal opens fresh.
+let waisSelected = new Set();
+
 function openWais() {
+  waisSelected = new Set();
   waisOverlayEl.hidden = false;
   renderWaisChips();
-  waisSuggestionsEl.innerHTML = '';
+  renderWaisSuggestionsMulti();
 }
 function closeWais() { waisOverlayEl.hidden = true; }
+
+function findWaisEntry(word) {
+  for (const cat of WAIS_DESCRIPTORS) {
+    const e = cat.entries.find(d => d.word === word);
+    if (e) return e;
+  }
+  return null;
+}
 
 function renderWaisChips() {
   waisChipsEl.innerHTML = WAIS_DESCRIPTORS.map(cat => `
@@ -2966,53 +2993,74 @@ function renderWaisChips() {
       <div class="wais-category-title">${cat.category}</div>
       <div class="wais-category-chips">
         ${cat.entries.map(d =>
-          `<button type="button" class="wais-chip" data-wais-word="${d.word}">${d.word}</button>`
+          `<button type="button" class="wais-chip ${waisSelected.has(d.word) ? 'active' : ''}" data-wais-word="${d.word}">${d.word}</button>`
         ).join('')}
       </div>
     </div>
   `).join('');
   waisChipsEl.querySelectorAll(".wais-chip").forEach(b => {
     b.addEventListener("click", () => {
-      waisChipsEl.querySelectorAll(".wais-chip").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      renderWaisSuggestions(b.dataset.waisWord);
+      const word = b.dataset.waisWord;
+      if (waisSelected.has(word)) waisSelected.delete(word);
+      else waisSelected.add(word);
+      b.classList.toggle("active");
+      renderWaisSuggestionsMulti();
     });
   });
 }
 
-function renderWaisSuggestions(word) {
-  // Walk categories to find the descriptor entry by word.
-  let entry = null;
-  for (const cat of WAIS_DESCRIPTORS) {
-    entry = cat.entries.find(d => d.word === word);
-    if (entry) break;
+// Aggregate suggested notes across all selected chips. Each note's count =
+// how many of the active chips suggest it. The "Add suggested flavor notes"
+// button at the bottom commits all of them at intensity min(10, count × 3),
+// so a note suggested by three chips ends up at 9, a note from one chip at 3.
+function renderWaisSuggestionsMulti() {
+  if (waisSelected.size === 0) {
+    waisSuggestionsEl.innerHTML = `<div class="wais-suggestions-empty">Click chips above to see suggested notes. Select multiple to combine — the more descriptors suggest the same note, the higher its starting intensity if you add them.</div>`;
+    return;
   }
-  if (!entry) { waisSuggestionsEl.innerHTML = ''; return; }
-  // Filter to visible notes (respect Common/All filter)
-  const notes = entry.notes
-    .map(id => NOTE_BY_ID[id])
-    .filter(n => n && isNoteVisible(n.id));
-  if (notes.length === 0) {
+
+  // Tally how many active chips suggest each note. Filter to visible notes.
+  const counts = new Map();
+  for (const word of waisSelected) {
+    const entry = findWaisEntry(word);
+    if (!entry) continue;
+    for (const noteId of entry.notes) {
+      counts.set(noteId, (counts.get(noteId) || 0) + 1);
+    }
+  }
+  const sorted = [...counts.entries()]
+    .filter(([nid]) => isNoteVisible(nid))
+    .sort((a, b) => b[1] - a[1] || NOTE_BY_ID[a[0]].label.localeCompare(NOTE_BY_ID[b[0]].label))
+    .map(([nid, count]) => ({ note: NOTE_BY_ID[nid], count, intensity: Math.min(10, count * 3) }));
+
+  if (sorted.length === 0) {
     waisSuggestionsEl.innerHTML = `
-      <div class="wais-suggestion-heading">Try these notes</div>
-      <div class="wais-suggestions-empty">All matches are niche notes that are currently filtered out. Switch the header to "All" to see them.</div>
+      <div class="wais-suggestion-heading">Notes to try</div>
+      <div class="wais-suggestions-empty">All matches are niche notes that are filtered out. Switch the header filter to "All" to see them.</div>
     `;
     return;
   }
+
   waisSuggestionsEl.innerHTML = `
-    <div class="wais-suggestion-heading">Try these notes</div>
+    <div class="wais-suggestion-heading">Notes to try (sorted by how many of your selected descriptors suggest them)</div>
     <ul class="wais-suggestion-list">
-      ${notes.map(n => {
-        const g = GROUP_BY_ID[n.group];
+      ${sorted.map(({ note, count, intensity }) => {
+        const g = GROUP_BY_ID[note.group];
         const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
-        return `<li class="wais-suggestion-item" data-note="${n.id}">
+        return `<li class="wais-suggestion-item" data-note="${note.id}" title="${count} of your selected descriptors suggest this. Starting intensity if you add: ${intensity}.">
           <span class="dot" style="background:${color}"></span>
-          <span class="name">${n.label}</span>
+          <span class="name">${note.label}</span>
           <span class="group">${g.label}</span>
+          <span class="wais-suggestion-count">×${count} → ${intensity}</span>
         </li>`;
       }).join('')}
     </ul>
+    <button type="button" id="wais-add-all-btn" class="wais-add-all-btn">Add suggested flavor notes →</button>
   `;
+
+  // Clicking an individual suggestion still scrolls + focuses that slider
+  // (doesn't auto-set intensity — the explicit "Add suggested flavor notes"
+  // button does that for the whole set).
   waisSuggestionsEl.querySelectorAll(".wais-suggestion-item").forEach(li => {
     li.addEventListener("click", () => {
       const noteId = li.dataset.note;
@@ -3026,6 +3074,21 @@ function renderWaisSuggestions(word) {
         if (slider) slider.focus();
       }
     });
+  });
+
+  // "Add suggested flavor notes" → commits each suggested note as a default
+  // (null-phase) entry at its derived intensity, then closes and re-renders.
+  const addBtn = document.getElementById("wais-add-all-btn");
+  if (addBtn) addBtn.addEventListener("click", () => {
+    sorted.forEach(({ note, intensity }) => {
+      commitEntry(note.id, null, intensity);
+      state.pendingIntensity[note.id] = intensity;
+    });
+    closeWais();
+    // Rebuild the panel so slider positions reflect the new entries, then
+    // recompute the wheel and analysis pane.
+    buildNotesPanel();
+    recompute();
   });
 }
 
