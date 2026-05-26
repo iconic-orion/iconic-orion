@@ -264,7 +264,11 @@
   .wais-title { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: 0.01em; }
   .wais-body { padding: 18px 22px; }
   .wais-lede { font-size: 12px; color: var(--ink-dim); margin: 0 0 14px; line-height: 1.5; }
-  .wais-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .wais-chips { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+  .wais-category { display: flex; flex-direction: column; gap: 6px; }
+  .wais-category-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); padding-bottom: 2px; border-bottom: 1px dotted var(--line); }
+  .wais-category-chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .wais-chip { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer;
     font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s; }
@@ -688,6 +692,8 @@ const NOTES = [
   { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true  },
   { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true  },
   { id: "banana",      label: "Banana",             group: "fruity",   common: true  },
+  { id: "pineapple",   label: "Pineapple",          group: "fruity",   common: true  },
+  { id: "cherry",      label: "Cherry",             group: "fruity",   common: true  },
   { id: "mango",       label: "Mango",              group: "fruity",   common: false },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false },
   // floral
@@ -716,6 +722,7 @@ const NOTES = [
   { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false },
   { id: "green",       label: "Green / grassy",     group: "earthy",   common: true  },
   { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true  },
+  { id: "mint",        label: "Mint",               group: "earthy",   common: true  },
   { id: "tobacco",     label: "Tobacco",            group: "earthy",   common: false },
   // sweet
   { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true  },
@@ -779,7 +786,17 @@ const COMPOUNDS = [
   // phenols
   { id: "guaiacol",      label: "Guaiacol",          class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Maga 1978).", note: "Smoky-medicinal; roast and wood." },
   { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
-  { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." }
+  { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." },
+  // Norisoprenoids
+  { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Naef et al. 2011).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents." },
+  // Alcohols (non-terpene)
+  { id: "octen3ol",      label: "1-Octen-3-ol",      class: "alcohol",   threshold: "low",      specificity: "signature", thresholdSrc: "~10 ppb (Combet et al. 2006).", note: "The 'mushroom alcohol.' Fresh-mushroom, forest-floor, blue-cheese accents." },
+  // More furans (Maillard / fruit)
+  { id: "furaneol",      label: "Furaneol (HDMF)",   class: "furan",     threshold: "low",      specificity: "shared",    thresholdSrc: "~10 ppb (Buttery et al. 1995).", note: "4-hydroxy-2,5-dimethyl-3(2H)-furanone. Strawberry/pineapple/cooked-fruit principal; also a Maillard product in coffee and bread crust." },
+  // More terpenes (eucalyptol, geosmin, menthol)
+  { id: "cineole",       label: "1,8-Cineole",       class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~12 ppb (Lis-Balchin 2002).", note: "Eucalyptol. Eucalyptus principal; also rosemary, sage, bay leaves, mint family." },
+  { id: "geosmin",       label: "Geosmin",           class: "terpene",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Darriet et al. 2000).", note: "The 'wet earth' compound. Petrichor, beetroot, mushroom, cork taint." },
+  { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -877,7 +894,35 @@ const EDGES = [
   { note: "yeasty",  cpd: "furfural", w: 0.30, cite: "Flament 2002 (bread crust)." },
   { note: "sulfury", cpd: "mfthiol",  w: 0.90, cite: "Mayer, Czerny, Grosch 2000 (methanethiol in fresh coffee)." },
   { note: "sulfury", cpd: "fft",      w: 0.35, cite: "Blank et al. 1992." },
-  { note: "cardboard", cpd: "e2non",  w: 0.95, cite: "Lermusieau & Collin 2003 ((E)-2-nonenal, beer staling)." }
+  { note: "cardboard", cpd: "e2non",  w: 0.95, cite: "Lermusieau & Collin 2003 ((E)-2-nonenal, beer staling)." },
+
+  // ---- New notes' edges (Pineapple, Cherry, Mint) ----
+  { note: "pineapple",  cpd: "etbut",    w: 0.80, cite: "Berger 2007; Steingass 2017 (ethyl butanoate, pineapple ester profile)." },
+  { note: "pineapple",  cpd: "ethex",    w: 0.55, cite: "Berger 2007 (ethyl hexanoate in pineapple)." },
+  { note: "pineapple",  cpd: "iaac",     w: 0.40, cite: "Berger 2007 (isoamyl acetate, banana-pineapple ester crossover)." },
+  { note: "pineapple",  cpd: "furaneol", w: 0.65, cite: "Pickenhagen et al. 1981 (furaneol in pineapple)." },
+
+  { note: "cherry",     cpd: "bdam",     w: 0.55, cite: "Sefton et al. 2011 (β-damascenone, cooked-cherry and wine notes)." },
+  { note: "cherry",     cpd: "benzald",  w: 0.40, cite: "Ohloff 1994 (benzaldehyde, cherry-pit/almond kernel accent)." },
+  { note: "cherry",     cpd: "gdecal",   w: 0.40, cite: "Schwab et al. 2008 (γ-decalactone, stonefruit family lactone)." },
+
+  { note: "mint",       cpd: "menthol",  w: 0.95, cite: "Lawrence 2007 (menthol, mint principal)." },
+  { note: "mint",       cpd: "cineole",  w: 0.40, cite: "Lawrence 2007 (1,8-cineole, minor mint constituent)." },
+
+  // ---- New compounds' edges to existing notes ----
+  { note: "violet",     cpd: "ionone",   w: 0.85, cite: "Naef et al. 2011 (β-ionone, violet principal odorant)." },
+  { note: "berry",      cpd: "ionone",   w: 0.40, cite: "Schreier 1984 (ionones in raspberry, blackberry)." },
+
+  { note: "mushroom",   cpd: "octen3ol", w: 0.90, cite: "Combet et al. 2006 (1-octen-3-ol, mushroom alcohol)." },
+  { note: "mushroom",   cpd: "geosmin",  w: 0.70, cite: "Combet et al. 2006 (geosmin in some mushroom species)." },
+  { note: "woody",      cpd: "geosmin",  w: 0.25, cite: "Darriet et al. 2000 (geosmin, soil/wet-earth crossover)." },
+
+  { note: "berry",      cpd: "furaneol", w: 0.50, cite: "Schwab et al. 2008 (furaneol in strawberries)." },
+  { note: "caramel",    cpd: "furaneol", w: 0.45, cite: "Buttery et al. 1995 (furaneol, Maillard caramel-cooked-sugar)." },
+  { note: "coffee",     cpd: "furaneol", w: 0.35, cite: "Czerny et al. 1999 (furaneol in roasted coffee)." },
+
+  { note: "pine",       cpd: "cineole",  w: 0.40, cite: "Lis-Balchin 2002 (1,8-cineole in pine and conifer families)." },
+  { note: "lavender",   cpd: "cineole",  w: 0.30, cite: "Lis-Balchin 2002 (1,8-cineole, minor lavender constituent)." }
 ];
 
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
@@ -893,7 +938,8 @@ const COMPOUND_CLASS_COLOR = {
   "aldehyde":          "#7daea3",  // aqua
   "ketone":            "#ea6962",  // red
   "norisoprenoid":     "#e8a0bf",  // light pink
-  "phenol":            "#928374"   // grey
+  "phenol":            "#928374",  // grey
+  "alcohol":           "#a89984"   // sand
 };
 
 // ---------- INFO-TAB CONTENT ----------
@@ -934,7 +980,13 @@ const COMPOUND_ORIGINS = {
   bdam:          "Cooked apple, honey, tobacco, black tea, wine (rose/raspberry/tobacco accents).",
   guaiacol:      "Smoke, charred wood, roasted coffee, whisky, smoked foods.",
   vinguai:       "Clove, smoke, wheat beer, robusta coffee.",
-  eugenol:       "Clove (principal aroma), allspice, cinnamon leaf, bay leaves, nutmeg."
+  eugenol:       "Clove (principal aroma), allspice, cinnamon leaf, bay leaves, nutmeg.",
+  ionone:        "Violet flowers, raspberry, blackberry, tomato, black tea, dried tobacco.",
+  octen3ol:      "Mushrooms (signature), blue cheese, lavender, oysters, forest floor.",
+  furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard product in coffee, bread crust, soy sauce.",
+  cineole:       "Eucalyptus leaves (principal), rosemary, sage, bay leaves, cardamom, mint family.",
+  geosmin:       "Wet soil after rain (petrichor), beetroot, cooked-spinach, freshwater fish, cork taint in wine.",
+  menthol:       "Peppermint (principal), spearmint, mint family herbs; produced commercially from corn mint oil."
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -950,7 +1002,8 @@ const COMPOUND_CLASS_INFO = {
   "phenolic-aldehyde": "Aldehydes attached to an aromatic ring. Vanillin is the canonical example: the principal odorant of vanilla and a major contributor to oak-aged spirits and wines.",
   ketone:              "Carbonyl group in the middle of a carbon chain. Diacetyl is the buttery one (malolactic fermentation); other ketones span cooked-apple, floral, and tobacco-like notes.",
   norisoprenoid:       "Fragments of broken-down carotenoid pigments, the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
-  phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers."
+  phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers.",
+  alcohol:             "Compounds with a free hydroxyl (-OH) group that aren't classified elsewhere as a terpene or phenol family. Few but distinctive: 1-octen-3-ol is the classic 'mushroom alcohol' responsible for fresh-mushroom and forest-floor notes."
 };
 
 // Full bibliographic entries for the most-cited papers backing the note→compound
@@ -1085,36 +1138,103 @@ function formatRefFull(ref) {
 // NOT auto-set intensities; the user picks. Each descriptor maps to a curated
 // subset of NOTES ids. Add/edit freely as the note set grows.
 const WAIS_DESCRIPTORS = [
-  { word: "floral",          notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
-  { word: "citrusy",         notes: ["lemon", "orange", "grapefruit"] },
-  { word: "fruity",          notes: ["berry", "apple", "stonefruit", "banana", "mango", "passionfruit"] },
-  { word: "tropical",        notes: ["mango", "passionfruit", "banana"] },
-  { word: "overripe fruit",  notes: ["berry", "stonefruit", "apple", "banana", "mango"] },
-  { word: "spicy / pungent", notes: ["clove", "cinnamon", "pepper", "anise"] },
-  { word: "roasty",          notes: ["coffee", "toast", "smoky", "burnt"] },
-  { word: "burnt / charred", notes: ["smoky", "burnt"] },
-  { word: "sweet / dessert", notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
-  { word: "musty",           notes: ["mushroom", "woody", "cardboard"] },
-  { word: "dusty",           notes: ["woody", "cardboard"] },
-  { word: "earthy / dirt",   notes: ["mushroom", "woody", "bellpepper"] },
-  { word: "soil",            notes: ["mushroom", "woody", "tobacco", "bellpepper"] },
-  { word: "wet earth",       notes: ["mushroom", "woody"] },
-  { word: "green / vegetal", notes: ["green", "bellpepper"] },
-  { word: "herbal",          notes: ["lavender", "chamomile", "anise", "pine"] },
-  { word: "woody",           notes: ["woody", "pine", "tobacco"] },
-  { word: "nutty",           notes: ["almond", "hazelnut", "peanut"] },
-  { word: "cheesey / dairy", notes: ["buttery", "sulfury"] },
-  { word: "lactic / yogurt", notes: ["buttery", "yeasty"] },
-  { word: "petting zoo",     notes: ["sulfury", "yeasty", "mushroom", "woody"] },
-  { word: "fermented",       notes: ["winey", "yeasty", "buttery"] },
-  { word: "boozy",           notes: ["winey", "yeasty", "buttery"] },
-  { word: "funky",           notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
-  { word: "kombucha-like",   notes: ["winey", "yeasty", "sulfury"] },
-  { word: "stale / oxidized",notes: ["cardboard", "mushroom"] },
-  { word: "medicinal",       notes: ["clove", "anise"] },
-  { word: "smoky",           notes: ["smoky", "woody", "burnt", "tobacco"] },
-  { word: "fresh",           notes: ["lemon", "lavender", "pine"] },
-  { word: "resinous",        notes: ["pine", "woody"] }
+  { category: "Fruity", entries: [
+    { word: "fruity",            notes: ["berry", "apple", "stonefruit", "banana", "mango", "passionfruit", "cherry", "pineapple"] },
+    { word: "citrusy",           notes: ["lemon", "orange", "grapefruit"] },
+    { word: "lime",              notes: ["lemon", "grapefruit"] },
+    { word: "tangerine",         notes: ["orange", "lemon"] },
+    { word: "bergamot",          notes: ["lemon", "orange", "lavender"] },
+    { word: "orange peel",       notes: ["orange", "lemon"] },
+    { word: "blueberry",         notes: ["berry"] },
+    { word: "raspberry",         notes: ["berry", "violet"] },
+    { word: "strawberry",        notes: ["berry"] },
+    { word: "blackberry",        notes: ["berry", "violet"] },
+    { word: "cranberry",         notes: ["berry"] },
+    { word: "red currant",       notes: ["berry"] },
+    { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
+    { word: "pomegranate",       notes: ["berry", "winey"] },
+    { word: "red cherry",        notes: ["cherry", "berry"] },
+    { word: "black cherry",      notes: ["cherry", "winey"] },
+    { word: "plum",              notes: ["stonefruit", "berry"] },
+    { word: "fig",               notes: ["berry", "stonefruit"] },
+    { word: "pear",              notes: ["apple"] },
+    { word: "quince",            notes: ["apple", "stonefruit"] },
+    { word: "peach",             notes: ["stonefruit"] },
+    { word: "apricot",           notes: ["stonefruit"] },
+    { word: "nectarine",         notes: ["stonefruit"] },
+    { word: "tropical",          notes: ["mango", "passionfruit", "banana", "pineapple"] },
+    { word: "papaya",            notes: ["mango", "passionfruit"] },
+    { word: "guava",             notes: ["passionfruit", "mango"] },
+    { word: "lychee",            notes: ["passionfruit", "rose"] },
+    { word: "overripe fruit",    notes: ["berry", "stonefruit", "apple", "banana", "mango", "cherry"] },
+    { word: "dried fruit",       notes: ["stonefruit", "berry", "apple", "mango", "cherry"] },
+    { word: "raisin",            notes: ["winey", "stonefruit"] },
+    { word: "prune",             notes: ["stonefruit", "winey"] },
+    { word: "date",              notes: ["caramel", "honey", "stonefruit"] },
+    { word: "jammy fruit",       notes: ["berry", "stonefruit", "winey"] },
+    { word: "stewed fruit",      notes: ["apple", "stonefruit", "berry"] },
+    { word: "fruitcake",         notes: ["winey", "stonefruit", "honey", "vanilla"] }
+  ]},
+  { category: "Floral", entries: [
+    { word: "floral",            notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
+    { word: "tea rose",          notes: ["rose", "jasmine"] },
+    { word: "orange blossom",    notes: ["jasmine", "lavender", "orange"] },
+    { word: "honeysuckle",       notes: ["jasmine", "rose", "honey"] },
+    { word: "elderflower",       notes: ["chamomile", "lavender"] }
+  ]},
+  { category: "Herbal / Vegetal", entries: [
+    { word: "herbal",            notes: ["lavender", "chamomile", "anise", "pine", "mint"] },
+    { word: "green / vegetal",   notes: ["green", "bellpepper"] },
+    { word: "fresh-cut grass",   notes: ["green"] },
+    { word: "tomato leaf",       notes: ["green", "bellpepper"] },
+    { word: "eucalyptus",        notes: ["pine", "mint"] },
+    { word: "sage",              notes: ["pine", "mint", "chamomile", "lavender"] },
+    { word: "thyme",             notes: ["pine", "anise", "mint"] },
+    { word: "beetroot",          notes: ["mushroom", "bellpepper"] },
+    { word: "olive",             notes: ["green", "bellpepper"] },
+    { word: "green bean",        notes: ["green", "bellpepper"] },
+    { word: "artichoke",         notes: ["green", "mushroom"] },
+    { word: "fresh",             notes: ["lemon", "lavender", "pine", "mint"] }
+  ]},
+  { category: "Earthy", entries: [
+    { word: "earthy / dirt",     notes: ["mushroom", "woody", "bellpepper"] },
+    { word: "soil",              notes: ["mushroom", "woody", "tobacco", "bellpepper"] },
+    { word: "wet earth",         notes: ["mushroom", "woody"] },
+    { word: "musty",             notes: ["mushroom", "woody", "cardboard"] },
+    { word: "dusty",             notes: ["woody", "cardboard"] },
+    { word: "woody",             notes: ["woody", "pine", "tobacco"] },
+    { word: "resinous",          notes: ["pine", "woody"] }
+  ]},
+  { category: "Sweet", entries: [
+    { word: "sweet / dessert",   notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
+    { word: "brown sugar",       notes: ["maple", "caramel"] },
+    { word: "molasses",          notes: ["caramel", "maple", "burnt"] },
+    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] }
+  ]},
+  { category: "Nutty / Cocoa", entries: [
+    { word: "nutty",             notes: ["almond", "hazelnut", "peanut"] },
+    { word: "cocoa nib",         notes: ["chocolate", "coffee"] },
+    { word: "dark chocolate",    notes: ["chocolate", "coffee", "burnt"] },
+    { word: "milk chocolate",    notes: ["chocolate", "vanilla", "honey"] }
+  ]},
+  { category: "Roast / Spice", entries: [
+    { word: "roasty",            notes: ["coffee", "toast", "smoky", "burnt"] },
+    { word: "burnt / charred",   notes: ["smoky", "burnt"] },
+    { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
+    { word: "toasted grain",     notes: ["toast", "yeasty"] },
+    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise"] },
+    { word: "medicinal",         notes: ["clove", "anise"] }
+  ]},
+  { category: "Fermented / Funky", entries: [
+    { word: "fermented",         notes: ["winey", "yeasty", "buttery"] },
+    { word: "boozy",             notes: ["winey", "yeasty", "buttery"] },
+    { word: "funky",             notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
+    { word: "kombucha-like",     notes: ["winey", "yeasty", "sulfury"] },
+    { word: "lactic / yogurt",   notes: ["buttery", "yeasty"] },
+    { word: "cheesey / dairy",   notes: ["buttery", "sulfury"] },
+    { word: "petting zoo",       notes: ["sulfury", "yeasty", "mushroom", "woody"] },
+    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] }
+  ]}
 ];
 
 // Jargon glossary — words people have heard in tasting circles but might not own.
@@ -2841,9 +2961,16 @@ function openWais() {
 function closeWais() { waisOverlayEl.hidden = true; }
 
 function renderWaisChips() {
-  waisChipsEl.innerHTML = WAIS_DESCRIPTORS.map(d =>
-    `<button type="button" class="wais-chip" data-wais-word="${d.word}">${d.word}</button>`
-  ).join('');
+  waisChipsEl.innerHTML = WAIS_DESCRIPTORS.map(cat => `
+    <div class="wais-category">
+      <div class="wais-category-title">${cat.category}</div>
+      <div class="wais-category-chips">
+        ${cat.entries.map(d =>
+          `<button type="button" class="wais-chip" data-wais-word="${d.word}">${d.word}</button>`
+        ).join('')}
+      </div>
+    </div>
+  `).join('');
   waisChipsEl.querySelectorAll(".wais-chip").forEach(b => {
     b.addEventListener("click", () => {
       waisChipsEl.querySelectorAll(".wais-chip").forEach(x => x.classList.remove("active"));
@@ -2854,7 +2981,12 @@ function renderWaisChips() {
 }
 
 function renderWaisSuggestions(word) {
-  const entry = WAIS_DESCRIPTORS.find(d => d.word === word);
+  // Walk categories to find the descriptor entry by word.
+  let entry = null;
+  for (const cat of WAIS_DESCRIPTORS) {
+    entry = cat.entries.find(d => d.word === word);
+    if (entry) break;
+  }
   if (!entry) { waisSuggestionsEl.innerHTML = ''; return; }
   // Filter to visible notes (respect Common/All filter)
   const notes = entry.notes
