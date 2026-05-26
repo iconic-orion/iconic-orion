@@ -76,6 +76,10 @@
   /* Hide the long subtitle on phone-sized viewports so the title + tabs + buttons
      don't fight for horizontal space. Tablets and laptops still see it. */
   @media (max-width: 900px) { header .sub { display: none; } }
+  /* On mid-width viewports (tablet landscape, half-screen browser windows), the
+     results pane flexes a bit narrower so the wheel has more room. Sliders pane
+     stays at 320 for usability — slider labels and the per-row buttons need it. */
+  @media (max-width: 1100px) { :root { --detail-pane-w: 280px; } }
   header .spacer { flex: 1; }
   header button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
@@ -2050,10 +2054,11 @@ document.getElementById("toggle-detail").addEventListener("click", () => {
 // Auto-detect initial view from viewport. Wide screens default to Reset View
 // (the 3-pane dashboard); narrower screens default to Notes (sliders + wheel).
 // User can override via tabs or per-pane toggles anytime; we don't auto-flip
-// on resize.
+// on resize. Threshold is 1100px so tablet landscape and half-screen browser
+// windows land in a focus mode instead of a cramped 3-pane.
 function autoDetectViewMode() {
   const w = window.innerWidth;
-  if (w >= 900) setView("dashboard");
+  if (w >= 1100) setView("dashboard");
   else setView("note-input");
 }
 
