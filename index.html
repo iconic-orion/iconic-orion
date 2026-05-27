@@ -186,6 +186,21 @@
   .compact-val { font-variant-numeric: tabular-nums; color: var(--accent);
     text-align: right; font-weight: 600; }
 
+  /* Empty-state compound browser — grouped by class, no signal/intensity yet */
+  .browse-compounds { list-style: none; padding: 0; margin: 8px 0 0;
+    display: flex; flex-direction: column; gap: 10px; }
+  .browse-class-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px;
+    align-items: start; }
+  .browse-class-label { color: var(--ink-dim); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding-top: 4px; }
+  .browse-class-items { display: flex; flex-wrap: wrap; gap: 4px; }
+  .browse-cpd { background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+    border-left-width: 3px; border-radius: 3px;
+    padding: 3px 8px; font-size: 11px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; font-family: inherit; }
+  .browse-cpd:hover { background: var(--bg-hover, #2a2730); border-color: var(--accent); }
+
   /* Wheel-corner overlays — readable text view of inputs (bottom-left) and
      compound suggestions (bottom-right). Hidden by default; shown in Go Deeper. */
   .wheel-overlay { position: absolute; bottom: 8px;
@@ -804,7 +819,7 @@ const COMPOUNDS = [
   { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
   // ketones / norisoprenoids
   { id: "diacetyl",      label: "Diacetyl",          class: "ketone",    threshold: "low",      specificity: "signature", thresholdSrc: "~5–15 ppb in beer (Bartowsky & Henschke 2004).", note: "2,3-butanedione; buttery, malolactic." },
-  { id: "bdam",          label: "β-Damascenone",     class: "norisoprenoid", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.002 ppb (Sefton et al. 2011).", note: "Cooked-apple/honey/tobacco; potent across wine & coffee." },
+  { id: "bdam",          label: "β-Damascenone",     class: "norisoprenoid", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.002 ppb (Sefton et al. 2011).", note: "Rose/cooked-apple/honey/tobacco; potent across many fruits, teas, and brews." },
   // phenols
   { id: "guaiacol",      label: "Guaiacol",          class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Maga 1978).", note: "Smoky-medicinal; roast and wood." },
   { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
@@ -851,6 +866,7 @@ const EDGES = [
   // Floral
   { note: "rose",          cpd: "geraniol",   w: 0.90, cite: "Ohloff 1994 (Scent & Chemistry)." },
   { note: "rose",          cpd: "linalool",   w: 0.55, cite: "Ohloff 1994." },
+  { note: "rose",          cpd: "bdam",       w: 0.70, cite: "Sefton et al. 2011 (β-damascenone, named for Rosa damascena — the Damask rose)." },
   { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
   { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
   { note: "lavender",      cpd: "linalool",       w: 0.80, cite: "Lis-Balchin 2002 (linalool ~30% lavender oil)." },
@@ -864,6 +880,7 @@ const EDGES = [
   { note: "coffee",  cpd: "edmpyr",   w: 0.80, cite: "Czerny et al. 1999 (ethyl-dimethyl-pyrazines, coffee)." },
   { note: "coffee",  cpd: "dempyr",   w: 0.80, cite: "Czerny et al. 1999." },
   { note: "coffee",  cpd: "furfural", w: 0.55, cite: "Flament 2002." },
+  { note: "coffee",  cpd: "bdam",     w: 0.60, cite: "Czerny et al. 1999 (β-damascenone among most potent coffee odorants)." },
   { note: "toast",   cpd: "furfural", w: 0.75, cite: "Flament 2002 (Maillard furans)." },
   { note: "toast",   cpd: "edmpyr",   w: 0.55, cite: "Czerny et al. 1999." },
   { note: "smoky",   cpd: "guaiacol", w: 0.90, cite: "Maga 1978 (guaiacol & smoke phenols)." },
@@ -906,6 +923,7 @@ const EDGES = [
   { note: "honey",     cpd: "bdam",      w: 0.45, cite: "Sefton et al. 2011." },
   { note: "chocolate", cpd: "edmpyr",    w: 0.70, cite: "Counet et al. 2002 (cocoa pyrazines)." },
   { note: "chocolate", cpd: "phenylacet",w: 0.55, cite: "Counet et al. 2002." },
+  { note: "chocolate", cpd: "furaneol", w: 0.45, cite: "Counet et al. 2002 (furaneol as cocoa Maillard product)." },
   { note: "maple",     cpd: "sotolon",   w: 0.95, cite: "Underwood & Filipic 1963; Pham et al. 1995." },
 
   // Fermented
@@ -970,45 +988,45 @@ const COMPOUND_CLASS_COLOR = {
 // useful per-compound information for a sensory-tasting audience — more useful
 // than molecular formula or biosynthetic pathway. Keyed by compound id.
 const COMPOUND_ORIGINS = {
-  limonene:      "Citrus peels (lemon, orange, grapefruit), pine needles, dill, caraway, hops.",
-  linalool:      "Coffee, lavender, chamomile, basil, mint, ginger, citrus peel oils.",
-  myrcene:       "Hops, mango, lemongrass, thyme, parsley, bay leaves.",
-  geraniol:      "Rose, geranium, citronella, palmarosa, lemon, ginger.",
-  bcaryo:        "Black pepper, clove, hops, basil, cinnamon, rosemary, oregano, copaiba.",
-  apinene:       "Pine resin, rosemary, basil, dill, eucalyptus, juniper.",
-  linalylacetate:"Lavender (≈40% of lavender oil), bergamot, sage, clary sage.",
-  bisabolol:     "Chamomile (principal sesquiterpenol), candeia tree (Brazilian source).",
-  ibmp:          "Bell pepper, Sauvignon Blanc grapes, robusta coffee, asparagus.",
-  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn.",
-  dempyr:        "Roasted coffee (key odorant), baked products.",
-  furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugars, baked goods.",
-  fft:           "Freshly brewed coffee. The signature roast-coffee thiol.",
-  mh3:           "Passionfruit, Sauvignon Blanc, grapefruit, blackcurrant, guava.",
-  mmp4:          "Sauvignon Blanc, passionfruit, boxwood, blackcurrant buds.",
-  mfthiol:       "Fresh coffee (freshness marker); cooked cabbage / cooked seafood at higher concentrations.",
-  etbut:         "Pineapple, apple, strawberry, banana. A fruity ester from fermentation.",
-  ethex:         "Berry, apple, pineapple. Fermentation ester common in wine and beer.",
-  iaac:          "Banana, pear. The classic ester produced by yeast in beer and wine fermentation.",
-  gdecal:        "Peach, mango, apricot, ripe stonefruit, dairy.",
-  gnonal:        "Coconut, creamy notes, aged spirits, oak-aged wines.",
-  sotolon:       "Maple syrup, fenugreek, curry, aged sake, vin jaune, lovage.",
-  vanillin:      "Vanilla pods, oak wood (extracted during barrel aging), some woody plants.",
-  cinnamald:     "Cinnamon bark (>50% of cinnamon bark essential oil).",
-  hexanal:       "Cut grass, green leaves, unripe fruits, fresh cucumber. Produced from lipid oxidation.",
-  e2non:         "Stale beer, stale coffee, cucumber, cardboard. A marker for oxidative staling.",
-  benzald:       "Bitter almond, marzipan, cherry pits, stone-fruit kernels, almond extract.",
-  phenylacet:    "Honey, rose, hyacinth, cocoa. Strecker degradation aldehyde.",
-  diacetyl:      "Butter, buttery popcorn, butterscotch. From malolactic fermentation (wine/beer) and dairy.",
-  bdam:          "Cooked apple, honey, tobacco, black tea, wine (rose/raspberry/tobacco accents).",
-  guaiacol:      "Smoke, charred wood, roasted coffee, whisky, smoked foods.",
-  vinguai:       "Clove, smoke, wheat beer, robusta coffee.",
-  eugenol:       "Clove (principal aroma), allspice, cinnamon leaf, bay leaves, nutmeg.",
-  ionone:        "Violet flowers, raspberry, blackberry, tomato, black tea, dried tobacco.",
-  octen3ol:      "Mushrooms (signature), blue cheese, lavender, oysters, forest floor.",
-  furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard product in coffee, bread crust, soy sauce.",
-  cineole:       "Eucalyptus leaves (principal), rosemary, sage, bay leaves, cardamom, mint family.",
-  geosmin:       "Wet soil after rain (petrichor), beetroot, cooked-spinach, freshwater fish, cork taint in wine.",
-  menthol:       "Peppermint (principal), spearmint, mint family herbs; produced commercially from corn mint oil."
+  limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates — the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
+  linalool:      "Lavender (≈30% of lavender oil), coriander seed (≈60–80% of its essential oil), green coffee beans, chamomile, basil, mint, ginger, citrus peel oils. One of the most widespread floral monoterpenes in nature.",
+  myrcene:       "Hops (the resinous-mango note in IPAs), ripe mango, hemp, lemongrass, thyme, parsley, bay. Same molecule across all of them.",
+  geraniol:      "Rose petals, geranium leaves, palmarosa, citronella (the candle), lemongrass, lemon, bay, ginger. The same compound makes rose smell like rose and citronella repel mosquitoes.",
+  bcaryo:        "Black pepper (where it drives the woody-spicy bite), clove, hops, hemp, basil, cinnamon, rosemary, oregano, copaiba balsam.",
+  apinene:       "Pine resin (the namesake — the smell of a pine forest), rosemary, frankincense, hemp, basil, dill, eucalyptus, juniper berries.",
+  linalylacetate:"Lavender (≈40% of lavender oil) and bergamot — the citrus that makes Earl Grey tea smell like Earl Grey. Also sage and clary sage.",
+  bisabolol:     "Chamomile (the soft-floral note you smell in chamomile tea); candeia tree, the main Brazilian commercial source.",
+  ibmp:          "Bell pepper (where it IS the green-pepper note), peas, asparagus, galbanum resin, robusta coffee, Sauvignon Blanc grapes. Detectable at parts-per-trillion — one of the most potent odorants known.",
+  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn. Doesn't exist in raw coffee beans — built from scratch by the heat of roasting (the Maillard reaction).",
+  dempyr:        "Roasted coffee (a key driver of the deep-roast smell) and baked goods. Another Maillard creation — made by heat, not extracted from any raw ingredient.",
+  furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugar, baked goods. A general signature of sugar getting hot enough to brown.",
+  fft:           "Freshly brewed coffee — the sulfur compound that makes coffee smell like coffee. Also roasted sesame and popcorn. Fades within hours of brewing.",
+  mh3:           "Passionfruit (where it creates the explosive tropical smell), grapefruit, blackcurrant, guava, Sauvignon Blanc.",
+  mmp4:          "Passionfruit, blackcurrant buds, boxwood, Sauvignon Blanc. The same compound is found in cat urine — which is why intense Sauvignon Blanc sometimes gets called 'cat-pee.'",
+  mfthiol:       "Fresh coffee in the first hour after brewing — it fades fast, which makes it a freshness marker. Also aged cheddar and cheese rinds. At higher concentrations: cooked cabbage and cooked seafood.",
+  etbut:         "Pineapple, apple, strawberry, banana. A fruity ester produced when yeast eats sugar — the smell of fruit slightly past ripe.",
+  ethex:         "Berry, apple, pineapple. A heavier fermentation ester — jammier than ethyl butanoate.",
+  iaac:          "Banana (where it IS the banana smell), pear, banana-flavored candy. The signature ester of yeast fermentation.",
+  gdecal:        "Peach, apricot, mango, ripe stonefruit, dairy. The soft fuzzy-peach quality on the back of your throat.",
+  gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids — giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
+  sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources — the principal smell of maple syrup IS the principal smell of fenugreek seed.",
+  vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging — a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
+  cinnamald:     "Cinnamon bark — over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon — what most US grocery 'cinnamon' actually is).",
+  hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells — released the instant a leaf is torn.",
+  e2non:         "Stale beer, stale coffee, cucumber, wet cardboard, old books. A marker of oxidative aging — appears as a beverage or paper sits with oxygen.",
+  benzald:       "Bitter almond, marzipan, cherry pits, apricot kernels, almond extract. All the kernels of the stone-fruit family share it — they're botanical cousins.",
+  phenylacet:    "Honey (the principal floral-honey note), rose, hyacinth, buckwheat honey, cocoa. Made when the amino acid phenylalanine breaks down under heat or fermentation.",
+  diacetyl:      "Butter (where it IS the butter smell), buttery popcorn, butterscotch, cultured dairy. Made by lactic acid bacteria — the same ones behind dairy cultures and the malolactic fermentation that softens many wines and sour beers.",
+  bdam:          "Rose (the namesake: Rosa damascena, the Damask rose), cooked apple, honey, black tea, tomato, grape, raspberry, tobacco. Also a major contributor to aged beverages.",
+  guaiacol:      "Smoke (the principal smoky-medicinal note), charred wood, roasted coffee, smoked foods, smoked teas like Lapsang Souchong. Also extracted from charred wood during barrel aging.",
+  vinguai:       "Clove (a key part of clove's bite), smoke, wheat beer (where the yeast builds it from the wort), robusta coffee.",
+  eugenol:       "Clove (the principal aroma — clove is essentially this one molecule), allspice, cinnamon leaf, bay, nutmeg, holy basil (tulsi). Minor in rose.",
+  ionone:        "Violet flowers (the principal odorant), raspberry, blackberry, carrot (a carotenoid breakdown product — same chemistry as the orange pigment), osmanthus, tomato, black tea, dried tobacco.",
+  octen3ol:      "Mushrooms (the signature 'mushroom smell'), blue cheese, lavender, oysters, forest floor after rain.",
+  furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard browning product — the same molecule shows up in roasted coffee, bread crust, and soy sauce, doing different work in each.",
+  cineole:       "Eucalyptus leaves (the principal odorant — koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
+  geosmin:       "Wet soil after rain — the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
+  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth — what creates the chilly sensation even at room temperature."
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -2100,12 +2118,42 @@ function renderAnalysisGrid() {
 
   const disclaimerLine = `<div class="results-disclaimer">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></div>`;
 
-  // Empty state — nothing logged yet
+  // Empty state — nothing logged yet. Still render a browseable list of every
+  // compound in the library so users can click into them on their own without
+  // having to slide a note first. Grouped by class; no intensity bars (no signal yet).
   if (activeNotes.length === 0 && allActive.length === 0) {
+    const visibleCompounds = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+    const byClass = {};
+    visibleCompounds.forEach(c => { (byClass[c.class] = byClass[c.class] || []).push(c); });
+    const classOrder = Object.keys(byClass).sort();
+    const browseList = classOrder.map(cls => {
+      const items = byClass[cls].slice().sort((a, b) => a.label.localeCompare(b.label));
+      return `<li class="browse-class-row">
+        <span class="browse-class-label">${cls}</span>
+        <span class="browse-class-items">
+          ${items.map(c => `<button type="button" class="browse-cpd view-cpd" data-cpd="${c.id}" style="border-left:3px solid ${compoundColor(c)}">${c.label}</button>`).join('')}
+        </span>
+      </li>`;
+    }).join('');
+
     detailPanel.innerHTML = `
       <div class="empty">Slide notes on the left to see what compounds they map to, ranked by literature confidence.</div>
       ${disclaimerLine}
+      <div class="results-section" style="margin-top:14px;">
+        <h3 class="results-h">Browse the compound library</h3>
+        <div class="results-section-help">Every compound in the wheel, grouped by chemical class. Click any to see its contributing notes and citations.</div>
+        <ul class="browse-compounds">${browseList}</ul>
+      </div>
     `;
+
+    detailPanel.querySelectorAll("[data-cpd]").forEach(el => {
+      el.addEventListener("click", () => {
+        state.selectedCompound = el.dataset.cpd;
+        state.selectedNote = null;
+        renderDetail();
+        gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
+      });
+    });
     return;
   }
 
