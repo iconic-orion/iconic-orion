@@ -87,13 +87,6 @@
   .tabs button.active { background: var(--accent); color: #1a1810; }
   .tabs button:not(.active):hover { background: var(--panel-2); color: var(--ink); }
 
-  .profile-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-  .profile-toggle button { border: none; border-radius: 0; padding: 6px 10px; background: transparent;
-    color: var(--ink-dim); font-size: 11px; }
-  .profile-toggle button.active { background: var(--accent-2); color: #0e0d10; }
-  .profile-toggle .label { padding: 6px 8px; font-size: 11px; color: var(--ink-dim);
-    text-transform: uppercase; letter-spacing: 0.08em; }
-
   /* Compound grid — lives inside the Analysis pane (right) as its default-state
      view when no compound is selected. Narrower than V1's middle-pane grid so
      cards stack as a single column in the 360px-wide analysis pane. */
@@ -200,40 +193,6 @@
     padding: 3px 8px; font-size: 11px; cursor: pointer;
     transition: border-color 0.15s, background 0.15s; font-family: inherit; }
   .browse-cpd:hover { background: var(--bg-hover, #2a2730); border-color: var(--accent); }
-
-  /* Wheel-corner overlays — readable text view of inputs (bottom-left) and
-     compound suggestions (bottom-right). Hidden by default; shown in Go Deeper. */
-  .wheel-overlay { position: absolute; bottom: 8px;
-    background: rgba(31, 29, 35, 0.88); border: 1px solid var(--line); border-radius: 6px;
-    padding: 6px 10px; font-size: 11px; display: none; max-width: 38%;
-    max-height: 45%; overflow-y: auto; backdrop-filter: blur(4px); }
-  body.go-deeper .wheel-overlay { display: block; }
-  .wheel-overlay.compounds { right: 8px; }
-  .wheel-overlay-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--ink-dim); margin-bottom: 4px;
-    display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  /* Tiny segmented toggle in the bottom-right overlay: switch list grouping
-     between individual compounds and chemical-class roll-up. */
-  .overlay-toggle { display: inline-flex; gap: 2px; }
-  .overlay-toggle button { background: transparent; border: 1px solid var(--line);
-    color: var(--ink-dim); padding: 1px 6px; border-radius: 3px; cursor: pointer;
-    font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
-    font-family: inherit; }
-  .overlay-toggle button.active { background: var(--accent); color: #1a1810;
-    border-color: var(--accent); }
-  .overlay-toggle button:hover:not(.active) { color: var(--ink); border-color: var(--accent); }
-  .wheel-overlay-list .class-dot { width: 8px; height: 8px; border-radius: 2px;
-    flex-shrink: 0; display: inline-block; }
-  .wheel-overlay-list { list-style: none; padding: 0; margin: 0; }
-  .wheel-overlay-list li { display: flex; align-items: center; gap: 6px;
-    padding: 2px 0; font-size: 11px; }
-  .wheel-overlay-list li .name { flex: 1; color: var(--ink); }
-  .wheel-overlay-list li .phase { font-size: 9px; color: var(--ink-dim);
-    text-transform: uppercase; letter-spacing: 0.05em;
-    border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
-  .wheel-overlay-list li .val { color: var(--accent); font-variant-numeric: tabular-nums;
-    font-weight: 600; min-width: 28px; text-align: right; }
-  .wheel-overlay-list li.empty { color: var(--ink-dim); font-style: italic; padding: 4px 0; }
 
   /* Legend */
   .legend { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
@@ -595,14 +554,9 @@
     <button data-view="dashboard" class="active">Reset View</button>
     <button data-view="analysis">Results</button>
   </div>
-  <div class="profile-toggle" id="notefilter-toggle" title="Filter to widely-recognized notes vs. include niche/specialist descriptors">
-    <span class="label">Notes</span>
-    <button data-filter="common" class="active">Common</button>
-    <button data-filter="all">All</button>
-  </div>
   <button id="info-open-btn" title="About, Methodology, How to Use, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
   <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
-  <button id="reset">Reset</button>
+  <button id="reset">Start Over</button>
   <button id="demo-coffee">Demo: Coffee</button>
   <button id="demo-mocktail">Demo: Citrus mocktail</button>
 </header>
@@ -651,20 +605,6 @@
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
-  <!-- Go Deeper overlay (hidden unless body.go-deeper). Bottom-right shows the
-       top compound suggestions in compact list form. The "Your inputs" overlay
-       was moved into the Results pane as a stacked "Your inputs → compounds"
-       section, since it belongs with the rest of the results readout. -->
-  <div class="wheel-overlay compounds">
-    <div class="wheel-overlay-header">
-      <span id="overlay-compounds-title">Top compounds</span>
-      <div class="overlay-toggle" id="overlay-by-toggle" title="Switch between individual compounds and chemical-class roll-up">
-        <button type="button" data-overlay-by="compound" class="active">by compound</button>
-        <button type="button" data-overlay-by="class">by class</button>
-      </div>
-    </div>
-    <ul class="wheel-overlay-list" id="overlay-compounds"></ul>
-  </div>
 </main>
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
@@ -717,9 +657,11 @@ const GROUPS = [
   { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" }
 ];
 
-// Sensory notes. `common: true` = widely recognizable across cultures/diets.
-// `common: false` = niche / requires familiarity (specialty fruits, professional descriptors).
-// Toggle "Common / All" in the header filters niche notes out of the panel and wheel.
+// Sensory notes. The `common` field (true = widely recognizable, false = niche /
+// requires familiarity) is no longer wired to any UI filter — all notes are
+// always visible. Field is left in place because some legacy code paths and
+// potential future affordances (e.g. a "show me niche notes only" demo) may
+// still want to introspect it.
 const NOTES = [
   // fruity
   { id: "lemon",       label: "Lemon",              group: "fruity",   common: true  },
@@ -1337,7 +1279,6 @@ const state = {
   pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
-  overlayBy: "compound",      // bottom-right wheel overlay grouping: "compound" | "class"
   selectedCompound: null,
   selectedNote: null,       // when set (Go Deeper only), analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
@@ -1348,7 +1289,6 @@ const state = {
   notesHidden:  false,   // is the left sliders pane hidden via toggle / view preset
   detailHidden: false,   // is the right analysis pane hidden via toggle / view preset
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
-  noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
   hiddenClasses: new Set(),  // compound-class names hidden via legend
   openCalloutKey: null       // currently-open edit/delete callout's entry key, if any
@@ -1403,7 +1343,6 @@ function isNoteVisible(noteId) {
   const n = NOTE_BY_ID[noteId];
   if (!n) return false;
   if (state.hiddenGroups.has(n.group)) return false;
-  if (state.noteFilter === "common" && !n.common) return false;
   return true;
 }
 function getVisibleNotes() {
@@ -1814,7 +1753,6 @@ function recompute() {
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
-  renderWheelOverlays();
 }
 
 // ---------- PANEL: notes ----------
@@ -2334,55 +2272,6 @@ function renderCompoundDetail(cpdId, banner) {
   });
 }
 
-// ---------- WHEEL CORNER OVERLAY (Go Deeper) ----------
-// Bottom-right of the wheel only — top compound suggestions in compact list
-// form, only visible when Go Deeper is on. The previous bottom-left "Your
-// inputs" overlay was moved into the Results pane as its own stacked section.
-const overlayCompoundsEl = document.getElementById("overlay-compounds");
-
-function renderWheelOverlays() {
-  // Bottom-right overlay can group by individual compound (default) or by
-  // chemical class — gives a quick "what families am I picking up" read.
-  const titleEl = document.getElementById("overlay-compounds-title");
-  const pct = v => Math.round(Math.min(1, v) * 100);
-
-  if (state.overlayBy === "class") {
-    if (titleEl) titleEl.textContent = "Top classes";
-    // Sum intensity per chemical class across visible, non-trivial compounds.
-    const sums = {};
-    for (const n of compoundNodes) {
-      if (!isCompoundVisible(n.id)) continue;
-      if (n.intensity <= 0.05) continue;
-      const cls = CPD_BY_ID[n.id].class;
-      sums[cls] = (sums[cls] || 0) + n.intensity;
-    }
-    const byClass = Object.entries(sums).sort((a, b) => b[1] - a[1]);
-    if (byClass.length === 0) {
-      overlayCompoundsEl.innerHTML = `<li class="empty">No compounds detected yet.</li>`;
-    } else {
-      // Normalize as % of the top-scoring class so magnitudes read at a glance.
-      const maxSum = byClass[0][1];
-      overlayCompoundsEl.innerHTML = byClass.map(([cls, sum]) => {
-        const p = Math.round((sum / maxSum) * 100);
-        const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
-        return `<li><span class="class-dot" style="background:${color}"></span><span class="name">${cls}</span><span class="val">${p}%</span></li>`;
-      }).join('');
-    }
-  } else {
-    if (titleEl) titleEl.textContent = "Top compounds";
-    const top = compoundNodes
-      .filter(n => isCompoundVisible(n.id) && n.intensity > 0.05)
-      .sort((a, b) => b.intensity - a.intensity)
-      .slice(0, 12);
-    overlayCompoundsEl.innerHTML = top.length === 0
-      ? `<li class="empty">No compounds detected yet.</li>`
-      : top.map(n => {
-          const c = CPD_BY_ID[n.id];
-          return `<li><span class="name">${c.label}</span><span class="val">${pct(n.intensity)}%</span></li>`;
-        }).join('');
-  }
-}
-
 // ---------- VIEW SWITCHING / PANE VISIBILITY ----------
 // Each side pane (sliders, results) can be hidden independently via its
 // pane-toggle tab on the wheel's edge. The three header view tabs are
@@ -2452,20 +2341,6 @@ function autoDetectViewMode() {
   if (w >= 1100) setView("dashboard");
   else setView("note-input");
 }
-
-document.querySelectorAll("#notefilter-toggle button").forEach(b => {
-  b.addEventListener("click", () => {
-    state.noteFilter = b.dataset.filter;
-    document.querySelectorAll("#notefilter-toggle button").forEach(x =>
-      x.classList.toggle("active", x.dataset.filter === state.noteFilter));
-    // Rebuild panel, recompute angles, redraw wheel, refresh scoring/edges
-    buildNotesPanel();
-    computeNotePositions();
-    drawGroupArcs();
-    drawNotes();
-    recompute();
-  });
-});
 
 // ---------- NOTES SEARCH ----------
 // Subtle search at the top of the notes pane filters which rows are visible.
@@ -2625,16 +2500,6 @@ function setNotes(entries) {
   entries.forEach(e => {
     if (NOTE_BY_ID[e.note]) commitEntry(e.note, e.phase ?? null, e.intensity);
   });
-  // Auto-flip the niche-notes filter if a demo includes any niche descriptor
-  const needsAll = entries.some(e => NOTE_BY_ID[e.note] && !NOTE_BY_ID[e.note].common);
-  if (needsAll && state.noteFilter !== "all") {
-    state.noteFilter = "all";
-    document.querySelectorAll("#notefilter-toggle button").forEach(x =>
-      x.classList.toggle("active", x.dataset.filter === "all"));
-    computeNotePositions();
-    drawGroupArcs();
-    drawNotes();
-  }
   // If any entry is phase-tagged, reveal Go Deeper so the UI buttons match the data.
   const usesPhase = entries.some(e => e.phase === "ortho" || e.phase === "retro");
   setGoDeeper(usesPhase || state.goDeeper);
@@ -2693,16 +2558,6 @@ function setGoDeeper(on) {
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   setGoDeeper(!state.goDeeper);
-});
-
-// Overlay-by toggle (bottom-right wheel overlay: compound vs class grouping)
-document.querySelectorAll("#overlay-by-toggle button").forEach(b => {
-  b.addEventListener("click", () => {
-    state.overlayBy = b.dataset.overlayBy;
-    document.querySelectorAll("#overlay-by-toggle button").forEach(x =>
-      x.classList.toggle("active", x.dataset.overlayBy === state.overlayBy));
-    renderWheelOverlays();
-  });
 });
 
 // ---------- INFO ("i") TAB ----------
@@ -2864,7 +2719,7 @@ function renderHowToUse() {
       <li><strong>Sliders pane (left).</strong> Your input. Each row is a slider plus an Add button. Click an "Added" button to Edit or Delete that entry.</li>
       <li><strong>Legend (top of the sliders pane).</strong> Visibility filters. Toggle note groups, compound classes, and ortho/retro entries. Useful for stress-testing what's driving what.</li>
       <li><strong>View tabs (header).</strong> <em>Notes</em> hides the results pane (sliders + wheel). <em>Reset View</em> shows all three panes. <em>Results</em> hides the sliders (wheel + results pane). The wheel is always there.</li>
-      <li><strong>Go Deeper (header toggle).</strong> Reveals advanced inputs. Per-row <em>Ortho</em> (sniff) and <em>Retro</em> (exhale) buttons let you tag when in the bite you noticed each note. Two text overlays appear in the bottom corners of the wheel showing your inputs and the top compound suggestions in compact list form.</li>
+      <li><strong>Go Deeper (header toggle).</strong> Reveals advanced inputs. Per-row <em>Ortho</em> (sniff) and <em>Retro</em> (exhale) buttons let you tag when in the bite you noticed each note. Clicking a note in this mode flips the analysis pane to its inverse view (compounds this note maps to). Citations also expand to their full bibliographic form.</li>
     </ul>
 
     <h3>Repeat-tasting</h3>
@@ -3100,7 +2955,7 @@ function renderWaisSuggestionsMulti() {
   if (sorted.length === 0) {
     waisSuggestionsEl.innerHTML = `
       <div class="wais-suggestion-heading">Notes to try</div>
-      <div class="wais-suggestions-empty">All matches are niche notes that are filtered out. Switch the header filter to "All" to see them.</div>
+      <div class="wais-suggestions-empty">No matching notes are currently visible. Check the legend's visibility filters if you've hidden any note groups.</div>
     `;
     return;
   }
