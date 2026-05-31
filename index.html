@@ -1,0 +1,3188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Aroma Wheel · Sensory → Compound Inference</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root {
+    --bg: #0e0d10;
+    --panel: #17161b;
+    --panel-2: #1f1d23;
+    --ink: #e9e6df;
+    --ink-dim: #8a8579;
+    --line: #2a2730;
+    --accent: #d8a657;
+    --accent-2: #7daea3;
+    --warn: #ea6962;
+
+    --grp-fruity: #e78a4e;
+    --grp-floral: #d3869b;
+    --grp-roasted: #a9624a;
+    --grp-spice:   #ea6962;
+    --grp-nutty:   #c79460;
+    --grp-earthy:  #89b482;
+    --grp-sweet:   #d8a657;
+    --grp-fermented: #7daea3;
+
+    /* Pane widths — referenced both by the body grid and by the pane-toggle
+       positions, so both stay in sync if these change. */
+    --notes-pane-w:  320px;
+    --detail-pane-w: 360px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display: grid;
+    grid-template-columns: var(--notes-pane-w) 1fr var(--detail-pane-w);
+    grid-template-rows: 48px 1fr;
+    grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
+
+  /* Per-pane visibility. The wheel is always present; each side pane can be
+     independently hidden. The header view tabs (Notes / Reset View / Results)
+     are presets that flip these classes in combination; the small pane-toggle
+     tabs on the screen's edges flip them one at a time. */
+  body.notes-hidden  { grid-template-columns: 0 1fr var(--detail-pane-w); }
+  body.notes-hidden  aside.notes  { display: none; }
+  body.detail-hidden { grid-template-columns: var(--notes-pane-w) 1fr 0; }
+  body.detail-hidden aside.detail { display: none; }
+  body.notes-hidden.detail-hidden { grid-template-columns: 0 1fr 0; }
+
+  /* Small "hide / show" tab pinned to the viewport edges adjacent to each
+     side pane. position:fixed (relative to viewport, not to the wheel cell)
+     so they stay visible even when the wheel grid cell collapses on narrow
+     screens. When the corresponding pane is visible the tab sits at the
+     pane's inner edge; when hidden it sits flush against the screen edge.
+     Low-key by default; brighter on hover. */
+  .pane-toggle { position: fixed; top: calc(48px + (100vh - 48px) * 0.25);
+    transform: translateY(-50%);
+    width: 16px; height: 56px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--ink-dim); font-size: 12px; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0.55;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s,
+                left 0.2s ease, right 0.2s ease; }
+  .pane-toggle:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
+  .pane-toggle.left  { left:  var(--notes-pane-w);  border-left: none;  border-radius: 0 6px 6px 0; }
+  .pane-toggle.right { right: var(--detail-pane-w); border-right: none; border-radius: 6px 0 0 6px; }
+  body.notes-hidden  .pane-toggle.left  { left:  0; }
+  body.detail-hidden .pane-toggle.right { right: 0; }
+  header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
+    border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
+  header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
+  /* On mid-width viewports (tablet landscape, half-screen browser windows), the
+     results pane flexes a bit narrower so the wheel has more room. Sliders pane
+     stays at 320 for usability — slider labels and the per-row buttons need it. */
+  @media (max-width: 1100px) { :root { --detail-pane-w: 280px; } }
+  header .spacer { flex: 1; }
+  header button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  header button:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .tabs button { border: none; border-radius: 0; padding: 6px 12px; background: transparent;
+    color: var(--ink-dim); }
+  .tabs button.active { background: var(--accent); color: #1a1810; }
+  .tabs button:not(.active):hover { background: var(--panel-2); color: var(--ink); }
+
+  .profile-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .profile-toggle button { border: none; border-radius: 0; padding: 6px 10px; background: transparent;
+    color: var(--ink-dim); font-size: 11px; }
+  .profile-toggle button.active { background: var(--accent-2); color: #0e0d10; }
+  .profile-toggle .label { padding: 6px 8px; font-size: 11px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Compound grid — lives inside the Analysis pane (right) as its default-state
+     view when no compound is selected. Narrower than V1's middle-pane grid so
+     cards stack as a single column in the 360px-wide analysis pane. */
+  .compound-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .cpd-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; cursor: pointer; transition: opacity 0.2s, border-color 0.15s; position: relative; }
+  .cpd-card:hover { border-color: var(--accent); }
+  .cpd-card.inactive { opacity: 0.28; }
+  .cpd-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .cpd-card .swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    vertical-align: middle; margin-right: 6px; }
+  .cpd-card .name { font-size: 13px; font-weight: 600; }
+  .cpd-card .meta { font-size: 10px; color: var(--ink-dim); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .cpd-card .meta .pill { padding: 1px 6px; border-radius: 3px; background: var(--bg);
+    border: 1px solid var(--line); }
+  .cpd-card .meta .pill.very-low { color: #e78a4e; border-color: #e78a4e; }
+  .cpd-card .meta .pill.low      { color: #d8a657; border-color: #d8a657; }
+  .cpd-card .meta .pill.medium   { color: #89b482; border-color: #89b482; }
+  .cpd-card .meta .pill.high     { color: #7daea3; border-color: #7daea3; }
+  .cpd-card .meta .pill.signature { color: #d3869b; border-color: #d3869b; font-weight: 600; }
+
+  .cpd-card .scores { margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .cpd-card .score-row { display: grid; grid-template-columns: 70px 1fr 32px; gap: 6px; align-items: center;
+    font-size: 10px; }
+  .cpd-card .score-row .lbl { color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  .cpd-card .score-row .val { color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+  .cpd-card .bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; position: relative; }
+  .cpd-card .bar > div { height: 100%; transition: width 0.3s; }
+  .cpd-card .bar .intensity { background: var(--accent); }
+  .cpd-card .bar .confidence { background: var(--accent-2); }
+
+  .compounds-header { display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 12px; }
+  .compounds-header h2 { font-size: 13px; margin: 0; letter-spacing: 0.02em; }
+  .compounds-header .help { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
+  .compounds-header .sort { display: inline-flex; border: 1px solid var(--line); border-radius: 6px;
+    overflow: hidden; align-self: flex-start; }
+  .compounds-header .sort button { border: none; border-radius: 0; padding: 4px 10px; background: transparent;
+    color: var(--ink-dim); font-size: 11px; cursor: pointer; }
+  .compounds-header .sort button.active { background: var(--panel-2); color: var(--ink); }
+
+  /* "Back to all compounds" link in detail mode, anchored above the compound name */
+  .back-to-grid { background: transparent; color: var(--ink-dim); border: none; padding: 0 0 8px;
+    font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .back-to-grid:hover { color: var(--accent); }
+
+  /* Default Results pane: three stacked sections (Your inputs / Top compounds /
+     All possible compounds). Each section has its own heading + help line. */
+  .results-section { margin-bottom: 22px; }
+  .results-section:last-of-type { margin-bottom: 8px; }
+  .results-h { font-size: 13px; margin: 0 0 4px; letter-spacing: 0.02em; color: var(--ink); }
+  .results-section-help { font-size: 11px; color: var(--ink-dim); line-height: 1.4; margin-bottom: 10px; }
+  .results-disclaimer { font-size: 11px; color: var(--ink-dim); line-height: 1.5;
+    padding-top: 10px; border-top: 1px dotted var(--line); margin-top: 8px; }
+
+  /* Section 1 — Your inputs → arrows to key compounds */
+  .input-arrows { list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 8px; }
+  .input-arrow-row { display: grid; grid-template-columns: minmax(70px, auto) auto 1fr;
+    gap: 6px; align-items: baseline; font-size: 12px; line-height: 1.5; }
+  .input-name { color: var(--ink); font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .input-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .arrow { color: var(--ink-dim); font-size: 13px; }
+  .arrow-targets { color: var(--ink-dim); }
+  .arrow-target { background: transparent; border: none; padding: 0;
+    color: var(--accent); cursor: pointer; font: inherit;
+    border-bottom: 1px dotted transparent; }
+  .arrow-target:hover { border-bottom-color: var(--accent); }
+  .arrow-sep { color: var(--ink-dim); margin: 0 1px; }
+
+  /* Section 3 — Compact list of all active compounds */
+  .compound-compact { list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 4px; }
+  .compact-row { display: grid;
+    grid-template-columns: 8px minmax(0, 1.5fr) minmax(0, 1fr) 1fr 36px;
+    gap: 8px; align-items: center; padding: 4px 6px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px;
+    cursor: pointer; font-size: 11px;
+    transition: border-color 0.15s; }
+  .compact-row:hover { border-color: var(--accent); }
+  .compact-swatch { width: 8px; height: 8px; border-radius: 50%; }
+  .compact-name { color: var(--ink); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  .compact-class { color: var(--ink-dim); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .compact-bar { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+  .compact-bar > div { height: 100%; }
+  .compact-val { font-variant-numeric: tabular-nums; color: var(--accent);
+    text-align: right; font-weight: 600; }
+
+  /* Empty-state compound browser — grouped by class, no signal/intensity yet */
+  .browse-compounds { list-style: none; padding: 0; margin: 8px 0 0;
+    display: flex; flex-direction: column; gap: 10px; }
+  .browse-class-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px;
+    align-items: start; }
+  .browse-class-label { color: var(--ink-dim); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding-top: 4px; }
+  .browse-class-items { display: flex; flex-wrap: wrap; gap: 4px; }
+  .browse-cpd { background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+    border-left-width: 3px; border-radius: 3px;
+    padding: 3px 8px; font-size: 11px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; font-family: inherit; }
+  .browse-cpd:hover { background: var(--bg-hover, #2a2730); border-color: var(--accent); }
+
+  /* Wheel-corner overlays — readable text view of inputs (bottom-left) and
+     compound suggestions (bottom-right). Hidden by default; shown in Go Deeper. */
+  .wheel-overlay { position: absolute; bottom: 8px;
+    background: rgba(31, 29, 35, 0.88); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; font-size: 11px; display: none; max-width: 38%;
+    max-height: 45%; overflow-y: auto; backdrop-filter: blur(4px); }
+  body.go-deeper .wheel-overlay { display: block; }
+  .wheel-overlay.compounds { right: 8px; }
+  .wheel-overlay-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 4px;
+    display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  /* Tiny segmented toggle in the bottom-right overlay: switch list grouping
+     between individual compounds and chemical-class roll-up. */
+  .overlay-toggle { display: inline-flex; gap: 2px; }
+  .overlay-toggle button { background: transparent; border: 1px solid var(--line);
+    color: var(--ink-dim); padding: 1px 6px; border-radius: 3px; cursor: pointer;
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+    font-family: inherit; }
+  .overlay-toggle button.active { background: var(--accent); color: #1a1810;
+    border-color: var(--accent); }
+  .overlay-toggle button:hover:not(.active) { color: var(--ink); border-color: var(--accent); }
+  .wheel-overlay-list .class-dot { width: 8px; height: 8px; border-radius: 2px;
+    flex-shrink: 0; display: inline-block; }
+  .wheel-overlay-list { list-style: none; padding: 0; margin: 0; }
+  .wheel-overlay-list li { display: flex; align-items: center; gap: 6px;
+    padding: 2px 0; font-size: 11px; }
+  .wheel-overlay-list li .name { flex: 1; color: var(--ink); }
+  .wheel-overlay-list li .phase { font-size: 9px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  .wheel-overlay-list li .val { color: var(--accent); font-variant-numeric: tabular-nums;
+    font-weight: 600; min-width: 28px; text-align: right; }
+  .wheel-overlay-list li.empty { color: var(--ink-dim); font-style: italic; padding: 4px 0; }
+
+  /* Legend */
+  .legend { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 10px; margin-bottom: 12px; }
+  .legend-header { display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; color: var(--ink-dim); text-transform: uppercase;
+    letter-spacing: 0.08em; user-select: none; font-size: 10px; padding: 2px 0; }
+  .legend.collapsed .legend-body { display: none; }
+  .legend.collapsed .caret { transform: rotate(-90deg); }
+  .legend-body { margin-top: 8px; }
+  .legend-section { margin-bottom: 10px; }
+  .legend-section:last-child { margin-bottom: 0; }
+  .legend-section-title { font-size: 10px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; margin: 4px 0 4px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .legend-section-title .toggle-all { font-size: 9px; cursor: pointer; color: var(--accent);
+    text-transform: none; letter-spacing: 0; }
+  .legend-section-title .toggle-all:hover { text-decoration: underline; }
+  .legend-item { display: grid; grid-template-columns: 14px 10px 1fr 22px;
+    gap: 6px; align-items: center; padding: 2px 0; cursor: pointer; font-size: 11px; }
+  .legend-item input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .legend-item .swatch { width: 10px; height: 10px; border-radius: 2px; }
+  .legend-item .count { font-size: 10px; color: var(--ink-dim);
+    text-align: right; font-variant-numeric: tabular-nums; }
+  .legend-item.off .label, .legend-item.off .swatch { opacity: 0.35; }
+  .legend-item:hover { background: var(--bg); border-radius: 3px; }
+  .caret { transition: transform 0.2s; font-size: 10px; }
+
+  aside.notes { grid-area: notes; background: var(--panel); border-right: 1px solid var(--line);
+    overflow-y: auto; padding: 12px; }
+  /* Subtle search field at the top of the notes pane (below the legend).
+     Filters note rows as the user types. */
+  /* "Describe what you're tasting →" trigger button at the top of the notes
+     pane. Solid button, not a text-link, so it reads as a clear action. */
+  .wais-open-btn { width: 100%; background: var(--panel-2); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 6px;
+    padding: 9px 12px; font-size: 12px; font-family: inherit; cursor: pointer;
+    margin-bottom: 10px; text-align: center; font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  .wais-open-btn:hover { background: var(--accent); color: #1a1810; }
+
+  /* WAIS modal content */
+  .wais-content { max-width: 640px; max-height: 80vh; }
+  .wais-title { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: 0.01em; }
+  .wais-body { padding: 18px 22px; }
+  .wais-lede { font-size: 12px; color: var(--ink-dim); margin: 0 0 14px; line-height: 1.5; }
+  .wais-chips { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+  .wais-category { display: flex; flex-direction: column; gap: 6px; }
+  .wais-category-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); padding-bottom: 2px; border-bottom: 1px dotted var(--line); }
+  .wais-category-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wais-chip { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+    font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+  .wais-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .wais-chip.active { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  .wais-suggestions { font-size: 12px; color: var(--ink); line-height: 1.6; }
+  .wais-suggestions-empty { color: var(--ink-dim); font-style: italic; padding: 8px 0; }
+  .wais-suggestion-heading { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 8px; }
+  .wais-suggestion-list { list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 4px; }
+  .wais-suggestion-item { display: grid; grid-template-columns: 10px 1fr auto;
+    gap: 8px; align-items: center; padding: 6px 10px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px;
+    cursor: pointer; transition: border-color 0.15s; }
+  .wais-suggestion-item:hover { border-color: var(--accent); }
+  .wais-suggestion-item .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .wais-suggestion-item .name { color: var(--ink); }
+  .wais-suggestion-item .group { font-size: 10px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; }
+  /* Small info icon shown next to the group label when a note's grouping
+     isn't obvious from everyday perception (e.g. why is Buttery in Fermented).
+     Cursor:help signals "hover for explanation"; tooltip carries the answer. */
+  .rationale-info { background: transparent; border: none; padding: 0 0 0 4px;
+    color: var(--ink-dim); cursor: help; font-size: 11px; font-family: inherit; }
+  .rationale-info:hover { color: var(--accent); }
+  .wais-suggestion-item { grid-template-columns: 10px 1fr auto auto !important; }
+  .wais-suggestion-count { font-size: 10px; color: var(--accent); font-weight: 600;
+    font-variant-numeric: tabular-nums; margin-left: 6px;
+    border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+    background: var(--bg); }
+
+  /* "Add suggested flavor notes" — the submit at the bottom of the
+     suggestions list. Prominent so the user sees it as the next action. */
+  .wais-add-all-btn { display: block; width: 100%; margin-top: 16px;
+    background: var(--accent); color: #1a1810; border: 1px solid var(--accent);
+    border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s; }
+  .wais-add-all-btn:hover { background: #e8b667; border-color: #e8b667; }
+
+  .notes-search { width: 100%; background: var(--bg); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 6px 10px; font-size: 12px; font-family: inherit;
+    margin-bottom: 10px; }
+  .notes-search:focus { outline: none; border-color: var(--accent); }
+  .notes-search::placeholder { color: var(--ink-dim); }
+  .note-row.search-hidden, .group-header.search-hidden { display: none; }
+  aside.detail { grid-area: detail; background: var(--panel); border-left: 1px solid var(--line);
+    overflow-y: auto; padding: 16px; }
+  main.wheel { grid-area: wheel; position: relative; overflow: hidden; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  .group-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); padding: 12px 4px 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px; }
+  .group-header .swatch { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
+     Each note can have up to two confirmed entries — one per phase —
+     each with its own intensity. Confirming requires intensity > 0.
+     Confirmed buttons show "Added"; clicking one opens edit/delete callout. */
+  .note-row { display: grid; grid-template-columns: 1fr 28px; gap: 4px 8px; align-items: center;
+    padding: 6px 4px; border-radius: 4px; position: relative; }
+  .note-row:hover { background: var(--panel-2); }
+  .note-row .note-label-text { font-size: 12px; cursor: pointer; grid-column: 1; }
+  .note-row .val { font-size: 11px; color: var(--ink-dim); text-align: right;
+    font-variant-numeric: tabular-nums; grid-column: 2; }
+  .note-row input[type=range] { grid-column: 1 / span 2; width: 100%; accent-color: var(--accent);
+    margin: 2px 0; }
+  .note-row.has-entries .note-label-text { color: var(--accent); }
+  .note-row.flash { background: rgba(216, 166, 87, 0.18); transition: background 0.6s; }
+
+  /* Default mode: NO buttons. The slider directly commits / updates / deletes
+     the note's null-phase entry in real-time.
+     Go Deeper mode (body.go-deeper): the row reveals three commit buttons
+     (Add / Ortho / Retro). Slider becomes pending-intensity; buttons commit. */
+  .phase-buttons { grid-column: 1 / span 2; display: none; }
+  body.go-deeper .phase-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .phase-btn { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line);
+    border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    transition: border-color 0.15s, color 0.15s, background 0.15s; }
+  .phase-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--ink); }
+  .phase-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .phase-btn.added { background: rgba(216, 166, 87, 0.12); border-color: var(--accent);
+    color: var(--accent); cursor: pointer; opacity: 1; }
+  .phase-btn.added:hover { background: rgba(216, 166, 87, 0.18); }
+  .phase-btn svg { width: 22px; height: 18px; flex-shrink: 0; }
+  .phase-btn .added-intensity { font-variant-numeric: tabular-nums; color: var(--ink);
+    font-weight: 600; margin-left: 2px; }
+
+  /* Go Deeper top-menu toggle (active state has a subtle accent) */
+  #godeeper-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  #godeeper-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  body.go-deeper #godeeper-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+
+  /* Info button — small round "i" sitting next to Go Deeper */
+  #info-open-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    font-style: italic; font-family: ui-serif, Georgia, serif; font-size: 14px;
+    padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  #info-open-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Info overlay (the "i" tab content). Modal-style full-screen surface,
+     dim background, scrollable content. Closed by ✕ button or Escape key. */
+  .info-overlay { position: fixed; inset: 0; background: rgba(14, 13, 16, 0.85);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 4vh 4vw; backdrop-filter: blur(2px); }
+  .info-overlay[hidden] { display: none; }
+  .info-overlay-content { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; width: 100%; max-width: 980px; height: 100%; max-height: 92vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6); }
+  .info-overlay-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+  .info-tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .info-tabs button { border: none; border-radius: 0; padding: 6px 14px; background: transparent;
+    color: var(--ink-dim); font-size: 13px; cursor: pointer; }
+  .info-tabs button.active { background: var(--accent); color: #1a1810; }
+  .info-tabs button:not(.active):hover { background: var(--bg); color: var(--ink); }
+  .info-close { background: transparent; border: none; color: var(--ink-dim);
+    font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+  .info-close:hover { color: var(--accent); }
+
+  .info-overlay-body { padding: 20px 28px; overflow-y: auto; flex: 1; line-height: 1.55; }
+  .info-overlay-body h2 { font-size: 17px; margin: 0 0 12px; letter-spacing: 0.01em; }
+  .info-overlay-body h3 { font-size: 14px; margin: 18px 0 8px; color: var(--accent); letter-spacing: 0.02em; }
+  .info-overlay-body p { margin: 0 0 12px; color: var(--ink); font-size: 13px; }
+  .info-overlay-body p.lede { font-size: 14px; color: var(--ink); }
+  .info-overlay-body em { color: var(--ink-dim); font-style: italic; }
+  .info-overlay-body ol, .info-overlay-body ul { padding-left: 22px; margin: 0 0 12px; color: var(--ink); font-size: 13px; }
+  .info-overlay-body li { margin-bottom: 6px; }
+  .info-overlay-body code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; background: var(--bg); color: var(--accent);
+    padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
+
+  /* Methodology "Show formulas" toggle.
+     Formula-heavy paragraphs are wrapped in <div class="formula">; hidden by
+     default, shown when the user toggles on. Lightly distinguished from prose
+     when visible so it's clear which blocks are the math addendums. */
+  .methodology-toggle-row { display: flex; align-items: center; gap: 12px;
+    margin: 0 0 18px; padding: 10px 12px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+  .methodology-toggle-row button { background: transparent; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 4px; padding: 4px 12px;
+    font-size: 11px; cursor: pointer; white-space: nowrap; }
+  .methodology-toggle-row button:hover { background: rgba(216, 166, 87, 0.12); }
+  .methodology-toggle-row .help { font-size: 11px; color: var(--ink-dim);
+    line-height: 1.4; }
+  .info-overlay-body .formula { display: none;
+    border-left: 2px solid var(--accent);
+    padding: 8px 12px; margin: 0 0 12px;
+    background: rgba(216, 166, 87, 0.05); border-radius: 0 4px 4px 0; }
+  .info-overlay-body.show-formulas .formula { display: block; }
+  .info-overlay-body .formula p:last-child,
+  .info-overlay-body .formula ul:last-child { margin-bottom: 0; }
+
+  /* Search field + filter row inside Types of Aroma */
+  .info-search-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .info-search { flex: 1; background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 8px 12px; font-size: 13px;
+    font-family: inherit; }
+  .info-search:focus { outline: none; border-color: var(--accent); }
+  .info-result-count { font-size: 11px; color: var(--ink-dim); white-space: nowrap; }
+
+  /* Types of Aroma entry blocks */
+  .info-section { margin-bottom: 22px; }
+  .info-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); margin-bottom: 10px; padding-bottom: 4px;
+    border-bottom: 1px solid var(--line); }
+  .info-entry { padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 6px; margin-bottom: 6px; }
+  .info-entry.hidden { display: none; }
+  .info-entry-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .info-entry-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .info-entry-pill { font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; }
+  .info-entry-pill.class-pill { color: var(--ink); }
+  .info-entry-body { font-size: 12px; color: var(--ink); line-height: 1.5; }
+  .info-entry-meta { font-size: 11px; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
+  .info-entry-meta strong { color: var(--ink); font-weight: 500; }
+  .info-view-on-wheel { font-size: 11px; color: var(--accent); cursor: pointer;
+    margin-top: 6px; display: inline-block; background: none; border: none; padding: 0; }
+  .info-view-on-wheel:hover { text-decoration: underline; }
+  .info-no-results { color: var(--ink-dim); font-style: italic; padding: 16px 0; text-align: center; }
+
+  /* Inline link styled as button — opens the info overlay on a specific tab.
+     Used wherever we want to surface a one-click "go read the longer story" affordance
+     (e.g. the limitations disclaimer in the analysis pane help text). */
+  .inline-link { background: none; border: none; color: var(--accent); cursor: pointer;
+    padding: 0; font: inherit; text-decoration: none; }
+  .inline-link:hover { text-decoration: underline; }
+
+  /* Edit/delete callout — appears anchored above an "Added" button on click */
+  .entry-callout { position: absolute; z-index: 50; background: var(--panel-2);
+    border: 1px solid var(--accent); border-radius: 6px; padding: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); min-width: 140px;
+    display: flex; flex-direction: column; gap: 4px; }
+  .entry-callout button { background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 4px; padding: 6px 10px; font-size: 11px; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 6px; }
+  .entry-callout button:hover { background: var(--bg); border-color: var(--accent); }
+  .entry-callout button.danger:hover { border-color: var(--warn); color: var(--warn); }
+  .entry-callout .nevermind { background: transparent; border: none; color: var(--ink-dim);
+    font-size: 10px; text-align: center; padding: 4px 0 0; margin-top: 2px;
+    border-top: 1px dotted var(--line); cursor: pointer; }
+  .entry-callout .nevermind:hover { color: var(--ink); background: transparent; }
+
+  /* Legend phase-filter rows (same shape as group/class items but with SVG icons) */
+  .legend-phase-item { display: grid; grid-template-columns: 14px 18px 1fr 22px;
+    gap: 6px; align-items: center; padding: 2px 0; cursor: pointer; font-size: 11px; }
+  .legend-phase-item input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+  .legend-phase-item svg { width: 22px; height: 18px; color: var(--ink-dim); }
+  .legend-phase-item.off .label, .legend-phase-item.off svg { opacity: 0.35; }
+  .legend-phase-item:hover { background: var(--bg); border-radius: 3px; }
+  .legend-phase-item .count { font-size: 10px; color: var(--ink-dim);
+    text-align: right; font-variant-numeric: tabular-nums; }
+
+  aside.detail h2 { font-size: 13px; margin: 0 0 4px; letter-spacing: 0.02em; }
+  aside.detail .compound-class { font-size: 11px; color: var(--ink-dim); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 12px; }
+  aside.detail .empty { color: var(--ink-dim); font-size: 12px; line-height: 1.5; }
+  aside.detail .section { margin-top: 14px; }
+  aside.detail .section-title { font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--ink-dim); margin-bottom: 6px; }
+  aside.detail ul { list-style: none; padding: 0; margin: 0; }
+  aside.detail li { font-size: 12px; padding: 4px 0; border-bottom: 1px dotted var(--line); }
+  aside.detail li .note-name { color: var(--ink); }
+  aside.detail li .weight { color: var(--accent); font-variant-numeric: tabular-nums; }
+  aside.detail li .cite { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 2px; font-style: italic; }
+  /* Expanded bibliographic citation (Go Deeper). More structured than the
+     short cite line: indented block, slight border accent, journal name
+     italicized. */
+  aside.detail li .cite-full { font-style: normal; padding: 6px 8px;
+    margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
+    border-radius: 0 3px 3px 0; line-height: 1.5; }
+  aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
+  /* Note-detail view (Go Deeper inverse mode) */
+  aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
+    border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  aside.detail .note-entries { font-size: 11px; color: var(--ink-dim); margin: 8px 0 14px;
+    padding: 8px 10px; background: var(--bg); border-radius: 4px;
+    border: 1px solid var(--line); }
+  aside.detail .entry-tag { display: inline-block; font-size: 10px;
+    background: var(--panel-2); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 3px; padding: 1px 6px; margin-left: 4px;
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  aside.detail li .view-cpd { cursor: pointer; color: var(--ink);
+    border-bottom: 1px dotted var(--ink-dim); }
+  aside.detail li .view-cpd:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* SVG text on the wheel. The paint-order trick draws a background-color
+     stroke behind the fill so labels remain readable when they overlap each
+     other or sit on top of compound dots / edges. Font sizes scale up on
+     hover and when active/selected so the focused element pops. */
+  .node-label, .note-label {
+    pointer-events: none;
+    fill: var(--ink);
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    transition: font-size 0.15s ease, font-weight 0.15s ease, fill-opacity 0.15s ease;
+  }
+  .node-label { font-size: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .note-label { font-size: 11px; }
+  .compound:hover .node-label,
+  .compound.selected .node-label {
+    font-size: 13px;
+    font-weight: 600;
+    fill-opacity: 1 !important;
+  }
+  .note:hover .note-label,
+  .note.active .note-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; }
+  .edge.lit { stroke-opacity: 0.55; }
+  .compound { cursor: pointer; }
+  .compound circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
+  .compound:hover circle { stroke: var(--accent); }
+  .compound.selected circle { stroke: var(--accent); stroke-width: 2; }
+  .note { cursor: pointer; }
+  .note circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
+  .note:hover circle { stroke: var(--ink); }
+  .note.active circle { stroke: var(--ink); stroke-width: 2; }
+
+  .center-ring { fill: none; stroke: var(--line); stroke-dasharray: 2 4; }
+  .group-arc { fill: none; stroke-width: 18; opacity: 0.7; }
+  .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
+    letter-spacing: 0.15em; opacity: 0.7; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Aroma Wheel</h1>
+  <span class="spacer"></span>
+  <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
+    <button data-view="note-input">Notes</button>
+    <button data-view="dashboard" class="active">Reset View</button>
+    <button data-view="analysis">Results</button>
+  </div>
+  <div class="profile-toggle" id="notefilter-toggle" title="Filter to widely-recognized notes vs. include niche/specialist descriptors">
+    <span class="label">Notes</span>
+    <button data-filter="common" class="active">Common</button>
+    <button data-filter="all">All</button>
+  </div>
+  <button id="info-open-btn" title="About, Methodology, How to Use, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
+  <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
+  <button id="reset">Reset</button>
+  <button id="demo-coffee">Demo: Coffee</button>
+  <button id="demo-mocktail">Demo: Citrus mocktail</button>
+</header>
+<aside class="notes" id="left-panel">
+  <div class="legend collapsed" id="legend">
+    <div class="legend-header" id="legend-toggle">
+      <span>Legend &amp; visibility</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="legend-body">
+      <div class="legend-section">
+        <div class="legend-section-title">
+          <span>Phase (ortho / retro)</span>
+        </div>
+        <div id="legend-phases"></div>
+      </div>
+      <div class="legend-section">
+        <div class="legend-section-title">
+          <span>Note groups</span>
+          <span class="toggle-all" data-target="groups">toggle all</span>
+        </div>
+        <div id="legend-groups"></div>
+      </div>
+      <div class="legend-section">
+        <div class="legend-section-title">
+          <span>Compound classes</span>
+          <span class="toggle-all" data-target="classes">toggle all</span>
+        </div>
+        <div id="legend-classes"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Discovery aid: opens a modal of evocative descriptors that suggest which
+       specific notes to try. Subtle text button so it's there for people who
+       want it without crowding the pane for people who don't. -->
+  <button type="button" id="wais-open-btn" class="wais-open-btn">Not sure what to add? Use Note Suggester</button>
+  <!-- Subtle search field at the top of the notes pane. Filters which note rows
+       are visible as the user types. Empty query = show all. -->
+  <input type="search" id="notes-search" class="notes-search" placeholder="Search notes…" autocomplete="off" />
+  <div id="notes-panel"></div>
+</aside>
+<main class="wheel">
+  <svg id="svg"></svg>
+  <!-- Per-pane hide/show toggles. Pinned to the wheel's inner edges so they're
+       visible whether the corresponding side pane is shown or hidden. Click to
+       collapse the pane against the screen edge; click again to bring it back. -->
+  <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
+  <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
+  <!-- Go Deeper overlay (hidden unless body.go-deeper). Bottom-right shows the
+       top compound suggestions in compact list form. The "Your inputs" overlay
+       was moved into the Results pane as a stacked "Your inputs → compounds"
+       section, since it belongs with the rest of the results readout. -->
+  <div class="wheel-overlay compounds">
+    <div class="wheel-overlay-header">
+      <span id="overlay-compounds-title">Top compounds</span>
+      <div class="overlay-toggle" id="overlay-by-toggle" title="Switch between individual compounds and chemical-class roll-up">
+        <button type="button" data-overlay-by="compound" class="active">by compound</button>
+        <button type="button" data-overlay-by="class">by class</button>
+      </div>
+    </div>
+    <ul class="wheel-overlay-list" id="overlay-compounds"></ul>
+  </div>
+</main>
+<aside class="detail" id="detail-panel">
+  <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
+</aside>
+
+<!-- Info overlay (the "i" tab). Three sub-tabs: About / How to Use / Types of Aroma.
+     Hidden until #info-open-btn is clicked; closed via the ✕ button or Escape. -->
+<div id="info-overlay" class="info-overlay" role="dialog" aria-modal="true" aria-labelledby="info-title" hidden>
+  <div class="info-overlay-content">
+    <div class="info-overlay-header">
+      <div class="info-tabs" id="info-tabs" role="tablist">
+        <button type="button" data-info-tab="about" class="active" role="tab">About</button>
+        <button type="button" data-info-tab="methodology" role="tab">Methodology</button>
+        <button type="button" data-info-tab="how-to-use" role="tab">How to Use</button>
+        <button type="button" data-info-tab="types-of-aroma" role="tab">Types of Aroma</button>
+      </div>
+      <button type="button" id="info-close-btn" class="info-close" aria-label="Close info">✕</button>
+    </div>
+    <div class="info-overlay-body" id="info-body" role="tabpanel"></div>
+  </div>
+</div>
+
+<!-- "What am I smelling?" modal — translates evocative descriptors to suggested
+     notes from the existing vocabulary. Closed by ✕ button or Escape. -->
+<div id="wais-overlay" class="info-overlay" role="dialog" aria-modal="true" aria-labelledby="wais-title" hidden>
+  <div class="info-overlay-content wais-content">
+    <div class="info-overlay-header">
+      <span id="wais-title" class="wais-title">Note Suggester</span>
+      <button type="button" id="wais-close-btn" class="info-close" aria-label="Close">✕</button>
+    </div>
+    <div class="info-overlay-body wais-body">
+      <p class="wais-lede">Click a word that describes what you're noticing. We'll suggest specific notes to try.</p>
+      <div id="wais-chips" class="wais-chips"></div>
+      <div id="wais-suggestions" class="wais-suggestions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- DATA ----------
+// Note groups (the 8 sectors of the wheel)
+const GROUPS = [
+  { id: "fruity",    label: "Fruity",    color: "var(--grp-fruity)",    cssVar: "--grp-fruity" },
+  { id: "floral",    label: "Floral",    color: "var(--grp-floral)",    cssVar: "--grp-floral" },
+  { id: "roasted",   label: "Roasted",   color: "var(--grp-roasted)",   cssVar: "--grp-roasted" },
+  { id: "spice",     label: "Spice",     color: "var(--grp-spice)",     cssVar: "--grp-spice" },
+  { id: "nutty",     label: "Nutty",     color: "var(--grp-nutty)",     cssVar: "--grp-nutty" },
+  { id: "earthy",    label: "Earthy",    color: "var(--grp-earthy)",    cssVar: "--grp-earthy" },
+  { id: "sweet",     label: "Sweet",     color: "var(--grp-sweet)",     cssVar: "--grp-sweet" },
+  { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" }
+];
+
+// Sensory notes. `common: true` = widely recognizable across cultures/diets.
+// `common: false` = niche / requires familiarity (specialty fruits, professional descriptors).
+// Toggle "Common / All" in the header filters niche notes out of the panel and wheel.
+const NOTES = [
+  // fruity
+  { id: "lemon",       label: "Lemon",              group: "fruity",   common: true  },
+  { id: "orange",      label: "Orange",             group: "fruity",   common: true  },
+  { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true  },
+  { id: "berry",       label: "Berry",              group: "fruity",   common: true  },
+  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true  },
+  { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true  },
+  { id: "banana",      label: "Banana",             group: "fruity",   common: true  },
+  { id: "pineapple",   label: "Pineapple",          group: "fruity",   common: true  },
+  { id: "cherry",      label: "Cherry",             group: "fruity",   common: true  },
+  { id: "mango",       label: "Mango",              group: "fruity",   common: false },
+  { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false },
+  // floral
+  { id: "rose",        label: "Rose",               group: "floral",   common: true  },
+  { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
+  { id: "lavender",    label: "Lavender",           group: "floral",   common: true  },
+  { id: "chamomile",   label: "Chamomile",          group: "floral",   common: true  },
+  { id: "violet",      label: "Violet",             group: "floral",   common: false },
+  // roasted
+  { id: "coffee",      label: "Coffee / roast",     group: "roasted",  common: true  },
+  { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true  },
+  { id: "smoky",       label: "Smoky",              group: "roasted",  common: true  },
+  { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true  },
+  // spice
+  { id: "clove",       label: "Clove",              group: "spice",    common: true  },
+  { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true  },
+  { id: "pepper",      label: "Black pepper",       group: "spice",    common: true  },
+  { id: "anise",       label: "Anise / licorice",   group: "spice",    common: true  },
+  // nutty
+  { id: "almond",      label: "Almond",             group: "nutty",    common: true  },
+  { id: "hazelnut",    label: "Hazelnut",           group: "nutty",    common: false },
+  { id: "peanut",      label: "Peanut",             group: "nutty",    common: true  },
+  // earthy
+  { id: "woody",       label: "Woody / cedar",      group: "earthy",   common: true  },
+  { id: "pine",        label: "Pine / resin",       group: "earthy",   common: true  },
+  { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false },
+  { id: "green",       label: "Green / grassy",     group: "earthy",   common: true  },
+  { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true  },
+  { id: "mint",        label: "Mint",               group: "earthy",   common: true  },
+  { id: "tobacco",     label: "Tobacco",            group: "earthy",   common: false },
+  // sweet
+  { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true  },
+  { id: "caramel",     label: "Caramel",            group: "sweet",    common: true  },
+  { id: "honey",       label: "Honey",              group: "sweet",    common: true  },
+  { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true  },
+  { id: "maple",       label: "Maple / brown sugar",group: "sweet",    common: true  },
+  // fermented
+  { id: "winey",       label: "Winey",              group: "fermented",common: false },
+  { id: "buttery",     label: "Buttery",            group: "fermented",common: true  },
+  { id: "yeasty",      label: "Yeasty / bready",    group: "fermented",common: true  },
+  { id: "sulfury",     label: "Sulfury",            group: "fermented",common: false },
+  { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false }
+];
+
+// Compounds with class, literature anchor, odor-threshold tier, and specificity.
+// threshold tiers: "very-low" (sub-ppt to ppt — everyone smells trace amounts),
+//                  "low"      (ppt to low-ppb — most smellers detect),
+//                  "medium"   (mid-ppb — typical smellers detect at modest concentrations),
+//                  "high"     (ppm-range — mainly sensitive smellers / requires real concentration).
+// specificity:    "signature" (compound is essentially the marker of one note — e.g. cinnamaldehyde→cinnamon),
+//                 "shared"    (compound contributes to several notes across categories).
+const COMPOUNDS = [
+  // terpenes
+  { id: "limonene",      label: "Limonene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~10 ppb in water (Buettner & Schieberle 1999).", note: "Major citrus-peel monoterpene." },
+  { id: "linalool",      label: "Linalool",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~0.6–6 ppb (Buttery 1981).", note: "Floral-citrus monoterpenoid; abundant in coffee, lavender, chamomile." },
+  { id: "myrcene",       label: "Myrcene",           class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~13–15 ppb (Buttery 1981).", note: "Earthy/resinous monoterpene; mango, hops, cannabis." },
+  { id: "geraniol",      label: "Geraniol",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~3.2 ppb (Buttery 1981).", note: "Rose-like monoterpenoid." },
+  { id: "bcaryo",        label: "β-Caryophyllene",   class: "terpene",   threshold: "high",     specificity: "shared",    thresholdSrc: "~64 ppb (Jirovetz et al. 2002).", note: "Woody-spicy sesquiterpene; pepper." },
+  { id: "apinene",       label: "α-Pinene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~6 ppb (Buttery 1981).", note: "Pine-resinous monoterpene." },
+  { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002).", note: "Lavender principal. About 40% of lavender oil. Floral-fresh." },
+  { id: "bisabolol",     label: "α-Bisabolol",       class: "terpene",   threshold: "medium",   specificity: "signature", thresholdSrc: "~22 ppb (Mann & Staba 1986).", note: "Chamomile principal sesquiterpenol; soft floral-herbal." },
+  // pyrazines
+  { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", specificity: "signature", thresholdSrc: "~2 ng/L water (Allen, Lacey, Boyd 1991).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
+  { id: "edmpyr",        label: "2-Ethyl-3,5-dimethylpyrazine", class: "pyrazine", threshold: "low", specificity: "shared", thresholdSrc: "~0.04 ppb in water (Czerny et al. 2008).", note: "Earthy-roasted; key coffee odorant (Czerny et al.)." },
+  { id: "dempyr",        label: "2,3-Diethyl-5-methylpyrazine", class: "pyrazine", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.001 ppb (Czerny et al. 2008).", note: "Earthy-nutty roast; potent coffee aroma." },
+  // furans / thiols
+  { id: "furfural",      label: "Furfural",          class: "furan",     threshold: "high",     specificity: "shared",    thresholdSrc: "~3000 ppb (Buttery 1981).", note: "Bready-almond Maillard furan." },
+  { id: "fft",           label: "Furfurylthiol",     class: "thiol",     threshold: "very-low", specificity: "signature", thresholdSrc: "~0.005 ppb (Blank, Sen, Grosch 1992).", note: "2-furfurylthiol; signature roasted-coffee thiol." },
+  { id: "mh3",           label: "3-Mercaptohexanol", class: "thiol",     threshold: "very-low", specificity: "shared",    thresholdSrc: "~60 ng/L (Tominaga et al. 1998).", note: "Polyfunctional thiol; passionfruit, grapefruit." },
+  { id: "mmp4",          label: "4MMP",              class: "thiol",     threshold: "very-low", specificity: "shared",    thresholdSrc: "~0.8 ng/L water (Tominaga et al. 1998).", note: "4-methyl-4-mercaptopentan-2-one; passionfruit/box-tree thiol." },
+  { id: "mfthiol",       label: "Methanethiol",      class: "thiol",     threshold: "very-low", specificity: "signature", thresholdSrc: "~0.02 ppb (Mayer, Czerny, Grosch 2000).", note: "Volatile S; coffee freshness, cabbage at high levels." },
+  // esters
+  { id: "etbut",         label: "Ethyl butanoate",   class: "ester",     threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Pineapple-apple fruity ester." },
+  { id: "ethex",         label: "Ethyl hexanoate",   class: "ester",     threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Berry-apple ester; fermentation." },
+  { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     threshold: "low",      specificity: "signature", thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
+  // lactones
+  { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone; also mango." },
+  { id: "gnonal",        label: "γ-Nonalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~30 ppb (Schwab et al. 2008).", note: "Coconut-creamy lactone; aged spirits." },
+  { id: "sotolon",       label: "Sotolon",           class: "lactone",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.3 ppb (Pham et al. 1995).", note: "Maple/fenugreek/curry; aged sake, vin jaune." },
+  // aldehydes
+  { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
+  { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
+  { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
+  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau & Collin 2003).", note: "Cardboard/stale; beer & coffee staling marker." },
+  { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
+  { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
+  // ketones / norisoprenoids
+  { id: "diacetyl",      label: "Diacetyl",          class: "ketone",    threshold: "low",      specificity: "signature", thresholdSrc: "~5–15 ppb in beer (Bartowsky & Henschke 2004).", note: "2,3-butanedione; buttery, malolactic." },
+  { id: "bdam",          label: "β-Damascenone",     class: "norisoprenoid", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.002 ppb (Sefton et al. 2011).", note: "Rose/cooked-apple/honey/tobacco; potent across many fruits, teas, and brews." },
+  // phenols
+  { id: "guaiacol",      label: "Guaiacol",          class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Maga 1978).", note: "Smoky-medicinal; roast and wood." },
+  { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
+  { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." },
+  // Norisoprenoids
+  { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Naef et al. 2011).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents." },
+  // Alcohols (non-terpene)
+  { id: "octen3ol",      label: "1-Octen-3-ol",      class: "alcohol",   threshold: "low",      specificity: "signature", thresholdSrc: "~10 ppb (Combet et al. 2006).", note: "The 'mushroom alcohol.' Fresh-mushroom, forest-floor, blue-cheese accents." },
+  // More furans (Maillard / fruit)
+  { id: "furaneol",      label: "Furaneol (HDMF)",   class: "furan",     threshold: "low",      specificity: "shared",    thresholdSrc: "~10 ppb (Buttery et al. 1995).", note: "4-hydroxy-2,5-dimethyl-3(2H)-furanone. Strawberry/pineapple/cooked-fruit principal; also a Maillard product in coffee and bread crust." },
+  // More terpenes (eucalyptol, geosmin, menthol)
+  { id: "cineole",       label: "1,8-Cineole",       class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~12 ppb (Lis-Balchin 2002).", note: "Eucalyptol. Eucalyptus principal; also rosemary, sage, bay leaves, mint family." },
+  { id: "geosmin",       label: "Geosmin",           class: "terpene",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Darriet et al. 2000).", note: "The 'wet earth' compound. Petrichor, beetroot, mushroom, cork taint." },
+  { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." }
+];
+
+// Edges: note -> compound, weight 0..1 (strength of association), with citation
+// Citations chosen to anchor in real GC-MS / flavor-chem literature on coffee + beverage aromatics.
+const EDGES = [
+  // Citrus
+  { note: "lemon",       cpd: "limonene",  w: 0.95, cite: "Shaw 1979; citrus peel oil GC-MS." },
+  { note: "orange",      cpd: "limonene",  w: 0.95, cite: "Shaw 1979." },
+  { note: "grapefruit",  cpd: "mh3",       w: 0.80, cite: "Tominaga et al. 1998 (3-MH in Sauvignon = grapefruit/passionfruit)." },
+  { note: "grapefruit",  cpd: "limonene",  w: 0.55, cite: "Shaw 1979." },
+  { note: "lemon",       cpd: "linalool",  w: 0.35, cite: "Flament 2002 (Coffee Flavor Chemistry)." },
+  // Berry
+  { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Jiang & Zhang 2010 (berry esters)." },
+  { note: "berry",       cpd: "bdam",      w: 0.55, cite: "Sefton et al. 2011 (β-damascenone in wine/fruit)." },
+  // Stonefruit / apple
+  { note: "stonefruit",  cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
+  { note: "stonefruit",  cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
+  { note: "apple",       cpd: "etbut",     w: 0.75, cite: "Dimick & Hoskin 1983 (apple esters)." },
+  { note: "apple",       cpd: "bdam",      w: 0.45, cite: "Sefton et al. 2011." },
+  // Banana / mango / passionfruit (replacing generic "tropical")
+  { note: "banana",      cpd: "iaac",      w: 0.95, cite: "Salmon et al. 1996 (isoamyl acetate, banana signature)." },
+  { note: "banana",      cpd: "etbut",     w: 0.40, cite: "Salmon et al. 1996." },
+  { note: "mango",       cpd: "myrcene",   w: 0.65, cite: "Pino & Mesa 2006 (mango monoterpene profile)." },
+  { note: "mango",       cpd: "gdecal",    w: 0.55, cite: "Pino & Mesa 2006 (ripe-mango lactones)." },
+  { note: "mango",       cpd: "iaac",      w: 0.30, cite: "Pino & Mesa 2006." },
+  { note: "passionfruit",cpd: "mh3",       w: 0.90, cite: "Tominaga et al. 1998; Engel & Tressl 1991 (3-MH/3-MHA in passionfruit)." },
+  { note: "passionfruit",cpd: "mmp4",      w: 0.55, cite: "Tominaga et al. 2000 (4MMP also found in passionfruit)." },
+  { note: "passionfruit",cpd: "ethex",     w: 0.45, cite: "Engel & Tressl 1991 (passionfruit esters)." },
+
+  // Floral
+  { note: "rose",          cpd: "geraniol",   w: 0.90, cite: "Ohloff 1994 (Scent & Chemistry)." },
+  { note: "rose",          cpd: "linalool",   w: 0.55, cite: "Ohloff 1994." },
+  { note: "rose",          cpd: "bdam",       w: 0.70, cite: "Sefton et al. 2011 (β-damascenone, named for Rosa damascena — the Damask rose)." },
+  { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
+  { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
+  { note: "lavender",      cpd: "linalool",       w: 0.80, cite: "Lis-Balchin 2002 (linalool ~30% lavender oil)." },
+  { note: "lavender",      cpd: "linalylacetate", w: 0.90, cite: "Lis-Balchin 2002 (linalyl acetate ~40% lavender oil)." },
+  { note: "chamomile",     cpd: "bisabolol",      w: 0.85, cite: "Mann & Staba 1986 (α-bisabolol, chamomile principal)." },
+  { note: "chamomile",     cpd: "linalool",       w: 0.35, cite: "Mann & Staba 1986 (minor chamomile constituent)." },
+  { note: "violet",        cpd: "bdam",       w: 0.65, cite: "Sefton et al. 2011 (damascones/ionones)." },
+
+  // Roasted / coffee / toast / smoky
+  { note: "coffee",  cpd: "fft",      w: 0.95, cite: "Blank, Sen, Grosch 1992 (furfurylthiol, key coffee odorant)." },
+  { note: "coffee",  cpd: "edmpyr",   w: 0.80, cite: "Czerny et al. 1999 (ethyl-dimethyl-pyrazines, coffee)." },
+  { note: "coffee",  cpd: "dempyr",   w: 0.80, cite: "Czerny et al. 1999." },
+  { note: "coffee",  cpd: "furfural", w: 0.55, cite: "Flament 2002." },
+  { note: "coffee",  cpd: "bdam",     w: 0.60, cite: "Czerny et al. 1999 (β-damascenone among most potent coffee odorants)." },
+  { note: "toast",   cpd: "furfural", w: 0.75, cite: "Flament 2002 (Maillard furans)." },
+  { note: "toast",   cpd: "edmpyr",   w: 0.55, cite: "Czerny et al. 1999." },
+  { note: "smoky",   cpd: "guaiacol", w: 0.90, cite: "Maga 1978 (guaiacol & smoke phenols)." },
+  { note: "smoky",   cpd: "vinguai",  w: 0.55, cite: "Czerny & Grosch 2000." },
+  { note: "burnt",   cpd: "furfural", w: 0.60, cite: "Flament 2002." },
+  { note: "burnt",   cpd: "guaiacol", w: 0.45, cite: "Maga 1978." },
+
+  // Spice
+  { note: "clove",    cpd: "eugenol",  w: 0.95, cite: "Ohloff 1994." },
+  { note: "clove",    cpd: "vinguai",  w: 0.75, cite: "Tressl & Friese 1978 (4-vinylguaiacol, clove note)." },
+  { note: "cinnamon", cpd: "cinnamald", w: 0.95, cite: "Friedman 2017 (cinnamaldehyde >50% of cinnamon bark oil)." },
+  { note: "cinnamon", cpd: "benzald",   w: 0.25, cite: "Friedman 2017 (minor cinnamon constituent)." },
+  { note: "pepper",   cpd: "bcaryo",   w: 0.85, cite: "Jirovetz et al. 2002 (β-caryophyllene in pepper)." },
+  { note: "anise",    cpd: "eugenol",  w: 0.35, cite: "Ohloff 1994 (phenylpropene class)." },
+
+  // Nutty
+  { note: "almond",   cpd: "benzald",  w: 0.90, cite: "Ohloff 1994 (bitter-almond)." },
+  { note: "hazelnut", cpd: "edmpyr",   w: 0.65, cite: "Czerny et al. 1999 (alkyl pyrazines, nutty)." },
+  { note: "hazelnut", cpd: "dempyr",   w: 0.55, cite: "Czerny et al. 1999." },
+  { note: "peanut",   cpd: "edmpyr",   w: 0.70, cite: "Buttery et al. 1990 (peanut pyrazines)." },
+
+  // Earthy
+  { note: "woody",      cpd: "bcaryo",   w: 0.70, cite: "Jirovetz et al. 2002." },
+  { note: "woody",      cpd: "gnonal",   w: 0.45, cite: "Lee & Noble 2003 (oak lactones-adjacent)." },
+  { note: "pine",       cpd: "apinene",  w: 0.95, cite: "Ohloff 1994." },
+  { note: "pine",       cpd: "myrcene",  w: 0.45, cite: "Ohloff 1994." },
+  { note: "mushroom",   cpd: "hexanal",  w: 0.25, cite: "Combet et al. 2006 (C8 vs C6; partial overlap)." },
+  { note: "green",      cpd: "hexanal",  w: 0.90, cite: "Hatanaka 1993 (green leaf volatiles, C6 aldehydes)." },
+  { note: "bellpepper", cpd: "ibmp",     w: 0.95, cite: "Allen, Lacey, Boyd 1991 (IBMP odor threshold ~2 ng/L)." },
+  { note: "bellpepper", cpd: "myrcene",  w: 0.20, cite: "Buttery et al. 1969 (terpene contribution)." },
+  { note: "tobacco",    cpd: "bdam",     w: 0.75, cite: "Sefton et al. 2011 (β-damascenone: cooked apple, honey, tobacco)." },
+  { note: "tobacco",    cpd: "guaiacol", w: 0.35, cite: "Maga 1978 (phenolic notes in cured/smoked tobacco)." },
+
+  // Sweet
+  { note: "vanilla",   cpd: "vanillin",  w: 0.95, cite: "Ranadive 1992 (vanillin, vanilla principal)." },
+  { note: "vanilla",   cpd: "gnonal",    w: 0.45, cite: "Lee & Noble 2003 (oak lactones, vanilla-creamy)." },
+  { note: "caramel",   cpd: "furfural",  w: 0.55, cite: "Flament 2002." },
+  { note: "caramel",   cpd: "sotolon",   w: 0.55, cite: "Pham et al. 1995." },
+  { note: "honey",     cpd: "phenylacet",w: 0.85, cite: "Bonvehí 2005 (phenylacetaldehyde, honey marker)." },
+  { note: "honey",     cpd: "bdam",      w: 0.45, cite: "Sefton et al. 2011." },
+  { note: "chocolate", cpd: "edmpyr",    w: 0.70, cite: "Counet et al. 2002 (cocoa pyrazines)." },
+  { note: "chocolate", cpd: "phenylacet",w: 0.55, cite: "Counet et al. 2002." },
+  { note: "chocolate", cpd: "furaneol", w: 0.45, cite: "Counet et al. 2002 (furaneol as cocoa Maillard product)." },
+  { note: "maple",     cpd: "sotolon",   w: 0.95, cite: "Underwood & Filipic 1963; Pham et al. 1995." },
+
+  // Fermented
+  { note: "winey",   cpd: "ethex",    w: 0.65, cite: "Francis & Newton 2005 (esters in wine)." },
+  { note: "winey",   cpd: "etbut",    w: 0.55, cite: "Francis & Newton 2005." },
+  { note: "buttery", cpd: "diacetyl", w: 0.95, cite: "Bartowsky & Henschke 2004 (diacetyl, malolactic)." },
+  { note: "yeasty",  cpd: "iaac",     w: 0.55, cite: "Verstrepen et al. 2003 (yeast acetate esters)." },
+  { note: "yeasty",  cpd: "furfural", w: 0.30, cite: "Flament 2002 (bread crust)." },
+  { note: "sulfury", cpd: "mfthiol",  w: 0.90, cite: "Mayer, Czerny, Grosch 2000 (methanethiol in fresh coffee)." },
+  { note: "sulfury", cpd: "fft",      w: 0.35, cite: "Blank et al. 1992." },
+  { note: "cardboard", cpd: "e2non",  w: 0.95, cite: "Lermusieau & Collin 2003 ((E)-2-nonenal, beer staling)." },
+
+  // ---- New notes' edges (Pineapple, Cherry, Mint) ----
+  { note: "pineapple",  cpd: "etbut",    w: 0.80, cite: "Berger 2007; Steingass 2017 (ethyl butanoate, pineapple ester profile)." },
+  { note: "pineapple",  cpd: "ethex",    w: 0.55, cite: "Berger 2007 (ethyl hexanoate in pineapple)." },
+  { note: "pineapple",  cpd: "iaac",     w: 0.40, cite: "Berger 2007 (isoamyl acetate, banana-pineapple ester crossover)." },
+  { note: "pineapple",  cpd: "furaneol", w: 0.65, cite: "Pickenhagen et al. 1981 (furaneol in pineapple)." },
+
+  { note: "cherry",     cpd: "bdam",     w: 0.55, cite: "Sefton et al. 2011 (β-damascenone, cooked-cherry and wine notes)." },
+  { note: "cherry",     cpd: "benzald",  w: 0.40, cite: "Ohloff 1994 (benzaldehyde, cherry-pit/almond kernel accent)." },
+  { note: "cherry",     cpd: "gdecal",   w: 0.40, cite: "Schwab et al. 2008 (γ-decalactone, stonefruit family lactone)." },
+
+  { note: "mint",       cpd: "menthol",  w: 0.95, cite: "Lawrence 2007 (menthol, mint principal)." },
+  { note: "mint",       cpd: "cineole",  w: 0.40, cite: "Lawrence 2007 (1,8-cineole, minor mint constituent)." },
+
+  // ---- New compounds' edges to existing notes ----
+  { note: "violet",     cpd: "ionone",   w: 0.85, cite: "Naef et al. 2011 (β-ionone, violet principal odorant)." },
+  { note: "berry",      cpd: "ionone",   w: 0.40, cite: "Schreier 1984 (ionones in raspberry, blackberry)." },
+
+  { note: "mushroom",   cpd: "octen3ol", w: 0.90, cite: "Combet et al. 2006 (1-octen-3-ol, mushroom alcohol)." },
+  { note: "mushroom",   cpd: "geosmin",  w: 0.70, cite: "Combet et al. 2006 (geosmin in some mushroom species)." },
+  { note: "woody",      cpd: "geosmin",  w: 0.25, cite: "Darriet et al. 2000 (geosmin, soil/wet-earth crossover)." },
+
+  { note: "berry",      cpd: "furaneol", w: 0.50, cite: "Schwab et al. 2008 (furaneol in strawberries)." },
+  { note: "caramel",    cpd: "furaneol", w: 0.45, cite: "Buttery et al. 1995 (furaneol, Maillard caramel-cooked-sugar)." },
+  { note: "coffee",     cpd: "furaneol", w: 0.35, cite: "Czerny et al. 1999 (furaneol in roasted coffee)." },
+
+  { note: "pine",       cpd: "cineole",  w: 0.40, cite: "Lis-Balchin 2002 (1,8-cineole in pine and conifer families)." },
+  { note: "lavender",   cpd: "cineole",  w: 0.30, cite: "Lis-Balchin 2002 (1,8-cineole, minor lavender constituent)." }
+];
+
+// Per-class colors for compound nodes + legend. Distinct per class so the legend
+// reads unambiguously even though several classes overlap aroma-family palettes.
+const COMPOUND_CLASS_COLOR = {
+  "terpene":           "#89b482",  // green
+  "pyrazine":          "#a9624a",  // brown
+  "furan":             "#d8a657",  // yellow
+  "thiol":             "#e78a4e",  // orange
+  "ester":             "#d3869b",  // pink
+  "lactone":           "#c79460",  // tan
+  "phenolic-aldehyde": "#bdae93",  // sand
+  "aldehyde":          "#7daea3",  // aqua
+  "ketone":            "#ea6962",  // red
+  "norisoprenoid":     "#e8a0bf",  // light pink
+  "phenol":            "#928374",  // grey
+  "alcohol":           "#a89984"   // sand
+};
+
+// ---------- INFO-TAB CONTENT ----------
+// Per-compound natural-occurrence info. Per the project's editorial principle:
+// for an aromatic compound, *where it naturally occurs in general* is the most
+// useful per-compound information for a sensory-tasting audience — more useful
+// than molecular formula or biosynthetic pathway. Keyed by compound id.
+const COMPOUND_ORIGINS = {
+  limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates — the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
+  linalool:      "Lavender (≈30% of lavender oil), coriander seed (≈60–80% of its essential oil), green coffee beans, chamomile, basil, mint, ginger, citrus peel oils. One of the most widespread floral monoterpenes in nature.",
+  myrcene:       "Hops (the resinous-mango note in IPAs), ripe mango, hemp, lemongrass, thyme, parsley, bay. Same molecule across all of them.",
+  geraniol:      "Rose petals, geranium leaves, palmarosa, citronella (the candle), lemongrass, lemon, bay, ginger. The same compound makes rose smell like rose and citronella repel mosquitoes.",
+  bcaryo:        "Black pepper (where it drives the woody-spicy bite), clove, hops, hemp, basil, cinnamon, rosemary, oregano, copaiba balsam.",
+  apinene:       "Pine resin (the namesake — the smell of a pine forest), rosemary, frankincense, hemp, basil, dill, eucalyptus, juniper berries.",
+  linalylacetate:"Lavender (≈40% of lavender oil) and bergamot — the citrus that makes Earl Grey tea smell like Earl Grey. Also sage and clary sage.",
+  bisabolol:     "Chamomile (the soft-floral note you smell in chamomile tea); candeia tree, the main Brazilian commercial source.",
+  ibmp:          "Bell pepper (where it IS the green-pepper note), peas, asparagus, galbanum resin, robusta coffee, Sauvignon Blanc grapes. Detectable at parts-per-trillion — one of the most potent odorants known.",
+  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn. Doesn't exist in raw coffee beans — built from scratch by the heat of roasting (the Maillard reaction).",
+  dempyr:        "Roasted coffee (a key driver of the deep-roast smell) and baked goods. Another Maillard creation — made by heat, not extracted from any raw ingredient.",
+  furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugar, baked goods. A general signature of sugar getting hot enough to brown.",
+  fft:           "Freshly brewed coffee — the sulfur compound that makes coffee smell like coffee. Also roasted sesame and popcorn. Fades within hours of brewing.",
+  mh3:           "Passionfruit (where it creates the explosive tropical smell), grapefruit, blackcurrant, guava, Sauvignon Blanc.",
+  mmp4:          "Passionfruit, blackcurrant buds, boxwood, Sauvignon Blanc. The same compound is found in cat urine — which is why intense Sauvignon Blanc sometimes gets called 'cat-pee.'",
+  mfthiol:       "Fresh coffee in the first hour after brewing — it fades fast, which makes it a freshness marker. Also aged cheddar and cheese rinds. At higher concentrations: cooked cabbage and cooked seafood.",
+  etbut:         "Pineapple, apple, strawberry, banana. A fruity ester produced when yeast eats sugar — the smell of fruit slightly past ripe.",
+  ethex:         "Berry, apple, pineapple. A heavier fermentation ester — jammier than ethyl butanoate.",
+  iaac:          "Banana (where it IS the banana smell), pear, banana-flavored candy. The signature ester of yeast fermentation.",
+  gdecal:        "Peach, apricot, mango, ripe stonefruit, dairy. The soft fuzzy-peach quality on the back of your throat.",
+  gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids — giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
+  sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources — the principal smell of maple syrup IS the principal smell of fenugreek seed.",
+  vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging — a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
+  cinnamald:     "Cinnamon bark — over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon — what most US grocery 'cinnamon' actually is).",
+  hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells — released the instant a leaf is torn.",
+  e2non:         "Stale beer, stale coffee, cucumber, wet cardboard, old books. A marker of oxidative aging — appears as a beverage or paper sits with oxygen.",
+  benzald:       "Bitter almond, marzipan, cherry pits, apricot kernels, almond extract. All the kernels of the stone-fruit family share it — they're botanical cousins.",
+  phenylacet:    "Honey (the principal floral-honey note), rose, hyacinth, buckwheat honey, cocoa. Made when the amino acid phenylalanine breaks down under heat or fermentation.",
+  diacetyl:      "Butter (where it IS the butter smell), buttery popcorn, butterscotch, cultured dairy. Made by lactic acid bacteria — the same ones behind dairy cultures and the malolactic fermentation that softens many wines and sour beers.",
+  bdam:          "Rose (the namesake: Rosa damascena, the Damask rose), cooked apple, honey, black tea, tomato, grape, raspberry, tobacco. Also a major contributor to aged beverages.",
+  guaiacol:      "Smoke (the principal smoky-medicinal note), charred wood, roasted coffee, smoked foods, smoked teas like Lapsang Souchong. Also extracted from charred wood during barrel aging.",
+  vinguai:       "Clove (a key part of clove's bite), smoke, wheat beer (where the yeast builds it from the wort), robusta coffee.",
+  eugenol:       "Clove (the principal aroma — clove is essentially this one molecule), allspice, cinnamon leaf, bay, nutmeg, holy basil (tulsi). Minor in rose.",
+  ionone:        "Violet flowers (the principal odorant), raspberry, blackberry, carrot (a carotenoid breakdown product — same chemistry as the orange pigment), osmanthus, tomato, black tea, dried tobacco.",
+  octen3ol:      "Mushrooms (the signature 'mushroom smell'), blue cheese, lavender, oysters, forest floor after rain.",
+  furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard browning product — the same molecule shows up in roasted coffee, bread crust, and soy sauce, doing different work in each.",
+  cineole:       "Eucalyptus leaves (the principal odorant — koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
+  geosmin:       "Wet soil after rain — the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
+  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth — what creates the chilly sensation even at room temperature."
+};
+
+// Per-class plain-English explanations. The class names themselves (ester, thiol,
+// pyrazine) ARE the kind of jargon worth defining; specific molecules live below.
+const COMPOUND_CLASS_INFO = {
+  terpene:             "Plant-made aroma compounds built from isoprene units. Monoterpenes (10 carbons) are smaller and more volatile: think citrus, pine, lavender. Sesquiterpenes (15 carbons) are heavier and slower-release: think pepper, chamomile.",
+  pyrazine:            "Nitrogen-containing rings formed during the Maillard reaction (browning). Roasted, nutty, sometimes vegetal. Dominant in coffee, cocoa, roasted nuts, and the unmistakable bell-pepper note (IBMP).",
+  furan:               "Oxygen-containing rings from sugar caramelization and Maillard browning. Bready, sweet, caramel. Furfural is the classic.",
+  thiol:               "Sulfur compounds, often potent at parts-per-trillion. Disproportionately responsible for tropical-fruit (passionfruit, grapefruit) and freshly-brewed-coffee notes.",
+  ester:               "Acids combined with alcohols. Often fruity and sweet; commonly produced during fermentation. Bananas (isoamyl acetate), apples (ethyl butanoate), berries (ethyl hexanoate).",
+  lactone:             "Cyclic esters. Creamy, coconut, peachy, maple. Stable in aging spirits and barrel-aged wines.",
+  aldehyde:            "Carbonyl group at the end of a carbon chain. Range widely: grassy (hexanal), bitter-almond (benzaldehyde), honey-floral (phenylacetaldehyde).",
+  "phenolic-aldehyde": "Aldehydes attached to an aromatic ring. Vanillin is the canonical example: the principal odorant of vanilla and a major contributor to oak-aged spirits and wines.",
+  ketone:              "Carbonyl group in the middle of a carbon chain. Diacetyl is the buttery one (malolactic fermentation); other ketones span cooked-apple, floral, and tobacco-like notes.",
+  norisoprenoid:       "Fragments of broken-down carotenoid pigments, the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
+  phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers.",
+  alcohol:             "Compounds with a free hydroxyl (-OH) group that aren't classified elsewhere as a terpene or phenol family. Few but distinctive: 1-octen-3-ol is the classic 'mushroom alcohol' responsible for fresh-mushroom and forest-floor notes."
+};
+
+// Full bibliographic entries for the most-cited papers backing the note→compound
+// edges. Each edge's short `cite` string is matched against the prefixes in
+// CITE_TO_REF below to find a full entry. Edges without a match fall back to
+// rendering the short cite string as-is. The catalog is intentionally small
+// and conservative — only papers where the full citation is well-established.
+// Add more entries here as they're verified; no edge data changes needed.
+const REFERENCES = {
+  "blank1992": {
+    authors: "Blank, I., Sen, A., & Grosch, W.",
+    year: 1992,
+    title: "Potent odorants of the roasted powder and brew of Arabica coffee.",
+    journal: "Zeitschrift für Lebensmittel-Untersuchung und Forschung",
+    volume: "195", issue: "3", pages: "239–245"
+  },
+  "czerny1999coffee": {
+    authors: "Czerny, M., Mayer, F., & Grosch, W.",
+    year: 1999,
+    title: "Sensory study on the character impact odorants of roasted Arabica coffee.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "47", issue: "2", pages: "695–699"
+  },
+  "czerny2000raw": {
+    authors: "Czerny, M., & Grosch, W.",
+    year: 2000,
+    title: "Potent odorants of raw Arabica coffee. Their changes during roasting.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "48", issue: "3", pages: "868–872"
+  },
+  "czerny2008": {
+    authors: "Czerny, M., Christlbauer, M., Fischer, A., Granvogl, M., Hammer, M., Hartl, C., Hernandez, N.M., & Schieberle, P.",
+    year: 2008,
+    title: "Re-investigation on odour thresholds of key food aroma compounds and development of an aroma language based on odour qualities of defined aqueous odorant solutions.",
+    journal: "European Food Research and Technology",
+    volume: "228", issue: "2", pages: "265–273"
+  },
+  "tominaga1998": {
+    authors: "Tominaga, T., Furrer, A., Henry, R., & Dubourdieu, D.",
+    year: 1998,
+    title: "Identification of new volatile thiols in the aroma of Vitis vinifera L. var. Sauvignon blanc wines.",
+    journal: "Flavour and Fragrance Journal",
+    volume: "13", issue: "3", pages: "159–162"
+  },
+  "bartowsky2004": {
+    authors: "Bartowsky, E.J., & Henschke, P.A.",
+    year: 2004,
+    title: "The 'buttery' attribute of wine—diacetyl—desirability, spoilage and beyond.",
+    journal: "International Journal of Food Microbiology",
+    volume: "96", issue: "3", pages: "235–252"
+  },
+  "sefton2011": {
+    authors: "Sefton, M.A., Skouroumounis, G.K., Elsey, G.M., & Taylor, D.K.",
+    year: 2011,
+    title: "Occurrence, sensory impact, synthesis, and synthetic pathways of β-damascenone and related damascone derivatives.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "59", issue: "18", pages: "9717–9746"
+  },
+  "friedman2017": {
+    authors: "Friedman, M.",
+    year: 2017,
+    title: "Chemistry, antimicrobial mechanisms, and antibiotic activities of cinnamaldehyde against pathogenic bacteria in animal feeds and human foods.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "65", issue: "48", pages: "10406–10423"
+  },
+  "verstrepen2003": {
+    authors: "Verstrepen, K.J., Derdelinckx, G., Dufour, J.-P., Winderickx, J., Thevelein, J.M., Pretorius, I.S., & Delvaux, F.R.",
+    year: 2003,
+    title: "Flavor-active esters: adding fruitiness to beer.",
+    journal: "Journal of Bioscience and Bioengineering",
+    volume: "96", issue: "2", pages: "110–118"
+  },
+  "mayer2000": {
+    authors: "Mayer, F., Czerny, M., & Grosch, W.",
+    year: 2000,
+    title: "Sensory study of the character impact aroma compounds of a coffee beverage.",
+    journal: "European Food Research and Technology",
+    volume: "211", issue: "4", pages: "272–276"
+  },
+  "hatanaka1993": {
+    authors: "Hatanaka, A.",
+    year: 1993,
+    title: "The biogeneration of green odour by green leaves.",
+    journal: "Phytochemistry",
+    volume: "34", issue: "5", pages: "1201–1218"
+  },
+  "shaw1979": {
+    authors: "Shaw, P.E.",
+    year: 1979,
+    title: "Review of quantitative analyses of citrus essential oils.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "27", issue: "2", pages: "246–257"
+  }
+};
+
+// Map cite-string prefixes (or distinctive substrings) to REFERENCES keys.
+// Order matters when multiple prefixes could match — most specific first.
+const CITE_TO_REF = [
+  ["Blank, Sen, Grosch 1992",     "blank1992"],
+  ["Blank et al. 1992",           "blank1992"],
+  ["Blank 1992",                  "blank1992"],
+  ["Czerny et al. 1999",          "czerny1999coffee"],
+  ["Czerny, Mayer, Grosch 1999",  "czerny1999coffee"],
+  ["Czerny et al. 2008",          "czerny2008"],
+  ["Czerny & Grosch 2000",        "czerny2000raw"],
+  ["Tominaga et al. 1998",        "tominaga1998"],
+  ["Bartowsky & Henschke 2004",   "bartowsky2004"],
+  ["Sefton et al. 2011",          "sefton2011"],
+  ["Friedman 2017",               "friedman2017"],
+  ["Verstrepen et al. 2003",      "verstrepen2003"],
+  ["Mayer, Czerny, Grosch 2000",  "mayer2000"],
+  ["Hatanaka 1993",               "hatanaka1993"],
+  ["Shaw 1979",                   "shaw1979"]
+];
+
+function refForCite(citeString) {
+  if (!citeString) return null;
+  for (const [needle, refId] of CITE_TO_REF) {
+    if (citeString.includes(needle)) return REFERENCES[refId];
+  }
+  return null;
+}
+
+function formatRefFull(ref) {
+  const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
+  return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
+}
+
+// "What am I smelling?" descriptor map. Translates evocative everyday words
+// (floral, cheesey, petting zoo, musty…) to specific notes from the existing
+// vocabulary. The tool surfaces these as suggested sliders to try — it does
+// NOT auto-set intensities; the user picks. Each descriptor maps to a curated
+// subset of NOTES ids. Add/edit freely as the note set grows.
+const WAIS_DESCRIPTORS = [
+  { category: "Fruity", entries: [
+    { word: "fruity",            notes: ["berry", "apple", "stonefruit", "banana", "mango", "passionfruit", "cherry", "pineapple"] },
+    { word: "citrusy",           notes: ["lemon", "orange", "grapefruit"] },
+    { word: "lime",              notes: ["lemon", "grapefruit"] },
+    { word: "tangerine",         notes: ["orange", "lemon"] },
+    { word: "bergamot",          notes: ["lemon", "orange", "lavender"] },
+    { word: "orange peel",       notes: ["orange", "lemon"] },
+    { word: "blueberry",         notes: ["berry"] },
+    { word: "raspberry",         notes: ["berry", "violet"] },
+    { word: "strawberry",        notes: ["berry"] },
+    { word: "blackberry",        notes: ["berry", "violet"] },
+    { word: "cranberry",         notes: ["berry"] },
+    { word: "red currant",       notes: ["berry"] },
+    { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
+    { word: "pomegranate",       notes: ["berry", "winey"] },
+    { word: "red cherry",        notes: ["cherry", "berry"] },
+    { word: "black cherry",      notes: ["cherry", "winey"] },
+    { word: "plum",              notes: ["stonefruit", "berry"] },
+    { word: "fig",               notes: ["berry", "stonefruit"] },
+    { word: "pear",              notes: ["apple"] },
+    { word: "quince",            notes: ["apple", "stonefruit"] },
+    { word: "peach",             notes: ["stonefruit"] },
+    { word: "apricot",           notes: ["stonefruit"] },
+    { word: "nectarine",         notes: ["stonefruit"] },
+    { word: "tropical",          notes: ["mango", "passionfruit", "banana", "pineapple"] },
+    { word: "papaya",            notes: ["mango", "passionfruit"] },
+    { word: "guava",             notes: ["passionfruit", "mango"] },
+    { word: "lychee",            notes: ["passionfruit", "rose"] },
+    { word: "overripe fruit",    notes: ["berry", "stonefruit", "apple", "banana", "mango", "cherry"] },
+    { word: "dried fruit",       notes: ["stonefruit", "berry", "apple", "mango", "cherry"] },
+    { word: "raisin",            notes: ["winey", "stonefruit"] },
+    { word: "prune",             notes: ["stonefruit", "winey"] },
+    { word: "date",              notes: ["caramel", "honey", "stonefruit"] },
+    { word: "jammy fruit",       notes: ["berry", "stonefruit", "winey"] },
+    { word: "stewed fruit",      notes: ["apple", "stonefruit", "berry"] },
+    { word: "fruitcake",         notes: ["winey", "stonefruit", "honey", "vanilla"] }
+  ]},
+  { category: "Floral", entries: [
+    { word: "floral",            notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
+    { word: "tea rose",          notes: ["rose", "jasmine"] },
+    { word: "orange blossom",    notes: ["jasmine", "lavender", "orange"] },
+    { word: "honeysuckle",       notes: ["jasmine", "rose", "honey"] },
+    { word: "elderflower",       notes: ["chamomile", "lavender"] }
+  ]},
+  { category: "Herbal / Vegetal", entries: [
+    { word: "herbal",            notes: ["lavender", "chamomile", "anise", "pine", "mint"] },
+    { word: "green / vegetal",   notes: ["green", "bellpepper"] },
+    { word: "fresh-cut grass",   notes: ["green"] },
+    { word: "tomato leaf",       notes: ["green", "bellpepper"] },
+    { word: "eucalyptus",        notes: ["pine", "mint"] },
+    { word: "sage",              notes: ["pine", "mint", "chamomile", "lavender"] },
+    { word: "thyme",             notes: ["pine", "anise", "mint"] },
+    { word: "beetroot",          notes: ["mushroom", "bellpepper"] },
+    { word: "olive",             notes: ["green", "bellpepper"] },
+    { word: "green bean",        notes: ["green", "bellpepper"] },
+    { word: "artichoke",         notes: ["green", "mushroom"] },
+    { word: "fresh",             notes: ["lemon", "lavender", "pine", "mint"] }
+  ]},
+  { category: "Earthy", entries: [
+    { word: "earthy / dirt",     notes: ["mushroom", "woody", "bellpepper"] },
+    { word: "soil",              notes: ["mushroom", "woody", "tobacco", "bellpepper"] },
+    { word: "wet earth",         notes: ["mushroom", "woody"] },
+    { word: "musty",             notes: ["mushroom", "woody", "cardboard"] },
+    { word: "dusty",             notes: ["woody", "cardboard"] },
+    { word: "woody",             notes: ["woody", "pine", "tobacco"] },
+    { word: "resinous",          notes: ["pine", "woody"] }
+  ]},
+  { category: "Sweet", entries: [
+    { word: "sweet / dessert",   notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
+    { word: "brown sugar",       notes: ["maple", "caramel"] },
+    { word: "molasses",          notes: ["caramel", "maple", "burnt"] },
+    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] }
+  ]},
+  { category: "Nutty / Cocoa", entries: [
+    { word: "nutty",             notes: ["almond", "hazelnut", "peanut"] },
+    { word: "cocoa nib",         notes: ["chocolate", "coffee"] },
+    { word: "dark chocolate",    notes: ["chocolate", "coffee", "burnt"] },
+    { word: "milk chocolate",    notes: ["chocolate", "vanilla", "honey"] }
+  ]},
+  { category: "Roast / Spice", entries: [
+    { word: "roasty",            notes: ["coffee", "toast", "smoky", "burnt"] },
+    { word: "burnt / charred",   notes: ["smoky", "burnt"] },
+    { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
+    { word: "toasted grain",     notes: ["toast", "yeasty"] },
+    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise"] },
+    { word: "medicinal",         notes: ["clove", "anise"] }
+  ]},
+  { category: "Fermented / Funky", entries: [
+    { word: "fermented",         notes: ["winey", "yeasty", "buttery"] },
+    { word: "boozy",             notes: ["winey", "yeasty", "buttery"] },
+    { word: "funky",             notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
+    { word: "kombucha-like",     notes: ["winey", "yeasty", "sulfury"] },
+    { word: "lactic / yogurt",   notes: ["buttery", "yeasty"] },
+    { word: "cheesey / dairy",   notes: ["buttery", "sulfury"] },
+    { word: "petting zoo",       notes: ["sulfury", "yeasty", "mushroom", "woody"] },
+    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] }
+  ]}
+];
+
+// Jargon glossary — words people have heard in tasting circles but might not own.
+// Per [[project-information-access]]: define jargon, NOT baseline chemistry.
+// We're NOT defining "what is a carbon atom"; we ARE defining "what is a tannin."
+const JARGON = [
+  { term: "tannin",          def: "Astringent polyphenols (mostly from grape skins, oak, and tea leaves) that give the drying, gripping mouthfeel. Not an aroma per se, but commonly conflated with flavor." },
+  { term: "terroir",          def: "The sense of place in an agricultural product. Soil, climate, microbes, even the wind. Why two Sauvignon Blancs from different vineyards can taste meaningfully different." },
+  { term: "Maillard reaction", def: "Browning chemistry: amino acids reacting with sugars at high heat. The source of most roasted / toasted / baked aromas (pyrazines, furans, melanoidins)." },
+  { term: "Strecker degradation", def: "A branch of the Maillard reaction that produces small aldehydes. Gives floral, malty, honey notes like phenylacetaldehyde." },
+  { term: "malolactic fermentation", def: "Secondary fermentation in wine (and many beers) where bacteria convert sharp malic acid to softer lactic acid. Produces diacetyl, the buttery note." },
+  { term: "GC-MS",            def: "Gas chromatography mass spectrometry: the lab method that separates a sample into its volatile components and identifies each by molecular mass. The data source behind most 'what's actually in this aroma' claims." },
+  { term: "odor threshold",   def: "The minimum concentration at which a typical person can detect a compound. Very-low-threshold compounds (furfurylthiol, IBMP) punch far above their weight." },
+  { term: "signature compound", def: "A compound so distinctive that a trace alone reads as the source aroma. Cinnamaldehyde = cinnamon; vanillin = vanilla; sotolon = maple." },
+  { term: "orthonasal olfaction", def: "Smelling through the front of the nose on the inhale. What perfumery emphasizes; what you do when you sniff over the cup before drinking." },
+  { term: "retronasal olfaction", def: "Smelling through the back of the throat on the exhale, often post-swallow. Most of what people call 'flavor' is actually this." },
+  { term: "perception threshold", def: "Same as odor threshold but applied to taste/mouthfeel. The point at which you become aware of a stimulus, varying with body state and prior exposure." },
+  { term: "polyfunctional thiol", def: "A thiol with multiple reactive groups. Hugely impactful in wine and beer (3-MH for passionfruit/grapefruit, 4MMP for boxwood/blackcurrant) despite tiny concentrations." },
+  { term: "ppt / ppb / ppm",   def: "Parts per trillion / billion / million: concentration units used for odor thresholds. 1 ppt is roughly one drop in 20 Olympic swimming pools." },
+  { term: "volatile",          def: "Small enough to evaporate at room temperature and reach your nose. Aroma compounds are by definition volatile; non-volatile compounds contribute to taste/mouthfeel but not smell." },
+  { term: "Brettanomyces / 'Brett'", def: "A wild yeast genus. Produces phenolic, barnyard, leather, smoke notes. Considered a defect in most wines, signature in some beers and a few cult wines." }
+];
+
+// ---------- INDEXING ----------
+const NOTE_BY_ID = Object.fromEntries(NOTES.map(n => [n.id, n]));
+const CPD_BY_ID  = Object.fromEntries(COMPOUNDS.map(c => [c.id, c]));
+const GROUP_BY_ID= Object.fromEntries(GROUPS.map(g => [g.id, g]));
+
+// note -> [{cpd, w, cite}]
+const NOTE_EDGES = {};
+const CPD_EDGES  = {};
+NOTES.forEach(n => NOTE_EDGES[n.id] = []);
+COMPOUNDS.forEach(c => CPD_EDGES[c.id] = []);
+EDGES.forEach(e => {
+  if (!NOTE_BY_ID[e.note]) console.warn("missing note:", e.note);
+  if (!CPD_BY_ID[e.cpd])   console.warn("missing cpd:", e.cpd);
+  NOTE_EDGES[e.note].push(e);
+  CPD_EDGES[e.cpd].push(e);
+});
+
+// ---------- STATE ----------
+// Input contract: each note can carry up to three independent confirmed entries:
+// - default (phase=null) — confirmed via the always-visible "Add" button.
+// - ortho (sniff) — confirmed via a button revealed by Go Deeper.
+// - retro (exhale) — confirmed via a button revealed by Go Deeper.
+// All three can coexist for the same note; their intensities aggregate as evidence.
+//
+// `entries` Map keys:
+//   null-phase  -> just `noteId` (e.g. "apple")
+//   tagged      -> `noteId:phase` (e.g. "apple:ortho")
+// `pendingIntensity[noteId]`: current slider value before confirm. 0 = no commit.
+// `hiddenPhases`: legend filter for ortho/retro visibility (does NOT affect null-phase entries).
+// `goDeeper`: when true, the per-row ortho/retro buttons are revealed.
+const PHASES = ["ortho", "retro"];         // tagged phases used by legend + aggregation
+const INPUT_PHASES = [null, ...PHASES];    // including default (null) for input rendering
+const entryKey = (noteId, phase) => phase ? `${noteId}:${phase}` : noteId;
+
+const state = {
+  entries: new Map(),                                          // see key format above
+  pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
+  hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
+  goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
+  overlayBy: "compound",      // bottom-right wheel overlay grouping: "compound" | "class"
+  selectedCompound: null,
+  selectedNote: null,       // when set (Go Deeper only), analysis pane shows the inverse view: compounds this note links to
+  hoveredNote: null,
+  hoveredCompound: null,
+  infoOpen: false,        // is the "i" info overlay shown
+  infoTab: "about",       // "about" | "how-to-use" | "types-of-aroma"
+  infoSearch: "",         // current search query in Types of Aroma
+  notesHidden:  false,   // is the left sliders pane hidden via toggle / view preset
+  detailHidden: false,   // is the right analysis pane hidden via toggle / view preset
+  sortBy: "intensity",   // "intensity" | "confidence" | "class"
+  noteFilter: "common",  // "common" | "all"   — hides niche notes when "common"
+  hiddenGroups: new Set(),   // note-group ids hidden via legend
+  hiddenClasses: new Set(),  // compound-class names hidden via legend
+  openCalloutKey: null       // currently-open edit/delete callout's entry key, if any
+};
+
+// ---------- ENTRY HELPERS ----------
+function commitEntry(noteId, phase, intensity) {
+  if (intensity <= 0) return;
+  state.entries.set(entryKey(noteId, phase), intensity);
+}
+function deleteEntry(noteId, phase) {
+  state.entries.delete(entryKey(noteId, phase));
+}
+function getEntry(noteId, phase) {
+  return state.entries.get(entryKey(noteId, phase));
+}
+function hasAnyEntry(noteId) {
+  return INPUT_PHASES.some(p => state.entries.has(entryKey(noteId, p)));
+}
+
+// noteSignal: per-note aggregate intensity used by scoring/rendering.
+// Sums intensities across:
+//   - the null-phase (default) entry, if any — always visible, unaffected by phase filter.
+//   - ortho-tagged entry, if not hidden by phase filter.
+//   - retro-tagged entry, if not hidden by phase filter.
+// Divides by 10 to match the old `noteWeights[id]/10` shape. NOT capped at the math
+// layer — logging multiple phases at high intensity is genuinely more evidence.
+function noteSignal(noteId) {
+  if (!isNoteVisible(noteId)) return 0;
+  let sum = 0;
+  // Default (null-phase) entry: always counted if present
+  const defaultV = state.entries.get(entryKey(noteId, null));
+  if (defaultV) sum += defaultV;
+  // Phase-tagged entries: gated by legend phase filter
+  for (const phase of PHASES) {
+    if (state.hiddenPhases.has(phase)) continue;
+    const v = state.entries.get(entryKey(noteId, phase));
+    if (v) sum += v;
+  }
+  return sum / 10;
+}
+
+// Count entries for a tagged phase (used by legend counts; default-phase
+// entries aren't shown in the phase filter UI so we don't count them here).
+function countEntriesForPhase(phase) {
+  let n = 0;
+  for (const k of state.entries.keys()) if (k.endsWith(":" + phase)) n++;
+  return n;
+}
+
+function isNoteVisible(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  if (!n) return false;
+  if (state.hiddenGroups.has(n.group)) return false;
+  if (state.noteFilter === "common" && !n.common) return false;
+  return true;
+}
+function getVisibleNotes() {
+  return NOTES.filter(n => isNoteVisible(n.id));
+}
+function isCompoundVisible(cpdId) {
+  const c = CPD_BY_ID[cpdId];
+  if (!c) return false;
+  return !state.hiddenClasses.has(c.class);
+}
+function getVisibleCompoundNodes() {
+  return compoundNodes.filter(n => isCompoundVisible(n.id));
+}
+
+// ---------- SVG ICONS (ortho/retro) ----------
+// Schematic gender-neutral side profile of the upper airway. Both icons share
+// the same face silhouette + highlighted nasal passage (thicker stroke); only
+// the bold arrows differ. The shared anatomy is the visual anchor — what
+// changes is the air path:
+//   Ortho — bold arrow entering at the nostril, flowing into the nasal cavity.
+//   Retro — bold arrow rising from the mouth/oral cavity, traveling up through
+//           the nasopharynx, and exiting out the nostril (post-swallow exhale).
+// ViewBox is 28x24 to give the anatomy room; CSS renders at 22x18.
+const ICON_ORTHO = `<svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M 4 3 Q 6 2 7 3 L 7 8 L 13 11 L 10 13 L 11 15 L 10 17 L 7 20" stroke-width="1.2"/>
+  <path d="M 10 15 L 13 15" stroke-width="1"/>
+  <path d="M 13 11 Q 10 10 8 8 Q 7 7 7 5" stroke-width="1.9"/>
+  <path d="M 8 8 Q 9 12 11 15" stroke-width="1.9"/>
+  <path d="M 24 11 L 14 11" stroke-width="2.4"/>
+  <path d="M 16 9 L 14 11 L 16 13" stroke-width="2.4"/>
+</svg>`;
+const ICON_RETRO = `<svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M 4 3 Q 6 2 7 3 L 7 8 L 13 11 L 10 13 L 11 15 L 10 17 L 7 20" stroke-width="1.2"/>
+  <path d="M 10 15 L 13 15" stroke-width="1"/>
+  <path d="M 13 11 Q 10 10 8 8 Q 7 7 7 5" stroke-width="1.9"/>
+  <path d="M 8 8 Q 9 12 11 15" stroke-width="1.9"/>
+  <path d="M 11 15 Q 8 13 8 9 L 14 11" stroke-width="2.4"/>
+  <path d="M 14 11 L 24 11" stroke-width="2.4"/>
+  <path d="M 22 9 L 24 11 L 22 13" stroke-width="2.4"/>
+</svg>`;
+const PHASE_ICON = { ortho: ICON_ORTHO, retro: ICON_RETRO };
+const PHASE_LABEL = { ortho: "Ortho (sniff)", retro: "Retro (exhale)" };
+
+// Perception multiplier by odor-threshold tier. Low-threshold compounds still
+// punch above their raw evidence (a few molecules of furfurylthiol read as
+// "roasted coffee"); high-threshold compounds need real concentration to register.
+const PERCEPTION = { "very-low": 1.20, "low": 1.00, "medium": 0.85, "high": 0.55 };
+
+// ---------- LAYOUT ----------
+const svg = d3.select("#svg");
+const wheelEl = document.querySelector("main.wheel");
+let W = wheelEl.clientWidth, H = wheelEl.clientHeight;
+let CX = W / 2, CY = H / 2;
+let R_NOTE = Math.min(W, H) * 0.42;
+let R_RING = R_NOTE - 18; // group-arc ring radius
+let R_COMPOUND_MAX = R_NOTE * 0.55;
+
+const root = svg.append("g");
+const gArcs   = root.append("g").attr("class", "group-arcs");
+const gEdges  = root.append("g").attr("class", "edges");
+const gComps  = root.append("g").attr("class", "compounds");
+const gNotes  = root.append("g").attr("class", "notes");
+const gLabels = root.append("g").attr("class", "labels");
+
+function layout() {
+  W = wheelEl.clientWidth; H = wheelEl.clientHeight;
+  CX = W / 2; CY = H / 2;
+  R_NOTE = Math.min(W, H) * 0.42;
+  R_RING = R_NOTE - 18;
+  R_COMPOUND_MAX = R_NOTE * 0.55;
+  svg.attr("viewBox", `0 0 ${W} ${H}`);
+  root.attr("transform", `translate(0,0)`);
+  computeNotePositions();
+  drawGroupArcs();
+  drawNotes();
+  updateSimulationCenter();
+}
+
+// Distribute visible notes around the ring, grouped contiguously
+function computeNotePositions() {
+  const visible = getVisibleNotes();
+  const counts = {};
+  GROUPS.forEach(g => counts[g.id] = visible.filter(n => n.group === g.id).length);
+  const total = visible.length || 1;
+  let angle = -Math.PI / 2; // start at top
+  const groupAngles = {};
+  GROUPS.forEach(g => {
+    const span = (counts[g.id] / total) * (Math.PI * 2);
+    groupAngles[g.id] = { start: angle, end: angle + span, span };
+    angle += span;
+  });
+  const byGroupCounter = {};
+  visible.forEach(n => {
+    byGroupCounter[n.group] = (byGroupCounter[n.group] || 0);
+    const i = byGroupCounter[n.group]++;
+    const g = groupAngles[n.group];
+    const a = g.start + (i + 0.5) / counts[n.group] * g.span;
+    n._angle = a;
+    n._x = CX + Math.cos(a) * R_NOTE;
+    n._y = CY + Math.sin(a) * R_NOTE;
+  });
+  // Hidden notes get null positions (and won't render)
+  NOTES.forEach(n => { if (!isNoteVisible(n.id)) { n._angle = null; n._x = null; n._y = null; } });
+  GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
+}
+
+function drawGroupArcs() {
+  const arc = d3.arc()
+    .innerRadius(R_RING - 2).outerRadius(R_RING + 2)
+    .startAngle(d => d._arc.start + Math.PI/2)
+    .endAngle(d => d._arc.end + Math.PI/2);
+
+  const visibleGroups = GROUPS.filter(g => g._arc && g._arc.span > 0.001);
+  const sel = gArcs.selectAll("path.group-arc").data(visibleGroups, d => d.id);
+  sel.join(
+    enter => enter.append("path").attr("class", "group-arc"),
+    update => update,
+    exit => exit.remove()
+  )
+  .attr("d", arc)
+  .attr("transform", `translate(${CX},${CY})`)
+  .attr("stroke", d => getComputedStyle(document.documentElement).getPropertyValue(d.cssVar).trim());
+
+  // group labels at midpoint
+  const labels = gArcs.selectAll("text.group-arc-label").data(visibleGroups, d => d.id);
+  labels.exit().remove();
+  labels.join("text")
+    .attr("class", "group-arc-label")
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
+    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
+    .text(d => d.label.toUpperCase());
+
+  // center decorative ring
+  gArcs.selectAll("circle.center-ring").data([0]).join("circle")
+    .attr("class", "center-ring")
+    .attr("cx", CX).attr("cy", CY).attr("r", R_COMPOUND_MAX + 12);
+}
+
+function drawNotes() {
+  // Only render notes that have at least one confirmed entry. The wheel
+  // populates as the user inputs perceptions on the left; group arcs and
+  // category labels remain visible so the spatial map is always legible.
+  // Positions are still computed for ALL visible notes (so a confirmed
+  // note appears at its consistent group-sector position), only the
+  // rendering is gated on hasAnyEntry.
+  const renderable = getVisibleNotes().filter(n => hasAnyEntry(n.id));
+  const sel = gNotes.selectAll("g.note").data(renderable, d => d.id);
+  sel.exit().remove();
+  // Every rendered note has at least one entry by definition, so the .active
+  // styling (heavier stroke) applies to all of them from the start.
+  const enter = sel.enter().append("g").attr("class", "note active")
+    .on("mouseenter", function(e, d) {
+      state.hoveredNote = d.id;
+      d3.select(this).raise();  // pop hovered note + its label above siblings
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
+    .on("click", (e, d) => {
+      // Default: scroll the slider panel to this note's row and focus its slider.
+      const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 600);
+        const slider = row.querySelector("input[type=range]");
+        if (slider) slider.focus();
+      }
+      // Go Deeper: also surface this note's outbound compound graph in the
+      // analysis pane — the inverse of clicking a compound.
+      if (state.goDeeper) {
+        state.selectedNote = d.id;
+        state.selectedCompound = null;
+        gComps.selectAll("g.compound").classed("selected", false);
+        renderDetail();
+      }
+    });
+  enter.append("circle").attr("r", 5);
+  enter.append("text").attr("class", "note-label");
+
+  const merged = sel.merge(enter);
+  merged.attr("transform", d => `translate(${d._x},${d._y})`);
+  merged.select("circle")
+    .attr("fill", d => groupColor(d.group));
+  merged.select("text")
+    .attr("class", "note-label")
+    .attr("x", d => Math.cos(d._angle) * 10)
+    .attr("y", d => Math.sin(d._angle) * 10)
+    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
+    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
+    .attr("fill", d => groupColor(d.group))
+    .text(d => d.label);
+}
+
+function groupColor(gid) {
+  const g = GROUP_BY_ID[gid];
+  return getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+}
+
+// ---------- FORCE SIM for compounds ----------
+// Each compound has a target position determined by its weighted contributing notes.
+// We use a force sim with a custom radial force pulling toward (CX, CY) plus a collide.
+const compoundNodes = COMPOUNDS.map(c => ({
+  id: c.id, label: c.label, class: c.class, note: c.note,
+  x: CX + (Math.random() - 0.5) * 40,
+  y: CY + (Math.random() - 0.5) * 40,
+  vx: 0, vy: 0,
+  score: 0, radius: 6
+}));
+const CPD_NODE_BY_ID = Object.fromEntries(compoundNodes.map(n => [n.id, n]));
+
+let sim;
+function startSim() {
+  sim = d3.forceSimulation(compoundNodes)
+    .alphaDecay(0.02)
+    .velocityDecay(0.3)
+    .force("center", d3.forceX(CX).strength(0.04))
+    .force("centerY", d3.forceY(CY).strength(0.04))
+    .force("collide", d3.forceCollide().radius(d => d.radius + 4).strength(0.9))
+    .force("target", targetForce(0.08))
+    .on("tick", tick);
+}
+function updateSimulationCenter() {
+  if (!sim) return;
+  sim.force("center", d3.forceX(CX).strength(0.04));
+  sim.force("centerY", d3.forceY(CY).strength(0.04));
+  sim.alpha(0.6).restart();
+}
+
+// targetForce: each compound is pulled toward the centroid of its (weighted) note contributors,
+// scaled inward by total score (more evidence -> closer to center? no — keep at mid-ring).
+function targetForce(strength) {
+  let s = strength;
+  function force(alpha) {
+    compoundNodes.forEach(node => {
+      const edges = CPD_EDGES[node.id];
+      let wx = 0, wy = 0, wsum = 0;
+      edges.forEach(e => {
+        if (!isNoteVisible(e.note)) return;
+        const noteW = noteSignal(e.note);
+        if (noteW <= 0) return;
+        const contrib = noteW * e.w;
+        const n = NOTE_BY_ID[e.note];
+        wx += n._x * contrib;
+        wy += n._y * contrib;
+        wsum += contrib;
+      });
+      let tx, ty;
+      if (wsum > 0) {
+        // weighted centroid of contributors, pulled inward toward center
+        const cx = wx / wsum, cy = wy / wsum;
+        const dx = cx - CX, dy = cy - CY;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const inward = Math.min(R_COMPOUND_MAX, dist * 0.6);
+        tx = CX + (dx / dist) * inward;
+        ty = CY + (dy / dist) * inward;
+      } else {
+        // park near center but jittered by compound class so they don't pile up
+        const hash = hashStr(node.id);
+        const a = (hash % 360) / 360 * Math.PI * 2;
+        tx = CX + Math.cos(a) * 30;
+        ty = CY + Math.sin(a) * 30;
+      }
+      node.vx += (tx - node.x) * s * alpha * 6;
+      node.vy += (ty - node.y) * s * alpha * 6;
+    });
+  }
+  force.strength = function(v) { if (!arguments.length) return s; s = v; return force; };
+  return force;
+}
+function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h*31 + s.charCodeAt(i))|0; return Math.abs(h); }
+
+function tick() {
+  // clamp to bounds
+  compoundNodes.forEach(n => {
+    const dx = n.x - CX, dy = n.y - CY;
+    const r = Math.sqrt(dx*dx + dy*dy);
+    if (r > R_COMPOUND_MAX) {
+      n.x = CX + dx/r * R_COMPOUND_MAX;
+      n.y = CY + dy/r * R_COMPOUND_MAX;
+    }
+  });
+
+  // Render compounds with non-trivial evidence only. Empty state of the wheel
+  // shows just the group arcs + labels; compounds populate as confirmed notes
+  // feed them. Filtered by class visibility AND intensity_raw > 0.
+  const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
+  sel.exit().remove();
+  const enter = sel.enter().append("g").attr("class", "compound")
+    .on("mouseenter", function(e, d) {
+      state.hoveredCompound = d.id;
+      d3.select(this).raise();  // pop hovered compound + its label above siblings
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredCompound = null; updateEdges(); })
+    .on("click", (e, d) => {
+      state.selectedCompound = d.id;
+      state.selectedNote = null;
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+    })
+    .call(d3.drag()
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+  enter.append("circle");
+  enter.append("text").attr("class", "node-label");
+
+  const merged = sel.merge(enter)
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .classed("selected", d => d.id === state.selectedCompound);
+
+  merged.select("circle")
+    .attr("r", d => d.radius)
+    .attr("fill", d => compoundColor(d))
+    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
+
+  merged.select("text")
+    .attr("x", d => d.radius + 4)
+    .attr("y", 3)
+    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedCompound || d.id === hoveredCompound() ? 0.95 : 0.4)
+    .text(d => d.label);
+
+  updateEdges();
+}
+function hoveredCompound() { return state.hoveredCompound; }
+
+function compoundColor(c) {
+  return COMPOUND_CLASS_COLOR[c.class] || "#aaa";
+}
+
+// ---------- EDGES rendering ----------
+function updateEdges() {
+  // only draw edges where note has weight > 0 OR note is hovered OR compound is selected
+  const drawn = [];
+  EDGES.forEach(e => {
+    if (!isNoteVisible(e.note)) return;
+    if (!isCompoundVisible(e.cpd)) return;
+    const sig = noteSignal(e.note);
+    const isHovered = state.hoveredNote === e.note || state.selectedCompound === e.cpd;
+    const w = sig * e.w;
+    if (sig > 0 || isHovered) {
+      drawn.push({
+        ...e,
+        n: NOTE_BY_ID[e.note],
+        c: CPD_NODE_BY_ID[e.cpd],
+        contrib: w,
+        lit: sig > 0,
+        focused: isHovered
+      });
+    }
+  });
+  const sel = gEdges.selectAll("path.edge").data(drawn, d => d.note + "->" + d.cpd);
+  sel.join(
+    enter => enter.append("path").attr("class", "edge"),
+    update => update,
+    exit => exit.remove()
+  )
+  .attr("d", d => `M ${d.n._x} ${d.n._y} Q ${CX} ${CY} ${d.c.x} ${d.c.y}`)
+  .attr("stroke", d => groupColor(d.n.group))
+  .attr("stroke-width", d => 0.6 + d.contrib * 4)
+  .classed("lit", d => d.lit || d.focused)
+  .attr("stroke-opacity", d => d.focused ? 0.75 : d.lit ? 0.15 + d.contrib * 0.6 : 0.08);
+}
+
+// ---------- SCORING ----------
+// For each compound we compute:
+//   intensity_raw : Σ (noteWeight/10 × edge.w) — raw evidence of presence
+//   intensity    : intensity_raw × threshold-tier perception multiplier
+//   confidence   : literature support — blend of (# active edges) and (peak active edge weight)
+function recompute() {
+  compoundNodes.forEach(node => {
+    const cpdMeta = CPD_BY_ID[node.id];
+    const edges = CPD_EDGES[node.id];
+    let s = 0;
+    let activeCount = 0;
+    let peakActive = 0;
+    edges.forEach(e => {
+      if (!isNoteVisible(e.note)) return;
+      const nw = noteSignal(e.note);
+      if (nw > 0) {
+        s += nw * e.w;
+        activeCount++;
+        if (e.w > peakActive) peakActive = e.w;
+      }
+    });
+    node.intensity_raw = s;
+    node.intensity    = s * PERCEPTION[cpdMeta.threshold];
+    node.active_edges = activeCount;
+    node.peak_edge    = peakActive;
+
+    if (activeCount === 0) {
+      node.confidence = 0;
+    } else {
+      const breadth = Math.min(1, activeCount / 3);
+      const strength = peakActive;
+      node.confidence = Math.min(1, 0.55 * breadth + 0.45 * strength);
+    }
+
+    node.score = node.intensity;
+    node.radius = 5 + Math.min(12, node.score * 8);
+  });
+  // Update which notes are rendered on the wheel. The set changes whenever
+  // entries are added or removed, so drawNotes belongs in the recompute loop.
+  drawNotes();
+
+  if (sim) sim.alpha(0.5).restart();
+  renderDetail();
+  renderWheelOverlays();
+}
+
+// ---------- PANEL: notes ----------
+const notesPanel = document.getElementById("notes-panel");
+
+function buildNotesPanel() {
+  notesPanel.innerHTML = "";
+  GROUPS.forEach(g => {
+    const visible = getVisibleNotes().filter(n => n.group === g.id);
+    if (visible.length === 0) return;
+    const header = document.createElement("div");
+    header.className = "group-header";
+    const sw = document.createElement("span"); sw.className = "swatch";
+    sw.style.background = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+    header.appendChild(sw);
+    header.appendChild(document.createTextNode(g.label));
+    notesPanel.appendChild(header);
+    visible.forEach(n => notesPanel.appendChild(renderNoteRow(n)));
+  });
+  // Re-apply any active search filter — the rebuild wiped search-hidden classes.
+  if (typeof applyNotesSearchFilter === "function") applyNotesSearchFilter();
+}
+
+// Build a single note-row DOM element: label + intensity readout + slider + two phase-confirm buttons.
+function renderNoteRow(n) {
+  const row = document.createElement("div");
+  row.className = "note-row";
+  row.dataset.note = n.id;
+  if (hasAnyEntry(n.id)) row.classList.add("has-entries");
+
+  const lbl = document.createElement("label");
+  lbl.className = "note-label-text";
+  lbl.setAttribute("for", "slider-" + n.id);
+  lbl.textContent = n.label;
+
+  const val = document.createElement("span");
+  val.className = "val";
+  val.textContent = state.pendingIntensity[n.id] || 0;
+
+  const slider = document.createElement("input");
+  slider.type = "range"; slider.min = 0; slider.max = 10; slider.step = 1;
+  slider.id = "slider-" + n.id;
+  slider.value = state.pendingIntensity[n.id] || 0;
+  slider.addEventListener("input", () => {
+    const v = +slider.value;
+    state.pendingIntensity[n.id] = v;
+    val.textContent = v;
+    if (state.goDeeper) {
+      // Go Deeper: slider sets pending intensity; user clicks a phase button
+      // to commit. Existing entries untouched until they explicitly act.
+      updateRowPhaseButtons(row, n.id);
+    } else {
+      // Default mode: slider directly creates / updates / deletes the
+      // null-phase entry in real-time. No commit step.
+      if (v > 0) commitEntry(n.id, null, v);
+      else       deleteEntry(n.id, null);
+      row.classList.toggle("has-entries", hasAnyEntry(n.id));
+      recompute();
+    }
+  });
+
+  const btns = document.createElement("div");
+  btns.className = "phase-buttons";
+  // All three phase buttons render in the DOM but the whole .phase-buttons row
+  // is hidden by CSS unless body.go-deeper is set. Order: [Add, Ortho, Retro].
+  INPUT_PHASES.forEach(phase => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "phase-btn";
+    btn.dataset.phase = phase === null ? "default" : phase;
+    btn.title = phase === null
+      ? "Add this note (no phase specified)"
+      : PHASE_LABEL[phase];
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const existing = getEntry(n.id, phase);
+      if (existing !== undefined) {
+        openEntryCallout(btn, n.id, phase);
+      } else {
+        const intensity = state.pendingIntensity[n.id] || 0;
+        if (intensity > 0) {
+          commitEntry(n.id, phase, intensity);
+          renderNoteRowPanel(n.id);
+          recompute();
+        }
+      }
+    });
+    btns.appendChild(btn);
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(val);
+  row.appendChild(slider);
+  row.appendChild(btns);
+  updateRowPhaseButtons(row, n.id);
+  return row;
+}
+
+// Update all phase buttons on a row (Add + ortho + retro) based on entry state + slider value.
+function updateRowPhaseButtons(row, noteId) {
+  const intensity = state.pendingIntensity[noteId] || 0;
+  row.querySelectorAll(".phase-btn").forEach(btn => {
+    const phase = btn.dataset.phase === "default" ? null : btn.dataset.phase;
+    const entry = getEntry(noteId, phase);
+    btn.classList.toggle("added", entry !== undefined);
+    btn.disabled = (entry === undefined && intensity <= 0);
+    btn.innerHTML = renderPhaseBtnContent(noteId, phase);
+  });
+  row.classList.toggle("has-entries", hasAnyEntry(noteId));
+}
+
+// Default (null phase) Add button: text-only — "Add" or "Added · N". The
+// ortho/retro buttons get the upper-airway icon + their phase name.
+// (The Edit/Delete callout strips icons for visual quiet — see openEntryCallout.)
+function renderPhaseBtnContent(noteId, phase) {
+  const entry = getEntry(noteId, phase);
+  if (phase === null) {
+    return entry !== undefined
+      ? `<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`
+      : `<span class="phase-label">Add</span>`;
+  }
+  if (entry !== undefined) {
+    return `${PHASE_ICON[phase]}<span class="phase-label">Added</span><span class="added-intensity">${entry}</span>`;
+  }
+  return `${PHASE_ICON[phase]}<span class="phase-label">${phase}</span>`;
+}
+
+// Re-render just one note row in place (after confirm/edit/delete) without rebuilding the whole panel.
+function renderNoteRowPanel(noteId) {
+  const oldRow = document.querySelector(`.note-row[data-note="${noteId}"]`);
+  if (!oldRow) return;
+  const newRow = renderNoteRow(NOTE_BY_ID[noteId]);
+  oldRow.replaceWith(newRow);
+}
+
+// Called after bulk entry changes (demos, reset) — full rebuild is simplest + safe.
+function syncSliders() { buildNotesPanel(); }
+
+// Callout anchored above a clicked "Added" button: Edit? / Delete? / Nevermind.
+// "Edit" restores the entry's intensity into the slider and removes the entry,
+// so the user adjusts and re-clicks the phase button to re-commit.
+function openEntryCallout(btn, noteId, phase) {
+  closeAllCallouts();
+  const row = btn.closest(".note-row");
+  if (!row) return;
+
+  const callout = document.createElement("div");
+  callout.className = "entry-callout";
+  // Callout is text-only too — icons stay solely in the legend.
+  callout.innerHTML = `
+    <button data-action="edit" type="button"><span>Edit?</span></button>
+    <button data-action="delete" type="button" class="danger"><span>Delete?</span></button>
+    <button data-action="cancel" type="button" class="nevermind">nevermind</button>
+  `;
+  // Anchor: above the button, left-aligned with it (within the row's relative box).
+  const btnRect = btn.getBoundingClientRect();
+  const rowRect = row.getBoundingClientRect();
+  callout.style.left = Math.max(0, btnRect.left - rowRect.left) + "px";
+  callout.style.bottom = (rowRect.height - (btnRect.top - rowRect.top) + 6) + "px";
+  row.appendChild(callout);
+  state.openCalloutKey = entryKey(noteId, phase);
+
+  callout.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const action = b.dataset.action;
+      if (action === "edit") {
+        const intensity = getEntry(noteId, phase);
+        state.pendingIntensity[noteId] = intensity;
+        deleteEntry(noteId, phase);
+        closeAllCallouts();
+        renderNoteRowPanel(noteId);
+        recompute();
+      } else if (action === "delete") {
+        deleteEntry(noteId, phase);
+        closeAllCallouts();
+        renderNoteRowPanel(noteId);
+        recompute();
+      } else {
+        closeAllCallouts();
+      }
+    });
+  });
+}
+
+function closeAllCallouts() {
+  document.querySelectorAll(".entry-callout").forEach(el => el.remove());
+  state.openCalloutKey = null;
+}
+
+// Click anywhere outside an open callout (or a phase button) closes it.
+document.addEventListener("click", (e) => {
+  if (!state.openCalloutKey) return;
+  if (e.target.closest(".entry-callout") || e.target.closest(".phase-btn")) return;
+  closeAllCallouts();
+});
+
+// ---------- PANEL: analysis (right pane) ----------
+// Two modes:
+//   - Grid mode (no compound selected): sortable cards of all compounds with
+//     intensity + confidence bars. Replaces V1's separate "Compounds" tab.
+//   - Detail mode (compound selected): per-compound deep dive with citations,
+//     contributing notes (with phase hints), threshold tier source.
+// Switching: clicking a card in grid mode → detail. "← All compounds" link in
+// detail mode returns to grid.
+const detailPanel = document.getElementById("detail-panel");
+function renderDetail() {
+  // Three modes: inverse note-view (Go Deeper, when a note is selected),
+  // compound detail (when a compound is selected), or the default grid.
+  if (state.selectedNote) renderNoteDetail(state.selectedNote);
+  else if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
+  else renderAnalysisGrid();
+}
+
+// Inverse view (Go Deeper): show which compounds a given note maps to,
+// sorted by base edge weight. Clicking a compound name switches to that
+// compound's full detail. "← All compounds" returns to grid mode.
+function renderNoteDetail(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  const g = GROUP_BY_ID[n.group];
+  const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+  const edges = (NOTE_EDGES[noteId] || []).slice().sort((a, b) => b.w - a.w);
+
+  // Summarize currently-confirmed entries for this note (if any)
+  const entries = [];
+  for (const phase of INPUT_PHASES) {
+    const v = getEntry(noteId, phase);
+    if (v !== undefined) entries.push({ phase, intensity: v });
+  }
+  const entriesHtml = entries.length === 0
+    ? `<div class="empty" style="margin-bottom:12px;">Not currently logged. The graph below shows what compounds this descriptor would point to if you confirmed it.</div>`
+    : `<div class="note-entries">
+        Currently logged:
+        ${entries.map(e => `<span class="entry-tag">${e.phase || "default"} · ${e.intensity}</span>`).join(" ")}
+      </div>`;
+
+  detailPanel.innerHTML = `
+    <button class="back-to-grid" type="button">← All compounds</button>
+    <h2><span class="note-color-dot" style="background:${color}"></span>${n.label}</h2>
+    <div class="compound-class">Note · ${g.label}</div>
+
+    ${entriesHtml}
+
+    <div class="section">
+      <div class="section-title">Compounds this note maps to (literature)</div>
+      <ul>
+        ${edges.length === 0
+          ? `<li><span class="cite">No compounds linked to this note in the current data.</span></li>`
+          : edges.map(e => {
+              const cpd = CPD_BY_ID[e.cpd];
+              const ref = state.goDeeper ? refForCite(e.cite) : null;
+              const citeHtml = ref
+                ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
+                : `<span class="cite">${e.cite}</span>`;
+              return `<li>
+                <span class="note-name view-cpd" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}</span>
+                <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
+                <span style="font-size:10px; color:var(--ink-dim); display:block; margin-top:1px;">${cpd.class} · thr ${cpd.threshold}</span>
+                ${citeHtml}
+              </li>`;
+            }).join("")}
+      </ul>
+    </div>
+  `;
+
+  // Back to grid
+  const backBtn = detailPanel.querySelector(".back-to-grid");
+  if (backBtn) backBtn.addEventListener("click", () => {
+    state.selectedNote = null;
+    state.selectedCompound = null;
+    gComps.selectAll("g.compound").classed("selected", false);
+    renderDetail();
+  });
+  // Compound name clicks → jump to that compound's detail
+  detailPanel.querySelectorAll(".view-cpd").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedNote = null;
+      state.selectedCompound = el.dataset.cpd;
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+      renderDetail();
+    });
+  });
+}
+
+// Default Results-pane view (no compound selected). Three stacked sections:
+//   1. Your inputs — for each confirmed note, the compounds it maps to in
+//      literature, shown as direct arrows. Clickable to jump to that compound.
+//   2. Top compounds (by confidence) — ranked card grid of the top 6 active
+//      compounds, sorted by confidence (where the literature converges).
+//   3. All possible compounds — compact list of every active compound with a
+//      small intensity bar, sorted by intensity desc. The completeness layer.
+function renderAnalysisGrid() {
+  const pct = v => Math.round(Math.min(1, v) * 100);
+  const activeNotes = NOTES.filter(n => hasAnyEntry(n.id) && isNoteVisible(n.id));
+  const allActive = compoundNodes
+    .filter(n => isCompoundVisible(n.id) && n.intensity_raw > 0);
+  const byConfidence = allActive.slice()
+    .sort((a, b) => b.confidence - a.confidence || b.intensity - a.intensity);
+  const topByConf = byConfidence.slice(0, 6);
+  const byIntensity = allActive.slice().sort((a, b) => b.intensity - a.intensity);
+
+  const disclaimerLine = `<div class="results-disclaimer">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></div>`;
+
+  // Empty state — nothing logged yet. Still render a browseable list of every
+  // compound in the library so users can click into them on their own without
+  // having to slide a note first. Grouped by class; no intensity bars (no signal yet).
+  if (activeNotes.length === 0 && allActive.length === 0) {
+    const visibleCompounds = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+    const byClass = {};
+    visibleCompounds.forEach(c => { (byClass[c.class] = byClass[c.class] || []).push(c); });
+    const classOrder = Object.keys(byClass).sort();
+    const browseList = classOrder.map(cls => {
+      const items = byClass[cls].slice().sort((a, b) => a.label.localeCompare(b.label));
+      return `<li class="browse-class-row">
+        <span class="browse-class-label">${cls}</span>
+        <span class="browse-class-items">
+          ${items.map(c => `<button type="button" class="browse-cpd view-cpd" data-cpd="${c.id}" style="border-left:3px solid ${compoundColor(c)}">${c.label}</button>`).join('')}
+        </span>
+      </li>`;
+    }).join('');
+
+    detailPanel.innerHTML = `
+      <div class="empty">Slide notes on the left to see what compounds they map to, ranked by literature confidence.</div>
+      ${disclaimerLine}
+      <div class="results-section" style="margin-top:14px;">
+        <h3 class="results-h">Browse the compound library</h3>
+        <div class="results-section-help">Every compound in the wheel, grouped by chemical class. Click any to see its contributing notes and citations.</div>
+        <ul class="browse-compounds">${browseList}</ul>
+      </div>
+    `;
+
+    detailPanel.querySelectorAll("[data-cpd]").forEach(el => {
+      el.addEventListener("click", () => {
+        state.selectedCompound = el.dataset.cpd;
+        state.selectedNote = null;
+        renderDetail();
+        gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
+      });
+    });
+    return;
+  }
+
+  // SECTION 1: Your inputs → compound arrows
+  const section1 = activeNotes.length === 0
+    ? `<div class="empty" style="padding:8px 0;">Slide a note above 0 to see what compounds it maps to.</div>`
+    : `<ul class="input-arrows">
+        ${activeNotes.map(n => {
+          const edges = (NOTE_EDGES[n.id] || []).slice().sort((a, b) => b.w - a.w).slice(0, 3);
+          if (edges.length === 0) return '';
+          const g = GROUP_BY_ID[n.group];
+          const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+          const arrows = edges.map(e => {
+            const cpd = CPD_BY_ID[e.cpd];
+            return `<button type="button" class="arrow-target view-cpd" data-cpd="${cpd.id}" title="${cpd.class} · base weight ${e.w.toFixed(2)}">${cpd.label}</button>`;
+          }).join('<span class="arrow-sep"> · </span>');
+          return `<li class="input-arrow-row">
+            <span class="input-name"><span class="input-dot" style="background:${color}"></span>${n.label}</span>
+            <span class="arrow">→</span>
+            <span class="arrow-targets">${arrows}</span>
+          </li>`;
+        }).join('')}
+      </ul>`;
+
+  // SECTION 2: Top compounds by confidence (cards)
+  const section2 = topByConf.length === 0
+    ? ''
+    : `<div class="compound-grid">
+        ${topByConf.map(n => {
+          const c = CPD_BY_ID[n.id];
+          return `
+            <div class="cpd-card" data-cpd="${n.id}">
+              <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}</div>
+              <div class="meta">
+                <span class="pill">${c.class}</span>
+                <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
+                ${c.specificity === "signature" ? `<span class="pill signature" title="Marker compound for one note">signature</span>` : ''}
+                ${n.active_edges > 0 ? `<span class="pill">${n.active_edges} cite${n.active_edges>1?'s':''}</span>` : ''}
+              </div>
+              <div class="scores">
+                <div class="score-row">
+                  <span class="lbl">Intensity</span>
+                  <div class="bar"><div class="intensity" style="width:${pct(n.intensity)}%"></div></div>
+                  <span class="val">${pct(n.intensity)}</span>
+                </div>
+                <div class="score-row">
+                  <span class="lbl">Confidence</span>
+                  <div class="bar"><div class="confidence" style="width:${pct(n.confidence)}%"></div></div>
+                  <span class="val">${pct(n.confidence)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>`;
+
+  // SECTION 3: All possible compounds (compact list)
+  const section3 = byIntensity.length === 0
+    ? ''
+    : `<ul class="compound-compact">
+        ${byIntensity.map(n => {
+          const c = CPD_BY_ID[n.id];
+          const color = compoundColor(c);
+          return `<li class="compact-row view-cpd" data-cpd="${c.id}">
+            <span class="compact-swatch" style="background:${color}"></span>
+            <span class="compact-name">${c.label}</span>
+            <span class="compact-class">${c.class}</span>
+            <span class="compact-bar"><div style="width:${pct(n.intensity)}%; background:${color}"></div></span>
+            <span class="compact-val">${pct(n.intensity)}%</span>
+          </li>`;
+        }).join('')}
+      </ul>`;
+
+  detailPanel.innerHTML = `
+    <div class="results-section">
+      <h3 class="results-h">Your inputs</h3>
+      <div class="results-section-help">The compounds most often associated with each note you've reported, from the literature.</div>
+      ${section1}
+    </div>
+
+    ${section2 ? `<div class="results-section">
+      <h3 class="results-h">Top compounds (by confidence)</h3>
+      <div class="results-section-help">Where your notes converge with literature backing. Click for citations.</div>
+      ${section2}
+    </div>` : ''}
+
+    ${section3 ? `<div class="results-section">
+      <h3 class="results-h">All possible compounds</h3>
+      <div class="results-section-help">Everything with any signal from your current notes, ranked by intensity.</div>
+      ${section3}
+    </div>` : ''}
+
+    ${disclaimerLine}
+  `;
+
+  // Wire all compound-target clicks (cards in section 2, compact rows in
+  // section 3, arrow targets in section 1) → select that compound.
+  detailPanel.querySelectorAll("[data-cpd]").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedCompound = el.dataset.cpd;
+      state.selectedNote = null;
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
+    });
+  });
+}
+
+function renderCompoundDetail(cpdId, banner) {
+  const c = CPD_BY_ID[cpdId];
+  const node = CPD_NODE_BY_ID[cpdId];
+  const edges = CPD_EDGES[cpdId].slice().sort((a,b) => {
+    const wa = noteSignal(a.note) * a.w;
+    const wb = noteSignal(b.note) * b.w;
+    if (wa !== wb) return wb - wa;
+    return b.w - a.w;
+  });
+  const pct = v => Math.round(Math.min(1, v) * 100);
+  detailPanel.innerHTML = `
+    <button class="back-to-grid" type="button">← All compounds</button>
+    ${banner ? `<div class="empty" style="margin-bottom:10px;">${banner}</div>` : ""}
+    <h2>${c.label}</h2>
+    <div class="compound-class">${c.class}${c.specificity === "signature" ? ' · signature' : ''}</div>
+    <div style="font-size:12px; line-height:1.5; color:var(--ink-dim);">${c.note}</div>
+
+    <div class="section">
+      <div class="section-title">Perception scores</div>
+      <div style="display:grid; grid-template-columns: 90px 1fr 32px; gap:6px; align-items:center; font-size:11px;">
+        <span style="color:var(--ink-dim)">Intensity</span>
+        <div class="bar" style="height:6px; background:var(--bg); border-radius:3px;">
+          <div style="height:100%; background:var(--accent); width:${pct(node.intensity)}%"></div>
+        </div>
+        <span style="text-align:right; font-variant-numeric:tabular-nums;">${pct(node.intensity)}</span>
+
+        <span style="color:var(--ink-dim)">Confidence</span>
+        <div class="bar" style="height:6px; background:var(--bg); border-radius:3px;">
+          <div style="height:100%; background:var(--accent-2); width:${pct(node.confidence)}%"></div>
+        </div>
+        <span style="text-align:right; font-variant-numeric:tabular-nums;">${pct(node.confidence)}</span>
+      </div>
+      <div style="font-size:11px; color:var(--ink-dim); margin-top:8px; line-height:1.5;">
+        Odor threshold: <strong style="color:var(--ink)">${c.threshold}</strong>. ${c.thresholdSrc}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Contributing notes (literature)</div>
+      <ul>
+        ${edges.map(e => {
+          const sig = noteSignal(e.note);
+          const live = sig > 0;
+          const contrib = (sig * e.w).toFixed(2);
+          // Show which phases contributed (small hint after the note name).
+          const phaseHints = PHASES
+            .filter(p => !state.hiddenPhases.has(p) && getEntry(e.note, p) !== undefined)
+            .map(p => `<span style="color:var(--ink-dim); font-size:10px;">${p}:${getEntry(e.note, p)}</span>`)
+            .join(" ");
+          // In Go Deeper mode, render the full bibliographic citation if we
+          // have one in REFERENCES; otherwise fall back to the short string.
+          const ref = state.goDeeper ? refForCite(e.cite) : null;
+          const citeHtml = ref
+            ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
+            : `<span class="cite">${e.cite}</span>`;
+          return `<li>
+            <span class="note-name">${NOTE_BY_ID[e.note].label}</span> ${phaseHints}
+            <span class="weight" style="float:right">${live ? contrib : "—"} <span style="color:var(--ink-dim)">(base ${e.w.toFixed(2)})</span></span>
+            ${citeHtml}
+          </li>`;
+        }).join("")}
+      </ul>
+    </div>
+  `;
+  // Back to grid: deselect compound and re-render the analysis pane in grid mode.
+  const backBtn = detailPanel.querySelector(".back-to-grid");
+  if (backBtn) backBtn.addEventListener("click", () => {
+    state.selectedCompound = null;
+    gComps.selectAll("g.compound").classed("selected", false);
+    renderDetail();
+  });
+}
+
+// ---------- WHEEL CORNER OVERLAY (Go Deeper) ----------
+// Bottom-right of the wheel only — top compound suggestions in compact list
+// form, only visible when Go Deeper is on. The previous bottom-left "Your
+// inputs" overlay was moved into the Results pane as its own stacked section.
+const overlayCompoundsEl = document.getElementById("overlay-compounds");
+
+function renderWheelOverlays() {
+  // Bottom-right overlay can group by individual compound (default) or by
+  // chemical class — gives a quick "what families am I picking up" read.
+  const titleEl = document.getElementById("overlay-compounds-title");
+  const pct = v => Math.round(Math.min(1, v) * 100);
+
+  if (state.overlayBy === "class") {
+    if (titleEl) titleEl.textContent = "Top classes";
+    // Sum intensity per chemical class across visible, non-trivial compounds.
+    const sums = {};
+    for (const n of compoundNodes) {
+      if (!isCompoundVisible(n.id)) continue;
+      if (n.intensity <= 0.05) continue;
+      const cls = CPD_BY_ID[n.id].class;
+      sums[cls] = (sums[cls] || 0) + n.intensity;
+    }
+    const byClass = Object.entries(sums).sort((a, b) => b[1] - a[1]);
+    if (byClass.length === 0) {
+      overlayCompoundsEl.innerHTML = `<li class="empty">No compounds detected yet.</li>`;
+    } else {
+      // Normalize as % of the top-scoring class so magnitudes read at a glance.
+      const maxSum = byClass[0][1];
+      overlayCompoundsEl.innerHTML = byClass.map(([cls, sum]) => {
+        const p = Math.round((sum / maxSum) * 100);
+        const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+        return `<li><span class="class-dot" style="background:${color}"></span><span class="name">${cls}</span><span class="val">${p}%</span></li>`;
+      }).join('');
+    }
+  } else {
+    if (titleEl) titleEl.textContent = "Top compounds";
+    const top = compoundNodes
+      .filter(n => isCompoundVisible(n.id) && n.intensity > 0.05)
+      .sort((a, b) => b.intensity - a.intensity)
+      .slice(0, 12);
+    overlayCompoundsEl.innerHTML = top.length === 0
+      ? `<li class="empty">No compounds detected yet.</li>`
+      : top.map(n => {
+          const c = CPD_BY_ID[n.id];
+          return `<li><span class="name">${c.label}</span><span class="val">${pct(n.intensity)}%</span></li>`;
+        }).join('');
+  }
+}
+
+// ---------- VIEW SWITCHING / PANE VISIBILITY ----------
+// Each side pane (sliders, results) can be hidden independently via its
+// pane-toggle tab on the wheel's edge. The three header view tabs are
+// presets that flip both per-pane states in combination.
+//   Notes ("note-input")     = sliders visible, results hidden
+//   Reset View ("dashboard") = both visible (the default 3-pane view)
+//   Results ("analysis")     = sliders hidden, results visible
+// data-view keys keep their original names internally to avoid churning
+// every state reference; the user-facing labels are what changed.
+// "Both hidden" (wheel only) is reachable via the toggles but unnamed in
+// the header tabs — emergent state, no tab highlights as active there.
+
+function applyPaneState() {
+  document.body.classList.toggle("notes-hidden",  state.notesHidden);
+  document.body.classList.toggle("detail-hidden", state.detailHidden);
+
+  // Update the per-pane toggle chevrons so they always point toward where
+  // the pane would go if clicked (‹ = push left / hide; › = pull right / show).
+  const tn = document.getElementById("toggle-notes");
+  const td = document.getElementById("toggle-detail");
+  if (tn) tn.textContent = state.notesHidden  ? "›" : "‹";
+  if (td) td.textContent = state.detailHidden ? "‹" : "›";
+
+  // Derive which view-preset (if any) matches the current pane combo,
+  // and highlight that tab in the header.
+  let activeView = null;
+  if (!state.notesHidden && !state.detailHidden) activeView = "dashboard";
+  else if (!state.notesHidden &&  state.detailHidden) activeView = "note-input";
+  else if ( state.notesHidden && !state.detailHidden) activeView = "analysis";
+  document.querySelectorAll("#view-tabs button").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === activeView);
+  });
+
+  // Layout changed; tell d3 to relayout the wheel.
+  if (typeof layout === "function") layout();
+  if (sim) sim.alpha(0.5).restart();
+}
+
+function setView(v) {
+  if (v === "dashboard")        { state.notesHidden = false; state.detailHidden = false; }
+  else if (v === "note-input")  { state.notesHidden = false; state.detailHidden = true;  }
+  else if (v === "analysis")    { state.notesHidden = true;  state.detailHidden = false; }
+  applyPaneState();
+}
+
+document.querySelectorAll("#view-tabs button").forEach(b => {
+  b.addEventListener("click", () => setView(b.dataset.view));
+});
+
+// Per-pane toggle handlers — independent of the view presets.
+document.getElementById("toggle-notes").addEventListener("click", () => {
+  state.notesHidden = !state.notesHidden;
+  applyPaneState();
+});
+document.getElementById("toggle-detail").addEventListener("click", () => {
+  state.detailHidden = !state.detailHidden;
+  applyPaneState();
+});
+
+// Auto-detect initial view from viewport. Wide screens default to Reset View
+// (the 3-pane dashboard); narrower screens default to Notes (sliders + wheel).
+// User can override via tabs or per-pane toggles anytime; we don't auto-flip
+// on resize. Threshold is 1100px so tablet landscape and half-screen browser
+// windows land in a focus mode instead of a cramped 3-pane.
+function autoDetectViewMode() {
+  const w = window.innerWidth;
+  if (w >= 1100) setView("dashboard");
+  else setView("note-input");
+}
+
+document.querySelectorAll("#notefilter-toggle button").forEach(b => {
+  b.addEventListener("click", () => {
+    state.noteFilter = b.dataset.filter;
+    document.querySelectorAll("#notefilter-toggle button").forEach(x =>
+      x.classList.toggle("active", x.dataset.filter === state.noteFilter));
+    // Rebuild panel, recompute angles, redraw wheel, refresh scoring/edges
+    buildNotesPanel();
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+    recompute();
+  });
+});
+
+// ---------- NOTES SEARCH ----------
+// Subtle search at the top of the notes pane filters which rows are visible.
+// Operates on already-rendered DOM (no rebuild) so focus + caret stay put as
+// the user types. Empty query = show everything (subject to other filters).
+const notesSearchEl = document.getElementById("notes-search");
+function applyNotesSearchFilter() {
+  const q = (notesSearchEl.value || "").trim().toLowerCase();
+  // Hide non-matching rows
+  const rows = document.querySelectorAll(".note-row");
+  rows.forEach(row => {
+    const noteId = row.dataset.note;
+    const note = NOTE_BY_ID[noteId];
+    const label = (note && note.label || "").toLowerCase();
+    const matches = !q || label.includes(q);
+    row.classList.toggle("search-hidden", !matches);
+  });
+  // Hide group headers that have no remaining visible rows.
+  // We walk siblings forward from each .group-header until we hit the next header.
+  document.querySelectorAll(".group-header").forEach(h => {
+    let any = false;
+    let el = h.nextElementSibling;
+    while (el && !el.classList.contains("group-header")) {
+      if (el.classList.contains("note-row") && !el.classList.contains("search-hidden")) {
+        any = true; break;
+      }
+      el = el.nextElementSibling;
+    }
+    h.classList.toggle("search-hidden", !any);
+  });
+}
+notesSearchEl.addEventListener("input", applyNotesSearchFilter);
+
+// ---------- LEGEND ----------
+function buildLegend() {
+  const phasesBox  = document.getElementById("legend-phases");
+  const groupsBox  = document.getElementById("legend-groups");
+  const classesBox = document.getElementById("legend-classes");
+
+  // Phase filter — show ortho / show retro. Phase tagging itself happens in the
+  // slider panel; this row controls which tagged entries contribute to scoring.
+  phasesBox.innerHTML = PHASES.map(phase => {
+    const hidden = state.hiddenPhases.has(phase);
+    const count = countEntriesForPhase(phase);
+    return `
+      <label class="legend-phase-item ${hidden ? 'off' : ''}" data-phase="${phase}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} />
+        ${PHASE_ICON[phase]}
+        <span class="label">${PHASE_LABEL[phase]}</span>
+        <span class="count">${count}</span>
+      </label>
+    `;
+  }).join("");
+
+  // Note groups
+  groupsBox.innerHTML = GROUPS.map(g => {
+    const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+    const total = NOTES.filter(n => n.group === g.id).length;
+    const hidden = state.hiddenGroups.has(g.id);
+    return `
+      <label class="legend-item ${hidden ? 'off' : ''}" data-kind="group" data-id="${g.id}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} />
+        <span class="swatch" style="background:${color}"></span>
+        <span class="label">${g.label}</span>
+        <span class="count">${total}</span>
+      </label>
+    `;
+  }).join("");
+
+  // Compound classes — derive list of unique classes present in COMPOUNDS, in stable order
+  const classOrder = Array.from(new Set(COMPOUNDS.map(c => c.class)));
+  classesBox.innerHTML = classOrder.map(cls => {
+    const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+    const total = COMPOUNDS.filter(c => c.class === cls).length;
+    const hidden = state.hiddenClasses.has(cls);
+    return `
+      <label class="legend-item ${hidden ? 'off' : ''}" data-kind="class" data-id="${cls}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} />
+        <span class="swatch" style="background:${color}"></span>
+        <span class="label">${cls}</span>
+        <span class="count">${total}</span>
+      </label>
+    `;
+  }).join("");
+
+  // Wire group/class checkboxes
+  document.querySelectorAll(".legend-item input").forEach(input => {
+    input.addEventListener("change", () => {
+      const item = input.closest(".legend-item");
+      const kind = item.dataset.kind;
+      const id = item.dataset.id;
+      const set = kind === "group" ? state.hiddenGroups : state.hiddenClasses;
+      if (input.checked) set.delete(id); else set.add(id);
+      item.classList.toggle("off", !input.checked);
+      applyVisibilityChange(kind);
+    });
+  });
+
+  // Wire phase-filter checkboxes
+  document.querySelectorAll(".legend-phase-item input").forEach(input => {
+    input.addEventListener("change", () => {
+      const item = input.closest(".legend-phase-item");
+      const phase = item.dataset.phase;
+      if (input.checked) state.hiddenPhases.delete(phase);
+      else state.hiddenPhases.add(phase);
+      item.classList.toggle("off", !input.checked);
+      recompute();
+    });
+  });
+}
+
+function applyVisibilityChange(kind) {
+  if (kind === "group") {
+    // Layout depends on which notes are visible
+    buildNotesPanel();
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+  }
+  // both kinds affect scoring/render of compounds and edges
+  recompute();
+}
+
+// Collapse / expand legend
+document.getElementById("legend-toggle").addEventListener("click", () => {
+  document.getElementById("legend").classList.toggle("collapsed");
+});
+
+// "toggle all" links
+document.querySelectorAll(".toggle-all").forEach(el => {
+  el.addEventListener("click", e => {
+    e.stopPropagation();
+    const target = el.dataset.target;
+    if (target === "groups") {
+      const allHidden = state.hiddenGroups.size === GROUPS.length;
+      state.hiddenGroups = allHidden ? new Set() : new Set(GROUPS.map(g => g.id));
+      buildLegend();
+      applyVisibilityChange("group");
+    } else {
+      const classes = Array.from(new Set(COMPOUNDS.map(c => c.class)));
+      const allHidden = state.hiddenClasses.size === classes.length;
+      state.hiddenClasses = allHidden ? new Set() : new Set(classes);
+      buildLegend();
+      applyVisibilityChange("class");
+    }
+  });
+});
+
+// ---------- DEMOS ----------
+// setNotes accepts an array of {note, intensity, phase?}. Phase defaults to null
+// (default-mode entry). If any entry has an ortho/retro phase, Go Deeper auto-
+// enables so the per-row UI matches the loaded data.
+function setNotes(entries) {
+  state.entries.clear();
+  Object.keys(state.pendingIntensity).forEach(k => state.pendingIntensity[k] = 0);
+  closeAllCallouts();
+  entries.forEach(e => {
+    if (NOTE_BY_ID[e.note]) commitEntry(e.note, e.phase ?? null, e.intensity);
+  });
+  // Auto-flip the niche-notes filter if a demo includes any niche descriptor
+  const needsAll = entries.some(e => NOTE_BY_ID[e.note] && !NOTE_BY_ID[e.note].common);
+  if (needsAll && state.noteFilter !== "all") {
+    state.noteFilter = "all";
+    document.querySelectorAll("#notefilter-toggle button").forEach(x =>
+      x.classList.toggle("active", x.dataset.filter === "all"));
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+  }
+  // If any entry is phase-tagged, reveal Go Deeper so the UI buttons match the data.
+  const usesPhase = entries.some(e => e.phase === "ortho" || e.phase === "retro");
+  setGoDeeper(usesPhase || state.goDeeper);
+  buildLegend();   // refresh per-phase counts
+  syncSliders();   // rebuild panel to show new entries
+  recompute();
+}
+
+document.getElementById("reset").addEventListener("click", () => setNotes([]));
+
+// Coffee — default-mode showcase. No phase tags; just intensities.
+// (Coffee experience is rich enough that most users can use it without phase tagging.)
+document.getElementById("demo-coffee").addEventListener("click", () => setNotes([
+  { note: "coffee",     intensity: 9 },
+  { note: "toast",      intensity: 6 },
+  { note: "smoky",      intensity: 2 },
+  { note: "chocolate",  intensity: 7 },
+  { note: "caramel",    intensity: 5 },
+  { note: "stonefruit", intensity: 4 },
+  { note: "honey",      intensity: 3 }
+]));
+
+// Citrus mocktail — Go Deeper showcase. Mixes default-mode entries with
+// ortho/retro-tagged ones to demonstrate dual-phase logging. Orange is
+// logged in both phases at different intensities (ortho-bright, retro-mild).
+// Loading this demo auto-enables Go Deeper.
+document.getElementById("demo-mocktail").addEventListener("click", () => setNotes([
+  { note: "grapefruit",   phase: "ortho", intensity: 9 },
+  { note: "orange",       phase: "ortho", intensity: 7 },
+  { note: "orange",       phase: "retro", intensity: 5 },
+  { note: "lemon",        intensity: 6 },
+  { note: "rose",         phase: "ortho", intensity: 4 },
+  { note: "passionfruit", phase: "retro", intensity: 6 },
+  { note: "honey",        intensity: 3 },
+  { note: "green",        intensity: 2 }
+]));
+
+// ---------- GO DEEPER TOGGLE ----------
+function setGoDeeper(on) {
+  const wasOn = state.goDeeper;
+  state.goDeeper = !!on;
+  document.body.classList.toggle("go-deeper", state.goDeeper);
+  // Switching Go Deeper OFF: re-sync the slider working values to the
+  // existing null-phase entries so the slider faithfully represents the
+  // committed state. In default mode, slider IS the entry.
+  if (wasOn && !state.goDeeper) {
+    for (const noteId of Object.keys(state.pendingIntensity)) {
+      const nullEntry = getEntry(noteId, null);
+      state.pendingIntensity[noteId] = nullEntry !== undefined ? nullEntry : 0;
+    }
+    syncSliders();  // rebuild the panel so each slider snaps to its synced value
+  }
+  // Refresh analysis pane so any open compound detail re-renders
+  // (full-citation expansion is gated on state.goDeeper).
+  renderDetail();
+}
+document.getElementById("godeeper-toggle").addEventListener("click", () => {
+  setGoDeeper(!state.goDeeper);
+});
+
+// Overlay-by toggle (bottom-right wheel overlay: compound vs class grouping)
+document.querySelectorAll("#overlay-by-toggle button").forEach(b => {
+  b.addEventListener("click", () => {
+    state.overlayBy = b.dataset.overlayBy;
+    document.querySelectorAll("#overlay-by-toggle button").forEach(x =>
+      x.classList.toggle("active", x.dataset.overlayBy === state.overlayBy));
+    renderWheelOverlays();
+  });
+});
+
+// ---------- INFO ("i") TAB ----------
+// Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
+// Lives alongside Go Deeper as a top-menu surface. Per project-information-access,
+// nothing here is gated — the i tab is a reference / glossary the user opens
+// when they want it. The compound-origin info and jargon glossary inside
+// Types of Aroma are the main payoff (define jargon, not basics).
+const infoOverlayEl = document.getElementById("info-overlay");
+const infoBodyEl    = document.getElementById("info-body");
+
+function openInfo(tab) {
+  state.infoOpen = true;
+  if (tab) state.infoTab = tab;
+  infoOverlayEl.hidden = false;
+  renderInfo();
+}
+function closeInfo() {
+  state.infoOpen = false;
+  infoOverlayEl.hidden = true;
+}
+function setInfoTab(tab) {
+  state.infoTab = tab;
+  renderInfo();
+}
+function renderInfo() {
+  document.querySelectorAll("#info-tabs button").forEach(b => {
+    b.classList.toggle("active", b.dataset.infoTab === state.infoTab);
+  });
+  if (state.infoTab === "about")            infoBodyEl.innerHTML = renderAbout();
+  else if (state.infoTab === "methodology") { infoBodyEl.innerHTML = renderMethodology(); wireMethodologyHandlers(); }
+  else if (state.infoTab === "how-to-use")  infoBodyEl.innerHTML = renderHowToUse();
+  else                                      renderTypesOfAroma();   // wires search dynamically
+  infoBodyEl.scrollTop = 0;
+}
+
+function wireMethodologyHandlers() {
+  const btn = document.getElementById("methodology-formulas-btn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    infoBodyEl.classList.toggle("show-formulas");
+    const isOn = infoBodyEl.classList.contains("show-formulas");
+    btn.textContent = (isOn ? "Hide" : "Show") + " formulas";
+  });
+}
+
+function renderAbout() {
+  return `
+    <h2>About this tool</h2>
+    <p class="lede">Aroma Wheel takes what you say you're smelling or tasting and maps it onto the aromatic compounds that are most likely contributing to that, based on published gas-chromatography (GC-MS) work in coffee, hops and beer, wine, and mocktails. You report perceptions, the wheel shows you compounds.</p>
+
+    <h3>The stance</h3>
+    <p>Your perceptions are real, and they change with the moment. The same cup of coffee or the same glass of wine can give you different results depending on the time of day, what you ate before, how alert you are, the ambient air. That variation isn't noise, it's signal.</p>
+    <p>This tool doesn't grade your perception against a "correct answer." What you smell or taste <em>is</em> the data. The compounds the wheel surfaces are plausible contributors to what you reported, weighted by what published literature says about that combination of notes, not verdicts about what you should have noticed.</p>
+
+    <h3>What the results mean</h3>
+    <p>For each compound that lights up:</p>
+    <ul>
+      <li><strong>Intensity</strong> is how strongly your reported notes point to it, with an adjustment for how easily that compound gets perceived in the first place. Some compounds, like furfurylthiol in coffee, read strong even at trace amounts because they have very low odor thresholds.</li>
+      <li><strong>Confidence</strong> is a blend of how many of your notes point to a compound and how strongly each one points. Several solid notes converging on the same compound gives you high confidence. A single speculative match on its own is lower.</li>
+      <li><strong>Citations</strong> are the published source behind every note-to-compound link. Click any compound in the analysis pane to see them.</li>
+    </ul>
+
+    <h3>What this isn't</h3>
+    <p>Important to say outright: this is a <strong>suggestion engine, not a lab</strong>. There is no chromatograph in your browser. When you say apple at intensity 5 and the wheel lights up ethyl butanoate, that is saying <em>"given what is published about apple aroma, ethyl butanoate is one plausible thing you might be picking up."</em></p>
+    <p>It is <strong>not</strong> saying:</p>
+    <ul>
+      <li>"The substance you tasted contains this compound." We didn't test what you're drinking. We're inferring from common aroma knowledge and the citations behind each link.</li>
+      <li>"This is <em>the</em> compound responsible for your perception." Perception is multi-causal. The same molecule reads differently in different drinks, and several molecules can produce similar perceptions.</li>
+      <li>"Other compounds aren't present." Real samples often carry dozens or hundreds of volatiles. We model a curated set chosen for usefulness in tasting, not exhaustive coverage.</li>
+    </ul>
+    <p>What it actually is: a structured way to think about what might be going on chemically when you notice something, with the citations as the receipts.</p>
+
+    <h3>Behind the scenes</h3>
+    <p>This is a public, educational project. The whole thing is a single static HTML file, and the source is on GitHub. The interesting part is probably not the tool itself, it's the thought process behind it. Comments in the source walk through design choices as they come up.</p>
+    <p>Current scope is things you ingest: coffee, hops and beer, wine, mocktails. Perfumery is a close adjacent the project might explore later, but it isn't supported yet. Perfumery sits at the orthonasal end of the olfactory spectrum (the sniff), while the current tool is centered on the retronasal end (post-swallow exhale), which is most of what you actually mean when you say "flavor."</p>
+
+    <h3>About the maker</h3>
+    <p>Built by Nolan. I've gone by a lot of names across the various fields I've worked in: UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, systems analyst. The aroma wheel sits somewhere in the middle of all of those. A UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization on top of a structured knowledge graph, a systems model of how sensory inference actually works.</p>
+  `;
+}
+
+function renderMethodology() {
+  // Toggle label reflects current state of the show-formulas class on the body
+  // (which persists across tab switches within the info overlay).
+  const showing = infoBodyEl.classList.contains("show-formulas");
+  return `
+    <h2>Methodology</h2>
+    <p class="lede">This is what happens between "you slide a note" and "compounds light up." Plain-language by default; toggle the formulas on if you want to see the actual math.</p>
+
+    <div class="methodology-toggle-row">
+      <button type="button" id="methodology-formulas-btn">${showing ? "Hide" : "Show"} formulas</button>
+      <span class="help">The math is the same either way. The toggle just controls whether the numbers and formulas show up alongside the explanation.</span>
+    </div>
+
+    <h3>The data model</h3>
+    <p>The tool ships with three kinds of data baked in:</p>
+    <ul>
+      <li><strong>Notes</strong> (~38 descriptors organized into 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
+      <li><strong>Compounds</strong> (~34 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
+      <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
+    </ul>
+    <p>That's the knowledge graph. When you confirm a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them.</p>
+
+    <h3>From slider to compound score</h3>
+    <p>When you confirm a note, the tool looks up which compounds that note maps to in the data. For each linked compound, the tool adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
+    <p>If you confirm several notes that all point to the same compound, those contributions sum. So <em>lemon</em>, <em>orange</em>, and <em>grapefruit</em> all reinforce <em>limonene</em>; the compound's raw intensity is the total of every contribution.</p>
+    <p>The phase model adds a wrinkle when Go Deeper is on. A single note can carry up to three independent entries: a default (no phase), an ortho-tagged one, and a retro-tagged one. All three contribute separately. So logging <em>apple</em> as ortho:3 and retro:5 gives twice the evidence of just retro:5 alone.</p>
+    <div class="formula">
+      <p>The math: intensity 5 becomes a <code>noteSignal</code> of 0.5 (intensity divided by 10). For each compound the note links to, the contribution is <code>noteSignal × edge.weight</code>. Using actual edge weights from the data: <em>lemon</em> at intensity 5 contributes 0.475 to <em>limonene</em> (0.5 × 0.95) and 0.175 to <em>linalool</em> (0.5 × 0.35).</p>
+    </div>
+
+    <h3>The perception multiplier</h3>
+    <p>The raw intensity isn't the final score. Compounds have very different odor thresholds, the minimum concentration at which a typical person can detect them. A trace of furfurylthiol reads loud; a much larger amount of furfural barely registers. The tool models this with a per-compound multiplier based on which threshold tier the compound is in.</p>
+    <div class="formula">
+      <p>The four tiers and their multipliers:</p>
+      <ul>
+        <li><strong>very-low</strong> threshold (sub-ppt to ppt range): <code>× 1.20</code>. Trace amounts read strong.</li>
+        <li><strong>low</strong> threshold (ppt to low-ppb): <code>× 1.00</code>. Baseline.</li>
+        <li><strong>medium</strong> threshold (mid-ppb): <code>× 0.85</code>. Needs modest concentration.</li>
+        <li><strong>high</strong> threshold (ppm range): <code>× 0.55</code>. Needs real concentration to register.</li>
+      </ul>
+      <p>So a compound's displayed Intensity is <code>raw sum × perception multiplier</code>.</p>
+    </div>
+
+    <h3>How confidence is computed</h3>
+    <p>Confidence is a blend of two things: how many of your reported notes contribute to this compound, and how strong the strongest of those contributing edges is. Several solidly-cited notes converging on one compound gives you high confidence. A single speculative match on its own is lower.</p>
+    <div class="formula">
+      <p>The math: <code>breadth</code> = number of contributing notes divided by 3, capped at 1 (so 3+ contributors hits max breadth). <code>strength</code> = the highest edge weight among the contributors. Both are 0 to 1.</p>
+      <p><code>Confidence = 0.55 × breadth + 0.45 × strength</code>, also 0 to 1.</p>
+    </div>
+
+    <h3>What's not modeled</h3>
+    <p>The tool is honest about its scope. Things it deliberately doesn't try to capture:</p>
+    <ul>
+      <li><strong>Concentration math.</strong> We don't know how much of a compound is in your cup. The threshold tier is a rough proxy for perceived loudness, not a quantitative claim.</li>
+      <li><strong>Matrix effects.</strong> Compounds smell differently in different drinks. Limonene in a citrus mocktail and limonene in a pine-forward gin both contribute equally in the model, but the actual perceived character can shift in ways the tool doesn't capture.</li>
+      <li><strong>Co-occurrence physics.</strong> Some compounds amplify or mask each other in reality. The model treats edges as independent contributions.</li>
+      <li><strong>Individual perceptual variation</strong> beyond the threshold-tier multiplier. Two people with the same sensory experience can produce different reports; the tool honors what you report and doesn't try to "correct" for it.</li>
+    </ul>
+    <p>These limits are exactly why this is a suggestion engine, not a lab. See <button type="button" class="inline-link" data-open-info="about">About → What this isn't</button> for the longer story.</p>
+  `;
+}
+
+function renderHowToUse() {
+  return `
+    <h2>How to use</h2>
+
+    <h3>The basic flow</h3>
+    <p>You pick descriptors you notice (lemon, vanilla, toast, smoky, whatever fits), slide an intensity from 1 to 10, and click <strong>Add</strong> to confirm. Every descriptor has known connections to specific aromatic compounds, drawn from published GC-MS work. When you confirm an entry, the connected compounds each get a weighted contribution from it. Several confirmed entries pointing at the same compound stack up. That's the whole inference loop.</p>
+
+    <h3>Two views of the same thing</h3>
+    <p>The wheel and the analysis pane show the same data in two different shapes.</p>
+    <p>The <strong>wheel</strong> is spatial. Descriptors sit around the perimeter, colored by their group (Fruity, Floral, Roasted, and so on). Compounds float toward the center, pulled by whichever descriptors point to them. Edges light up between descriptors and compounds when both are active. Hover a compound for a bigger label, click for its full detail.</p>
+    <p>The <strong>analysis pane</strong> (the grey panel on the right) is ranked and textual. By default it's a sortable grid of every compound with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the literature citations behind each link.</p>
+
+    <h3>Controls</h3>
+    <ul>
+      <li><strong>Sliders pane (left).</strong> Your input. Each row is a slider plus an Add button. Click an "Added" button to Edit or Delete that entry.</li>
+      <li><strong>Legend (top of the sliders pane).</strong> Visibility filters. Toggle note groups, compound classes, and ortho/retro entries. Useful for stress-testing what's driving what.</li>
+      <li><strong>View tabs (header).</strong> <em>Notes</em> hides the results pane (sliders + wheel). <em>Reset View</em> shows all three panes. <em>Results</em> hides the sliders (wheel + results pane). The wheel is always there.</li>
+      <li><strong>Go Deeper (header toggle).</strong> Reveals advanced inputs. Per-row <em>Ortho</em> (sniff) and <em>Retro</em> (exhale) buttons let you tag when in the bite you noticed each note. Two text overlays appear in the bottom corners of the wheel showing your inputs and the top compound suggestions in compact list form.</li>
+    </ul>
+
+    <h3>Repeat-tasting</h3>
+    <p>If you taste the same coffee tomorrow and report different things, that's expected. The tool is built to make those comparisons across moments legible, not collapse them.</p>
+  `;
+}
+
+function renderTypesOfAroma() {
+  // Render the structural shell + entries; search wiring happens after.
+  const q = (state.infoSearch || "").trim().toLowerCase();
+  const matches = (text) => !q || text.toLowerCase().includes(q);
+
+  // Per-compound entries grouped by class for navigability
+  const compoundsByClass = {};
+  COMPOUNDS.forEach(c => {
+    (compoundsByClass[c.class] = compoundsByClass[c.class] || []).push(c);
+  });
+  // Stable class order: match the COMPOUND_CLASS_INFO key order
+  const classOrder = Object.keys(COMPOUND_CLASS_INFO).filter(k => compoundsByClass[k]);
+
+  // Build matched-entry tracking for counts
+  let totalMatched = 0;
+
+  const jargonHtml = JARGON.map(j => {
+    const matched = matches(j.term) || matches(j.def);
+    if (matched) totalMatched++;
+    return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="jargon">
+      <div class="info-entry-head"><span class="info-entry-name">${j.term}</span></div>
+      <div class="info-entry-body">${j.def}</div>
+    </div>`;
+  }).join('');
+
+  const classesHtml = classOrder.map(cls => {
+    const info = COMPOUND_CLASS_INFO[cls];
+    const matched = matches(cls) || matches(info);
+    if (matched) totalMatched++;
+    const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+    return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="class">
+      <div class="info-entry-head">
+        <span class="info-entry-name">${cls}</span>
+        <span class="info-entry-pill class-pill" style="border-color:${color};color:${color}">${compoundsByClass[cls].length} compound${compoundsByClass[cls].length > 1 ? 's' : ''}</span>
+      </div>
+      <div class="info-entry-body">${info}</div>
+    </div>`;
+  }).join('');
+
+  const compoundsHtml = classOrder.map(cls => {
+    const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
+    const items = compoundsByClass[cls].map(c => {
+      const origin = COMPOUND_ORIGINS[c.id] || "Origins not yet documented here.";
+      const matched = matches(c.label) || matches(c.id) || matches(c.class) || matches(origin) || matches(c.note || "");
+      if (matched) totalMatched++;
+      const sigPill = c.specificity === "signature"
+        ? `<span class="info-entry-pill" style="border-color:#d3869b;color:#d3869b">signature</span>` : '';
+      return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="compound" data-cpd="${c.id}">
+        <div class="info-entry-head">
+          <span class="info-entry-name">${c.label}</span>
+          <span class="info-entry-pill class-pill" style="border-color:${color};color:${color}">${c.class}</span>
+          <span class="info-entry-pill">thr: ${c.threshold}</span>
+          ${sigPill}
+        </div>
+        <div class="info-entry-body">${c.note || ''}</div>
+        <div class="info-entry-meta"><strong>Naturally occurs in:</strong> ${origin}</div>
+        <div class="info-entry-meta"><strong>Threshold source:</strong> ${c.thresholdSrc}</div>
+        <button type="button" class="info-view-on-wheel" data-cpd="${c.id}">→ View on wheel</button>
+      </div>`;
+    }).join('');
+    // Hide class header if all its compounds are filtered out
+    const anyVisible = compoundsByClass[cls].some(c => {
+      const origin = COMPOUND_ORIGINS[c.id] || "";
+      return matches(c.label) || matches(c.id) || matches(c.class) || matches(origin) || matches(c.note || "");
+    });
+    if (!anyVisible) return '';
+    return `<h3 style="color:${color}">${cls}</h3>${items}`;
+  }).join('');
+
+  infoBodyEl.innerHTML = `
+    <h2>Types of Aroma</h2>
+    <p class="lede">A reference for the compound space the wheel draws from, plus a glossary of jargon you'll hear in tasting circles. Search across compound names, classes, where things naturally occur, and definitions.</p>
+
+    <div class="info-search-row">
+      <input type="search" id="info-search-input" class="info-search" placeholder="Search compounds, classes, jargon, origins..." value="${q}" />
+      <span class="info-result-count" id="info-result-count">${totalMatched} match${totalMatched === 1 ? '' : 'es'}</span>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">Glossary: words worth owning</div>
+      ${jargonHtml || '<div class="info-no-results">No glossary entries match.</div>'}
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">Compound classes</div>
+      ${classesHtml || '<div class="info-no-results">No classes match.</div>'}
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">Individual compounds: where they occur in nature</div>
+      ${compoundsHtml || '<div class="info-no-results">No compounds match.</div>'}
+    </div>
+  `;
+
+  // Wire search input — live filter, no submit needed
+  const searchInput = document.getElementById("info-search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      state.infoSearch = searchInput.value;
+      const scrollPos = infoBodyEl.scrollTop;
+      renderTypesOfAroma();
+      // Restore caret + focus + scroll position so typing feels continuous
+      const newInput = document.getElementById("info-search-input");
+      if (newInput) { newInput.focus(); newInput.setSelectionRange(newInput.value.length, newInput.value.length); }
+      infoBodyEl.scrollTop = scrollPos;
+    });
+  }
+
+  // Wire "View on wheel" links — close overlay, select compound, surface in analysis
+  infoBodyEl.querySelectorAll(".info-view-on-wheel").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cpdId = btn.dataset.cpd;
+      closeInfo();
+      state.selectedCompound = cpdId;
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", x => x.id === cpdId);
+    });
+  });
+}
+
+// Wiring: open button, close button, tabs, Escape key
+document.getElementById("info-open-btn").addEventListener("click", () => openInfo("about"));
+document.getElementById("info-close-btn").addEventListener("click", closeInfo);
+document.querySelectorAll("#info-tabs button").forEach(b => {
+  b.addEventListener("click", () => setInfoTab(b.dataset.infoTab));
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && state.infoOpen) closeInfo();
+});
+
+// Delegated handler — any element with data-open-info="<tab>" opens the info
+// overlay on that tab. Lets us scatter "go read the longer story" links anywhere
+// in the UI (e.g. the limitations disclaimer in the analysis pane).
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-open-info]");
+  if (btn) {
+    e.preventDefault();
+    openInfo(btn.dataset.openInfo);
+  }
+});
+
+// ---------- "WHAT AM I SMELLING?" ----------
+// Vocabulary translator: user picks an evocative descriptor (floral, cheesey,
+// petting zoo...) and the tool suggests specific notes from the existing
+// vocabulary to try. Click a suggested note → modal closes, panel scrolls to
+// that slider with a flash highlight. No auto-set of intensity; the user
+// chooses how strong it actually is.
+const waisOverlayEl     = document.getElementById("wais-overlay");
+const waisChipsEl       = document.getElementById("wais-chips");
+const waisSuggestionsEl = document.getElementById("wais-suggestions");
+
+// Per-note rationale shown as a tooltip in the Note Suggester when a note's
+// group assignment isn't obvious from everyday perception. The chemistry
+// reason lives here so users who wonder "why is X in this group?" have a
+// one-hover answer without us having to restructure the groups themselves.
+const NOTE_GROUP_RATIONALE = {
+  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation."
+};
+
+// Multi-select: which descriptor chips are currently active. Cleared each
+// time the modal opens fresh.
+let waisSelected = new Set();
+
+function openWais() {
+  waisSelected = new Set();
+  waisOverlayEl.hidden = false;
+  renderWaisChips();
+  renderWaisSuggestionsMulti();
+}
+function closeWais() { waisOverlayEl.hidden = true; }
+
+function findWaisEntry(word) {
+  for (const cat of WAIS_DESCRIPTORS) {
+    const e = cat.entries.find(d => d.word === word);
+    if (e) return e;
+  }
+  return null;
+}
+
+function renderWaisChips() {
+  waisChipsEl.innerHTML = WAIS_DESCRIPTORS.map(cat => `
+    <div class="wais-category">
+      <div class="wais-category-title">${cat.category}</div>
+      <div class="wais-category-chips">
+        ${cat.entries.map(d =>
+          `<button type="button" class="wais-chip ${waisSelected.has(d.word) ? 'active' : ''}" data-wais-word="${d.word}">${d.word}</button>`
+        ).join('')}
+      </div>
+    </div>
+  `).join('');
+  waisChipsEl.querySelectorAll(".wais-chip").forEach(b => {
+    b.addEventListener("click", () => {
+      const word = b.dataset.waisWord;
+      if (waisSelected.has(word)) waisSelected.delete(word);
+      else waisSelected.add(word);
+      b.classList.toggle("active");
+      renderWaisSuggestionsMulti();
+    });
+  });
+}
+
+// Aggregate suggested notes across all selected chips. Each note's count =
+// how many of the active chips suggest it. The "Add suggested flavor notes"
+// button at the bottom commits all of them at intensity min(10, count × 3),
+// so a note suggested by three chips ends up at 9, a note from one chip at 3.
+function renderWaisSuggestionsMulti() {
+  if (waisSelected.size === 0) {
+    waisSuggestionsEl.innerHTML = `<div class="wais-suggestions-empty">Click chips above to see suggested notes. Select multiple to combine — the more descriptors suggest the same note, the higher its starting intensity if you add them.</div>`;
+    return;
+  }
+
+  // Tally how many active chips suggest each note. Filter to visible notes.
+  const counts = new Map();
+  for (const word of waisSelected) {
+    const entry = findWaisEntry(word);
+    if (!entry) continue;
+    for (const noteId of entry.notes) {
+      counts.set(noteId, (counts.get(noteId) || 0) + 1);
+    }
+  }
+  const sorted = [...counts.entries()]
+    .filter(([nid]) => isNoteVisible(nid))
+    .sort((a, b) => b[1] - a[1] || NOTE_BY_ID[a[0]].label.localeCompare(NOTE_BY_ID[b[0]].label))
+    .map(([nid, count]) => ({ note: NOTE_BY_ID[nid], count, intensity: Math.min(10, count * 3) }));
+
+  if (sorted.length === 0) {
+    waisSuggestionsEl.innerHTML = `
+      <div class="wais-suggestion-heading">Notes to try</div>
+      <div class="wais-suggestions-empty">All matches are niche notes that are filtered out. Switch the header filter to "All" to see them.</div>
+    `;
+    return;
+  }
+
+  waisSuggestionsEl.innerHTML = `
+    <div class="wais-suggestion-heading">Notes to try (sorted by how many of your selected descriptors suggest them)</div>
+    <ul class="wais-suggestion-list">
+      ${sorted.map(({ note, count, intensity }) => {
+        const g = GROUP_BY_ID[note.group];
+        const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+        const rationale = NOTE_GROUP_RATIONALE[note.id];
+        const rationaleIcon = rationale
+          ? `<button type="button" class="rationale-info" title="${rationale.replace(/"/g, '&quot;')}" aria-label="Why is ${note.label} in ${g.label}?">ⓘ</button>`
+          : '';
+        return `<li class="wais-suggestion-item" data-note="${note.id}" title="${count} of your selected descriptors suggest this. Starting intensity if you add: ${intensity}.">
+          <span class="dot" style="background:${color}"></span>
+          <span class="name">${note.label}</span>
+          <span class="group">${g.label}${rationaleIcon}</span>
+          <span class="wais-suggestion-count">×${count} → ${intensity}</span>
+        </li>`;
+      }).join('')}
+    </ul>
+    <button type="button" id="wais-add-all-btn" class="wais-add-all-btn">Add suggested flavor notes →</button>
+  `;
+
+  // Stop info-icon clicks from bubbling to the row (which would scroll to
+  // the slider). Tooltip shows on hover regardless.
+  waisSuggestionsEl.querySelectorAll(".rationale-info").forEach(btn => {
+    btn.addEventListener("click", (e) => e.stopPropagation());
+  });
+  // Clicking an individual suggestion still scrolls + focuses that slider
+  // (doesn't auto-set intensity — the explicit "Add suggested flavor notes"
+  // button does that for the whole set).
+  waisSuggestionsEl.querySelectorAll(".wais-suggestion-item").forEach(li => {
+    li.addEventListener("click", () => {
+      const noteId = li.dataset.note;
+      closeWais();
+      const row = document.querySelector(`.note-row[data-note="${noteId}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 600);
+        const slider = row.querySelector("input[type=range]");
+        if (slider) slider.focus();
+      }
+    });
+  });
+
+  // "Add suggested flavor notes" → commits each suggested note as a default
+  // (null-phase) entry at its derived intensity, then closes and re-renders.
+  const addBtn = document.getElementById("wais-add-all-btn");
+  if (addBtn) addBtn.addEventListener("click", () => {
+    sorted.forEach(({ note, intensity }) => {
+      commitEntry(note.id, null, intensity);
+      state.pendingIntensity[note.id] = intensity;
+    });
+    closeWais();
+    // Rebuild the panel so slider positions reflect the new entries, then
+    // recompute the wheel and analysis pane.
+    buildNotesPanel();
+    recompute();
+  });
+}
+
+document.getElementById("wais-open-btn").addEventListener("click", openWais);
+document.getElementById("wais-close-btn").addEventListener("click", closeWais);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !waisOverlayEl.hidden) closeWais();
+});
+
+// ---------- INIT ----------
+buildLegend();
+buildNotesPanel();
+layout();
+startSim();
+recompute();
+autoDetectViewMode();  // pick Reset View or Notes based on viewport width
+
+window.addEventListener("resize", () => {
+  layout();
+  if (sim) sim.alpha(0.5).restart();
+});
+</script>
+</body>
+</html>
