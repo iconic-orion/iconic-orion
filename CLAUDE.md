@@ -4,8 +4,8 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 
 ## Long-lived branches
 
-- **`main`** — production. Only merge here via PR once changes are tested and the user explicitly says it's ready to ship.
-- **`prototype`** — the **deploy / staging branch**. GitHub Pages is configured to serve from here (or is the natural target). Treat as semi-stable: only land work here that's coherent on its own. Day-to-day exploration happens on branches *off* `prototype`, not directly on it.
+- **`main`** — production. Reflects the last shipped baseline. As of 2026-05-31 (PR #5, merge commit `74bd1ef`), `main` is caught up to `prototype` — V2 and the Compound library have been promoted. Only merge here via PR once changes are tested and the user explicitly says it's ready to ship.
+- **`prototype`** — the **deploy / staging branch** and the day-to-day source of truth for the live app. Netlify deploys from here to https://aromawheel.net. Treat as semi-stable: only land work here that's coherent on its own. Day-to-day exploration happens on branches *off* `prototype`, not directly on it. Expect `prototype` to drift ahead of `main` between promotions.
 
 ## Short-lived branches
 
@@ -20,25 +20,35 @@ When a body of work is big enough to need multiple coherent commits before it's 
 - The tracking PR's description lists slices so reviewers (and future-you) can see progress at a glance.
 - Do NOT auto-merge the tracking PR. Wait for explicit approval before merging into `prototype`.
 
-### Current long-running dev branch: V2
+### Current long-running dev branch: *(none active)*
 
-- Branch: **`claude/vigilant-lovelace-2cb582`**
-- Tracking PR: **[#4](https://github.com/iconic-orion/iconic-orion/pull/4)** — kept in draft until V2 is ready to merge into `prototype`.
-- Slice plan: (1) ortho/retro foundation [done], (2) three view modes + responsive layout, (3) "i" info tab with About / How to Use / Types of Aroma, (4) Go Deeper additional contents (expanded citations, methodology, cross-dimension correlations), (5) mouthfeel dimension as its own tab, (6) nudge / search / visible word bank, (7) perceptual-tone copy pass.
+No long-running dev branch is currently active. New work goes directly to short-lived branches off `prototype`, or straight to `prototype` if it's small and coherent on its own.
+
+### Historical: V2 (shipped 2026-05-26)
+
+- Branch: **`claude/vigilant-lovelace-2cb582`** — now stale; `prototype` is ahead of it. Safe to delete locally.
+- Tracking PR: **[#4](https://github.com/iconic-orion/iconic-orion/pull/4)** — **merged** 2026-05-26.
+- Merge commit on `prototype`: `20643d3` (tagged **`v2`**).
+- Slices delivered: (1) ortho/retro foundation, (2) three view modes + responsive layout, (3) "i" info tab with About / How to Use / Types of Aroma, (4) Go Deeper additional contents, (5) mouthfeel dimension as its own tab, (6) nudge / search / visible word bank, (7) perceptual-tone copy pass.
 
 ## Flow at a glance
 
 ```
 feature/X ──PR──▶ prototype ──PR──▶ main      (small self-contained changes)
 
-claude/vigilant-lovelace ──PR──▶ prototype ──PR──▶ main   (long-running V2)
+(future long-running work) ──PR──▶ prototype ──PR──▶ main
    ▲
    │ slice commits accumulate here
 ```
 
 ## Tags
 
-- **`v1`** → commit `f066d15`. Checkpoint of the first workable HTML prototype, captured before V2 design changes. Recover any time with `git checkout v1`. Pushed to origin; visible in GitHub's Tags / Releases UI.
+Tags mark historical snapshots. Recover any with `git checkout <tag>`. Both are pushed to origin and visible in GitHub's Tags / Releases UI.
+
+- **`v1`** → commit `f066d15` — first workable HTML prototype, captured before V2 design changes. Historical snapshot.
+- **`v2`** → commit `20643d3` — the moment V2 landed on `prototype` (merge of PR #4, 2026-05-26). Historical snapshot; `prototype` has continued forward since.
+
+`prototype` is always newer than the highest-numbered `vN` tag.
 
 ## Branch protection (set in GitHub UI)
 
@@ -51,10 +61,6 @@ On `main`:
 
 This repo uses **Claude Code worktrees** (under `.claude/worktrees/`) so multiple agent sessions can work on different branches in parallel without stepping on each other. Each worktree is a separate working directory checked out to one branch.
 
-The canonical worktree for V2 work is:
+All current `.claude/worktrees/*` directories — including `vigilant-lovelace-2cb582/` — are **historical leftovers from the V2 era**. None are canonical anymore. They're safe to ignore, or to clean up with `git worktree remove <path>` if you want a tidier filesystem. The matching `claude/*` branches (sad-beaver, frosty-hoover, blissful-franklin, etc.) are all behind `prototype` with zero unique commits — they can be deleted without losing work.
 
-```
-D:\Git_NAE\.claude\worktrees\vigilant-lovelace-2cb582\
-```
-
-Other directories under `.claude/worktrees/` are leftovers from earlier sessions. They're safe to ignore, or to clean up with `git worktree remove <path>` if you want a tidier filesystem.
+When new long-running work starts, create a fresh worktree off `prototype` and document it here.
