@@ -1455,7 +1455,7 @@ const svg = d3.select("#svg");
 const wheelEl = document.querySelector("main.wheel");
 let W = wheelEl.clientWidth, H = wheelEl.clientHeight;
 let CX = W / 2, CY = H / 2;
-let R_NOTE = Math.min(W, H) * 0.42;
+let R_NOTE = Math.min(W, H) * 0.38;  // ring sized to leave room for the curved outer labels
 let R_RING = R_NOTE - 18; // group-arc ring radius
 let R_COMPOUND_MAX = R_NOTE * 0.55;
 
@@ -1469,7 +1469,7 @@ const gLabels = root.append("g").attr("class", "labels");
 function layout() {
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
-  R_NOTE = Math.min(W, H) * 0.42;
+  R_NOTE = Math.min(W, H) * 0.38;  // ring sized to leave room for the curved outer labels
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
