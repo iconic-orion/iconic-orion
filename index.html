@@ -1515,6 +1515,15 @@ function computeNotePositions() {
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
+// Radius at which the section (group/class) labels sit. Floated out past the
+// ring so the entered-note / compound labels (which live just outside R_NOTE and
+// render above the arc layer) don't cover them. Adaptive: generous on desktop,
+// clamped on small screens so the label never spills past the pane edge.
+function arcLabelRadius() {
+  const margin = Math.min(W, H) / 2 - R_NOTE;   // gap between ring and pane edge
+  return R_NOTE + Math.min(46, Math.max(22, margin - 8));
+}
+
 function drawGroupArcs() {
   const arc = d3.arc()
     .innerRadius(R_RING - 2).outerRadius(R_RING + 2)
@@ -1539,8 +1548,8 @@ function drawGroupArcs() {
     .attr("class", "group-arc-label")
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
-    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
-    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
+    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
+    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
     .text(d => d.label.toUpperCase());
 
   // center decorative ring
@@ -1670,8 +1679,8 @@ function drawClassArcs() {
     .attr("class", "group-arc-label")
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
-    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
-    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
+    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
+    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
     .text(d => d.label.toUpperCase());
 
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
