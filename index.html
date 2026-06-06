@@ -86,6 +86,10 @@
     color: var(--ink-dim); }
   .tabs button.active { background: var(--accent); color: #1a1810; }
   .tabs button:not(.active):hover { background: var(--panel-2); color: var(--ink); }
+  /* Small inline caption inside a segmented control (e.g. "Organize"). */
+  .tabs .tabs-label { padding: 6px 8px 6px 10px; font-size: 10px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.08em; align-self: center;
+    border-right: 1px solid var(--line); background: var(--panel-2); }
 
   /* Compound grid — lives inside the Analysis pane (right) as its default-state
      view when no compound is selected. Narrower than V1's middle-pane grid so
@@ -552,6 +556,11 @@
   .note:hover circle { stroke: var(--ink); }
   .note.active circle { stroke: var(--ink); stroke-width: 2; }
 
+  /* Legend-hover spotlight: matched entities get a bright halo, the rest fade. */
+  .compound, .note { transition: opacity 0.15s; }
+  .compound.dimmed, .note.dimmed { opacity: 0.12; }
+  .compound.spotlit circle, .note.spotlit circle { stroke: var(--accent); stroke-width: 2; }
+
   .center-ring { fill: none; stroke: var(--line); stroke-dasharray: 2 4; }
   .group-arc { fill: none; stroke-width: 18; opacity: 0.7; }
   .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
@@ -566,6 +575,11 @@
     <button data-view="note-input">Notes</button>
     <button data-view="dashboard" class="active">Reset View</button>
     <button data-view="analysis">Results</button>
+  </div>
+  <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
+    <span class="tabs-label">Organize</span>
+    <button data-organize="scent" class="active">Scent</button>
+    <button data-organize="chemistry">Chemistry</button>
   </div>
   <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
   <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
@@ -937,6 +951,13 @@ const COMPOUND_CLASS_COLOR = {
   "alcohol":           "#a89984"   // sand
 };
 
+// Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
+// organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
+// get a short ring label so the 12 arc labels don't collide.
+const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
+const CLASS_SHORT = { "phenolic-aldehyde": "phen-ald", "norisoprenoid": "norisopr." };
+const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color: COMPOUND_CLASS_COLOR[id] }));
+
 // ---------- INFO-TAB CONTENT ----------
 // Per-compound natural-occurrence info. Per the project's editorial principle:
 // for an aromatic compound, *where it naturally occurs in general* is the most
@@ -1270,6 +1291,24 @@ EDGES.forEach(e => {
   CPD_EDGES[e.cpd].push(e);
 });
 
+// COMPOUND_SCENT_HOME: each compound's dominant note-group, by summed edge weight.
+// This is the "what scent family do we think of this compound as" signal — e.g.
+// β-damascenone's edges (berry, apple, rose, coffee, tobacco…) sum heaviest into
+// fruity, so its home is "fruity" no matter where the live force layout parks it.
+// Used as the compound tint in scent mode so cohorts read at a glance. Computed
+// once; the graph is static.
+const COMPOUND_SCENT_HOME = {};
+COMPOUNDS.forEach(c => {
+  const byGroup = {};
+  CPD_EDGES[c.id].forEach(e => {
+    const g = NOTE_BY_ID[e.note] && NOTE_BY_ID[e.note].group;
+    if (g) byGroup[g] = (byGroup[g] || 0) + e.w;
+  });
+  let best = null, bestW = -1;
+  for (const [g, w] of Object.entries(byGroup)) if (w > bestW) { best = g; bestW = w; }
+  COMPOUND_SCENT_HOME[c.id] = best;   // may be null for an edgeless compound
+});
+
 // ---------- STATE ----------
 // Input contract: each note can carry up to three independent confirmed entries:
 // - default (phase=null) — confirmed via the always-visible "Add" button.
@@ -1304,7 +1343,13 @@ const state = {
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
   hiddenClasses: new Set(),  // compound-class names hidden via legend
-  openCalloutKey: null       // currently-open edit/delete callout's entry key, if any
+  openCalloutKey: null,      // currently-open edit/delete callout's entry key, if any
+  // Wheel organizing principle. "scent": note-group arcs on the ring, compounds
+  // float (today's default). "chemistry": chemical-class arcs on the ring, the
+  // entered notes float toward the compound neighborhoods they evoke (the dual).
+  organizeBy: "scent",       // "scent" | "chemistry"
+  // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
+  spotlight: null            // null | { kind: "group" | "class", id }
 };
 
 // ---------- ENTRY HELPERS ----------
@@ -1428,9 +1473,17 @@ function layout() {
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
   root.attr("transform", `translate(0,0)`);
-  computeNotePositions();
-  drawGroupArcs();
-  drawNotes();
+  if (inChemistry()) {
+    // Dual layout: chemical-class arcs on the ring, compounds anchored in them;
+    // the entered notes float (rendered from the sim tick / recompute).
+    computeCompoundPositions();
+    drawClassArcs();
+    drawCompoundAnchors();
+  } else {
+    computeNotePositions();
+    drawGroupArcs();
+    drawNotes();
+  }
   updateSimulationCenter();
 }
 
@@ -1549,11 +1602,124 @@ function drawNotes() {
     .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
     .attr("fill", d => groupColor(d.group))
     .text(d => d.label);
+  applySpotlight();
 }
 
 function groupColor(gid) {
   const g = GROUP_BY_ID[gid];
   return getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+}
+
+// ---------- CHEMISTRY-MODE LAYOUT (the dual of the note functions above) ----------
+// In chemistry mode the ANCHORS are compounds (fixed on the ring, grouped into
+// chemical-class arcs) and the FLOATS are the entered notes. These three mirror
+// computeNotePositions / drawGroupArcs / drawNotes exactly, over COMPOUNDS/CLASSES.
+
+// Distribute visible compounds around the ring, grouped contiguously by class.
+function computeCompoundPositions() {
+  const visible = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+  const counts = {};
+  CLASSES.forEach(cl => counts[cl.id] = visible.filter(c => c.class === cl.id).length);
+  const total = visible.length || 1;
+  let angle = -Math.PI / 2; // start at top
+  const classAngles = {};
+  CLASSES.forEach(cl => {
+    const span = (counts[cl.id] / total) * (Math.PI * 2);
+    classAngles[cl.id] = { start: angle, end: angle + span, span };
+    angle += span;
+  });
+  const counter = {};
+  visible.forEach(c => {
+    counter[c.class] = (counter[c.class] || 0);
+    const i = counter[c.class]++;
+    const ca = classAngles[c.class];
+    const a = ca.start + (i + 0.5) / counts[c.class] * ca.span;
+    const node = CPD_NODE_BY_ID[c.id];
+    node._angle = a;
+    node._x = CX + Math.cos(a) * R_NOTE;
+    node._y = CY + Math.sin(a) * R_NOTE;
+  });
+  COMPOUNDS.forEach(c => { if (!isCompoundVisible(c.id)) {
+    const n = CPD_NODE_BY_ID[c.id]; n._angle = null; n._x = null; n._y = null;
+  }});
+  CLASSES.forEach(cl => { cl._arc = classAngles[cl.id]; });
+}
+
+function drawClassArcs() {
+  const arc = d3.arc()
+    .innerRadius(R_RING - 2).outerRadius(R_RING + 2)
+    .startAngle(d => d._arc.start + Math.PI/2)
+    .endAngle(d => d._arc.end + Math.PI/2);
+
+  const visibleClasses = CLASSES.filter(cl => cl._arc && cl._arc.span > 0.001);
+  // Reuse the .group-arc element class so existing arc styling applies; data
+  // keyed by id, so toggling modes cleanly swaps note-group arcs for class arcs.
+  gArcs.selectAll("path.group-arc").data(visibleClasses, d => d.id)
+    .join(
+      enter => enter.append("path").attr("class", "group-arc"),
+      update => update,
+      exit => exit.remove()
+    )
+    .attr("d", arc)
+    .attr("transform", `translate(${CX},${CY})`)
+    .attr("stroke", d => d.color);
+
+  const labels = gArcs.selectAll("text.group-arc-label").data(visibleClasses, d => d.id);
+  labels.exit().remove();
+  labels.join("text")
+    .attr("class", "group-arc-label")
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
+    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * (R_NOTE + 22))
+    .text(d => d.label.toUpperCase());
+
+  gArcs.selectAll("circle.center-ring").data([0]).join("circle")
+    .attr("class", "center-ring")
+    .attr("cx", CX).attr("cy", CY).attr("r", R_COMPOUND_MAX + 12);
+}
+
+// Compound anchors: the "periodic table" of class arcs. Unlike note anchors
+// (which render only when entered), ALL visible compounds show — faint by
+// default, brightening as evidence accrues — so the floating notes have stable
+// neighborhoods to drift toward and the chemical structure is always legible.
+function drawCompoundAnchors() {
+  const renderable = COMPOUNDS.filter(c => isCompoundVisible(c.id) && CPD_NODE_BY_ID[c.id]._x != null)
+    .map(c => CPD_NODE_BY_ID[c.id]);
+  const sel = gNotes.selectAll("g.note").data(renderable, d => d.id);
+  sel.exit().remove();
+  const enter = sel.enter().append("g").attr("class", "note active")
+    .on("mouseenter", function(e, d) {
+      state.hoveredCompound = d.id;
+      d3.select(this).raise();
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredCompound = null; updateEdges(); })
+    .on("click", (e, d) => {
+      state.selectedCompound = d.id;
+      state.selectedNote = null;
+      renderDetail();
+      gNotes.selectAll("g.note").classed("selected", x => x.id === state.selectedCompound);
+    });
+  enter.append("circle").attr("r", 5);
+  enter.append("text").attr("class", "note-label");
+
+  const merged = sel.merge(enter)
+    .classed("selected", d => d.id === state.selectedCompound);
+  merged.attr("transform", d => `translate(${d._x},${d._y})`);
+  merged.select("circle")
+    .attr("fill", d => COMPOUND_CLASS_COLOR[d.class] || "#aaa")
+    .attr("fill-opacity", d => 0.3 + 0.6 * Math.min(1, d.score || 0));
+  merged.select("text")
+    .attr("class", "note-label")
+    .attr("x", d => Math.cos(d._angle) * 10)
+    .attr("y", d => Math.sin(d._angle) * 10)
+    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
+    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
+    .attr("fill", d => COMPOUND_CLASS_COLOR[d.class] || "#aaa")
+    .attr("fill-opacity", d => (d.score > 0.05 || d.id === state.selectedCompound || d.id === state.hoveredCompound) ? 0.95 : 0.4)
+    .text(d => d.label);
+  applySpotlight();
 }
 
 // ---------- FORCE SIM for compounds ----------
@@ -1567,6 +1733,23 @@ const compoundNodes = COMPOUNDS.map(c => ({
   score: 0, radius: 6
 }));
 const CPD_NODE_BY_ID = Object.fromEntries(compoundNodes.map(n => [n.id, n]));
+
+// Float-node mirror for notes: in chemistry mode the NOTES become the simulated
+// dots (pulled toward the compound classes they evoke), exactly as compounds are
+// the simulated dots in scent mode. Same node shape so one sim handles both.
+const noteNodes = NOTES.map(n => ({
+  id: n.id, label: n.label, group: n.group,
+  x: CX + (Math.random() - 0.5) * 40,
+  y: CY + (Math.random() - 0.5) * 40,
+  vx: 0, vy: 0,
+  score: 0, radius: 6
+}));
+const NOTE_NODE_BY_ID = Object.fromEntries(noteNodes.map(n => [n.id, n]));
+
+// The two organizing roles, resolved from state.organizeBy. Anchors sit on the
+// ring (fixed _x/_y); floats are force-simulated (live x/y).
+function inChemistry() { return state.organizeBy === "chemistry"; }
+function floatNodes()  { return inChemistry() ? noteNodes : compoundNodes; }
 
 let sim;
 function startSim() {
@@ -1591,19 +1774,34 @@ function updateSimulationCenter() {
 function targetForce(strength) {
   let s = strength;
   function force(alpha) {
-    compoundNodes.forEach(node => {
-      const edges = CPD_EDGES[node.id];
+    const chem = inChemistry();
+    floatNodes().forEach(node => {
       let wx = 0, wy = 0, wsum = 0;
-      edges.forEach(e => {
-        if (!isNoteVisible(e.note)) return;
-        const noteW = noteSignal(e.note);
-        if (noteW <= 0) return;
-        const contrib = noteW * e.w;
-        const n = NOTE_BY_ID[e.note];
-        wx += n._x * contrib;
-        wy += n._y * contrib;
-        wsum += contrib;
-      });
+      if (chem) {
+        // node is a NOTE; pull toward its compounds' fixed class-arc anchors,
+        // weighted purely by edge strength so the placement is stable (a note
+        // always drifts to the same chemical neighborhood). Only place notes the
+        // user has actually entered; the rest stay parked near center.
+        if (noteSignal(node.id) > 0) NOTE_EDGES[node.id].forEach(e => {
+          if (!isCompoundVisible(e.cpd)) return;
+          const cn = CPD_NODE_BY_ID[e.cpd];
+          if (cn._x == null) return;       // anchor not positioned (hidden class)
+          wx += cn._x * e.w; wy += cn._y * e.w; wsum += e.w;
+        });
+      } else {
+        // node is a COMPOUND; pull toward the weighted centroid of its active
+        // note anchors (the original scent-mode behavior).
+        CPD_EDGES[node.id].forEach(e => {
+          if (!isNoteVisible(e.note)) return;
+          const noteW = noteSignal(e.note);
+          if (noteW <= 0) return;
+          const contrib = noteW * e.w;
+          const n = NOTE_BY_ID[e.note];
+          wx += n._x * contrib;
+          wy += n._y * contrib;
+          wsum += contrib;
+        });
+      }
       let tx, ty;
       if (wsum > 0) {
         // weighted centroid of contributors, pulled inward toward center
@@ -1630,8 +1828,8 @@ function targetForce(strength) {
 function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h*31 + s.charCodeAt(i))|0; return Math.abs(h); }
 
 function tick() {
-  // clamp to bounds
-  compoundNodes.forEach(n => {
+  // clamp floats (compounds in scent mode, notes in chemistry mode) to bounds
+  floatNodes().forEach(n => {
     const dx = n.x - CX, dy = n.y - CY;
     const r = Math.sqrt(dx*dx + dy*dy);
     if (r > R_COMPOUND_MAX) {
@@ -1639,10 +1837,14 @@ function tick() {
       n.y = CY + dy/r * R_COMPOUND_MAX;
     }
   });
+  if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
+  updateEdges();
+}
 
-  // Render compounds with non-trivial evidence only. Empty state of the wheel
-  // shows just the group arcs + labels; compounds populate as confirmed notes
-  // feed them. Filtered by class visibility AND intensity_raw > 0.
+// Scent mode: compounds float toward their active notes. Render those with
+// non-trivial evidence only — the empty wheel shows just the group arcs, and
+// compounds populate as confirmed notes feed them.
+function renderCompoundFloats() {
   const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
   const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
   sel.exit().remove();
@@ -1681,29 +1883,122 @@ function tick() {
     .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedCompound || d.id === hoveredCompound() ? 0.95 : 0.4)
     .text(d => d.label);
 
-  updateEdges();
+  applySpotlight();
+}
+
+// Chemistry mode: the entered notes float toward the chemical neighborhoods they
+// evoke. Mirror of renderCompoundFloats — render only notes that carry an entry,
+// colored by their scent group, click scrolls to the matching slider row.
+function renderNoteFloats() {
+  const renderable = noteNodes.filter(n => isNoteVisible(n.id) && hasAnyEntry(n.id));
+  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
+  sel.exit().remove();
+  const enter = sel.enter().append("g").attr("class", "compound")
+    .on("mouseenter", function(e, d) {
+      state.hoveredNote = d.id;
+      d3.select(this).raise();
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
+    .on("click", (e, d) => {
+      const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 600);
+        const slider = row.querySelector("input[type=range]");
+        if (slider) slider.focus();
+      }
+      if (state.goDeeper) {
+        state.selectedNote = d.id;
+        state.selectedCompound = null;
+        renderDetail();
+      }
+    })
+    .call(d3.drag()
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+  enter.append("circle");
+  enter.append("text").attr("class", "node-label");
+
+  const merged = sel.merge(enter)
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .classed("selected", d => d.id === state.selectedNote);
+
+  merged.select("circle")
+    .attr("r", d => d.radius)
+    .attr("fill", d => groupColor(d.group))
+    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
+
+  merged.select("text")
+    .attr("x", d => d.radius + 4)
+    .attr("y", 3)
+    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedNote || d.id === state.hoveredNote ? 0.95 : 0.4)
+    .text(d => d.label);
+
+  applySpotlight();
 }
 function hoveredCompound() { return state.hoveredCompound; }
 
 function compoundColor(c) {
-  return COMPOUND_CLASS_COLOR[c.class] || "#aaa";
+  // Color follows the organizing mode. In chemistry mode the dot's color names
+  // its chemical class (matching its ring arc). In scent mode it's tinted by the
+  // compound's dominant scent-family, so "the fruity compounds" read as a cohort
+  // regardless of where the live layout has parked the dot.
+  if (inChemistry()) return COMPOUND_CLASS_COLOR[c.class] || "#aaa";
+  const home = COMPOUND_SCENT_HOME[c.id];
+  return home ? groupColor(home) : "#aaa";
 }
+
+// ---------- SPOTLIGHT (legend hover) ----------
+// Hovering a legend row halos the matching entities on the wheel and dims the
+// rest, in either mode. `d` is a note datum (has .group) or a compound datum
+// (has .class). A "group" spotlight matches notes of that group plus compounds
+// whose dominant scent-family is that group; a "class" spotlight matches
+// compounds of that class plus notes that link to it.
+function spotlightMatch(d) {
+  const sp = state.spotlight;
+  if (!sp) return true;
+  if (sp.kind === "group") {
+    if (d.group) return d.group === sp.id;
+    return COMPOUND_SCENT_HOME[d.id] === sp.id;
+  }
+  // class spotlight
+  if (d.class) return d.class === sp.id;
+  return (NOTE_EDGES[d.id] || []).some(e => CPD_BY_ID[e.cpd] && CPD_BY_ID[e.cpd].class === sp.id);
+}
+function applySpotlight() {
+  const active = !!state.spotlight;
+  gNotes.selectAll("g.note")
+    .classed("dimmed", d => active && !spotlightMatch(d))
+    .classed("spotlit", d => active && spotlightMatch(d));
+  gComps.selectAll("g.compound")
+    .classed("dimmed", d => active && !spotlightMatch(d))
+    .classed("spotlit", d => active && spotlightMatch(d));
+}
+function setSpotlight(kind, id) { state.spotlight = (kind && id) ? { kind, id } : null; applySpotlight(); }
 
 // ---------- EDGES rendering ----------
 function updateEdges() {
   // only draw edges where note has weight > 0 OR note is hovered OR compound is selected
+  const chem = inChemistry();
   const drawn = [];
   EDGES.forEach(e => {
     if (!isNoteVisible(e.note)) return;
     if (!isCompoundVisible(e.cpd)) return;
     const sig = noteSignal(e.note);
-    const isHovered = state.hoveredNote === e.note || state.selectedCompound === e.cpd;
+    const isHovered = state.hoveredNote === e.note || state.hoveredCompound === e.cpd || state.selectedCompound === e.cpd;
     const w = sig * e.w;
-    if (sig > 0 || isHovered) {
+    // Scent: draw lit edges plus a hovered/selected node's full fan. Chemistry:
+    // the floating endpoint is the note, which is only on screen when entered, so
+    // restrict to lit edges (sig > 0) to avoid lines to off-screen parked notes.
+    if (sig > 0 || (isHovered && !chem)) {
       drawn.push({
         ...e,
         n: NOTE_BY_ID[e.note],
         c: CPD_NODE_BY_ID[e.cpd],
+        nf: NOTE_NODE_BY_ID[e.note],   // note float node (chemistry endpoint)
         contrib: w,
         lit: sig > 0,
         focused: isHovered
@@ -1716,7 +2011,11 @@ function updateEdges() {
     update => update,
     exit => exit.remove()
   )
-  .attr("d", d => `M ${d.n._x} ${d.n._y} Q ${CX} ${CY} ${d.c.x} ${d.c.y}`)
+  // Curve runs anchor -> center -> float. Scent: note anchor (_x/_y) to compound
+  // float (x/y). Chemistry: compound anchor (_x/_y) to note float (x/y).
+  .attr("d", d => chem
+    ? `M ${d.c._x} ${d.c._y} Q ${CX} ${CY} ${d.nf.x} ${d.nf.y}`
+    : `M ${d.n._x} ${d.n._y} Q ${CX} ${CY} ${d.c.x} ${d.c.y}`)
   .attr("stroke", d => groupColor(d.n.group))
   .attr("stroke-width", d => 0.6 + d.contrib * 4)
   .classed("lit", d => d.lit || d.focused)
@@ -1760,9 +2059,15 @@ function recompute() {
     node.score = node.intensity;
     node.radius = 5 + Math.min(12, node.score * 8);
   });
-  // Update which notes are rendered on the wheel. The set changes whenever
-  // entries are added or removed, so drawNotes belongs in the recompute loop.
-  drawNotes();
+  // Score the note float-nodes too (used as their size/opacity when they're the
+  // floating set in chemistry mode). Cheap; harmless in scent mode.
+  noteNodes.forEach(nn => {
+    nn.score = noteSignal(nn.id);
+    nn.radius = 5 + Math.min(12, nn.score * 8);
+  });
+  // Redraw the anchor set — it changes whenever entries are added/removed (scent:
+  // which notes show; chemistry: compound-anchor brightness tracks score).
+  if (inChemistry()) drawCompoundAnchors(); else drawNotes();
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
@@ -2334,6 +2639,32 @@ document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
 });
 
+// "Organize by" toggle: flip the wheel between scent and chemistry projections.
+function setOrganizeBy(mode) {
+  if (mode === state.organizeBy) return;
+  state.organizeBy = mode;
+  document.querySelectorAll("#organize-tabs button").forEach(x =>
+    x.classList.toggle("active", x.dataset.organize === mode));
+  // Roles swap, so clear stale selection/hover and wipe the wheel layers before
+  // the other projection draws into them.
+  state.selectedNote = null;
+  state.hoveredNote = null;
+  state.hoveredCompound = null;
+  state.spotlight = null;
+  gEdges.selectAll("*").remove();
+  gComps.selectAll("*").remove();
+  gNotes.selectAll("*").remove();
+  gArcs.selectAll("path.group-arc, text.group-arc-label").remove();
+  // Repoint the force sim at the new float set (compounds in scent, notes in
+  // chemistry) so d3 integrates the right nodes.
+  if (sim) sim.nodes(floatNodes());
+  layout();      // draws the new ring arcs + anchors for the active mode
+  recompute();   // scores + draws floats/anchors and restarts the sim
+}
+document.querySelectorAll("#organize-tabs button").forEach(b => {
+  b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
+});
+
 // Per-pane toggle handlers — independent of the view presets.
 document.getElementById("toggle-notes").addEventListener("click", () => {
   state.notesHidden = !state.notesHidden;
@@ -2439,17 +2770,20 @@ function buildLegend() {
     `;
   }).join("");
 
-  // Wire group/class checkboxes
-  document.querySelectorAll(".legend-item input").forEach(input => {
+  // Wire group/class checkboxes (visibility) + hover spotlight on each row.
+  document.querySelectorAll(".legend-item").forEach(item => {
+    const kind = item.dataset.kind;   // "group" | "class"
+    const id = item.dataset.id;
+    const input = item.querySelector("input");
     input.addEventListener("change", () => {
-      const item = input.closest(".legend-item");
-      const kind = item.dataset.kind;
-      const id = item.dataset.id;
       const set = kind === "group" ? state.hiddenGroups : state.hiddenClasses;
       if (input.checked) set.delete(id); else set.add(id);
       item.classList.toggle("off", !input.checked);
       applyVisibilityChange(kind);
     });
+    // Spotlight: halo the matching wheel entities while hovering this row.
+    item.addEventListener("mouseenter", () => setSpotlight(kind, id));
+    item.addEventListener("mouseleave", () => setSpotlight(null, null));
   });
 
   // Wire phase-filter checkboxes
@@ -2466,14 +2800,17 @@ function buildLegend() {
 }
 
 function applyVisibilityChange(kind) {
-  if (kind === "group") {
-    // Layout depends on which notes are visible
-    buildNotesPanel();
-    computeNotePositions();
-    drawGroupArcs();
-    drawNotes();
+  if (inChemistry()) {
+    // Chemistry: compound classes form the ring, so a class change re-flows the
+    // arcs + anchors. A note-group change only affects which notes are available
+    // to float / appear in the sliders panel.
+    if (kind === "class") { computeCompoundPositions(); drawClassArcs(); drawCompoundAnchors(); }
+    if (kind === "group") { buildNotesPanel(); }
+  } else {
+    // Scent: note groups form the ring; a group change re-flows arcs + anchors.
+    if (kind === "group") { buildNotesPanel(); computeNotePositions(); drawGroupArcs(); drawNotes(); }
   }
-  // both kinds affect scoring/render of compounds and edges
+  // Both kinds affect scoring + the floating set, so always recompute.
   recompute();
 }
 

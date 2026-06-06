@@ -20,9 +20,12 @@ When a body of work is big enough to need multiple coherent commits before it's 
 - The tracking PR's description lists slices so reviewers (and future-you) can see progress at a glance.
 - Do NOT auto-merge the tracking PR. Wait for explicit approval before merging into `prototype`.
 
-### Current long-running dev branch: *(none active)*
+### Current feature branches (in flight)
 
-No long-running dev branch is currently active. New work goes directly to short-lived branches off `prototype`, or straight to `prototype` if it's small and coherent on its own.
+- **`claude/header-cleanup`** — PR **#6** (draft). Header cleanup (drop Common/All, rename Reset, remove misleading overlay) + About-popup rewrite (accuracy fixes, trim, in-tab table of contents). Off `prototype`.
+- **`feature/compound-lens`** — branched **off `claude/header-cleanup`** (stacks on #6; rebase/clean once #6 lands). Adds the wheel's **"Organize by: Scent | Chemistry"** lens: scent-family tint on compounds + legend hover spotlight (feature A), and a full dual layout where chemical-class arcs replace note-group arcs and notes float toward the chemistry they evoke (feature C). Draft tracking PR into `prototype`; do NOT merge before #6.
+
+No multi-slice long-running dev branch (with accumulating slice commits) is active; the above are coherent feature branches.
 
 ### Historical: V2 (shipped 2026-05-26)
 
