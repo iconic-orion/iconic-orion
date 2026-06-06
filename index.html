@@ -1516,12 +1516,12 @@ function computeNotePositions() {
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
-// Radius of the circle the section (group/class) labels are curved along. Now
-// sits just INSIDE the ring band, in the dark interior — the note/compound names
-// extend outward from R_NOTE, so an inner label can never be covered by them.
-// Clamped to stay clear of the floating dots near the center.
+// Radius of the circle the section (group/class) labels are curved along. Sits
+// inside the ring with a comfortable gap so the curved text clears the colored
+// band (otherwise the labels get occluded by their own arc) while still staying
+// clear of the floating dots near the center.
 function arcLabelRadius() {
-  return Math.max(R_COMPOUND_MAX + 22, R_NOTE - 30);
+  return Math.max(R_COMPOUND_MAX + 16, R_RING - 56);
 }
 
 // Color a section label by its category: group color in scent mode, chemical-
