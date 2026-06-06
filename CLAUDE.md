@@ -20,9 +20,13 @@ When a body of work is big enough to need multiple coherent commits before it's 
 - The tracking PR's description lists slices so reviewers (and future-you) can see progress at a glance.
 - Do NOT auto-merge the tracking PR. Wait for explicit approval before merging into `prototype`.
 
-### Current long-running dev branch: *(none active)*
+### Current feature branches (in flight)
 
-No long-running dev branch is currently active. New work goes directly to short-lived branches off `prototype`, or straight to `prototype` if it's small and coherent on its own.
+- **`feature/compound-lens`** — PR **#7** (draft, base `prototype`). Adds the wheel's **"Organize by: Scent | Chemistry"** lens: scent-family tint on compounds + legend hover spotlight (feature A), and a full dual layout where chemical-class arcs replace note-group arcs and notes float toward the chemistry they evoke (feature C). Awaiting review; do NOT auto-merge.
+
+Recently merged: **`claude/header-cleanup`** (PR **#6**, merged 2026-06-06, merge commit `d96ebaa`) — header cleanup (drop Common/All, rename Reset, remove misleading overlay) + About-popup rewrite (accuracy fixes, trim, in-tab table of contents). Now live on `prototype` / aromawheel.net. Branch is safe to delete.
+
+No multi-slice long-running dev branch (with accumulating slice commits) is active.
 
 ### Historical: V2 (shipped 2026-05-26)
 
