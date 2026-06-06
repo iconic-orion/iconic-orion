@@ -3058,11 +3058,11 @@ function renderMethodology() {
     <h3 id="meth-data">The data model</h3>
     <p>The tool ships with three kinds of data baked in:</p>
     <ul>
-      <li><strong>Notes</strong> (~38 descriptors organized into 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
-      <li><strong>Compounds</strong> (~34 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
+      <li><strong>Notes</strong> (~44 descriptors across 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
+      <li><strong>Compounds</strong> (~39 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
       <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
     </ul>
-    <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them.</p>
+    <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture — never these numbers.)</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
@@ -3112,6 +3112,7 @@ function renderHowToUse() {
     ${tocNav([
       ["use-flow", "The basic flow"],
       ["use-views", "Two views"],
+      ["use-organize", "Organize the wheel"],
       ["use-controls", "Controls"],
       ["use-deeper", "Go Deeper"],
       ["use-repeat", "Repeat-tasting"]
@@ -3121,14 +3122,22 @@ function renderHowToUse() {
     <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky — whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
 
     <h3 id="use-views">Two views of the same thing</h3>
-    <p>The <strong>wheel</strong> is spatial: descriptors around the rim (colored by group — Fruity, Floral, Roasted, and so on), compounds floating toward the center, pulled by whichever descriptors point to them. Edges light up between active pairs. Hover a compound for a bigger label, click for its full detail.</p>
+    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail — and you can flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
     <p>The <strong>Results pane</strong> (grey panel, right) is the same data ranked and textual — a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
+
+    <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
+    <p>The header's <strong>Organize</strong> toggle decides what the ring is built from — two views of the same note-to-compound web. The scoring never changes; only the layout and coloring do.</p>
+    <ul>
+      <li><strong>Scent</strong> (default). The rim is your <em>note groups</em> (Fruity, Floral, Roasted…). Compounds float inward toward the notes pulling on them, each tinted by the scent family it belongs to. Best for "what compounds sit behind what I'm tasting?"</li>
+      <li><strong>Chemistry</strong>. The rim becomes <em>chemical classes</em> (terpene, ester, thiol…), with every compound parked in its class like a periodic table — and now your <em>notes</em> float inward toward the chemistry they evoke. Best for "what kinds of molecules am I noticing?", or for spotting that, say, caramel and chocolate are chemical neighbors even though they live in different scent groups.</li>
+    </ul>
 
     <h3 id="use-controls">Controls</h3>
     <ul>
       <li><strong>Sliders pane (left).</strong> Your input — one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
-      <li><strong>Legend.</strong> Visibility filters: toggle note groups, compound classes, and ortho/retro entries to stress-test what's driving what.</li>
+      <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off — and hover any row to halo just those items on the wheel and fade the rest.</li>
       <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Reset View</em> = all three panes. <em>Results</em> = wheel + Results pane. The wheel is always shown.</li>
     </ul>
 
