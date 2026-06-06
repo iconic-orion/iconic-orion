@@ -565,6 +565,7 @@
   .group-arc { fill: none; stroke-width: 18; opacity: 0.7; }
   .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
     letter-spacing: 0.15em; opacity: 0.7; }
+  .arc-label-path { fill: none; stroke: none; }
 </style>
 </head>
 <body>
@@ -1515,13 +1516,56 @@ function computeNotePositions() {
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
-// Radius at which the section (group/class) labels sit. Floated out past the
-// ring so the entered-note / compound labels (which live just outside R_NOTE and
-// render above the arc layer) don't cover them. Adaptive: generous on desktop,
-// clamped on small screens so the label never spills past the pane edge.
+// Radius of the outer circle the section (group/class) labels are curved along.
+// Floated well past the ring so the note/compound labels (which sit just outside
+// R_NOTE) don't cover them — aiming ~100px out, clamped to the pane so the text
+// never spills off the edge on smaller viewports.
 function arcLabelRadius() {
   const margin = Math.min(W, H) / 2 - R_NOTE;   // gap between ring and pane edge
-  return R_NOTE + Math.min(46, Math.max(22, margin - 8));
+  return R_NOTE + Math.max(28, Math.min(100, margin - 14));
+}
+
+// Build an arc path for one section label to ride along, centered on the arc's
+// midpoint angle. Labels on the bottom half are drawn along a reversed sweep so
+// the text stays upright instead of hanging upside-down.
+function arcLabelPath(d, RL) {
+  const a = (d._arc.start + d._arc.end) / 2;   // midpoint angle (screen radians)
+  const bottom = Math.sin(a) > 0;              // below center → flip for legibility
+  const dir = bottom ? -1 : 1;
+  const half = 0.95;                           // generous arc span; text is centered on it
+  const a0 = a - dir * half, a1 = a + dir * half;
+  const x0 = CX + RL * Math.cos(a0), y0 = CY + RL * Math.sin(a0);
+  const x1 = CX + RL * Math.cos(a1), y1 = CY + RL * Math.sin(a1);
+  return `M ${x0} ${y0} A ${RL} ${RL} 0 0 ${bottom ? 0 : 1} ${x1} ${y1}`;
+}
+
+// Shared curved-label renderer for both the scent group arcs and the chemistry
+// class arcs. Each label rides a per-item invisible arc path via <textPath>.
+function drawArcLabels(items) {
+  const RL = arcLabelRadius();
+  gArcs.selectAll("path.arc-label-path").data(items, d => d.id)
+    .join(
+      enter => enter.append("path").attr("class", "arc-label-path").attr("fill", "none"),
+      update => update,
+      exit => exit.remove()
+    )
+    .attr("id", d => `arclbl-${d.id}`)
+    .attr("d", d => arcLabelPath(d, RL));
+
+  gArcs.selectAll("text.group-arc-label").data(items, d => d.id)
+    .join(
+      enter => {
+        const t = enter.append("text").attr("class", "group-arc-label").attr("text-anchor", "middle");
+        t.append("textPath").attr("startOffset", "50%");
+        return t;
+      },
+      update => update,
+      exit => exit.remove()
+    )
+    .select("textPath")
+    .attr("href", d => `#arclbl-${d.id}`)
+    .attr("xlink:href", d => `#arclbl-${d.id}`)
+    .text(d => d.label.toUpperCase());
 }
 
 function drawGroupArcs() {
@@ -1541,16 +1585,7 @@ function drawGroupArcs() {
   .attr("transform", `translate(${CX},${CY})`)
   .attr("stroke", d => getComputedStyle(document.documentElement).getPropertyValue(d.cssVar).trim());
 
-  // group labels at midpoint
-  const labels = gArcs.selectAll("text.group-arc-label").data(visibleGroups, d => d.id);
-  labels.exit().remove();
-  labels.join("text")
-    .attr("class", "group-arc-label")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
-    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
-    .text(d => d.label.toUpperCase());
+  drawArcLabels(visibleGroups);   // curved section names on the outer circle
 
   // center decorative ring
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
@@ -1673,15 +1708,7 @@ function drawClassArcs() {
     .attr("transform", `translate(${CX},${CY})`)
     .attr("stroke", d => d.color);
 
-  const labels = gArcs.selectAll("text.group-arc-label").data(visibleClasses, d => d.id);
-  labels.exit().remove();
-  labels.join("text")
-    .attr("class", "group-arc-label")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .attr("x", d => CX + Math.cos((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
-    .attr("y", d => CY + Math.sin((d._arc.start + d._arc.end) / 2) * arcLabelRadius())
-    .text(d => d.label.toUpperCase());
+  drawArcLabels(visibleClasses);   // curved class names on the outer circle
 
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
     .attr("class", "center-ring")
@@ -2663,7 +2690,7 @@ function setOrganizeBy(mode) {
   gEdges.selectAll("*").remove();
   gComps.selectAll("*").remove();
   gNotes.selectAll("*").remove();
-  gArcs.selectAll("path.group-arc, text.group-arc-label").remove();
+  gArcs.selectAll("path.group-arc, text.group-arc-label, path.arc-label-path").remove();
   // Repoint the force sim at the new float set (compounds in scent, notes in
   // chemistry) so d3 integrates the right nodes.
   if (sim) sim.nodes(floatNodes());
