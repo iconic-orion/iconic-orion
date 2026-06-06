@@ -384,6 +384,19 @@
     font-size: 12px; background: var(--bg); color: var(--accent);
     padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
 
+  /* In-tab table of contents — a row of chips that jump to the h3 sections of
+     the current tab. Wiring is a single delegated listener on the info body
+     (see JS), so it survives the innerHTML swap on every tab switch. */
+  .info-toc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    margin: 0 0 20px; padding: 9px 12px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 6px; }
+  .info-toc .info-toc-label { font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--ink-dim); margin-right: 2px; }
+  .info-toc button { background: transparent; border: 1px solid var(--line);
+    color: var(--ink); border-radius: 4px; padding: 3px 10px; font-size: 11px;
+    cursor: pointer; font-family: inherit; }
+  .info-toc button:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Methodology "Show formulas" toggle.
      Formula-heavy paragraphs are wrapped in <div class="formula">; hidden by
      default, shown when the user toggles on. Lightly distinguished from prose
@@ -554,7 +567,7 @@
     <button data-view="dashboard" class="active">Reset View</button>
     <button data-view="analysis">Results</button>
   </div>
-  <button id="info-open-btn" title="About, Methodology, How to Use, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
+  <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
   <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
   <button id="reset">Start Over</button>
   <button id="demo-coffee">Demo: Coffee</button>
@@ -617,8 +630,8 @@
     <div class="info-overlay-header">
       <div class="info-tabs" id="info-tabs" role="tablist">
         <button type="button" data-info-tab="about" class="active" role="tab">About</button>
-        <button type="button" data-info-tab="methodology" role="tab">Methodology</button>
         <button type="button" data-info-tab="how-to-use" role="tab">How to Use</button>
+        <button type="button" data-info-tab="methodology" role="tab">Methodology</button>
         <button type="button" data-info-tab="types-of-aroma" role="tab">Types of Aroma</button>
       </div>
       <button type="button" id="info-close-btn" class="info-close" aria-label="Close info">✕</button>
@@ -2604,39 +2617,47 @@ function wireMethodologyHandlers() {
   });
 }
 
+// Compact in-tab table of contents. Each item is [sectionId, label]; clicking a
+// chip scrolls that h3 into view within the scrollable info body. Wiring is a
+// single delegated listener on the persistent infoBodyEl (see below), so it
+// survives the innerHTML swap that happens on every tab switch.
+function tocNav(items) {
+  const chips = items.map(([id, label]) =>
+    `<button type="button" data-scroll="${id}">${label}</button>`).join("");
+  return `<nav class="info-toc"><span class="info-toc-label">On this page</span>${chips}</nav>`;
+}
+
 function renderAbout() {
   return `
     <h2>About this tool</h2>
-    <p class="lede">Aroma Wheel takes what you say you're smelling or tasting and maps it onto the aromatic compounds that are most likely contributing to that, based on published gas-chromatography (GC-MS) work in coffee, hops and beer, wine, and mocktails. You report perceptions, the wheel shows you compounds.</p>
+    <p class="lede">Tell Aroma Wheel what you're smelling or tasting, and it maps your words onto the aromatic compounds most likely behind them — drawn from published gas-chromatography (GC-MS) work in coffee, beer, wine, and mocktails. You report perceptions; the wheel shows compounds.</p>
 
-    <h3>The stance</h3>
-    <p>Your perceptions are real, and they change with the moment. The same cup of coffee or the same glass of wine can give you different results depending on the time of day, what you ate before, how alert you are, the ambient air. That variation isn't noise, it's signal.</p>
-    <p>This tool doesn't grade your perception against a "correct answer." What you smell or taste <em>is</em> the data. The compounds the wheel surfaces are plausible contributors to what you reported, weighted by what published literature says about that combination of notes, not verdicts about what you should have noticed.</p>
+    ${tocNav([
+      ["about-stance", "The stance"],
+      ["about-results", "What results mean"],
+      ["about-isnt", "What this isn't"],
+      ["about-scenes", "Behind the scenes"],
+      ["about-maker", "The maker"]
+    ])}
 
-    <h3>What the results mean</h3>
-    <p>For each compound that lights up:</p>
+    <h3 id="about-stance">The stance</h3>
+    <p>Your perceptions are real, and they change with the moment. The same coffee or glass of wine can read differently depending on the time of day, what you ate, how alert you are. That variation isn't noise — it's signal. This tool never grades you against a "correct answer." What you smell <em>is</em> the data; the compounds it surfaces are plausible contributors, weighted by what the literature says about that combination of notes — not verdicts about what you should have noticed.</p>
+
+    <h3 id="about-results">What the results mean</h3>
     <ul>
-      <li><strong>Intensity</strong> is how strongly your reported notes point to it, with an adjustment for how easily that compound gets perceived in the first place. Some compounds, like furfurylthiol in coffee, read strong even at trace amounts because they have very low odor thresholds.</li>
-      <li><strong>Confidence</strong> is a blend of how many of your notes point to a compound and how strongly each one points. Several solid notes converging on the same compound gives you high confidence. A single speculative match on its own is lower.</li>
-      <li><strong>Citations</strong> are the published source behind every note-to-compound link. Click any compound in the analysis pane to see them.</li>
+      <li><strong>Intensity</strong> — how strongly your notes point to a compound, adjusted for how easily it's perceived. Some compounds (like furfurylthiol in coffee) read strong even at trace amounts.</li>
+      <li><strong>Confidence</strong> — how many of your notes converge on a compound, and how strongly. Several notes agreeing is high; a lone speculative match is low.</li>
+      <li><strong>Citations</strong> — the published source behind every note-to-compound link. Click any compound in the Results pane to see them.</li>
     </ul>
 
-    <h3>What this isn't</h3>
-    <p>Important to say outright: this is a <strong>suggestion engine, not a lab</strong>. There is no chromatograph in your browser. When you say apple at intensity 5 and the wheel lights up ethyl butanoate, that is saying <em>"given what is published about apple aroma, ethyl butanoate is one plausible thing you might be picking up."</em></p>
-    <p>It is <strong>not</strong> saying:</p>
-    <ul>
-      <li>"The substance you tasted contains this compound." We didn't test what you're drinking. We're inferring from common aroma knowledge and the citations behind each link.</li>
-      <li>"This is <em>the</em> compound responsible for your perception." Perception is multi-causal. The same molecule reads differently in different drinks, and several molecules can produce similar perceptions.</li>
-      <li>"Other compounds aren't present." Real samples often carry dozens or hundreds of volatiles. We model a curated set chosen for usefulness in tasting, not exhaustive coverage.</li>
-    </ul>
-    <p>What it actually is: a structured way to think about what might be going on chemically when you notice something, with the citations as the receipts.</p>
+    <h3 id="about-isnt">What this isn't</h3>
+    <p>This is a <strong>suggestion engine, not a lab</strong>. There's no chromatograph in your browser. When you log apple and ethyl butanoate lights up, that means <em>"given what's published about apple aroma, ethyl butanoate is one plausible thing you're picking up"</em> — not that your drink was tested, not that it's <em>the</em> single compound responsible, and not that nothing else is present. Real samples carry dozens or hundreds of volatiles; this models a curated set chosen for usefulness in tasting. What it <em>is</em>: a structured way to think about what might be going on chemically, with the citations as receipts.</p>
 
-    <h3>Behind the scenes</h3>
-    <p>This is a public, educational project. The whole thing is a single static HTML file, and the source is on GitHub. The interesting part is probably not the tool itself, it's the thought process behind it. Comments in the source walk through design choices as they come up.</p>
-    <p>Current scope is things you ingest: coffee, hops and beer, wine, mocktails. Perfumery is a close adjacent the project might explore later, but it isn't supported yet. Perfumery sits at the orthonasal end of the olfactory spectrum (the sniff), while the current tool is centered on the retronasal end (post-swallow exhale), which is most of what you actually mean when you say "flavor."</p>
+    <h3 id="about-scenes">Behind the scenes</h3>
+    <p>A public, educational project — one static HTML file, source on GitHub, with comments that walk through the design choices as they come up. The interesting part is probably the thinking, not the tool. Current scope is things you ingest: coffee, beer, wine, mocktails. Perfumery sits at the orthonasal "sniff" end of smell, while this tool centers the retronasal end (the post-swallow exhale that's most of what you mean by "flavor"); it's a close adjacent the project might explore later, but isn't supported yet.</p>
 
-    <h3>About the maker</h3>
-    <p>Built by Nolan. I've gone by a lot of names across the various fields I've worked in: UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, systems analyst. The aroma wheel sits somewhere in the middle of all of those. A UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization on top of a structured knowledge graph, a systems model of how sensory inference actually works.</p>
+    <h3 id="about-maker">About the maker</h3>
+    <p>Built by Nolan — variously a UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, and systems analyst. The wheel sits in the middle of all of those: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
   `;
 }
 
@@ -2646,31 +2667,39 @@ function renderMethodology() {
   const showing = infoBodyEl.classList.contains("show-formulas");
   return `
     <h2>Methodology</h2>
-    <p class="lede">This is what happens between "you slide a note" and "compounds light up." Plain-language by default; toggle the formulas on if you want to see the actual math.</p>
+    <p class="lede">What happens between "you slide a note" and "compounds light up." Plain-language by default; toggle the formulas on if you want the actual math.</p>
+
+    ${tocNav([
+      ["meth-data", "Data model"],
+      ["meth-score", "Slider → score"],
+      ["meth-multiplier", "Perception multiplier"],
+      ["meth-confidence", "Confidence"],
+      ["meth-scope", "What's not modeled"]
+    ])}
 
     <div class="methodology-toggle-row">
       <button type="button" id="methodology-formulas-btn">${showing ? "Hide" : "Show"} formulas</button>
       <span class="help">The math is the same either way. The toggle just controls whether the numbers and formulas show up alongside the explanation.</span>
     </div>
 
-    <h3>The data model</h3>
+    <h3 id="meth-data">The data model</h3>
     <p>The tool ships with three kinds of data baked in:</p>
     <ul>
       <li><strong>Notes</strong> (~38 descriptors organized into 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
       <li><strong>Compounds</strong> (~34 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
       <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
     </ul>
-    <p>That's the knowledge graph. When you confirm a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them.</p>
+    <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them.</p>
 
-    <h3>From slider to compound score</h3>
-    <p>When you confirm a note, the tool looks up which compounds that note maps to in the data. For each linked compound, the tool adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
-    <p>If you confirm several notes that all point to the same compound, those contributions sum. So <em>lemon</em>, <em>orange</em>, and <em>grapefruit</em> all reinforce <em>limonene</em>; the compound's raw intensity is the total of every contribution.</p>
+    <h3 id="meth-score">From slider to compound score</h3>
+    <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
+    <p>If several notes all point to the same compound, those contributions sum. So <em>lemon</em>, <em>orange</em>, and <em>grapefruit</em> all reinforce <em>limonene</em>; the compound's raw intensity is the total of every contribution.</p>
     <p>The phase model adds a wrinkle when Go Deeper is on. A single note can carry up to three independent entries: a default (no phase), an ortho-tagged one, and a retro-tagged one. All three contribute separately. So logging <em>apple</em> as ortho:3 and retro:5 gives twice the evidence of just retro:5 alone.</p>
     <div class="formula">
       <p>The math: intensity 5 becomes a <code>noteSignal</code> of 0.5 (intensity divided by 10). For each compound the note links to, the contribution is <code>noteSignal × edge.weight</code>. Using actual edge weights from the data: <em>lemon</em> at intensity 5 contributes 0.475 to <em>limonene</em> (0.5 × 0.95) and 0.175 to <em>linalool</em> (0.5 × 0.35).</p>
     </div>
 
-    <h3>The perception multiplier</h3>
+    <h3 id="meth-multiplier">The perception multiplier</h3>
     <p>The raw intensity isn't the final score. Compounds have very different odor thresholds, the minimum concentration at which a typical person can detect them. A trace of furfurylthiol reads loud; a much larger amount of furfural barely registers. The tool models this with a per-compound multiplier based on which threshold tier the compound is in.</p>
     <div class="formula">
       <p>The four tiers and their multipliers:</p>
@@ -2683,14 +2712,14 @@ function renderMethodology() {
       <p>So a compound's displayed Intensity is <code>raw sum × perception multiplier</code>.</p>
     </div>
 
-    <h3>How confidence is computed</h3>
+    <h3 id="meth-confidence">How confidence is computed</h3>
     <p>Confidence is a blend of two things: how many of your reported notes contribute to this compound, and how strong the strongest of those contributing edges is. Several solidly-cited notes converging on one compound gives you high confidence. A single speculative match on its own is lower.</p>
     <div class="formula">
       <p>The math: <code>breadth</code> = number of contributing notes divided by 3, capped at 1 (so 3+ contributors hits max breadth). <code>strength</code> = the highest edge weight among the contributors. Both are 0 to 1.</p>
       <p><code>Confidence = 0.55 × breadth + 0.45 × strength</code>, also 0 to 1.</p>
     </div>
 
-    <h3>What's not modeled</h3>
+    <h3 id="meth-scope">What's not modeled</h3>
     <p>The tool is honest about its scope. Things it deliberately doesn't try to capture:</p>
     <ul>
       <li><strong>Concentration math.</strong> We don't know how much of a compound is in your cup. The threshold tier is a rough proxy for perceived loudness, not a quantitative claim.</li>
@@ -2705,25 +2734,36 @@ function renderMethodology() {
 function renderHowToUse() {
   return `
     <h2>How to use</h2>
+    <p class="lede">Slide the descriptors you notice; compounds light up as evidence accumulates. That's the whole loop.</p>
 
-    <h3>The basic flow</h3>
-    <p>You pick descriptors you notice (lemon, vanilla, toast, smoky, whatever fits), slide an intensity from 1 to 10, and click <strong>Add</strong> to confirm. Every descriptor has known connections to specific aromatic compounds, drawn from published GC-MS work. When you confirm an entry, the connected compounds each get a weighted contribution from it. Several confirmed entries pointing at the same compound stack up. That's the whole inference loop.</p>
+    ${tocNav([
+      ["use-flow", "The basic flow"],
+      ["use-views", "Two views"],
+      ["use-controls", "Controls"],
+      ["use-deeper", "Go Deeper"],
+      ["use-repeat", "Repeat-tasting"]
+    ])}
 
-    <h3>Two views of the same thing</h3>
-    <p>The wheel and the analysis pane show the same data in two different shapes.</p>
-    <p>The <strong>wheel</strong> is spatial. Descriptors sit around the perimeter, colored by their group (Fruity, Floral, Roasted, and so on). Compounds float toward the center, pulled by whichever descriptors point to them. Edges light up between descriptors and compounds when both are active. Hover a compound for a bigger label, click for its full detail.</p>
-    <p>The <strong>analysis pane</strong> (the grey panel on the right) is ranked and textual. By default it's a sortable grid of every compound with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the literature citations behind each link.</p>
+    <h3 id="use-flow">The basic flow</h3>
+    <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky — whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
 
-    <h3>Controls</h3>
+    <h3 id="use-views">Two views of the same thing</h3>
+    <p>The <strong>wheel</strong> is spatial: descriptors around the rim (colored by group — Fruity, Floral, Roasted, and so on), compounds floating toward the center, pulled by whichever descriptors point to them. Edges light up between active pairs. Hover a compound for a bigger label, click for its full detail.</p>
+    <p>The <strong>Results pane</strong> (grey panel, right) is the same data ranked and textual — a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
+
+    <h3 id="use-controls">Controls</h3>
     <ul>
-      <li><strong>Sliders pane (left).</strong> Your input. Each row is a slider plus an Add button. Click an "Added" button to Edit or Delete that entry.</li>
-      <li><strong>Legend (top of the sliders pane).</strong> Visibility filters. Toggle note groups, compound classes, and ortho/retro entries. Useful for stress-testing what's driving what.</li>
-      <li><strong>View tabs (header).</strong> <em>Notes</em> hides the results pane (sliders + wheel). <em>Reset View</em> shows all three panes. <em>Results</em> hides the sliders (wheel + results pane). The wheel is always there.</li>
-      <li><strong>Go Deeper (header toggle).</strong> Reveals advanced inputs. Per-row <em>Ortho</em> (sniff) and <em>Retro</em> (exhale) buttons let you tag when in the bite you noticed each note. Clicking a note in this mode flips the analysis pane to its inverse view (compounds this note maps to). Citations also expand to their full bibliographic form.</li>
+      <li><strong>Sliders pane (left).</strong> Your input — one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
+      <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
+      <li><strong>Legend.</strong> Visibility filters: toggle note groups, compound classes, and ortho/retro entries to stress-test what's driving what.</li>
+      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Reset View</em> = all three panes. <em>Results</em> = wheel + Results pane. The wheel is always shown.</li>
     </ul>
 
-    <h3>Repeat-tasting</h3>
-    <p>If you taste the same coffee tomorrow and report different things, that's expected. The tool is built to make those comparisons across moments legible, not collapse them.</p>
+    <h3 id="use-deeper">Go Deeper</h3>
+    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log — and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Results pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
+
+    <h3 id="use-repeat">Repeat-tasting</h3>
+    <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
   `;
 }
 
@@ -2846,6 +2886,16 @@ function renderTypesOfAroma() {
     });
   });
 }
+
+// In-tab table-of-contents chips: scroll the target section into view within
+// the scrollable info body. Delegated on the persistent body element so it
+// keeps working across the innerHTML swaps that happen on every tab switch.
+infoBodyEl.addEventListener("click", (e) => {
+  const chip = e.target.closest(".info-toc [data-scroll]");
+  if (!chip) return;
+  const target = document.getElementById(chip.dataset.scroll);
+  if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 // Wiring: open button, close button, tabs, Escape key
 document.getElementById("info-open-btn").addEventListener("click", () => openInfo("about"));
