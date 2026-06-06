@@ -1724,6 +1724,12 @@ function drawClassArcs() {
     .attr("cx", CX).attr("cy", CY).attr("r", R_COMPOUND_MAX + 12);
 }
 
+// Manual per-compound nudges (px) for anchor labels that collide with a
+// neighbor in the densely-packed bottom arc. Keep this tiny and intentional.
+const ANCHOR_LABEL_NUDGE = {
+  linalylacetate: { dy: 10 }   // drop it below Ethyl butanoate's tail
+};
+
 // Compound anchors: the "periodic table" of class arcs. Unlike note anchors
 // (which render only when entered), ALL visible compounds show — faint by
 // default, brightening as evidence accrues — so the floating notes have stable
@@ -1757,8 +1763,8 @@ function drawCompoundAnchors() {
     .attr("fill-opacity", d => 0.3 + 0.6 * Math.min(1, d.score || 0));
   merged.select("text")
     .attr("class", "note-label")
-    .attr("x", d => Math.cos(d._angle) * 10)
-    .attr("y", d => Math.sin(d._angle) * 10)
+    .attr("x", d => Math.cos(d._angle) * 10 + ((ANCHOR_LABEL_NUDGE[d.id] || {}).dx || 0))
+    .attr("y", d => Math.sin(d._angle) * 10 + ((ANCHOR_LABEL_NUDGE[d.id] || {}).dy || 0))
     .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
     .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
     .attr("fill", d => COMPOUND_CLASS_COLOR[d.class] || "#aaa")
