@@ -1517,11 +1517,14 @@ function computeNotePositions() {
 }
 
 // Radius of the circle the section (group/class) labels are curved along. Sits
-// inside the ring with a comfortable gap so the curved text clears the colored
-// band (otherwise the labels get occluded by their own arc) while still staying
-// clear of the floating dots near the center.
+// inside the ring, set back by a fraction of the ring→interior band so the gap
+// scales with the wheel (a fixed pixel inset looks fine small but cramped on a
+// big full-width wheel). Stays well clear of the central floating dots.
 function arcLabelRadius() {
-  return Math.max(R_COMPOUND_MAX + 16, R_RING - 56);
+  const band = R_RING - R_COMPOUND_MAX;          // open space between ring and floats
+  // Center the labels in that open band (clamped clear of the floats on a tiny
+  // wheel) so the gap from the ring scales with the wheel and never reads cramped.
+  return Math.max(R_COMPOUND_MAX + 12, R_RING - Math.max(50, band * 0.5));
 }
 
 // Color a section label by its category: group color in scent mode, chemical-
