@@ -22,10 +22,11 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-- **`claude/header-cleanup`** — PR **#6** (draft). Header cleanup (drop Common/All, rename Reset, remove misleading overlay) + About-popup rewrite (accuracy fixes, trim, in-tab table of contents). Off `prototype`.
-- **`feature/compound-lens`** — branched **off `claude/header-cleanup`** (stacks on #6; rebase/clean once #6 lands). Adds the wheel's **"Organize by: Scent | Chemistry"** lens: scent-family tint on compounds + legend hover spotlight (feature A), and a full dual layout where chemical-class arcs replace note-group arcs and notes float toward the chemistry they evoke (feature C). Draft tracking PR into `prototype`; do NOT merge before #6.
+- **`feature/compound-lens`** — PR **#7** (draft, base `prototype`). Adds the wheel's **"Organize by: Scent | Chemistry"** lens: scent-family tint on compounds + legend hover spotlight (feature A), and a full dual layout where chemical-class arcs replace note-group arcs and notes float toward the chemistry they evoke (feature C). Awaiting review; do NOT auto-merge.
 
-No multi-slice long-running dev branch (with accumulating slice commits) is active; the above are coherent feature branches.
+Recently merged: **`claude/header-cleanup`** (PR **#6**, merged 2026-06-06, merge commit `d96ebaa`) — header cleanup (drop Common/All, rename Reset, remove misleading overlay) + About-popup rewrite (accuracy fixes, trim, in-tab table of contents). Now live on `prototype` / aromawheel.net. Branch is safe to delete.
+
+No multi-slice long-running dev branch (with accumulating slice commits) is active.
 
 ### Historical: V2 (shipped 2026-05-26)
 
