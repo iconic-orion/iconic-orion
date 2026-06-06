@@ -1516,13 +1516,18 @@ function computeNotePositions() {
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
-// Radius of the outer circle the section (group/class) labels are curved along.
-// Floated well past the ring so the note/compound labels (which sit just outside
-// R_NOTE) don't cover them — aiming ~100px out, clamped to the pane so the text
-// never spills off the edge on smaller viewports.
+// Radius of the circle the section (group/class) labels are curved along. Now
+// sits just INSIDE the ring band, in the dark interior — the note/compound names
+// extend outward from R_NOTE, so an inner label can never be covered by them.
+// Clamped to stay clear of the floating dots near the center.
 function arcLabelRadius() {
-  const margin = Math.min(W, H) / 2 - R_NOTE;   // gap between ring and pane edge
-  return R_NOTE + Math.max(28, Math.min(100, margin - 14));
+  return Math.max(R_COMPOUND_MAX + 22, R_NOTE - 30);
+}
+
+// Color a section label by its category: group color in scent mode, chemical-
+// class color in chemistry mode. (GROUPS carry a cssVar; CLASSES carry a hex.)
+function arcLabelColor(d) {
+  return d.cssVar ? groupColor(d.id) : (d.color || "#cdc8be");
 }
 
 // Build an arc path for one section label to ride along, centered on the arc's
@@ -1552,7 +1557,7 @@ function drawArcLabels(items) {
     .attr("id", d => `arclbl-${d.id}`)
     .attr("d", d => arcLabelPath(d, RL));
 
-  gArcs.selectAll("text.group-arc-label").data(items, d => d.id)
+  const texts = gArcs.selectAll("text.group-arc-label").data(items, d => d.id)
     .join(
       enter => {
         const t = enter.append("text").attr("class", "group-arc-label").attr("text-anchor", "middle");
@@ -1561,8 +1566,9 @@ function drawArcLabels(items) {
       },
       update => update,
       exit => exit.remove()
-    )
-    .select("textPath")
+    );
+  texts.attr("fill", d => arcLabelColor(d)).attr("opacity", 0.95);
+  texts.select("textPath")
     .attr("href", d => `#arclbl-${d.id}`)
     .attr("xlink:href", d => `#arclbl-${d.id}`)
     .text(d => d.label.toUpperCase());
