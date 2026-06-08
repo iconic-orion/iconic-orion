@@ -40,7 +40,7 @@
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
-     independently hidden. The header view tabs (Notes / Reset View / Results)
+     independently hidden. The header view tabs (Notes / Reset View / Compounds)
      are presets that flip these classes in combination; the small pane-toggle
      tabs on the screen's edges flip them one at a time. */
   body.notes-hidden  { grid-template-columns: 0 1fr var(--detail-pane-w); }
@@ -103,6 +103,13 @@
   .cpd-card .swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block;
     vertical-align: middle; margin-right: 6px; }
   .cpd-card .name { font-size: 13px; font-weight: 600; }
+  /* Common-name reveal: a compound's everyday name, hidden until you hover
+     (desktop) or long-press (mobile, which toggles .show-common via JS). Only
+     compounds whose label is a chemistry name carry one — they get .has-common. */
+  .common-name { display: none; font-weight: 400; color: var(--ink-dim); }
+  .has-common:hover .common-name,
+  .has-common.show-common .common-name { display: inline; }
+  h2 .detail-common { font-weight: 400; font-size: 0.7em; color: var(--ink-dim); }
   .cpd-card .meta { font-size: 10px; color: var(--ink-dim); text-transform: uppercase;
     letter-spacing: 0.06em; margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
   .cpd-card .meta .pill { padding: 1px 6px; border-radius: 3px; background: var(--bg);
@@ -138,7 +145,7 @@
     font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
   .back-to-grid:hover { color: var(--accent); }
 
-  /* Default Results pane: three stacked sections (Your inputs / Top compounds /
+  /* Default Compounds pane: three stacked sections (Your inputs / Top compounds /
      All possible compounds). Each section has its own heading + help line. */
   .results-section { margin-bottom: 22px; }
   .results-section:last-of-type { margin-bottom: 8px; }
@@ -575,7 +582,7 @@
   <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
     <button data-view="note-input">Notes</button>
     <button data-view="dashboard" class="active">Reset View</button>
-    <button data-view="analysis">Results</button>
+    <button data-view="analysis">Compounds</button>
   </div>
   <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
     <span class="tabs-label">Organize</span>
@@ -768,14 +775,14 @@ const COMPOUNDS = [
   { id: "dempyr",        label: "2,3-Diethyl-5-methylpyrazine", class: "pyrazine", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.001 ppb (Czerny et al. 2008).", note: "Earthy-nutty roast; potent coffee aroma." },
   // furans / thiols
   { id: "furfural",      label: "Furfural",          class: "furan",     threshold: "high",     specificity: "shared",    thresholdSrc: "~3000 ppb (Buttery 1981).", note: "Bready-almond Maillard furan." },
-  { id: "fft",           label: "Furfurylthiol",     class: "thiol",     threshold: "very-low", specificity: "signature", thresholdSrc: "~0.005 ppb (Blank, Sen, Grosch 1992).", note: "2-furfurylthiol; signature roasted-coffee thiol." },
+  { id: "fft",           label: "Furfurylthiol",     class: "thiol",     commonName: "furfuryl mercaptan", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.005 ppb (Blank, Sen, Grosch 1992).", note: "2-furfurylthiol; signature roasted-coffee thiol." },
   { id: "mh3",           label: "3-Mercaptohexanol", class: "thiol",     threshold: "very-low", specificity: "shared",    thresholdSrc: "~60 ng/L (Tominaga et al. 1998).", note: "Polyfunctional thiol; passionfruit, grapefruit." },
   { id: "mmp4",          label: "4MMP",              class: "thiol",     threshold: "very-low", specificity: "shared",    thresholdSrc: "~0.8 ng/L water (Tominaga et al. 1998).", note: "4-methyl-4-mercaptopentan-2-one; passionfruit/box-tree thiol." },
-  { id: "mfthiol",       label: "Methanethiol",      class: "thiol",     threshold: "very-low", specificity: "signature", thresholdSrc: "~0.02 ppb (Mayer, Czerny, Grosch 2000).", note: "Volatile S; coffee freshness, cabbage at high levels." },
+  { id: "mfthiol",       label: "Methanethiol",      class: "thiol",     commonName: "methyl mercaptan", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.02 ppb (Mayer, Czerny, Grosch 2000).", note: "Volatile S; coffee freshness, cabbage at high levels." },
   // esters
-  { id: "etbut",         label: "Ethyl butanoate",   class: "ester",     threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Pineapple-apple fruity ester." },
-  { id: "ethex",         label: "Ethyl hexanoate",   class: "ester",     threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Berry-apple ester; fermentation." },
-  { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     threshold: "low",      specificity: "signature", thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
+  { id: "etbut",         label: "Ethyl butanoate",   class: "ester",     commonName: "ethyl butyrate", threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Pineapple-apple fruity ester." },
+  { id: "ethex",         label: "Ethyl hexanoate",   class: "ester",     commonName: "ethyl caproate", threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Berry-apple ester; fermentation." },
+  { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     commonName: "banana oil", threshold: "low",      specificity: "signature", thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
   // lactones
   { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone; also mango." },
   { id: "gnonal",        label: "γ-Nonalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~30 ppb (Schwab et al. 2008).", note: "Coconut-creamy lactone; aged spirits." },
@@ -797,11 +804,11 @@ const COMPOUNDS = [
   // Norisoprenoids
   { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Naef et al. 2011).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents." },
   // Alcohols (non-terpene)
-  { id: "octen3ol",      label: "1-Octen-3-ol",      class: "alcohol",   threshold: "low",      specificity: "signature", thresholdSrc: "~10 ppb (Combet et al. 2006).", note: "The 'mushroom alcohol.' Fresh-mushroom, forest-floor, blue-cheese accents." },
+  { id: "octen3ol",      label: "1-Octen-3-ol",      class: "alcohol",   commonName: "mushroom alcohol", threshold: "low",      specificity: "signature", thresholdSrc: "~10 ppb (Combet et al. 2006).", note: "The 'mushroom alcohol.' Fresh-mushroom, forest-floor, blue-cheese accents." },
   // More furans (Maillard / fruit)
   { id: "furaneol",      label: "Furaneol (HDMF)",   class: "furan",     threshold: "low",      specificity: "shared",    thresholdSrc: "~10 ppb (Buttery et al. 1995).", note: "4-hydroxy-2,5-dimethyl-3(2H)-furanone. Strawberry/pineapple/cooked-fruit principal; also a Maillard product in coffee and bread crust." },
   // More terpenes (eucalyptol, geosmin, menthol)
-  { id: "cineole",       label: "1,8-Cineole",       class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~12 ppb (Lis-Balchin 2002).", note: "Eucalyptol. Eucalyptus principal; also rosemary, sage, bay leaves, mint family." },
+  { id: "cineole",       label: "1,8-Cineole",       class: "terpene",   commonName: "eucalyptol", threshold: "low",      specificity: "signature", thresholdSrc: "~12 ppb (Lis-Balchin 2002).", note: "Eucalyptol. Eucalyptus principal; also rosemary, sage, bay leaves, mint family." },
   { id: "geosmin",       label: "Geosmin",           class: "terpene",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Darriet et al. 2000).", note: "The 'wet earth' compound. Petrichor, beetroot, mushroom, cork taint." },
   { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." }
 ];
@@ -2328,6 +2335,45 @@ document.addEventListener("click", (e) => {
 // Switching: clicking a card in grid mode → detail. "← All compounds" link in
 // detail mode returns to grid.
 const detailPanel = document.getElementById("detail-panel");
+
+// Common-name reveal helpers. For compounds whose label is a chemistry name
+// (e.g. "1,8-Cineole"), commonClass() flags the rendered element and commonTag()
+// appends the everyday name in parentheses; CSS keeps it hidden until hover /
+// long-press. Compounds that already lead with their common name get neither.
+const commonClass = c => c && c.commonName ? ' has-common' : '';
+const commonTag = c => c && c.commonName ? ` <span class="common-name">(${c.commonName})</span>` : '';
+
+// Mobile equivalent of hovering: a long-press on a compound reveals its common
+// name, and we swallow the tap-to-open-detail that would otherwise follow so the
+// gesture stays distinct. Wired once via delegation on the stable panel element,
+// so it keeps working across the many innerHTML re-renders inside.
+(function wireCommonNameLongPress() {
+  let timer = null, startX = 0, startY = 0, suppressClick = false;
+  const clearTimer = () => { clearTimeout(timer); timer = null; };
+  detailPanel.addEventListener("touchstart", (e) => {
+    const el = e.target.closest(".has-common");
+    if (!el) return;
+    const t = e.touches[0]; startX = t.clientX; startY = t.clientY;
+    timer = setTimeout(() => {
+      suppressClick = true;
+      detailPanel.querySelectorAll(".show-common").forEach(n => { if (n !== el) n.classList.remove("show-common"); });
+      el.classList.toggle("show-common");
+      setTimeout(() => { suppressClick = false; }, 700);
+    }, 450);
+  }, { passive: true });
+  detailPanel.addEventListener("touchmove", (e) => {
+    if (!timer) return;
+    const t = e.touches[0];
+    if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) clearTimer();
+  }, { passive: true });
+  detailPanel.addEventListener("touchend", clearTimer, { passive: true });
+  detailPanel.addEventListener("touchcancel", clearTimer, { passive: true });
+  // Capture phase so we stop the navigation click before the per-element handlers see it.
+  detailPanel.addEventListener("click", (e) => {
+    if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+  }, true);
+})();
+
 function renderDetail() {
   // Three modes: inverse note-view (Go Deeper, when a note is selected),
   // compound detail (when a compound is selected), or the default grid.
@@ -2377,7 +2423,7 @@ function renderNoteDetail(noteId) {
                 ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
                 : `<span class="cite">${e.cite}</span>`;
               return `<li>
-                <span class="note-name view-cpd" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}</span>
+                <span class="note-name view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}${commonTag(cpd)}</span>
                 <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
                 <span style="font-size:10px; color:var(--ink-dim); display:block; margin-top:1px;">${cpd.class} · thr ${cpd.threshold}</span>
                 ${citeHtml}
@@ -2406,7 +2452,7 @@ function renderNoteDetail(noteId) {
   });
 }
 
-// Default Results-pane view (no compound selected). Three stacked sections:
+// Default Compounds-pane view (no compound selected). Three stacked sections:
 //   1. Your inputs — for each confirmed note, the compounds it maps to in
 //      literature, shown as direct arrows. Clickable to jump to that compound.
 //   2. Top compounds (by confidence) — ranked card grid of the top 6 active
@@ -2438,7 +2484,7 @@ function renderAnalysisGrid() {
       return `<li class="browse-class-row">
         <span class="browse-class-label">${cls}</span>
         <span class="browse-class-items">
-          ${items.map(c => `<button type="button" class="browse-cpd view-cpd" data-cpd="${c.id}" style="border-left:3px solid ${compoundColor(c)}">${c.label}</button>`).join('')}
+          ${items.map(c => `<button type="button" class="browse-cpd view-cpd${commonClass(c)}" data-cpd="${c.id}" style="border-left:3px solid ${compoundColor(c)}">${c.label}${commonTag(c)}</button>`).join('')}
         </span>
       </li>`;
     }).join('');
@@ -2475,7 +2521,7 @@ function renderAnalysisGrid() {
           const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
           const arrows = edges.map(e => {
             const cpd = CPD_BY_ID[e.cpd];
-            return `<button type="button" class="arrow-target view-cpd" data-cpd="${cpd.id}" title="${cpd.class} · base weight ${e.w.toFixed(2)}">${cpd.label}</button>`;
+            return `<button type="button" class="arrow-target view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="${cpd.class} · base weight ${e.w.toFixed(2)}">${cpd.label}${commonTag(cpd)}</button>`;
           }).join('<span class="arrow-sep"> · </span>');
           return `<li class="input-arrow-row">
             <span class="input-name"><span class="input-dot" style="background:${color}"></span>${n.label}</span>
@@ -2492,8 +2538,8 @@ function renderAnalysisGrid() {
         ${topByConf.map(n => {
           const c = CPD_BY_ID[n.id];
           return `
-            <div class="cpd-card" data-cpd="${n.id}">
-              <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}</div>
+            <div class="cpd-card${commonClass(c)}" data-cpd="${n.id}">
+              <div class="name"><span class="swatch" style="background:${compoundColor(c)}"></span>${c.label}${commonTag(c)}</div>
               <div class="meta">
                 <span class="pill">${c.class}</span>
                 <span class="pill ${c.threshold}" title="${c.thresholdSrc}">thr: ${c.threshold}</span>
@@ -2524,9 +2570,9 @@ function renderAnalysisGrid() {
         ${byIntensity.map(n => {
           const c = CPD_BY_ID[n.id];
           const color = compoundColor(c);
-          return `<li class="compact-row view-cpd" data-cpd="${c.id}">
+          return `<li class="compact-row view-cpd${commonClass(c)}" data-cpd="${c.id}">
             <span class="compact-swatch" style="background:${color}"></span>
-            <span class="compact-name">${c.label}</span>
+            <span class="compact-name">${c.label}${commonTag(c)}</span>
             <span class="compact-class">${c.class}</span>
             <span class="compact-bar"><div style="width:${pct(n.intensity)}%; background:${color}"></div></span>
             <span class="compact-val">${pct(n.intensity)}%</span>
@@ -2581,7 +2627,7 @@ function renderCompoundDetail(cpdId, banner) {
   detailPanel.innerHTML = `
     <button class="back-to-grid" type="button">← All compounds</button>
     ${banner ? `<div class="empty" style="margin-bottom:10px;">${banner}</div>` : ""}
-    <h2>${c.label}</h2>
+    <h2>${c.label}${c.commonName ? ` <span class="detail-common">(${c.commonName})</span>` : ''}</h2>
     <div class="compound-class">${c.class}${c.specificity === "signature" ? ' · signature' : ''}</div>
     <div style="font-size:12px; line-height:1.5; color:var(--ink-dim);">${c.note}</div>
 
@@ -2647,7 +2693,7 @@ function renderCompoundDetail(cpdId, banner) {
 // presets that flip both per-pane states in combination.
 //   Notes ("note-input")     = sliders visible, results hidden
 //   Reset View ("dashboard") = both visible (the default 3-pane view)
-//   Results ("analysis")     = sliders hidden, results visible
+//   Compounds ("analysis")   = sliders hidden, results visible
 // data-view keys keep their original names internally to avoid churning
 // every state reference; the user-facing labels are what changed.
 // "Both hidden" (wheel only) is reachable via the toggles but unnamed in
@@ -3035,7 +3081,7 @@ function renderAbout() {
     <ul>
       <li><strong>Intensity</strong> — how strongly your notes point to a compound, adjusted for how easily it's perceived. Some compounds (like furfurylthiol in coffee) read strong even at trace amounts.</li>
       <li><strong>Confidence</strong> — how many of your notes converge on a compound, and how strongly. Several notes agreeing is high; a lone speculative match is low.</li>
-      <li><strong>Citations</strong> — the published source behind every note-to-compound link. Click any compound in the Results pane to see them.</li>
+      <li><strong>Citations</strong> — the published source behind every note-to-compound link. Click any compound in the Compounds pane to see them.</li>
     </ul>
 
     <h3 id="about-isnt">What this isn't</h3>
@@ -3138,7 +3184,7 @@ function renderHowToUse() {
 
     <h3 id="use-views">Two views of the same thing</h3>
     <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail — and you can flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
-    <p>The <strong>Results pane</strong> (grey panel, right) is the same data ranked and textual — a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
+    <p>The <strong>Compounds pane</strong> (grey panel, right) is the same data ranked and textual — a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
     <p>The header's <strong>Organize</strong> toggle decides what the ring is built from — two views of the same note-to-compound web. The scoring never changes; only the layout and coloring do.</p>
@@ -3153,11 +3199,11 @@ function renderHowToUse() {
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off — and hover any row to halo just those items on the wheel and fade the rest.</li>
-      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Reset View</em> = all three panes. <em>Results</em> = wheel + Results pane. The wheel is always shown.</li>
+      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Reset View</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log — and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Results pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
+    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log — and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
 
     <h3 id="use-repeat">Repeat-tasting</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
