@@ -309,6 +309,14 @@
   main.wheel { grid-area: wheel; position: relative; overflow: hidden; }
   svg { width: 100%; height: 100%; display: block; }
 
+  /* Compound callout labels (mobile-only toggle) */
+  #callout-toggle { display: none; }
+  .callout-tail { pointer-events: none; }
+  .callout-bg   { pointer-events: none; }
+  .callout-text { pointer-events: none;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9px; dominant-baseline: middle; }
+
   /* First-run nudge — centered in the empty wheel. The container ignores pointer
      events so it never blocks the wheel; only the demo buttons re-enable them. */
   .wheel-nudge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -654,6 +662,25 @@
        them just yields cryptic codes. Drop them like the compound anchors; the
        color bands decode via the legend and tapping a dot. */
     body.organize-chemistry text.group-arc-label { display: none; }
+
+    /* "Show compound labels" callout toggle: small control pinned to the top-left
+       of the wheel pane. Only renders on mobile where floating dot labels are hidden. */
+    #callout-toggle {
+      display: flex; align-items: center; gap: 5px;
+      position: absolute; top: 10px; left: 10px; z-index: 5;
+      padding: 4px 8px;
+      background: rgba(29, 27, 23, 0.55);
+      border: 1px solid rgba(205, 200, 190, 0.22);
+      border-radius: 6px;
+      font-size: 10px; color: var(--ink);
+      cursor: pointer; user-select: none;
+    }
+    #callout-toggle input[type=checkbox] {
+      width: 11px; height: 11px;
+      accent-color: var(--accent);
+      cursor: pointer; flex-shrink: 0; margin: 0;
+    }
+    #callout-toggle label { cursor: pointer; }
   }
 </style>
 </head>
@@ -725,6 +752,14 @@
       <button type="button" class="nudge-demo" data-demo="coffee">Try: Coffee</button>
       <button type="button" class="nudge-demo" data-demo="mocktail">Try: Citrus mocktail</button>
     </div>
+  </div>
+  <!-- Mobile-only "Show compound labels" toggle. On phones the floating dot
+       labels are hidden for a clean dot map; this lets the user opt into
+       leader-line callouts that name each visible compound dot. Hidden on
+       desktop via CSS (see 760px media query). -->
+  <div id="callout-toggle">
+    <input type="checkbox" id="callout-check">
+    <label for="callout-check">Show compound labels</label>
   </div>
   <!-- Per-pane hide/show toggles. Pinned to the wheel's inner edges so they're
        visible whether the corresponding side pane is shown or hidden. Click to
@@ -1447,7 +1482,8 @@ const state = {
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
-  spotlight: null            // null | { kind: "group" | "class", id }
+  spotlight: null,           // null | { kind: "group" | "class", id }
+  showCallouts: false        // mobile callout labels toggle
 };
 
 // ---------- ENTRY HELPERS ----------
@@ -1561,7 +1597,8 @@ const gArcs   = root.append("g").attr("class", "group-arcs");
 const gEdges  = root.append("g").attr("class", "edges");
 const gComps  = root.append("g").attr("class", "compounds");
 const gNotes  = root.append("g").attr("class", "notes");
-const gLabels = root.append("g").attr("class", "labels");
+const gLabels   = root.append("g").attr("class", "labels");
+const gCallouts = root.append("g").attr("class", "callouts");
 
 function layout() {
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
@@ -1585,6 +1622,7 @@ function layout() {
     drawGroupArcs();
     drawNotes();
   }
+  _calloutSetKey = '';   // force callout re-layout on next tick (W/H/R changed)
   updateSimulationCenter();
 }
 
@@ -1999,6 +2037,7 @@ function tick() {
   });
   if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
   updateEdges();
+  updateCallouts();
 }
 
 // Scent mode: compounds float toward their active notes. Render those with
@@ -2111,6 +2150,128 @@ function renderNoteFloats() {
   applySpotlight();
 }
 function hoveredCompound() { return state.hoveredCompound; }
+
+// ---------- COMPOUND CALLOUT LABELS (mobile) ----------
+// When the user enables "Show compound labels", each visible compound dot gets a
+// static leader-line callout: pill label fixed in one of four corner zones
+// (10 / 2 / 4 / 8 o'clock), tail line tracking the jiggling dot in real time.
+// The pill's opacity scales with the compound's evidence weight so dominant
+// compounds read clearly while weak ones recede.
+
+const CALLOUT_ZONES = [
+  { angle: -5*Math.PI/6, textAnchor: 'start', yEdge: 'top'    },  // 10 o'clock (upper-left)
+  { angle: -Math.PI/6,   textAnchor: 'end',   yEdge: 'top'    },  // 2 o'clock (upper-right)
+  { angle:  Math.PI/6,   textAnchor: 'end',   yEdge: 'bottom' },  // 4 o'clock (lower-right)
+  { angle:  5*Math.PI/6, textAnchor: 'start', yEdge: 'bottom' },  // 8 o'clock (lower-left)
+];
+
+let _calloutSetKey = '';
+let _calloutMaxScore = 1;
+
+function isMobileViewport() { return window.matchMedia('(max-width: 760px)').matches; }
+
+function nearestCalloutZone(dotAngle) {
+  let best = 0, bestDist = Infinity;
+  CALLOUT_ZONES.forEach((z, i) => {
+    let d = Math.abs(dotAngle - z.angle);
+    if (d > Math.PI) d = 2 * Math.PI - d;
+    if (d < bestDist) { bestDist = d; best = i; }
+  });
+  return best;
+}
+
+function placeCallouts(renderable) {
+  gCallouts.selectAll('*').remove();
+  if (!renderable.length) return;
+
+  _calloutMaxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
+  const ROW_H = 14, GAP = 3, MARGIN = 8, PILL_PAD = 4, MAX_CHARS = 16, MAX_W = 100;
+
+  // Assign each compound to its nearest zone based on current dot position
+  const bins = [[], [], [], []];
+  renderable.forEach(n => {
+    const angle = Math.atan2(n.y - CY, n.x - CX);
+    bins[nearestCalloutZone(angle)].push(n);
+  });
+  // Stable sort within zone by angular position
+  bins.forEach(bin => bin.sort((a, b) =>
+    Math.atan2(a.y - CY, a.x - CX) - Math.atan2(b.y - CY, b.x - CX)));
+
+  // Compute and store static label positions on each node
+  bins.forEach((nodes, zi) => {
+    const z = CALLOUT_ZONES[zi];
+    const xBase = z.textAnchor === 'start' ? MARGIN : W - MARGIN;
+    nodes.forEach((n, i) => {
+      const label = n.label.length > MAX_CHARS ? n.label.slice(0, MAX_CHARS - 1) + '…' : n.label;
+      const pillW = Math.min(label.length * 5.8 + PILL_PAD * 2, MAX_W);
+      n._clLabel  = label;
+      n._clPillW  = pillW;
+      n._clLx     = xBase;
+      n._clLy     = z.yEdge === 'top'
+        ? MARGIN + ROW_H / 2 + i * (ROW_H + GAP)
+        : H - MARGIN - ROW_H / 2 - i * (ROW_H + GAP);
+      n._clAnchor = z.textAnchor;
+      // Tail origin: inner edge of the pill (side facing wheel center)
+      n._clTailX  = z.textAnchor === 'start'
+        ? xBase + pillW - PILL_PAD          // right edge (left-side zones: tl, bl)
+        : xBase - pillW + PILL_PAD;         // left edge  (right-side zones: tr, br)
+      n._clTailY  = n._clLy;
+    });
+  });
+
+  const all = renderable.filter(n => n._clLx != null);
+  const sel = gCallouts.selectAll('g.callout').data(all, d => d.id);
+  const enter = sel.enter().append('g').attr('class', 'callout');
+  enter.append('line').attr('class', 'callout-tail');
+  enter.append('rect').attr('class', 'callout-bg');
+  enter.append('text').attr('class', 'callout-text');
+
+  const merged = sel.merge(enter);
+  merged.each(function(d) {
+    const rel   = Math.min(1, (d.score || 0) / _calloutMaxScore);
+    const color = compoundColor(d);
+    const pillX = d._clAnchor === 'start' ? d._clLx - PILL_PAD : d._clLx - d._clPillW + PILL_PAD;
+    d3.select(this).select('rect.callout-bg')
+      .attr('x', pillX).attr('y', d._clLy - ROW_H / 2 + 1)
+      .attr('width', d._clPillW).attr('height', ROW_H - 2).attr('rx', 3)
+      .attr('fill', color).attr('fill-opacity', 0.12 + 0.45 * rel);
+    d3.select(this).select('text.callout-text')
+      .attr('x', d._clAnchor === 'start' ? d._clLx + PILL_PAD / 2 : d._clLx - PILL_PAD / 2)
+      .attr('y', d._clLy).attr('text-anchor', d._clAnchor)
+      .attr('fill', color).attr('fill-opacity', 0.45 + 0.55 * rel)
+      .text(d._clLabel);
+  });
+
+  refreshCalloutTails();
+}
+
+function refreshCalloutTails() {
+  gCallouts.selectAll('g.callout').each(function(d) {
+    const rel = Math.min(1, (d.score || 0) / _calloutMaxScore);
+    d3.select(this).select('line.callout-tail')
+      .attr('x1', d._clTailX).attr('y1', d._clTailY)
+      .attr('x2', d.x).attr('y2', d.y)
+      .attr('stroke', compoundColor(d))
+      .attr('stroke-opacity', 0.25 + 0.35 * rel)
+      .attr('stroke-width', 0.75)
+      .attr('stroke-dasharray', '3,3');
+  });
+}
+
+function updateCallouts() {
+  if (!state.showCallouts || !isMobileViewport()) {
+    if (gCallouts.node().childElementCount) gCallouts.selectAll('*').remove();
+    return;
+  }
+  const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+  const key = renderable.map(n => n.id).join(',');
+  if (key !== _calloutSetKey) {
+    _calloutSetKey = key;
+    placeCallouts(renderable);
+  } else {
+    refreshCalloutTails();
+  }
+}
 
 function compoundColor(c) {
   // Color follows the organizing mode. In chemistry mode the dot's color names
@@ -3040,6 +3201,18 @@ function applyVisibilityChange(kind) {
   // Both kinds affect scoring + the floating set, so always recompute.
   recompute();
 }
+
+// Mobile "Show compound labels" callout toggle
+document.getElementById('callout-check').addEventListener('change', e => {
+  state.showCallouts = e.target.checked;
+  _calloutSetKey = '';
+  if (!state.showCallouts) {
+    gCallouts.selectAll('*').remove();
+  } else {
+    const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+    placeCallouts(renderable);
+  }
+});
 
 // Collapse / expand legend
 document.getElementById("legend-toggle").addEventListener("click", () => {
