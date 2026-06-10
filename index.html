@@ -636,9 +636,14 @@
     /* Chemistry mode only: the ring anchors are compounds, whose long names run
        off a phone-width wheel. Hide them too — the curved class-arc labels
        (TERPENE, ESTER, …) still give the ring its legend, and tapping a dot
-       opens the named detail card. Scent mode keeps its short note anchor
-       labels (Coffee / roast, etc.), which fit. */
+       opens the named detail card. Scent mode keeps its note anchor labels,
+       shortened to their primary token (see wheelNoteLabel), which fit. */
     body.organize-chemistry g.note text.note-label { display: none; }
+
+    /* Every rendered note anchor carries .active, which bumps the label to 13px —
+       too big for a phone wheel, where it shoves labels past the viewport edge.
+       Pull scent-mode anchor labels down so they sit within the wheel. */
+    .note.active .note-label, .note:hover .note-label { font-size: 10px; }
   }
 </style>
 </head>
@@ -1740,8 +1745,16 @@ function drawNotes() {
     .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
     .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
     .attr("fill", d => groupColor(d.group))
-    .text(d => d.label);
+    .text(d => wheelNoteLabel(d));
   applySpotlight();
+}
+
+// On a phone-width wheel, long note names (and their "A / B" alternates) run off
+// the edge. Show just the primary token there; the full name stays in the slider
+// panel and the detail card. Re-evaluated on every layout() (incl. on resize).
+function wheelNoteLabel(d) {
+  if (window.matchMedia("(max-width: 760px)").matches) return d.label.split(" / ")[0];
+  return d.label;
 }
 
 function groupColor(gid) {
