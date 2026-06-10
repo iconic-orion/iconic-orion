@@ -81,6 +81,13 @@
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
   header button:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* Mobile HUD: a ☰ toggle (shown only on phones) drops the secondary control
+     cluster into a second header row. On desktop the toggle is hidden and
+     .hud-extra is a transparent wrapper (display: contents), so its children
+     lay out inline exactly as if they were direct header children. */
+  #hud-toggle { display: none; }
+  .hud-extra { display: contents; }
+
   .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .tabs button { border: none; border-radius: 0; padding: 6px 12px; background: transparent;
     color: var(--ink-dim); }
@@ -618,8 +625,20 @@
     }
     header { flex-wrap: wrap; height: auto; min-height: 48px;
       padding: 8px 12px; row-gap: 8px; }
-    header .spacer { display: none; }     /* let controls flow + wrap from the left */
-    header h1 { width: 100%; }            /* title on its own line above the controls */
+    /* HUD: the title row stays compact — "Aroma Wheel" on the left, then the
+       spacer pushes the always-on actions (info / Start Over / ☰) to the right.
+       The control cluster (view modes, organize, Go Deeper) lives in .hud-extra
+       and only drops in as a full-width second row when ☰ opens it, so the
+       essentials never get pushed off-screen and Start Over is always reachable. */
+    header .spacer { display: block; flex: 1; }
+    header h1 { width: auto; font-size: 13px; }
+    #hud-toggle { display: inline-flex; align-items: center; justify-content: center;
+      min-width: 34px; font-size: 14px; line-height: 1; }
+    .hud-extra { display: none; }
+    header.hud-open .hud-extra {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      order: 10; flex-basis: 100%; width: 100%;
+      padding-top: 8px; border-top: 1px solid var(--line); }
 
     /* Both side panels share the single bottom cell; exactly one is shown.
        Sliders win whenever they're not explicitly hidden (Dashboard + Notes);
@@ -688,19 +707,26 @@
 <header>
   <h1>Aroma Wheel</h1>
   <span class="spacer"></span>
-  <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
-    <button data-view="note-input">Notes</button>
-    <button data-view="dashboard" class="active">Dashboard</button>
-    <button data-view="analysis">Compounds</button>
-  </div>
-  <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
-    <span class="tabs-label">Organize</span>
-    <button data-organize="scent" class="active">Scent</button>
-    <button data-organize="chemistry">Chemistry</button>
+  <!-- Collapsible control cluster. On desktop .hud-extra is display:contents, so
+       these lay out inline in the header as before. On mobile they're hidden
+       until the ☰ toggle opens them as a second row. -->
+  <div class="hud-extra" id="hud-extra">
+    <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
+      <button data-view="note-input">Notes</button>
+      <button data-view="dashboard" class="active">Dashboard</button>
+      <button data-view="analysis">Compounds</button>
+    </div>
+    <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
+      <span class="tabs-label">Organize</span>
+      <button data-organize="scent" class="active">Scent</button>
+      <button data-organize="chemistry">Chemistry</button>
+    </div>
+    <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
   </div>
   <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
-  <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
   <button id="reset">Start Over</button>
+  <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
+  <button id="hud-toggle" type="button" aria-label="Show controls" aria-expanded="false" title="Show / hide controls">☰</button>
 </header>
 <aside class="notes" id="left-panel">
   <div class="legend collapsed" id="legend">
@@ -3022,6 +3048,21 @@ function ensureDetailVisible() {
 
 document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
+});
+
+// Mobile HUD toggle: drop / hide the secondary control cluster (view modes,
+// organize, Go Deeper) as a second header row. Collapsed by default so the title
+// row stays compact and the always-on actions (info / Start Over) never get
+// pushed off-screen. Relayout after toggling since the header's height changes,
+// which resizes the wheel band below it.
+const hudToggleBtn = document.getElementById("hud-toggle");
+hudToggleBtn.addEventListener("click", () => {
+  const header = document.querySelector("header");
+  const open = header.classList.toggle("hud-open");
+  hudToggleBtn.setAttribute("aria-expanded", String(open));
+  hudToggleBtn.textContent = open ? "✕" : "☰";
+  layout();
+  if (sim) sim.alpha(0.4).restart();
 });
 
 // "Organize by" toggle: flip the wheel between scent and chemistry projections.
