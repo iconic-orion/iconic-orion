@@ -623,20 +623,21 @@
       grid-template-rows: auto 44vh 1fr;
       grid-template-areas: "head" "wheel" "panel";
     }
+    /* ••• is pulled out of the flex flow and pinned to the top-right corner so it
+       can never wrap onto its own line. The header gets matching right padding so
+       the view tabs don't slide under it. */
     header { flex-wrap: wrap; height: auto; min-height: 48px;
-      padding: 8px 12px; row-gap: 8px; }
-    /* HUD: title + view tabs + ••• always on one compact line.
-       Secondary controls (Organize, Go Deeper, info, Start Over) live in
-       .hud-extra and drop in as a full-width second row when ••• is tapped. */
+      padding: 8px 48px 8px 12px; row-gap: 0; position: relative; gap: 8px; }
     header .spacer { display: block; flex: 1; }
     header h1 { width: auto; font-size: 13px; }
     #hud-toggle { display: inline-flex; align-items: center; justify-content: center;
-      min-width: 34px; font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
+      position: absolute; right: 12px; top: 8px; width: 30px; height: 30px;
+      font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
     header.hud-open .hud-extra {
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
-      padding-top: 8px; border-top: 1px solid var(--line); }
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 
     /* Both side panels share the single bottom cell; exactly one is shown.
        Sliders win whenever they're not explicitly hidden (Dashboard + Notes);
