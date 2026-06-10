@@ -22,9 +22,10 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-- **`claude/ui-pass-2`** — draft PR **[#9](https://github.com/iconic-orion/iconic-orion/pull/9)** against `prototype`. Second UI pass: mobile + overall refinements following the PR #8 merge. **In progress** — slices accumulate here before merge.
+- **`claude/ui-pass-3`** — draft PR **[#10](https://github.com/iconic-orion/iconic-orion/pull/10)** against `prototype`. Third UI pass: further mobile and overall refinements. **In progress** — slices accumulate here before merge.
 
 Recently merged into `prototype`:
+- **`claude/ui-pass-2`** — PR **#9** (merged 2026-06-10, merge commit `d4f41cd`). Mobile hamburger menu (full tray: View/Organize labels, i pinned top-right, divider, Go Deeper/Start Over row), favicon (8-wedge SVG ring), compound callout labels, nudge dark-pill background, wheel size bump. Branch safe to delete.
 - **`claude/thirsty-dijkstra-de159b`** — PR **#8** (merged 2026-06-10, merge commit `4c074d0`). UX pass: first-run nudge, mobile single-column breakpoint (≤760px), compound callout labels (mobile toggle with leader lines), collapsible HUD header (view tabs always visible, ••• expands secondary controls), float-label de-clutter, data palette saturation pass, copy polish (em-dash strip, Note Suggester pruning, Methodology sources note). Branch safe to delete.
 - **`feature/compound-lens`** — PR **#7** (merged 2026-06-06, merge commit `bdb8039`). Branch deleted.
 - **`claude/header-cleanup`** — PR **#6** (merged 2026-06-06, merge commit `d96ebaa`). Branch safe to delete.
