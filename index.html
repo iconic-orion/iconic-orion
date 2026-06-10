@@ -640,6 +640,9 @@
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
       margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+    /* Dashboard is redundant on mobile (both panels show the same thing in
+       single-column layout). Hide the tab; setView() redirects its state. */
+    #view-tabs button[data-view="dashboard"] { display: none; }
 
     /* Both side panels share the single bottom cell; exactly one is shown.
        Sliders win whenever they're not explicitly hidden (Dashboard + Notes);
@@ -730,8 +733,9 @@
     </div>
     <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
-    <button id="reset">Start Over</button>
   </div>
+  <!-- Start Over: always visible on both desktop and mobile (outside the tray). -->
+  <button id="reset">Start Over</button>
   <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
   <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">•••</button>
 </header>
@@ -3024,8 +3028,11 @@ function applyPaneState() {
   if (!state.notesHidden && !state.detailHidden) activeView = "dashboard";
   else if (!state.notesHidden &&  state.detailHidden) activeView = "note-input";
   else if ( state.notesHidden && !state.detailHidden) activeView = "analysis";
+  // Dashboard tab is hidden on mobile; map its state to Notes so the tab highlight
+  // stays meaningful (both show the notes/sliders panel in single-column layout).
+  const tabActiveView = (isMobileViewport() && activeView === "dashboard") ? "note-input" : activeView;
   document.querySelectorAll("#view-tabs button").forEach(b => {
-    b.classList.toggle("active", b.dataset.view === activeView);
+    b.classList.toggle("active", b.dataset.view === tabActiveView);
   });
 
   // Layout changed; tell d3 to relayout the wheel.
@@ -3034,6 +3041,7 @@ function applyPaneState() {
 }
 
 function setView(v) {
+  if (isMobileViewport() && v === "dashboard") v = "note-input";
   if (v === "dashboard")        { state.notesHidden = false; state.detailHidden = false; }
   else if (v === "note-input")  { state.notesHidden = false; state.detailHidden = true;  }
   else if (v === "analysis")    { state.notesHidden = true;  state.detailHidden = false; }
