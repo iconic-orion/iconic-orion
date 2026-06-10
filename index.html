@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <title>Aroma Wheel · Sensory → Compound Inference</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
   :root {
@@ -87,6 +88,8 @@
      lay out inline exactly as if they were direct header children. */
   #hud-toggle { display: none; }
   .hud-extra { display: contents; }
+  /* Divider only appears inside the mobile tray; never on desktop's inline row. */
+  .hud-divider { display: none; }
 
   .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .tabs button { border: none; border-radius: 0; padding: 6px 12px; background: transparent;
@@ -327,7 +330,8 @@
   /* First-run nudge — centered in the empty wheel. The container ignores pointer
      events so it never blocks the wheel; only the demo buttons re-enable them. */
   .wheel-nudge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5; }
+    width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5;
+    background: rgba(29, 27, 23, 0.72); border-radius: 10px; padding: 14px 12px; }
   .wheel-nudge[hidden] { display: none; }
   .wheel-nudge .nudge-head { font-size: 13px; color: var(--ink); font-weight: 600;
     letter-spacing: 0.01em; margin-bottom: 7px; }
@@ -620,23 +624,41 @@
     body,
     body.notes-hidden, body.detail-hidden, body.notes-hidden.detail-hidden {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 44vh 1fr;
+      grid-template-rows: auto 46vh 1fr;
       grid-template-areas: "head" "wheel" "panel";
     }
+    /* ••• is pinned to the top-right corner so collapsed header is always
+       exactly one line: [Aroma Wheel ···]. Everything else is in the tray. */
     header { flex-wrap: wrap; height: auto; min-height: 48px;
-      padding: 8px 12px; row-gap: 8px; }
-    /* HUD: title + view tabs + ••• always on one compact line.
-       Secondary controls (Organize, Go Deeper, info, Start Over) live in
-       .hud-extra and drop in as a full-width second row when ••• is tapped. */
+      padding: 8px 48px 8px 12px; row-gap: 0; position: relative; gap: 8px; }
     header .spacer { display: block; flex: 1; }
     header h1 { width: auto; font-size: 13px; }
     #hud-toggle { display: inline-flex; align-items: center; justify-content: center;
-      min-width: 34px; font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
+      position: absolute; right: 12px; top: 8px; width: 30px; height: 30px;
+      font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
+    /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
+         row 1   VIEW | Notes Compounds            (i)
+         row 2   ORGANIZE | Scent Chemistry
+         row 3   ──────────── divider ────────────
+         row 4   Go Deeper                  Start Over
+       Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
+       dictate the mobile layout. */
     header.hud-open .hud-extra {
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 10px 12px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
-      padding-top: 8px; border-top: 1px solid var(--line); }
+      margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+    header.hud-open #view-tabs       { grid-row: 1; grid-column: 1; justify-self: start; }
+    header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
+    header.hud-open #organize-tabs    { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open .hud-divider      { display: block; grid-row: 3; grid-column: 1 / -1;
+      height: 1px; background: var(--line); }
+    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
+    header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
+    /* Dashboard is redundant on mobile (single-column layout shows same as Notes).
+       Hide the tab; setView() redirects its state to note-input. */
+    #view-tabs button[data-view="dashboard"] { display: none; }
 
     /* Both side panels share the single bottom cell; exactly one is shown.
        Sliders win whenever they're not explicitly hidden (Dashboard + Notes);
@@ -650,6 +672,11 @@
 
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
+
+    /* On mobile the ring's inner diameter is ~260px on a 375px screen (R_NOTE =
+       min(W,H) * 0.36, inner diam ≈ 2 * R_NOTE). Nudge width stays well inside
+       the colored arcs so text never overlaps them. */
+    .wheel-nudge { width: min(200px, 52vw); padding: 12px 10px; }
 
     /* The floating dots' labels (compound names in scent mode, note names in
        chemistry mode) are too long for a phone-width wheel and pile up
@@ -705,21 +732,23 @@
 <header>
   <h1>Aroma Wheel</h1>
   <span class="spacer"></span>
-  <!-- View tabs (Notes / Dashboard / Compounds): primary nav, always visible on
-       both desktop and mobile. -->
-  <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
-    <button data-view="note-input">Notes</button>
-    <button data-view="dashboard" class="active">Dashboard</button>
-    <button data-view="analysis">Compounds</button>
-  </div>
-  <!-- Secondary controls: always inline on desktop; on mobile hidden until
-       the ☰ toggle opens them as a second row. -->
+  <!-- All controls: always inline on desktop (display:contents makes children
+       direct flex items); on mobile hidden until ••• expands them as a tray. -->
   <div class="hud-extra" id="hud-extra">
+    <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
+      <span class="tabs-label">View</span>
+      <button data-view="note-input">Notes</button>
+      <button data-view="dashboard" class="active">Dashboard</button>
+      <button data-view="analysis">Compounds</button>
+    </div>
     <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
       <span class="tabs-label">Organize</span>
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
+    <!-- Mobile-only divider between the View/Organize settings and the actions
+         (hidden on desktop; grid-placed in the mobile tray). -->
+    <div class="hud-divider" aria-hidden="true"></div>
     <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
@@ -772,7 +801,7 @@
        Hidden the moment any note is logged; reappears after Start Over. -->
   <div id="wheel-nudge" class="wheel-nudge" hidden>
     <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
-    <div class="nudge-sub">Candidate odorants surface here, ranked by published GC-MS evidence. Click any one for its citations.</div>
+    <div class="nudge-sub">Aromatic compounds appear here as you add notes. Tap any one to learn more.</div>
     <div class="nudge-demos">
       <button type="button" class="nudge-demo" data-demo="coffee">Try: Coffee</button>
       <button type="button" class="nudge-demo" data-demo="mocktail">Try: Citrus mocktail</button>
@@ -1631,7 +1660,7 @@ function layout() {
   // Tighter ring on narrow viewports: the note/compound anchor labels extend
   // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
   // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
-  R_NOTE = Math.min(W, H) * (W < 560 ? 0.32 : 0.38);
+  R_NOTE = Math.min(W, H) * (W < 560 ? 0.36 : 0.38);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
@@ -3016,8 +3045,11 @@ function applyPaneState() {
   if (!state.notesHidden && !state.detailHidden) activeView = "dashboard";
   else if (!state.notesHidden &&  state.detailHidden) activeView = "note-input";
   else if ( state.notesHidden && !state.detailHidden) activeView = "analysis";
+  // Dashboard tab is hidden on mobile; map its state to Notes so the tab highlight
+  // stays meaningful (both show the notes/sliders panel in single-column layout).
+  const tabActiveView = (isMobileViewport() && activeView === "dashboard") ? "note-input" : activeView;
   document.querySelectorAll("#view-tabs button").forEach(b => {
-    b.classList.toggle("active", b.dataset.view === activeView);
+    b.classList.toggle("active", b.dataset.view === tabActiveView);
   });
 
   // Layout changed; tell d3 to relayout the wheel.
@@ -3026,6 +3058,7 @@ function applyPaneState() {
 }
 
 function setView(v) {
+  if (isMobileViewport() && v === "dashboard") v = "note-input";
   if (v === "dashboard")        { state.notesHidden = false; state.detailHidden = false; }
   else if (v === "note-input")  { state.notesHidden = false; state.detailHidden = true;  }
   else if (v === "analysis")    { state.notesHidden = true;  state.detailHidden = false; }

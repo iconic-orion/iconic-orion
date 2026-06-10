@@ -22,13 +22,14 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-- **`claude/thirsty-dijkstra-de159b`** — draft PR **[#8](https://github.com/iconic-orion/iconic-orion/pull/8)** against `prototype`. UX pass from the 2026-06-09 usability review: first-run nudge on the empty wheel (enthusiast-pitched, hosts the demo buttons), mobile breakpoint (≤760px stacks to one column), float-label de-clutter (wider collide, weak labels recede; phones get a clean dot map), header diet ("Reset View" → "Dashboard", demos out of the header). **Held in draft** — Nolan is landing a few more overall-UI fixes on this branch before merge. Worktree: `.claude/worktrees/thirsty-dijkstra-de159b/`.
+- **`claude/ui-pass-2`** — draft PR **[#9](https://github.com/iconic-orion/iconic-orion/pull/9)** against `prototype`. Second UI pass: mobile + overall refinements following the PR #8 merge. **In progress** — slices accumulate here before merge.
 
-Recently merged into `prototype` (both now live on aromawheel.net):
-- **`feature/compound-lens`** — PR **#7** (merged 2026-06-06, merge commit `bdb8039`). The wheel's **"Organize by: Scent | Chemistry"** lens: scent-family tint on compounds + legend hover spotlight (feature A), and a full dual layout where chemical-class arcs replace note-group arcs and notes float toward the chemistry they evoke (feature C). Plus the curved, color-coded category labels seated inside the ring. Branch deleted.
-- **`claude/header-cleanup`** — PR **#6** (merged 2026-06-06, merge commit `d96ebaa`) — header cleanup (drop Common/All, rename Reset, remove misleading overlay) + About-popup rewrite (accuracy fixes, trim, in-tab table of contents). Branch safe to delete.
+Recently merged into `prototype`:
+- **`claude/thirsty-dijkstra-de159b`** — PR **#8** (merged 2026-06-10, merge commit `4c074d0`). UX pass: first-run nudge, mobile single-column breakpoint (≤760px), compound callout labels (mobile toggle with leader lines), collapsible HUD header (view tabs always visible, ••• expands secondary controls), float-label de-clutter, data palette saturation pass, copy polish (em-dash strip, Note Suggester pruning, Methodology sources note). Branch safe to delete.
+- **`feature/compound-lens`** — PR **#7** (merged 2026-06-06, merge commit `bdb8039`). Branch deleted.
+- **`claude/header-cleanup`** — PR **#6** (merged 2026-06-06, merge commit `d96ebaa`). Branch safe to delete.
 
-`prototype` is now ahead of `main` by PRs #6 and #7. No multi-slice long-running dev branch (with accumulating slice commits) is active.
+`prototype` is now ahead of `main` by PRs #6, #7, and #8. No additional long-running dev branch active beyond `claude/ui-pass-2`.
 
 ### Historical: V2 (shipped 2026-05-26)
 

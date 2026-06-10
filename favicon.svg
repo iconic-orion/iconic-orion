@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- dark background -->
+  <circle cx="16" cy="16" r="16" fill="#1d1b17"/>
+  <!-- 8 equal wedges (45° each), arranged as the wheel's scent-family ring.
+       Order matches the group definition: fruity, floral, roasted, spice,
+       nutty, earthy, sweet, fermented.
+       Each path: M center, L outer-start, arc to outer-end, L center.
+       Outer radius = 14, inner hub radius = 6 (leaves a dark center circle). -->
+
+  <!-- fruity #eb894a  0°–45° -->
+  <path d="M16,16 L16,2 A14,14 0 0,1 25.899,6.101 Z" fill="#eb894a"/>
+  <!-- floral #db7e97  45°–90° -->
+  <path d="M16,16 L25.899,6.101 A14,14 0 0,1 30,16 Z" fill="#db7e97"/>
+  <!-- roasted #b65b3d  90°–135° -->
+  <path d="M16,16 L30,16 A14,14 0 0,1 25.899,25.899 Z" fill="#b65b3d"/>
+  <!-- spice #ee665e  135°–180° -->
+  <path d="M16,16 L25.899,25.899 A14,14 0 0,1 16,30 Z" fill="#ee665e"/>
+  <!-- nutty #d19456  180°–225° -->
+  <path d="M16,16 L16,30 A14,14 0 0,1 6.101,25.899 Z" fill="#d19456"/>
+  <!-- earthy #7fc275  225°–270° -->
+  <path d="M16,16 L6.101,25.899 A14,14 0 0,1 2,16 Z" fill="#7fc275"/>
+  <!-- sweet #dfa850  270°–315° -->
+  <path d="M16,16 L2,16 A14,14 0 0,1 6.101,6.101 Z" fill="#dfa850"/>
+  <!-- fermented #6ebdab  315°–360° -->
+  <path d="M16,16 L6.101,6.101 A14,14 0 0,1 16,2 Z" fill="#6ebdab"/>
+
+  <!-- dark hub — punches out the center to match the wheel's hollow ring look -->
+  <circle cx="16" cy="16" r="6" fill="#1d1b17"/>
+</svg>
