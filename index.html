@@ -621,7 +621,7 @@
     body,
     body.notes-hidden, body.detail-hidden, body.notes-hidden.detail-hidden {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 44vh 1fr;
+      grid-template-rows: auto 46vh 1fr;
       grid-template-areas: "head" "wheel" "panel";
     }
     /* ••• is pulled out of the flex flow and pinned to the top-right corner so it
@@ -653,10 +653,10 @@
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
 
-    /* On mobile the ring's inner diameter is ~225px on a 375px screen (R_NOTE =
-       min(W,H) * 0.32, inner diam ≈ 2 * R_NOTE). Clamp the nudge to 48vw so it
-       stays inside the colored arcs and reads against the dark background pill. */
-    .wheel-nudge { width: min(180px, 48vw); padding: 12px 10px; }
+    /* On mobile the ring's inner diameter is ~260px on a 375px screen (R_NOTE =
+       min(W,H) * 0.36, inner diam ≈ 2 * R_NOTE). Nudge width stays well inside
+       the colored arcs so text never overlaps them. */
+    .wheel-nudge { width: min(200px, 52vw); padding: 12px 10px; }
 
     /* The floating dots' labels (compound names in scent mode, note names in
        chemistry mode) are too long for a phone-width wheel and pile up
@@ -1638,7 +1638,7 @@ function layout() {
   // Tighter ring on narrow viewports: the note/compound anchor labels extend
   // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
   // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
-  R_NOTE = Math.min(W, H) * (W < 560 ? 0.32 : 0.38);
+  R_NOTE = Math.min(W, H) * (W < 560 ? 0.36 : 0.38);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
