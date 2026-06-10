@@ -590,6 +590,42 @@
   .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
     letter-spacing: 0.15em; opacity: 0.7; }
   .arc-label-path { fill: none; stroke: none; }
+
+  /* ---------- MOBILE (≤760px) ----------
+     The desktop three-column grid (sliders | wheel | analysis) can't fit a phone,
+     so below 760px we collapse to a single column: a full-width wheel on top with
+     one full-width panel below it. The header view tabs (Notes / Compounds) pick
+     which panel shows; the "Dashboard / both panes" state has no meaning here, so
+     it resolves to the sliders panel. Placed last in the sheet so it overrides
+     every base rule above regardless of source order. */
+  @media (max-width: 760px) {
+    /* One column, fixed grid regardless of which panes are "hidden" in JS state.
+       Header grows to fit its wrapped controls; wheel takes a fixed band; the
+       active panel fills and scrolls the rest. */
+    body,
+    body.notes-hidden, body.detail-hidden, body.notes-hidden.detail-hidden {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 44vh 1fr;
+      grid-template-areas: "head" "wheel" "panel";
+    }
+    header { flex-wrap: wrap; height: auto; min-height: 48px;
+      padding: 8px 12px; row-gap: 8px; }
+    header .spacer { display: none; }     /* let controls flow + wrap from the left */
+    header h1 { width: 100%; }            /* title on its own line above the controls */
+
+    /* Both side panels share the single bottom cell; exactly one is shown.
+       Sliders win whenever they're not explicitly hidden (Dashboard + Notes);
+       the analysis panel shows only in the Compounds view (notes hidden). */
+    aside.notes, aside.detail { grid-area: panel; width: auto;
+      border-left: none; border-right: none; border-top: 1px solid var(--line); }
+    body:not(.notes-hidden) aside.detail { display: none; }
+
+    /* The edge pane-toggle arrows assume side-by-side panes; meaningless stacked. */
+    .pane-toggle { display: none; }
+
+    /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
+    .wheel-nudge .nudge-arrow { display: none; }
+  }
 </style>
 </head>
 <body>
