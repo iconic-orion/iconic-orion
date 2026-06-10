@@ -309,6 +309,23 @@
   main.wheel { grid-area: wheel; position: relative; overflow: hidden; }
   svg { width: 100%; height: 100%; display: block; }
 
+  /* First-run nudge — centered in the empty wheel. The container ignores pointer
+     events so it never blocks the wheel; only the demo buttons re-enable them. */
+  .wheel-nudge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5; }
+  .wheel-nudge[hidden] { display: none; }
+  .wheel-nudge .nudge-head { font-size: 13px; color: var(--ink); font-weight: 600;
+    letter-spacing: 0.01em; margin-bottom: 7px; }
+  .wheel-nudge .nudge-arrow { color: var(--accent); font-size: 15px; margin-right: 2px; }
+  .wheel-nudge .nudge-sub { font-size: 11px; color: var(--ink-dim); line-height: 1.5; }
+  .wheel-nudge .nudge-demos { margin-top: 13px; pointer-events: auto;
+    display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .wheel-nudge .nudge-demo { background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--ink); border-radius: 14px; padding: 4px 12px; font-size: 11px;
+    cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s, color 0.15s; }
+  .wheel-nudge .nudge-demo:hover { border-color: var(--accent); color: var(--accent); }
+
   .group-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--ink-dim); padding: 12px 4px 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
     display: flex; align-items: center; gap: 8px; }
@@ -635,6 +652,17 @@
 </aside>
 <main class="wheel">
   <svg id="svg"></svg>
+  <!-- First-run nudge: shown only while the wheel is empty (no entries). Names the
+       core loop (slide a note → odorants surface) and offers one-click examples.
+       Hidden the moment any note is logged; reappears after Start Over. -->
+  <div id="wheel-nudge" class="wheel-nudge" hidden>
+    <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
+    <div class="nudge-sub">Candidate odorants surface here, ranked by published GC-MS evidence. Click any one for its citations.</div>
+    <div class="nudge-demos">
+      <button type="button" class="nudge-demo" data-demo="coffee">Try: Coffee</button>
+      <button type="button" class="nudge-demo" data-demo="mocktail">Try: Citrus mocktail</button>
+    </div>
+  </div>
   <!-- Per-pane hide/show toggles. Pinned to the wheel's inner edges so they're
        visible whether the corresponding side pane is shown or hidden. Click to
        collapse the pane against the screen edge; click again to bring it back. -->
@@ -2129,6 +2157,7 @@ function recompute() {
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
+  if (typeof updateNudge === "function") updateNudge();
 }
 
 // ---------- PANEL: notes ----------
@@ -2959,7 +2988,7 @@ document.getElementById("reset").addEventListener("click", () => setNotes([]));
 
 // Coffee — default-mode showcase. No phase tags; just intensities.
 // (Coffee experience is rich enough that most users can use it without phase tagging.)
-document.getElementById("demo-coffee").addEventListener("click", () => setNotes([
+const DEMO_COFFEE = [
   { note: "coffee",     intensity: 9 },
   { note: "toast",      intensity: 6 },
   { note: "smoky",      intensity: 2 },
@@ -2967,13 +2996,13 @@ document.getElementById("demo-coffee").addEventListener("click", () => setNotes(
   { note: "caramel",    intensity: 5 },
   { note: "stonefruit", intensity: 4 },
   { note: "honey",      intensity: 3 }
-]));
+];
 
 // Citrus mocktail — Go Deeper showcase. Mixes default-mode entries with
 // ortho/retro-tagged ones to demonstrate dual-phase logging. Orange is
 // logged in both phases at different intensities (ortho-bright, retro-mild).
 // Loading this demo auto-enables Go Deeper.
-document.getElementById("demo-mocktail").addEventListener("click", () => setNotes([
+const DEMO_MOCKTAIL = [
   { note: "grapefruit",   phase: "ortho", intensity: 9 },
   { note: "orange",       phase: "ortho", intensity: 7 },
   { note: "orange",       phase: "retro", intensity: 5 },
@@ -2982,7 +3011,21 @@ document.getElementById("demo-mocktail").addEventListener("click", () => setNote
   { note: "passionfruit", phase: "retro", intensity: 6 },
   { note: "honey",        intensity: 3 },
   { note: "green",        intensity: 2 }
-]));
+];
+
+// Single entry point so the header buttons AND the empty-wheel nudge load the
+// same data. `name` is "coffee" | "mocktail".
+function loadDemo(name) { setNotes(name === "mocktail" ? DEMO_MOCKTAIL : DEMO_COFFEE); }
+document.getElementById("demo-coffee").addEventListener("click", () => loadDemo("coffee"));
+document.getElementById("demo-mocktail").addEventListener("click", () => loadDemo("mocktail"));
+
+// ---------- FIRST-RUN NUDGE ----------
+// Visible only while the wheel is empty; updateNudge() runs from recompute()
+// (which fires on every entry change) and once at init.
+const wheelNudgeEl = document.getElementById("wheel-nudge");
+function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0; }
+wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
+  b.addEventListener("click", () => loadDemo(b.dataset.demo)));
 
 // ---------- GO DEEPER TOGGLE ----------
 function setGoDeeper(on) {
