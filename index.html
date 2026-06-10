@@ -327,7 +327,8 @@
   /* First-run nudge — centered in the empty wheel. The container ignores pointer
      events so it never blocks the wheel; only the demo buttons re-enable them. */
   .wheel-nudge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5; }
+    width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5;
+    background: rgba(29, 27, 23, 0.72); border-radius: 10px; padding: 14px 12px; }
   .wheel-nudge[hidden] { display: none; }
   .wheel-nudge .nudge-head { font-size: 13px; color: var(--ink); font-weight: 600;
     letter-spacing: 0.01em; margin-bottom: 7px; }
@@ -651,6 +652,11 @@
 
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
+
+    /* On mobile the ring's inner diameter is ~225px on a 375px screen (R_NOTE =
+       min(W,H) * 0.32, inner diam ≈ 2 * R_NOTE). Clamp the nudge to 48vw so it
+       stays inside the colored arcs and reads against the dark background pill. */
+    .wheel-nudge { width: min(180px, 48vw); padding: 12px 10px; }
 
     /* The floating dots' labels (compound names in scent mode, note names in
        chemistry mode) are too long for a phone-width wheel and pile up
