@@ -644,6 +644,16 @@
        too big for a phone wheel, where it shoves labels past the viewport edge.
        Pull scent-mode anchor labels down so they sit within the wheel. */
     .note.active .note-label, .note:hover .note-label { font-size: 10px; }
+
+    /* Curved category labels overrun each other on the small ring at desktop
+       size. Shrink them so the 8 scent families (incl. the tight nutty / spice /
+       roasted run) clear each other. */
+    text.group-arc-label { font-size: 9px; letter-spacing: 0.05em; }
+    /* Chemistry's 12 class labels — several long, several riding 1-compound
+       slivers — can't fit a phone ring legibly even shrunk, and abbreviating
+       them just yields cryptic codes. Drop them like the compound anchors; the
+       color bands decode via the legend and tapping a dot. */
+    body.organize-chemistry text.group-arc-label { display: none; }
   }
 </style>
 </head>
