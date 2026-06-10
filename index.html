@@ -625,18 +625,16 @@
     }
     header { flex-wrap: wrap; height: auto; min-height: 48px;
       padding: 8px 12px; row-gap: 8px; }
-    /* HUD: the title row stays compact — "Aroma Wheel" on the left, then the
-       spacer pushes the always-on actions (info / Start Over / ☰) to the right.
-       The control cluster (view modes, organize, Go Deeper) lives in .hud-extra
-       and only drops in as a full-width second row when ☰ opens it, so the
-       essentials never get pushed off-screen and Start Over is always reachable. */
+    /* HUD: title + view tabs + ••• always on one compact line.
+       Secondary controls (Organize, Go Deeper, info, Start Over) live in
+       .hud-extra and drop in as a full-width second row when ••• is tapped. */
     header .spacer { display: block; flex: 1; }
     header h1 { width: auto; font-size: 13px; }
     #hud-toggle { display: inline-flex; align-items: center; justify-content: center;
-      min-width: 34px; font-size: 14px; line-height: 1; }
+      min-width: 34px; font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
     header.hud-open .hud-extra {
-      display: flex; flex-wrap: wrap; gap: 8px;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
       padding-top: 8px; border-top: 1px solid var(--line); }
 
@@ -707,26 +705,27 @@
 <header>
   <h1>Aroma Wheel</h1>
   <span class="spacer"></span>
-  <!-- Collapsible control cluster. On desktop .hud-extra is display:contents, so
-       these lay out inline in the header as before. On mobile they're hidden
-       until the ☰ toggle opens them as a second row. -->
+  <!-- View tabs (Notes / Dashboard / Compounds): primary nav, always visible on
+       both desktop and mobile. -->
+  <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
+    <button data-view="note-input">Notes</button>
+    <button data-view="dashboard" class="active">Dashboard</button>
+    <button data-view="analysis">Compounds</button>
+  </div>
+  <!-- Secondary controls: always inline on desktop; on mobile hidden until
+       the ☰ toggle opens them as a second row. -->
   <div class="hud-extra" id="hud-extra">
-    <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
-      <button data-view="note-input">Notes</button>
-      <button data-view="dashboard" class="active">Dashboard</button>
-      <button data-view="analysis">Compounds</button>
-    </div>
     <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
       <span class="tabs-label">Organize</span>
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
     <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
+    <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
+    <button id="reset">Start Over</button>
   </div>
-  <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
-  <button id="reset">Start Over</button>
   <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
-  <button id="hud-toggle" type="button" aria-label="Show controls" aria-expanded="false" title="Show / hide controls">☰</button>
+  <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">•••</button>
 </header>
 <aside class="notes" id="left-panel">
   <div class="legend collapsed" id="legend">
