@@ -88,6 +88,8 @@
      lay out inline exactly as if they were direct header children. */
   #hud-toggle { display: none; }
   .hud-extra { display: contents; }
+  /* Divider only appears inside the mobile tray; never on desktop's inline row. */
+  .hud-divider { display: none; }
 
   .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .tabs button { border: none; border-radius: 0; padding: 6px 12px; background: transparent;
@@ -635,10 +637,25 @@
       position: absolute; right: 12px; top: 8px; width: 30px; height: 30px;
       font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
+    /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
+         row 1   VIEW | Notes Compounds            (i)
+         row 2   ORGANIZE | Scent Chemistry
+         row 3   ──────────── divider ────────────
+         row 4   Go Deeper                  Start Over
+       Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
+       dictate the mobile layout. */
     header.hud-open .hud-extra {
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 10px 12px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
-      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+      margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+    header.hud-open #view-tabs       { grid-row: 1; grid-column: 1; justify-self: start; }
+    header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
+    header.hud-open #organize-tabs    { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open .hud-divider      { display: block; grid-row: 3; grid-column: 1 / -1;
+      height: 1px; background: var(--line); }
+    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
+    header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
     /* Dashboard is redundant on mobile (single-column layout shows same as Notes).
        Hide the tab; setView() redirects its state to note-input. */
     #view-tabs button[data-view="dashboard"] { display: none; }
@@ -719,6 +736,7 @@
        direct flex items); on mobile hidden until ••• expands them as a tray. -->
   <div class="hud-extra" id="hud-extra">
     <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
+      <span class="tabs-label">View</span>
       <button data-view="note-input">Notes</button>
       <button data-view="dashboard" class="active">Dashboard</button>
       <button data-view="analysis">Compounds</button>
@@ -728,6 +746,9 @@
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
+    <!-- Mobile-only divider between the View/Organize settings and the actions
+         (hidden on desktop; grid-placed in the mobile tray). -->
+    <div class="hud-divider" aria-hidden="true"></div>
     <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
