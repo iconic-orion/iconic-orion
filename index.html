@@ -17,14 +17,14 @@
     --accent-2: #7daea3;
     --warn: #ea6962;
 
-    --grp-fruity: #e78a4e;
-    --grp-floral: #d3869b;
-    --grp-roasted: #a9624a;
-    --grp-spice:   #ea6962;
-    --grp-nutty:   #c79460;
-    --grp-earthy:  #89b482;
-    --grp-sweet:   #d8a657;
-    --grp-fermented: #7daea3;
+    --grp-fruity: #eb894a;
+    --grp-floral: #db7e97;
+    --grp-roasted: #b65b3d;
+    --grp-spice:   #ee665e;
+    --grp-nutty:   #d19456;
+    --grp-earthy:  #7fc275;
+    --grp-sweet:   #dfa850;
+    --grp-fermented: #6ebdab;
 
     /* Pane widths — referenced both by the body grid and by the pane-toggle
        positions, so both stay in sync if these change. */
@@ -114,11 +114,11 @@
     letter-spacing: 0.06em; margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
   .cpd-card .meta .pill { padding: 1px 6px; border-radius: 3px; background: var(--bg);
     border: 1px solid var(--line); }
-  .cpd-card .meta .pill.very-low { color: #e78a4e; border-color: #e78a4e; }
-  .cpd-card .meta .pill.low      { color: #d8a657; border-color: #d8a657; }
-  .cpd-card .meta .pill.medium   { color: #89b482; border-color: #89b482; }
-  .cpd-card .meta .pill.high     { color: #7daea3; border-color: #7daea3; }
-  .cpd-card .meta .pill.signature { color: #d3869b; border-color: #d3869b; font-weight: 600; }
+  .cpd-card .meta .pill.very-low { color: #eb894a; border-color: #eb894a; }
+  .cpd-card .meta .pill.low      { color: #dfa850; border-color: #dfa850; }
+  .cpd-card .meta .pill.medium   { color: #7fc275; border-color: #7fc275; }
+  .cpd-card .meta .pill.high     { color: #6ebdab; border-color: #6ebdab; }
+  .cpd-card .meta .pill.signature { color: #db7e97; border-color: #db7e97; font-weight: 600; }
 
   .cpd-card .scores { margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 6px; }
   .cpd-card .score-row { display: grid; grid-template-columns: 70px 1fr 32px; gap: 6px; align-items: center;
@@ -632,6 +632,13 @@
        colored, positioned, and tappable, and names surface in the panel below
        and the detail card on tap. Ring anchor labels (.note-label) stay. */
     g.compound text.node-label { display: none; }
+
+    /* Chemistry mode only: the ring anchors are compounds, whose long names run
+       off a phone-width wheel. Hide them too — the curved class-arc labels
+       (TERPENE, ESTER, …) still give the ring its legend, and tapping a dot
+       opens the named detail card. Scent mode keeps its short note anchor
+       labels (Coffee / roast, etc.), which fit. */
+    body.organize-chemistry g.note text.note-label { display: none; }
   }
 </style>
 </head>
@@ -1014,18 +1021,18 @@ const EDGES = [
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
 // reads unambiguously even though several classes overlap aroma-family palettes.
 const COMPOUND_CLASS_COLOR = {
-  "terpene":           "#89b482",  // green
-  "pyrazine":          "#a9624a",  // brown
-  "furan":             "#d8a657",  // yellow
-  "thiol":             "#e78a4e",  // orange
-  "ester":             "#d3869b",  // pink
-  "lactone":           "#c79460",  // tan
-  "phenolic-aldehyde": "#bdae93",  // sand
-  "aldehyde":          "#7daea3",  // aqua
-  "ketone":            "#ea6962",  // red
-  "norisoprenoid":     "#e8a0bf",  // light pink
-  "phenol":            "#928374",  // grey
-  "alcohol":           "#a89984"   // sand
+  "terpene":           "#7fc275",  // green
+  "pyrazine":          "#b65b3d",  // brown
+  "furan":             "#dfa850",  // yellow
+  "thiol":             "#eb894a",  // orange
+  "ester":             "#db7e97",  // pink
+  "lactone":           "#d19456",  // tan
+  "phenolic-aldehyde": "#cbb172",  // warm gold (was muddy sand)
+  "aldehyde":          "#6ebdab",  // aqua
+  "ketone":            "#ee665e",  // red
+  "norisoprenoid":     "#d57bb4",  // orchid (was pale pink) — β-ionone is violet-scented
+  "phenol":            "#6096c3",  // blue (was grey) — smoky-medicinal
+  "alcohol":           "#a584c2"   // soft purple (was sand) — earthy/mushroom
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
@@ -1828,6 +1835,7 @@ function drawCompoundAnchors() {
     .on("click", (e, d) => {
       state.selectedCompound = d.id;
       state.selectedNote = null;
+      ensureDetailVisible();
       renderDetail();
       gNotes.selectAll("g.note").classed("selected", x => x.id === state.selectedCompound);
     });
@@ -1995,6 +2003,7 @@ function renderCompoundFloats() {
     .on("click", (e, d) => {
       state.selectedCompound = d.id;
       state.selectedNote = null;
+      ensureDetailVisible();
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
     })
@@ -2815,6 +2824,19 @@ function setView(v) {
   applyPaneState();
 }
 
+// Tapping a compound on the wheel should land you on its detail. On desktop the
+// analysis pane is usually already open; if it's collapsed (Notes view) we just
+// reveal it. On mobile only one panel shows at a time, so we switch to the
+// Compounds view — otherwise the tap would select a compound you can't see.
+function ensureDetailVisible() {
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    setView("analysis");
+  } else if (state.detailHidden) {
+    state.detailHidden = false;
+    applyPaneState();
+  }
+}
+
 document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
 });
@@ -2823,6 +2845,9 @@ document.querySelectorAll("#view-tabs button").forEach(b => {
 function setOrganizeBy(mode) {
   if (mode === state.organizeBy) return;
   state.organizeBy = mode;
+  // Body flag lets CSS treat the two projections differently — used on mobile to
+  // hide the long compound anchor labels that only exist in chemistry mode.
+  document.body.classList.toggle("organize-chemistry", mode === "chemistry");
   document.querySelectorAll("#organize-tabs button").forEach(x =>
     x.classList.toggle("active", x.dataset.organize === mode));
   // Roles swap, so clear stale selection/hover and wipe the wheel layers before
@@ -3351,7 +3376,7 @@ function renderTypesOfAroma() {
       const matched = matches(c.label) || matches(c.id) || matches(c.class) || matches(origin) || matches(c.note || "");
       if (matched) totalMatched++;
       const sigPill = c.specificity === "signature"
-        ? `<span class="info-entry-pill" style="border-color:#d3869b;color:#d3869b">signature</span>` : '';
+        ? `<span class="info-entry-pill" style="border-color:#db7e97;color:#db7e97">signature</span>` : '';
       return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="compound" data-cpd="${c.id}">
         <div class="info-entry-head">
           <span class="info-entry-name">${c.label}</span>
