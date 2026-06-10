@@ -40,7 +40,7 @@
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
-     independently hidden. The header view tabs (Notes / Reset View / Compounds)
+     independently hidden. The header view tabs (Notes / Dashboard / Compounds)
      are presets that flip these classes in combination; the small pane-toggle
      tabs on the screen's edges flip them one at a time. */
   body.notes-hidden  { grid-template-columns: 0 1fr var(--detail-pane-w); }
@@ -625,6 +625,13 @@
 
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
+
+    /* The floating dots' labels (compound names in scent mode, note names in
+       chemistry mode) are too long for a phone-width wheel and pile up
+       illegibly in the center. Drop them to a clean dot map; the dots stay
+       colored, positioned, and tappable, and names surface in the panel below
+       and the detail card on tap. Ring anchor labels (.note-label) stay. */
+    g.compound text.node-label { display: none; }
   }
 </style>
 </head>
@@ -634,7 +641,7 @@
   <span class="spacer"></span>
   <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
     <button data-view="note-input">Notes</button>
-    <button data-view="dashboard" class="active">Reset View</button>
+    <button data-view="dashboard" class="active">Dashboard</button>
     <button data-view="analysis">Compounds</button>
   </div>
   <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
@@ -645,8 +652,6 @@
   <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
   <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
   <button id="reset">Start Over</button>
-  <button id="demo-coffee">Demo: Coffee</button>
-  <button id="demo-mocktail">Demo: Citrus mocktail</button>
 </header>
 <aside class="notes" id="left-panel">
   <div class="legend collapsed" id="legend">
@@ -1540,7 +1545,10 @@ const gLabels = root.append("g").attr("class", "labels");
 function layout() {
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
-  R_NOTE = Math.min(W, H) * 0.38;  // ring sized to leave room for the curved outer labels
+  // Tighter ring on narrow viewports: the note/compound anchor labels extend
+  // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
+  // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
+  R_NOTE = Math.min(W, H) * (W < 560 ? 0.32 : 0.38);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
@@ -1880,7 +1888,7 @@ function startSim() {
     .velocityDecay(0.3)
     .force("center", d3.forceX(CX).strength(0.04))
     .force("centerY", d3.forceY(CY).strength(0.04))
-    .force("collide", d3.forceCollide().radius(d => d.radius + 4).strength(0.9))
+    .force("collide", d3.forceCollide().radius(d => d.radius + 13).strength(0.9))
     .force("target", targetForce(0.08))
     .on("tick", tick);
 }
@@ -1968,6 +1976,13 @@ function tick() {
 // compounds populate as confirmed notes feed them.
 function renderCompoundFloats() {
   const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+  // Label de-clutter: every dot stays on the wheel (nothing hidden), but only the
+  // stronger-evidence labels keep a bright resting state. The weak-evidence tail
+  // recedes to a faint label so the center doesn't become an unreadable knot;
+  // hovering any dot raises it and brings its label fully back. Threshold is
+  // relative to the strongest compound on the wheel so it adapts to any input.
+  const maxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
+  const labelThresh = maxScore * 0.33;
   const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
   sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "compound")
@@ -2002,7 +2017,10 @@ function renderCompoundFloats() {
   merged.select("text")
     .attr("x", d => d.radius + 4)
     .attr("y", 3)
-    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedCompound || d.id === hoveredCompound() ? 0.95 : 0.4)
+    .attr("fill-opacity", d =>
+      (d.id === state.selectedCompound || d.id === hoveredCompound()) ? 1
+      : d.score >= labelThresh ? 0.92
+      : 0.16)
     .text(d => d.label);
 
   applySpotlight();
@@ -2757,7 +2775,7 @@ function renderCompoundDetail(cpdId, banner) {
 // pane-toggle tab on the wheel's edge. The three header view tabs are
 // presets that flip both per-pane states in combination.
 //   Notes ("note-input")     = sliders visible, results hidden
-//   Reset View ("dashboard") = both visible (the default 3-pane view)
+//   Dashboard ("dashboard")  = both visible (the default 3-pane view)
 //   Compounds ("analysis")   = sliders hidden, results visible
 // data-view keys keep their original names internally to avoid churning
 // every state reference; the user-facing labels are what changed.
@@ -2837,8 +2855,8 @@ document.getElementById("toggle-detail").addEventListener("click", () => {
   applyPaneState();
 });
 
-// Auto-detect initial view from viewport. Wide screens default to Reset View
-// (the 3-pane dashboard); narrower screens default to Notes (sliders + wheel).
+// Auto-detect initial view from viewport. Wide screens default to Dashboard
+// (the 3-pane view); narrower screens default to Notes (sliders + wheel).
 // User can override via tabs or per-pane toggles anytime; we don't auto-flip
 // on resize. Threshold is 1100px so tablet landscape and half-screen browser
 // windows land in a focus mode instead of a cramped 3-pane.
@@ -3049,11 +3067,9 @@ const DEMO_MOCKTAIL = [
   { note: "green",        intensity: 2 }
 ];
 
-// Single entry point so the header buttons AND the empty-wheel nudge load the
-// same data. `name` is "coffee" | "mocktail".
+// Single entry point for the demos. The example launchers live in the empty-wheel
+// nudge (see FIRST-RUN NUDGE below); `name` is "coffee" | "mocktail".
 function loadDemo(name) { setNotes(name === "mocktail" ? DEMO_MOCKTAIL : DEMO_COFFEE); }
-document.getElementById("demo-coffee").addEventListener("click", () => loadDemo("coffee"));
-document.getElementById("demo-mocktail").addEventListener("click", () => loadDemo("mocktail"));
 
 // ---------- FIRST-RUN NUDGE ----------
 // Visible only while the wheel is empty; updateNudge() runs from recompute()
@@ -3278,7 +3294,7 @@ function renderHowToUse() {
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off — and hover any row to halo just those items on the wheel and fade the rest.</li>
-      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Reset View</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown.</li>
+      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Dashboard</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
@@ -3604,7 +3620,7 @@ buildNotesPanel();
 layout();
 startSim();
 recompute();
-autoDetectViewMode();  // pick Reset View or Notes based on viewport width
+autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
 
 window.addEventListener("resize", () => {
   layout();
