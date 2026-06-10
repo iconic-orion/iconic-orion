@@ -17,14 +17,14 @@
     --accent-2: #7daea3;
     --warn: #ea6962;
 
-    --grp-fruity: #e78a4e;
-    --grp-floral: #d3869b;
-    --grp-roasted: #a9624a;
-    --grp-spice:   #ea6962;
-    --grp-nutty:   #c79460;
-    --grp-earthy:  #89b482;
-    --grp-sweet:   #d8a657;
-    --grp-fermented: #7daea3;
+    --grp-fruity: #eb894a;
+    --grp-floral: #db7e97;
+    --grp-roasted: #b65b3d;
+    --grp-spice:   #ee665e;
+    --grp-nutty:   #d19456;
+    --grp-earthy:  #7fc275;
+    --grp-sweet:   #dfa850;
+    --grp-fermented: #6ebdab;
 
     /* Pane widths — referenced both by the body grid and by the pane-toggle
        positions, so both stay in sync if these change. */
@@ -40,7 +40,7 @@
     grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
-     independently hidden. The header view tabs (Notes / Reset View / Compounds)
+     independently hidden. The header view tabs (Notes / Dashboard / Compounds)
      are presets that flip these classes in combination; the small pane-toggle
      tabs on the screen's edges flip them one at a time. */
   body.notes-hidden  { grid-template-columns: 0 1fr var(--detail-pane-w); }
@@ -81,6 +81,13 @@
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
   header button:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* Mobile HUD: a ☰ toggle (shown only on phones) drops the secondary control
+     cluster into a second header row. On desktop the toggle is hidden and
+     .hud-extra is a transparent wrapper (display: contents), so its children
+     lay out inline exactly as if they were direct header children. */
+  #hud-toggle { display: none; }
+  .hud-extra { display: contents; }
+
   .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
   .tabs button { border: none; border-radius: 0; padding: 6px 12px; background: transparent;
     color: var(--ink-dim); }
@@ -114,11 +121,11 @@
     letter-spacing: 0.06em; margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
   .cpd-card .meta .pill { padding: 1px 6px; border-radius: 3px; background: var(--bg);
     border: 1px solid var(--line); }
-  .cpd-card .meta .pill.very-low { color: #e78a4e; border-color: #e78a4e; }
-  .cpd-card .meta .pill.low      { color: #d8a657; border-color: #d8a657; }
-  .cpd-card .meta .pill.medium   { color: #89b482; border-color: #89b482; }
-  .cpd-card .meta .pill.high     { color: #7daea3; border-color: #7daea3; }
-  .cpd-card .meta .pill.signature { color: #d3869b; border-color: #d3869b; font-weight: 600; }
+  .cpd-card .meta .pill.very-low { color: #eb894a; border-color: #eb894a; }
+  .cpd-card .meta .pill.low      { color: #dfa850; border-color: #dfa850; }
+  .cpd-card .meta .pill.medium   { color: #7fc275; border-color: #7fc275; }
+  .cpd-card .meta .pill.high     { color: #6ebdab; border-color: #6ebdab; }
+  .cpd-card .meta .pill.signature { color: #db7e97; border-color: #db7e97; font-weight: 600; }
 
   .cpd-card .scores { margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 6px; }
   .cpd-card .score-row { display: grid; grid-template-columns: 70px 1fr 32px; gap: 6px; align-items: center;
@@ -308,6 +315,31 @@
     overflow-y: auto; padding: 16px; }
   main.wheel { grid-area: wheel; position: relative; overflow: hidden; }
   svg { width: 100%; height: 100%; display: block; }
+
+  /* Compound callout labels (mobile-only toggle) */
+  #callout-toggle { display: none; }
+  .callout-tail { pointer-events: none; }
+  .callout-bg   { pointer-events: none; }
+  .callout-text { pointer-events: none;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9px; dominant-baseline: middle; }
+
+  /* First-run nudge — centered in the empty wheel. The container ignores pointer
+     events so it never blocks the wheel; only the demo buttons re-enable them. */
+  .wheel-nudge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5; }
+  .wheel-nudge[hidden] { display: none; }
+  .wheel-nudge .nudge-head { font-size: 13px; color: var(--ink); font-weight: 600;
+    letter-spacing: 0.01em; margin-bottom: 7px; }
+  .wheel-nudge .nudge-arrow { color: var(--accent); font-size: 15px; margin-right: 2px; }
+  .wheel-nudge .nudge-sub { font-size: 11px; color: var(--ink-dim); line-height: 1.5; }
+  .wheel-nudge .nudge-demos { margin-top: 13px; pointer-events: auto;
+    display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .wheel-nudge .nudge-demo { background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--ink); border-radius: 14px; padding: 4px 12px; font-size: 11px;
+    cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s, color 0.15s; }
+  .wheel-nudge .nudge-demo:hover { border-color: var(--accent); color: var(--accent); }
 
   .group-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--ink-dim); padding: 12px 4px 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
@@ -573,27 +605,127 @@
   .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
     letter-spacing: 0.15em; opacity: 0.7; }
   .arc-label-path { fill: none; stroke: none; }
+
+  /* ---------- MOBILE (≤760px) ----------
+     The desktop three-column grid (sliders | wheel | analysis) can't fit a phone,
+     so below 760px we collapse to a single column: a full-width wheel on top with
+     one full-width panel below it. The header view tabs (Notes / Compounds) pick
+     which panel shows; the "Dashboard / both panes" state has no meaning here, so
+     it resolves to the sliders panel. Placed last in the sheet so it overrides
+     every base rule above regardless of source order. */
+  @media (max-width: 760px) {
+    /* One column, fixed grid regardless of which panes are "hidden" in JS state.
+       Header grows to fit its wrapped controls; wheel takes a fixed band; the
+       active panel fills and scrolls the rest. */
+    body,
+    body.notes-hidden, body.detail-hidden, body.notes-hidden.detail-hidden {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 44vh 1fr;
+      grid-template-areas: "head" "wheel" "panel";
+    }
+    header { flex-wrap: wrap; height: auto; min-height: 48px;
+      padding: 8px 12px; row-gap: 8px; }
+    /* HUD: title + view tabs + ••• always on one compact line.
+       Secondary controls (Organize, Go Deeper, info, Start Over) live in
+       .hud-extra and drop in as a full-width second row when ••• is tapped. */
+    header .spacer { display: block; flex: 1; }
+    header h1 { width: auto; font-size: 13px; }
+    #hud-toggle { display: inline-flex; align-items: center; justify-content: center;
+      min-width: 34px; font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
+    .hud-extra { display: none; }
+    header.hud-open .hud-extra {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      order: 10; flex-basis: 100%; width: 100%;
+      padding-top: 8px; border-top: 1px solid var(--line); }
+
+    /* Both side panels share the single bottom cell; exactly one is shown.
+       Sliders win whenever they're not explicitly hidden (Dashboard + Notes);
+       the analysis panel shows only in the Compounds view (notes hidden). */
+    aside.notes, aside.detail { grid-area: panel; width: auto;
+      border-left: none; border-right: none; border-top: 1px solid var(--line); }
+    body:not(.notes-hidden) aside.detail { display: none; }
+
+    /* The edge pane-toggle arrows assume side-by-side panes; meaningless stacked. */
+    .pane-toggle { display: none; }
+
+    /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
+    .wheel-nudge .nudge-arrow { display: none; }
+
+    /* The floating dots' labels (compound names in scent mode, note names in
+       chemistry mode) are too long for a phone-width wheel and pile up
+       illegibly in the center. Drop them to a clean dot map; the dots stay
+       colored, positioned, and tappable, and names surface in the panel below
+       and the detail card on tap. Ring anchor labels (.note-label) stay. */
+    g.compound text.node-label { display: none; }
+
+    /* Chemistry mode only: the ring anchors are compounds, whose long names run
+       off a phone-width wheel. Hide them too — the curved class-arc labels
+       (TERPENE, ESTER, …) still give the ring its legend, and tapping a dot
+       opens the named detail card. Scent mode keeps its note anchor labels,
+       shortened to their primary token (see wheelNoteLabel), which fit. */
+    body.organize-chemistry g.note text.note-label { display: none; }
+
+    /* Every rendered note anchor carries .active, which bumps the label to 13px —
+       too big for a phone wheel, where it shoves labels past the viewport edge.
+       Pull scent-mode anchor labels down so they sit within the wheel. */
+    .note.active .note-label, .note:hover .note-label { font-size: 10px; }
+
+    /* Curved category labels overrun each other on the small ring at desktop
+       size. Shrink them so the 8 scent families (incl. the tight nutty / spice /
+       roasted run) clear each other. */
+    text.group-arc-label { font-size: 9px; letter-spacing: 0.05em; }
+    /* Chemistry's 12 class labels — several long, several riding 1-compound
+       slivers — can't fit a phone ring legibly even shrunk, and abbreviating
+       them just yields cryptic codes. Drop them like the compound anchors; the
+       color bands decode via the legend and tapping a dot. */
+    body.organize-chemistry text.group-arc-label { display: none; }
+
+    /* "Show compound labels" callout toggle: small control pinned to the top-left
+       of the wheel pane. Only renders on mobile where floating dot labels are hidden. */
+    #callout-toggle {
+      display: flex; align-items: center; gap: 5px;
+      position: absolute; top: 10px; left: 10px; z-index: 5;
+      padding: 4px 8px;
+      background: rgba(29, 27, 23, 0.55);
+      border: 1px solid rgba(205, 200, 190, 0.22);
+      border-radius: 6px;
+      font-size: 10px; color: var(--ink);
+      cursor: pointer; user-select: none;
+    }
+    #callout-toggle input[type=checkbox] {
+      width: 11px; height: 11px;
+      accent-color: var(--accent);
+      cursor: pointer; flex-shrink: 0; margin: 0;
+    }
+    #callout-toggle label { cursor: pointer; }
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>Aroma Wheel</h1>
   <span class="spacer"></span>
+  <!-- View tabs (Notes / Dashboard / Compounds): primary nav, always visible on
+       both desktop and mobile. -->
   <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
     <button data-view="note-input">Notes</button>
-    <button data-view="dashboard" class="active">Reset View</button>
+    <button data-view="dashboard" class="active">Dashboard</button>
     <button data-view="analysis">Compounds</button>
   </div>
-  <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
-    <span class="tabs-label">Organize</span>
-    <button data-organize="scent" class="active">Scent</button>
-    <button data-organize="chemistry">Chemistry</button>
+  <!-- Secondary controls: always inline on desktop; on mobile hidden until
+       the ☰ toggle opens them as a second row. -->
+  <div class="hud-extra" id="hud-extra">
+    <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
+      <span class="tabs-label">Organize</span>
+      <button data-organize="scent" class="active">Scent</button>
+      <button data-organize="chemistry">Chemistry</button>
+    </div>
+    <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
+    <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
+    <button id="reset">Start Over</button>
   </div>
-  <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
-  <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
-  <button id="reset">Start Over</button>
-  <button id="demo-coffee">Demo: Coffee</button>
-  <button id="demo-mocktail">Demo: Citrus mocktail</button>
+  <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
+  <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">•••</button>
 </header>
 <aside class="notes" id="left-panel">
   <div class="legend collapsed" id="legend">
@@ -635,6 +767,25 @@
 </aside>
 <main class="wheel">
   <svg id="svg"></svg>
+  <!-- First-run nudge: shown only while the wheel is empty (no entries). Names the
+       core loop (slide a note → odorants surface) and offers one-click examples.
+       Hidden the moment any note is logged; reappears after Start Over. -->
+  <div id="wheel-nudge" class="wheel-nudge" hidden>
+    <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
+    <div class="nudge-sub">Candidate odorants surface here, ranked by published GC-MS evidence. Click any one for its citations.</div>
+    <div class="nudge-demos">
+      <button type="button" class="nudge-demo" data-demo="coffee">Try: Coffee</button>
+      <button type="button" class="nudge-demo" data-demo="mocktail">Try: Citrus mocktail</button>
+    </div>
+  </div>
+  <!-- Mobile-only "Show compound labels" toggle. On phones the floating dot
+       labels are hidden for a clean dot map; this lets the user opt into
+       leader-line callouts that name each visible compound dot. Hidden on
+       desktop via CSS (see 760px media query). -->
+  <div id="callout-toggle">
+    <input type="checkbox" id="callout-check">
+    <label for="callout-check">Show compound labels</label>
+  </div>
   <!-- Per-pane hide/show toggles. Pinned to the wheel's inner edges so they're
        visible whether the corresponding side pane is shown or hidden. Click to
        collapse the pane against the screen edge; click again to bring it back. -->
@@ -843,7 +994,7 @@ const EDGES = [
   // Floral
   { note: "rose",          cpd: "geraniol",   w: 0.90, cite: "Ohloff 1994 (Scent & Chemistry)." },
   { note: "rose",          cpd: "linalool",   w: 0.55, cite: "Ohloff 1994." },
-  { note: "rose",          cpd: "bdam",       w: 0.70, cite: "Sefton et al. 2011 (β-damascenone, named for Rosa damascena — the Damask rose)." },
+  { note: "rose",          cpd: "bdam",       w: 0.70, cite: "Sefton et al. 2011 (β-damascenone, named for Rosa damascena, the Damask rose)." },
   { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
   { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
   { note: "lavender",      cpd: "linalool",       w: 0.80, cite: "Lis-Balchin 2002 (linalool ~30% lavender oil)." },
@@ -945,18 +1096,18 @@ const EDGES = [
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
 // reads unambiguously even though several classes overlap aroma-family palettes.
 const COMPOUND_CLASS_COLOR = {
-  "terpene":           "#89b482",  // green
-  "pyrazine":          "#a9624a",  // brown
-  "furan":             "#d8a657",  // yellow
-  "thiol":             "#e78a4e",  // orange
-  "ester":             "#d3869b",  // pink
-  "lactone":           "#c79460",  // tan
-  "phenolic-aldehyde": "#bdae93",  // sand
-  "aldehyde":          "#7daea3",  // aqua
-  "ketone":            "#ea6962",  // red
-  "norisoprenoid":     "#e8a0bf",  // light pink
-  "phenol":            "#928374",  // grey
-  "alcohol":           "#a89984"   // sand
+  "terpene":           "#7fc275",  // green
+  "pyrazine":          "#b65b3d",  // brown
+  "furan":             "#dfa850",  // yellow
+  "thiol":             "#eb894a",  // orange
+  "ester":             "#db7e97",  // pink
+  "lactone":           "#d19456",  // tan
+  "phenolic-aldehyde": "#cbb172",  // warm gold (was muddy sand)
+  "aldehyde":          "#6ebdab",  // aqua
+  "ketone":            "#ee665e",  // red
+  "norisoprenoid":     "#d57bb4",  // orchid (was pale pink) — β-ionone is violet-scented
+  "phenol":            "#6096c3",  // blue (was grey) — smoky-medicinal
+  "alcohol":           "#a584c2"   // soft purple (was sand) — earthy/mushroom
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
@@ -972,45 +1123,45 @@ const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color
 // useful per-compound information for a sensory-tasting audience — more useful
 // than molecular formula or biosynthetic pathway. Keyed by compound id.
 const COMPOUND_ORIGINS = {
-  limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates — the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
+  limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates: the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
   linalool:      "Lavender (≈30% of lavender oil), coriander seed (≈60–80% of its essential oil), green coffee beans, chamomile, basil, mint, ginger, citrus peel oils. One of the most widespread floral monoterpenes in nature.",
   myrcene:       "Hops (the resinous-mango note in IPAs), ripe mango, hemp, lemongrass, thyme, parsley, bay. Same molecule across all of them.",
   geraniol:      "Rose petals, geranium leaves, palmarosa, citronella (the candle), lemongrass, lemon, bay, ginger. The same compound makes rose smell like rose and citronella repel mosquitoes.",
   bcaryo:        "Black pepper (where it drives the woody-spicy bite), clove, hops, hemp, basil, cinnamon, rosemary, oregano, copaiba balsam.",
-  apinene:       "Pine resin (the namesake — the smell of a pine forest), rosemary, frankincense, hemp, basil, dill, eucalyptus, juniper berries.",
-  linalylacetate:"Lavender (≈40% of lavender oil) and bergamot — the citrus that makes Earl Grey tea smell like Earl Grey. Also sage and clary sage.",
+  apinene:       "Pine resin (the namesake: the smell of a pine forest), rosemary, frankincense, hemp, basil, dill, eucalyptus, juniper berries.",
+  linalylacetate:"Lavender (≈40% of lavender oil) and bergamot, the citrus that makes Earl Grey tea smell like Earl Grey. Also sage and clary sage.",
   bisabolol:     "Chamomile (the soft-floral note you smell in chamomile tea); candeia tree, the main Brazilian commercial source.",
-  ibmp:          "Bell pepper (where it IS the green-pepper note), peas, asparagus, galbanum resin, robusta coffee, Sauvignon Blanc grapes. Detectable at parts-per-trillion — one of the most potent odorants known.",
-  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn. Doesn't exist in raw coffee beans — built from scratch by the heat of roasting (the Maillard reaction).",
-  dempyr:        "Roasted coffee (a key driver of the deep-roast smell) and baked goods. Another Maillard creation — made by heat, not extracted from any raw ingredient.",
+  ibmp:          "Bell pepper (where it IS the green-pepper note), peas, asparagus, galbanum resin, robusta coffee, Sauvignon Blanc grapes. Detectable at parts-per-trillion, one of the most potent odorants known.",
+  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn. Doesn't exist in raw coffee beans; built from scratch by the heat of roasting (the Maillard reaction).",
+  dempyr:        "Roasted coffee (a key driver of the deep-roast smell) and baked goods. Another Maillard creation, made by heat rather than extracted from any raw ingredient.",
   furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugar, baked goods. A general signature of sugar getting hot enough to brown.",
-  fft:           "Freshly brewed coffee — the sulfur compound that makes coffee smell like coffee. Also roasted sesame and popcorn. Fades within hours of brewing.",
+  fft:           "Freshly brewed coffee: the sulfur compound that makes coffee smell like coffee. Also roasted sesame and popcorn. Fades within hours of brewing.",
   mh3:           "Passionfruit (where it creates the explosive tropical smell), grapefruit, blackcurrant, guava, Sauvignon Blanc.",
-  mmp4:          "Passionfruit, blackcurrant buds, boxwood, Sauvignon Blanc. The same compound is found in cat urine — which is why intense Sauvignon Blanc sometimes gets called 'cat-pee.'",
-  mfthiol:       "Fresh coffee in the first hour after brewing — it fades fast, which makes it a freshness marker. Also aged cheddar and cheese rinds. At higher concentrations: cooked cabbage and cooked seafood.",
-  etbut:         "Pineapple, apple, strawberry, banana. A fruity ester produced when yeast eats sugar — the smell of fruit slightly past ripe.",
-  ethex:         "Berry, apple, pineapple. A heavier fermentation ester — jammier than ethyl butanoate.",
+  mmp4:          "Passionfruit, blackcurrant buds, boxwood, Sauvignon Blanc. The same compound is found in cat urine, which is why intense Sauvignon Blanc sometimes gets called 'cat-pee.'",
+  mfthiol:       "Fresh coffee in the first hour after brewing; it fades fast, which makes it a freshness marker. Also aged cheddar and cheese rinds. At higher concentrations: cooked cabbage and cooked seafood.",
+  etbut:         "Pineapple, apple, strawberry, banana. A fruity ester produced when yeast eats sugar: the smell of fruit slightly past ripe.",
+  ethex:         "Berry, apple, pineapple. A heavier fermentation ester, jammier than ethyl butanoate.",
   iaac:          "Banana (where it IS the banana smell), pear, banana-flavored candy. The signature ester of yeast fermentation.",
   gdecal:        "Peach, apricot, mango, ripe stonefruit, dairy. The soft fuzzy-peach quality on the back of your throat.",
-  gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids — giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
-  sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources — the principal smell of maple syrup IS the principal smell of fenugreek seed.",
-  vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging — a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
-  cinnamald:     "Cinnamon bark — over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon — what most US grocery 'cinnamon' actually is).",
-  hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells — released the instant a leaf is torn.",
-  e2non:         "Stale beer, stale coffee, cucumber, wet cardboard, old books. A marker of oxidative aging — appears as a beverage or paper sits with oxygen.",
-  benzald:       "Bitter almond, marzipan, cherry pits, apricot kernels, almond extract. All the kernels of the stone-fruit family share it — they're botanical cousins.",
+  gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids, giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
+  sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources: the principal smell of maple syrup IS the principal smell of fenugreek seed.",
+  vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging, a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
+  cinnamald:     "Cinnamon bark: over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon, what most US grocery 'cinnamon' actually is).",
+  hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells, released the instant a leaf is torn.",
+  e2non:         "Stale beer, stale coffee, cucumber, wet cardboard, old books. A marker of oxidative aging; it appears as a beverage or paper sits with oxygen.",
+  benzald:       "Bitter almond, marzipan, cherry pits, apricot kernels, almond extract. All the kernels of the stone-fruit family share it; they're botanical cousins.",
   phenylacet:    "Honey (the principal floral-honey note), rose, hyacinth, buckwheat honey, cocoa. Made when the amino acid phenylalanine breaks down under heat or fermentation.",
-  diacetyl:      "Butter (where it IS the butter smell), buttery popcorn, butterscotch, cultured dairy. Made by lactic acid bacteria — the same ones behind dairy cultures and the malolactic fermentation that softens many wines and sour beers.",
+  diacetyl:      "Butter (where it IS the butter smell), buttery popcorn, butterscotch, cultured dairy. Made by lactic acid bacteria, the same ones behind dairy cultures and the malolactic fermentation that softens many wines and sour beers.",
   bdam:          "Rose (the namesake: Rosa damascena, the Damask rose), cooked apple, honey, black tea, tomato, grape, raspberry, tobacco. Also a major contributor to aged beverages.",
   guaiacol:      "Smoke (the principal smoky-medicinal note), charred wood, roasted coffee, smoked foods, smoked teas like Lapsang Souchong. Also extracted from charred wood during barrel aging.",
   vinguai:       "Clove (a key part of clove's bite), smoke, wheat beer (where the yeast builds it from the wort), robusta coffee.",
-  eugenol:       "Clove (the principal aroma — clove is essentially this one molecule), allspice, cinnamon leaf, bay, nutmeg, holy basil (tulsi). Minor in rose.",
-  ionone:        "Violet flowers (the principal odorant), raspberry, blackberry, carrot (a carotenoid breakdown product — same chemistry as the orange pigment), osmanthus, tomato, black tea, dried tobacco.",
+  eugenol:       "Clove (the principal aroma; clove is essentially this one molecule), allspice, cinnamon leaf, bay, nutmeg, holy basil (tulsi). Minor in rose.",
+  ionone:        "Violet flowers (the principal odorant), raspberry, blackberry, carrot (a carotenoid breakdown product, same chemistry as the orange pigment), osmanthus, tomato, black tea, dried tobacco.",
   octen3ol:      "Mushrooms (the signature 'mushroom smell'), blue cheese, lavender, oysters, forest floor after rain.",
-  furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard browning product — the same molecule shows up in roasted coffee, bread crust, and soy sauce, doing different work in each.",
-  cineole:       "Eucalyptus leaves (the principal odorant — koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
-  geosmin:       "Wet soil after rain — the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
-  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth — what creates the chilly sensation even at room temperature."
+  furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard browning product: the same molecule shows up in roasted coffee, bread crust, and soy sauce, doing different work in each.",
+  cineole:       "Eucalyptus leaves (the principal odorant, koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
+  geosmin:       "Wet soil after rain, the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
+  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth, creating the chilly sensation even at room temperature."
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -1187,9 +1338,9 @@ const WAIS_DESCRIPTORS = [
     { word: "apricot",           notes: ["stonefruit"] },
     { word: "nectarine",         notes: ["stonefruit"] },
     { word: "tropical",          notes: ["mango", "passionfruit", "banana", "pineapple"] },
-    { word: "papaya",            notes: ["mango", "passionfruit"] },
+    { word: "papaya",            notes: ["mango"] },
     { word: "guava",             notes: ["passionfruit", "mango"] },
-    { word: "lychee",            notes: ["passionfruit", "rose"] },
+    { word: "lychee",            notes: ["rose"] },
     { word: "overripe fruit",    notes: ["berry", "stonefruit", "apple", "banana", "mango", "cherry"] },
     { word: "dried fruit",       notes: ["stonefruit", "berry", "apple", "mango", "cherry"] },
     { word: "raisin",            notes: ["winey", "stonefruit"] },
@@ -1203,8 +1354,7 @@ const WAIS_DESCRIPTORS = [
     { word: "floral",            notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
     { word: "tea rose",          notes: ["rose", "jasmine"] },
     { word: "orange blossom",    notes: ["jasmine", "lavender", "orange"] },
-    { word: "honeysuckle",       notes: ["jasmine", "rose", "honey"] },
-    { word: "elderflower",       notes: ["chamomile", "lavender"] }
+    { word: "honeysuckle",       notes: ["jasmine", "rose", "honey"] }
   ]},
   { category: "Herbal / Vegetal", entries: [
     { word: "herbal",            notes: ["lavender", "chamomile", "anise", "pine", "mint"] },
@@ -1214,7 +1364,7 @@ const WAIS_DESCRIPTORS = [
     { word: "eucalyptus",        notes: ["pine", "mint"] },
     { word: "sage",              notes: ["pine", "mint", "chamomile", "lavender"] },
     { word: "thyme",             notes: ["pine", "anise", "mint"] },
-    { word: "beetroot",          notes: ["mushroom", "bellpepper"] },
+    { word: "beetroot",          notes: ["mushroom"] },
     { word: "olive",             notes: ["green", "bellpepper"] },
     { word: "green bean",        notes: ["green", "bellpepper"] },
     { word: "artichoke",         notes: ["green", "mushroom"] },
@@ -1357,7 +1507,8 @@ const state = {
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
-  spotlight: null            // null | { kind: "group" | "class", id }
+  spotlight: null,           // null | { kind: "group" | "class", id }
+  showCallouts: false        // mobile callout labels toggle
 };
 
 // ---------- ENTRY HELPERS ----------
@@ -1471,12 +1622,16 @@ const gArcs   = root.append("g").attr("class", "group-arcs");
 const gEdges  = root.append("g").attr("class", "edges");
 const gComps  = root.append("g").attr("class", "compounds");
 const gNotes  = root.append("g").attr("class", "notes");
-const gLabels = root.append("g").attr("class", "labels");
+const gLabels   = root.append("g").attr("class", "labels");
+const gCallouts = root.append("g").attr("class", "callouts");
 
 function layout() {
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
-  R_NOTE = Math.min(W, H) * 0.38;  // ring sized to leave room for the curved outer labels
+  // Tighter ring on narrow viewports: the note/compound anchor labels extend
+  // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
+  // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
+  R_NOTE = Math.min(W, H) * (W < 560 ? 0.32 : 0.38);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
@@ -1492,6 +1647,7 @@ function layout() {
     drawGroupArcs();
     drawNotes();
   }
+  _calloutSetKey = '';   // force callout re-layout on next tick (W/H/R changed)
   updateSimulationCenter();
 }
 
@@ -1661,8 +1817,16 @@ function drawNotes() {
     .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
     .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
     .attr("fill", d => groupColor(d.group))
-    .text(d => d.label);
+    .text(d => wheelNoteLabel(d));
   applySpotlight();
+}
+
+// On a phone-width wheel, long note names (and their "A / B" alternates) run off
+// the edge. Show just the primary token there; the full name stays in the slider
+// panel and the detail card. Re-evaluated on every layout() (incl. on resize).
+function wheelNoteLabel(d) {
+  if (window.matchMedia("(max-width: 760px)").matches) return d.label.split(" / ")[0];
+  return d.label;
 }
 
 function groupColor(gid) {
@@ -1756,6 +1920,7 @@ function drawCompoundAnchors() {
     .on("click", (e, d) => {
       state.selectedCompound = d.id;
       state.selectedNote = null;
+      ensureDetailVisible();
       renderDetail();
       gNotes.selectAll("g.note").classed("selected", x => x.id === state.selectedCompound);
     });
@@ -1816,7 +1981,7 @@ function startSim() {
     .velocityDecay(0.3)
     .force("center", d3.forceX(CX).strength(0.04))
     .force("centerY", d3.forceY(CY).strength(0.04))
-    .force("collide", d3.forceCollide().radius(d => d.radius + 4).strength(0.9))
+    .force("collide", d3.forceCollide().radius(d => d.radius + 13).strength(0.9))
     .force("target", targetForce(0.08))
     .on("tick", tick);
 }
@@ -1897,6 +2062,7 @@ function tick() {
   });
   if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
   updateEdges();
+  updateCallouts();
 }
 
 // Scent mode: compounds float toward their active notes. Render those with
@@ -1904,6 +2070,13 @@ function tick() {
 // compounds populate as confirmed notes feed them.
 function renderCompoundFloats() {
   const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+  // Label de-clutter: every dot stays on the wheel (nothing hidden), but only the
+  // stronger-evidence labels keep a bright resting state. The weak-evidence tail
+  // recedes to a faint label so the center doesn't become an unreadable knot;
+  // hovering any dot raises it and brings its label fully back. Threshold is
+  // relative to the strongest compound on the wheel so it adapts to any input.
+  const maxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
+  const labelThresh = maxScore * 0.33;
   const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
   sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "compound")
@@ -1916,6 +2089,7 @@ function renderCompoundFloats() {
     .on("click", (e, d) => {
       state.selectedCompound = d.id;
       state.selectedNote = null;
+      ensureDetailVisible();
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
     })
@@ -1938,7 +2112,10 @@ function renderCompoundFloats() {
   merged.select("text")
     .attr("x", d => d.radius + 4)
     .attr("y", 3)
-    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedCompound || d.id === hoveredCompound() ? 0.95 : 0.4)
+    .attr("fill-opacity", d =>
+      (d.id === state.selectedCompound || d.id === hoveredCompound()) ? 1
+      : d.score >= labelThresh ? 0.92
+      : 0.16)
     .text(d => d.label);
 
   applySpotlight();
@@ -1998,6 +2175,128 @@ function renderNoteFloats() {
   applySpotlight();
 }
 function hoveredCompound() { return state.hoveredCompound; }
+
+// ---------- COMPOUND CALLOUT LABELS (mobile) ----------
+// When the user enables "Show compound labels", each visible compound dot gets a
+// static leader-line callout: pill label fixed in one of four corner zones
+// (10 / 2 / 4 / 8 o'clock), tail line tracking the jiggling dot in real time.
+// The pill's opacity scales with the compound's evidence weight so dominant
+// compounds read clearly while weak ones recede.
+
+const CALLOUT_ZONES = [
+  { angle: -5*Math.PI/6, textAnchor: 'start', yEdge: 'top'    },  // 10 o'clock (upper-left)
+  { angle: -Math.PI/6,   textAnchor: 'end',   yEdge: 'top'    },  // 2 o'clock (upper-right)
+  { angle:  Math.PI/6,   textAnchor: 'end',   yEdge: 'bottom' },  // 4 o'clock (lower-right)
+  { angle:  5*Math.PI/6, textAnchor: 'start', yEdge: 'bottom' },  // 8 o'clock (lower-left)
+];
+
+let _calloutSetKey = '';
+let _calloutMaxScore = 1;
+
+function isMobileViewport() { return window.matchMedia('(max-width: 760px)').matches; }
+
+function nearestCalloutZone(dotAngle) {
+  let best = 0, bestDist = Infinity;
+  CALLOUT_ZONES.forEach((z, i) => {
+    let d = Math.abs(dotAngle - z.angle);
+    if (d > Math.PI) d = 2 * Math.PI - d;
+    if (d < bestDist) { bestDist = d; best = i; }
+  });
+  return best;
+}
+
+function placeCallouts(renderable) {
+  gCallouts.selectAll('*').remove();
+  if (!renderable.length) return;
+
+  _calloutMaxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
+  const ROW_H = 14, GAP = 3, MARGIN = 8, PILL_PAD = 4, MAX_CHARS = 16, MAX_W = 100;
+
+  // Assign each compound to its nearest zone based on current dot position
+  const bins = [[], [], [], []];
+  renderable.forEach(n => {
+    const angle = Math.atan2(n.y - CY, n.x - CX);
+    bins[nearestCalloutZone(angle)].push(n);
+  });
+  // Stable sort within zone by angular position
+  bins.forEach(bin => bin.sort((a, b) =>
+    Math.atan2(a.y - CY, a.x - CX) - Math.atan2(b.y - CY, b.x - CX)));
+
+  // Compute and store static label positions on each node
+  bins.forEach((nodes, zi) => {
+    const z = CALLOUT_ZONES[zi];
+    const xBase = z.textAnchor === 'start' ? MARGIN : W - MARGIN;
+    nodes.forEach((n, i) => {
+      const label = n.label.length > MAX_CHARS ? n.label.slice(0, MAX_CHARS - 1) + '…' : n.label;
+      const pillW = Math.min(label.length * 5.8 + PILL_PAD * 2, MAX_W);
+      n._clLabel  = label;
+      n._clPillW  = pillW;
+      n._clLx     = xBase;
+      n._clLy     = z.yEdge === 'top'
+        ? MARGIN + ROW_H / 2 + i * (ROW_H + GAP)
+        : H - MARGIN - ROW_H / 2 - i * (ROW_H + GAP);
+      n._clAnchor = z.textAnchor;
+      // Tail origin: inner edge of the pill (side facing wheel center)
+      n._clTailX  = z.textAnchor === 'start'
+        ? xBase + pillW - PILL_PAD          // right edge (left-side zones: tl, bl)
+        : xBase - pillW + PILL_PAD;         // left edge  (right-side zones: tr, br)
+      n._clTailY  = n._clLy;
+    });
+  });
+
+  const all = renderable.filter(n => n._clLx != null);
+  const sel = gCallouts.selectAll('g.callout').data(all, d => d.id);
+  const enter = sel.enter().append('g').attr('class', 'callout');
+  enter.append('line').attr('class', 'callout-tail');
+  enter.append('rect').attr('class', 'callout-bg');
+  enter.append('text').attr('class', 'callout-text');
+
+  const merged = sel.merge(enter);
+  merged.each(function(d) {
+    const rel   = Math.min(1, (d.score || 0) / _calloutMaxScore);
+    const color = compoundColor(d);
+    const pillX = d._clAnchor === 'start' ? d._clLx - PILL_PAD : d._clLx - d._clPillW + PILL_PAD;
+    d3.select(this).select('rect.callout-bg')
+      .attr('x', pillX).attr('y', d._clLy - ROW_H / 2 + 1)
+      .attr('width', d._clPillW).attr('height', ROW_H - 2).attr('rx', 3)
+      .attr('fill', color).attr('fill-opacity', 0.12 + 0.45 * rel);
+    d3.select(this).select('text.callout-text')
+      .attr('x', d._clAnchor === 'start' ? d._clLx + PILL_PAD / 2 : d._clLx - PILL_PAD / 2)
+      .attr('y', d._clLy).attr('text-anchor', d._clAnchor)
+      .attr('fill', color).attr('fill-opacity', 0.45 + 0.55 * rel)
+      .text(d._clLabel);
+  });
+
+  refreshCalloutTails();
+}
+
+function refreshCalloutTails() {
+  gCallouts.selectAll('g.callout').each(function(d) {
+    const rel = Math.min(1, (d.score || 0) / _calloutMaxScore);
+    d3.select(this).select('line.callout-tail')
+      .attr('x1', d._clTailX).attr('y1', d._clTailY)
+      .attr('x2', d.x).attr('y2', d.y)
+      .attr('stroke', compoundColor(d))
+      .attr('stroke-opacity', 0.25 + 0.35 * rel)
+      .attr('stroke-width', 0.75)
+      .attr('stroke-dasharray', '3,3');
+  });
+}
+
+function updateCallouts() {
+  if (!state.showCallouts || !isMobileViewport()) {
+    if (gCallouts.node().childElementCount) gCallouts.selectAll('*').remove();
+    return;
+  }
+  const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+  const key = renderable.map(n => n.id).join(',');
+  if (key !== _calloutSetKey) {
+    _calloutSetKey = key;
+    placeCallouts(renderable);
+  } else {
+    refreshCalloutTails();
+  }
+}
 
 function compoundColor(c) {
   // Color follows the organizing mode. In chemistry mode the dot's color names
@@ -2129,6 +2428,7 @@ function recompute() {
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
+  if (typeof updateNudge === "function") updateNudge();
 }
 
 // ---------- PANEL: notes ----------
@@ -2692,7 +2992,7 @@ function renderCompoundDetail(cpdId, banner) {
 // pane-toggle tab on the wheel's edge. The three header view tabs are
 // presets that flip both per-pane states in combination.
 //   Notes ("note-input")     = sliders visible, results hidden
-//   Reset View ("dashboard") = both visible (the default 3-pane view)
+//   Dashboard ("dashboard")  = both visible (the default 3-pane view)
 //   Compounds ("analysis")   = sliders hidden, results visible
 // data-view keys keep their original names internally to avoid churning
 // every state reference; the user-facing labels are what changed.
@@ -2732,14 +3032,45 @@ function setView(v) {
   applyPaneState();
 }
 
+// Tapping a compound on the wheel should land you on its detail. On desktop the
+// analysis pane is usually already open; if it's collapsed (Notes view) we just
+// reveal it. On mobile only one panel shows at a time, so we switch to the
+// Compounds view — otherwise the tap would select a compound you can't see.
+function ensureDetailVisible() {
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    setView("analysis");
+  } else if (state.detailHidden) {
+    state.detailHidden = false;
+    applyPaneState();
+  }
+}
+
 document.querySelectorAll("#view-tabs button").forEach(b => {
   b.addEventListener("click", () => setView(b.dataset.view));
+});
+
+// Mobile HUD toggle: drop / hide the secondary control cluster (view modes,
+// organize, Go Deeper) as a second header row. Collapsed by default so the title
+// row stays compact and the always-on actions (info / Start Over) never get
+// pushed off-screen. Relayout after toggling since the header's height changes,
+// which resizes the wheel band below it.
+const hudToggleBtn = document.getElementById("hud-toggle");
+hudToggleBtn.addEventListener("click", () => {
+  const header = document.querySelector("header");
+  const open = header.classList.toggle("hud-open");
+  hudToggleBtn.setAttribute("aria-expanded", String(open));
+  hudToggleBtn.textContent = open ? "✕" : "☰";
+  layout();
+  if (sim) sim.alpha(0.4).restart();
 });
 
 // "Organize by" toggle: flip the wheel between scent and chemistry projections.
 function setOrganizeBy(mode) {
   if (mode === state.organizeBy) return;
   state.organizeBy = mode;
+  // Body flag lets CSS treat the two projections differently — used on mobile to
+  // hide the long compound anchor labels that only exist in chemistry mode.
+  document.body.classList.toggle("organize-chemistry", mode === "chemistry");
   document.querySelectorAll("#organize-tabs button").forEach(x =>
     x.classList.toggle("active", x.dataset.organize === mode));
   // Roles swap, so clear stale selection/hover and wipe the wheel layers before
@@ -2772,8 +3103,8 @@ document.getElementById("toggle-detail").addEventListener("click", () => {
   applyPaneState();
 });
 
-// Auto-detect initial view from viewport. Wide screens default to Reset View
-// (the 3-pane dashboard); narrower screens default to Notes (sliders + wheel).
+// Auto-detect initial view from viewport. Wide screens default to Dashboard
+// (the 3-pane view); narrower screens default to Notes (sliders + wheel).
 // User can override via tabs or per-pane toggles anytime; we don't auto-flip
 // on resize. Threshold is 1100px so tablet landscape and half-screen browser
 // windows land in a focus mode instead of a cramped 3-pane.
@@ -2911,6 +3242,18 @@ function applyVisibilityChange(kind) {
   recompute();
 }
 
+// Mobile "Show compound labels" callout toggle
+document.getElementById('callout-check').addEventListener('change', e => {
+  state.showCallouts = e.target.checked;
+  _calloutSetKey = '';
+  if (!state.showCallouts) {
+    gCallouts.selectAll('*').remove();
+  } else {
+    const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
+    placeCallouts(renderable);
+  }
+});
+
 // Collapse / expand legend
 document.getElementById("legend-toggle").addEventListener("click", () => {
   document.getElementById("legend").classList.toggle("collapsed");
@@ -2959,7 +3302,7 @@ document.getElementById("reset").addEventListener("click", () => setNotes([]));
 
 // Coffee — default-mode showcase. No phase tags; just intensities.
 // (Coffee experience is rich enough that most users can use it without phase tagging.)
-document.getElementById("demo-coffee").addEventListener("click", () => setNotes([
+const DEMO_COFFEE = [
   { note: "coffee",     intensity: 9 },
   { note: "toast",      intensity: 6 },
   { note: "smoky",      intensity: 2 },
@@ -2967,13 +3310,13 @@ document.getElementById("demo-coffee").addEventListener("click", () => setNotes(
   { note: "caramel",    intensity: 5 },
   { note: "stonefruit", intensity: 4 },
   { note: "honey",      intensity: 3 }
-]));
+];
 
 // Citrus mocktail — Go Deeper showcase. Mixes default-mode entries with
 // ortho/retro-tagged ones to demonstrate dual-phase logging. Orange is
 // logged in both phases at different intensities (ortho-bright, retro-mild).
 // Loading this demo auto-enables Go Deeper.
-document.getElementById("demo-mocktail").addEventListener("click", () => setNotes([
+const DEMO_MOCKTAIL = [
   { note: "grapefruit",   phase: "ortho", intensity: 9 },
   { note: "orange",       phase: "ortho", intensity: 7 },
   { note: "orange",       phase: "retro", intensity: 5 },
@@ -2982,7 +3325,19 @@ document.getElementById("demo-mocktail").addEventListener("click", () => setNote
   { note: "passionfruit", phase: "retro", intensity: 6 },
   { note: "honey",        intensity: 3 },
   { note: "green",        intensity: 2 }
-]));
+];
+
+// Single entry point for the demos. The example launchers live in the empty-wheel
+// nudge (see FIRST-RUN NUDGE below); `name` is "coffee" | "mocktail".
+function loadDemo(name) { setNotes(name === "mocktail" ? DEMO_MOCKTAIL : DEMO_COFFEE); }
+
+// ---------- FIRST-RUN NUDGE ----------
+// Visible only while the wheel is empty; updateNudge() runs from recompute()
+// (which fires on every entry change) and once at init.
+const wheelNudgeEl = document.getElementById("wheel-nudge");
+function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0; }
+wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
+  b.addEventListener("click", () => loadDemo(b.dataset.demo)));
 
 // ---------- GO DEEPER TOGGLE ----------
 function setGoDeeper(on) {
@@ -3064,7 +3419,7 @@ function tocNav(items) {
 function renderAbout() {
   return `
     <h2>About this tool</h2>
-    <p class="lede">Tell Aroma Wheel what you're smelling or tasting, and it maps your words onto the aromatic compounds most likely behind them — drawn from published gas-chromatography (GC-MS) work in coffee, beer, wine, and mocktails. You report perceptions; the wheel shows compounds.</p>
+    <p class="lede">Tell Aroma Wheel what you're smelling or tasting, and it maps your words onto the aromatic compounds most likely behind them, drawn from published gas-chromatography (GC-MS) work in coffee, beer, wine, and mocktails. You report perceptions; the wheel shows compounds.</p>
 
     ${tocNav([
       ["about-stance", "The stance"],
@@ -3075,23 +3430,23 @@ function renderAbout() {
     ])}
 
     <h3 id="about-stance">The stance</h3>
-    <p>Your perceptions are real, and they change with the moment. The same coffee or glass of wine can read differently depending on the time of day, what you ate, how alert you are. That variation isn't noise — it's signal. This tool never grades you against a "correct answer." What you smell <em>is</em> the data; the compounds it surfaces are plausible contributors, weighted by what the literature says about that combination of notes — not verdicts about what you should have noticed.</p>
+    <p>Your perceptions are real, and they change with the moment. The same coffee or glass of wine can read differently depending on the time of day, what you ate, how alert you are. That variation is signal, not noise. This tool never grades you against a "correct answer." What you smell <em>is</em> the data; the compounds it surfaces are plausible contributors, weighted by what the literature says about that combination of notes, not verdicts about what you should have noticed.</p>
 
     <h3 id="about-results">What the results mean</h3>
     <ul>
-      <li><strong>Intensity</strong> — how strongly your notes point to a compound, adjusted for how easily it's perceived. Some compounds (like furfurylthiol in coffee) read strong even at trace amounts.</li>
-      <li><strong>Confidence</strong> — how many of your notes converge on a compound, and how strongly. Several notes agreeing is high; a lone speculative match is low.</li>
-      <li><strong>Citations</strong> — the published source behind every note-to-compound link. Click any compound in the Compounds pane to see them.</li>
+      <li><strong>Intensity:</strong> how strongly your notes point to a compound, adjusted for how easily it's perceived. Some compounds (like furfurylthiol in coffee) read strong even at trace amounts.</li>
+      <li><strong>Confidence:</strong> how many of your notes converge on a compound, and how strongly. Several notes agreeing is high; a lone speculative match is low.</li>
+      <li><strong>Citations:</strong> the published source behind every note-to-compound link. Click any compound in the Compounds pane to see them.</li>
     </ul>
 
     <h3 id="about-isnt">What this isn't</h3>
-    <p>This is a <strong>suggestion engine, not a lab</strong>. There's no chromatograph in your browser. When you log apple and ethyl butanoate lights up, that means <em>"given what's published about apple aroma, ethyl butanoate is one plausible thing you're picking up"</em> — not that your drink was tested, not that it's <em>the</em> single compound responsible, and not that nothing else is present. Real samples carry dozens or hundreds of volatiles; this models a curated set chosen for usefulness in tasting. What it <em>is</em>: a structured way to think about what might be going on chemically, with the citations as receipts.</p>
+    <p>This is a <strong>suggestion engine, not a lab</strong>. There's no chromatograph in your browser. When you log apple and ethyl butanoate lights up, that means <em>"given what's published about apple aroma, ethyl butanoate is one plausible thing you're picking up."</em> It doesn't mean your drink was tested, that it's <em>the</em> single compound responsible, or that nothing else is present. Real samples carry dozens or hundreds of volatiles; this models a curated set chosen for usefulness in tasting. What it <em>is</em>: a structured way to think about what might be going on chemically, with the citations as receipts.</p>
 
     <h3 id="about-scenes">Behind the scenes</h3>
-    <p>A public, educational project — one static HTML file, source on GitHub, with comments that walk through the design choices as they come up. The interesting part is probably the thinking, not the tool. Current scope is things you ingest: coffee, beer, wine, mocktails. Perfumery sits at the orthonasal "sniff" end of smell, while this tool centers the retronasal end (the post-swallow exhale that's most of what you mean by "flavor"); it's a close adjacent the project might explore later, but isn't supported yet.</p>
+    <p>A public, educational project: one static HTML file, source on GitHub, with comments that walk through the design choices as they come up. The interesting part is probably the thinking, not the tool. Current scope is things you ingest: coffee, beer, wine, mocktails. Perfumery sits at the orthonasal "sniff" end of smell, while this tool centers the retronasal end (the post-swallow exhale that's most of what you mean by "flavor"); it's a close adjacent the project might explore later, but isn't supported yet.</p>
 
     <h3 id="about-maker">About the maker</h3>
-    <p>Built by Nolan — variously a UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, and systems analyst. The wheel sits in the middle of all of those: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
+    <p>Built by Nolan, who works variously as a UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, and systems analyst. The wheel sits in the middle of all of those: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
   `;
 }
 
@@ -3105,6 +3460,7 @@ function renderMethodology() {
 
     ${tocNav([
       ["meth-data", "Data model"],
+      ["meth-sources", "On the sources"],
       ["meth-score", "Slider → score"],
       ["meth-multiplier", "Perception multiplier"],
       ["meth-confidence", "Confidence"],
@@ -3123,7 +3479,12 @@ function renderMethodology() {
       <li><strong>Compounds</strong> (~39 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
       <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
     </ul>
-    <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture — never these numbers.)</p>
+    <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture, never these numbers.)</p>
+
+    <h3 id="meth-sources">A note on the sources</h3>
+    <p>Some citations here are old. Buttery's threshold work is from 1981, Shaw's citrus analysis from 1979, and that's worth being upfront about rather than hiding. For <strong>odor thresholds</strong> especially, the old paper is usually the <em>primary</em> measurement: the original careful determination of how little of a compound a person can detect. Later studies cite those values rather than re-measuring them, so a 1981 reference is often the canonical source, not a stale one. Where a threshold <em>has</em> been revisited, the modern numbers tend to land close: Grosch's 1992 figure for furfurylthiol (~0.005 ppb) still matches what recent work reports.</p>
+    <p>The standard <em>modern</em> compilation that gathers these together is van Gemert's <em>Compilation of Odour Threshold Values in Air and Water</em> (2nd ed., Oliemans Punter &amp; Partners, 2011), which gathers roughly 10,750 threshold values drawn from ~1,780 sources and is the reference work this tool's threshold tiers are sanity-checked against.</p>
+    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, every reference in here is a real paper. This tool would rather show an old-but-real source than a fresh-looking invented one.</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
@@ -3180,30 +3541,30 @@ function renderHowToUse() {
     ])}
 
     <h3 id="use-flow">The basic flow</h3>
-    <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky — whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
+    <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
 
     <h3 id="use-views">Two views of the same thing</h3>
-    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail — and you can flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
-    <p>The <strong>Compounds pane</strong> (grey panel, right) is the same data ranked and textual — a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
+    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
+    <p>The <strong>Compounds pane</strong> (grey panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
-    <p>The header's <strong>Organize</strong> toggle decides what the ring is built from — two views of the same note-to-compound web. The scoring never changes; only the layout and coloring do.</p>
+    <p>The header's <strong>Organize</strong> toggle decides what the ring is built from: two views of the same note-to-compound web. The scoring never changes; only the layout and coloring do.</p>
     <ul>
       <li><strong>Scent</strong> (default). The rim is your <em>note groups</em> (Fruity, Floral, Roasted…). Compounds float inward toward the notes pulling on them, each tinted by the scent family it belongs to. Best for "what compounds sit behind what I'm tasting?"</li>
-      <li><strong>Chemistry</strong>. The rim becomes <em>chemical classes</em> (terpene, ester, thiol…), with every compound parked in its class like a periodic table — and now your <em>notes</em> float inward toward the chemistry they evoke. Best for "what kinds of molecules am I noticing?", or for spotting that, say, caramel and chocolate are chemical neighbors even though they live in different scent groups.</li>
+      <li><strong>Chemistry</strong>. The rim becomes <em>chemical classes</em> (terpene, ester, thiol…), with every compound parked in its class like a periodic table, and now your <em>notes</em> float inward toward the chemistry they evoke. Best for "what kinds of molecules am I noticing?", or for spotting that, say, caramel and chocolate are chemical neighbors even though they live in different scent groups.</li>
     </ul>
 
     <h3 id="use-controls">Controls</h3>
     <ul>
-      <li><strong>Sliders pane (left).</strong> Your input — one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
+      <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
-      <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off — and hover any row to halo just those items on the wheel and fade the rest.</li>
-      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Reset View</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown.</li>
+      <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
+      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Dashboard</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log — and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
+    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
 
     <h3 id="use-repeat">Repeat-tasting</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
@@ -3256,7 +3617,7 @@ function renderTypesOfAroma() {
       const matched = matches(c.label) || matches(c.id) || matches(c.class) || matches(origin) || matches(c.note || "");
       if (matched) totalMatched++;
       const sigPill = c.specificity === "signature"
-        ? `<span class="info-entry-pill" style="border-color:#d3869b;color:#d3869b">signature</span>` : '';
+        ? `<span class="info-entry-pill" style="border-color:#db7e97;color:#db7e97">signature</span>` : '';
       return `<div class="info-entry ${matched ? '' : 'hidden'}" data-entry-type="compound" data-cpd="${c.id}">
         <div class="info-entry-head">
           <span class="info-entry-name">${c.label}</span>
@@ -3427,7 +3788,7 @@ function renderWaisChips() {
 // so a note suggested by three chips ends up at 9, a note from one chip at 3.
 function renderWaisSuggestionsMulti() {
   if (waisSelected.size === 0) {
-    waisSuggestionsEl.innerHTML = `<div class="wais-suggestions-empty">Click chips above to see suggested notes. Select multiple to combine — the more descriptors suggest the same note, the higher its starting intensity if you add them.</div>`;
+    waisSuggestionsEl.innerHTML = `<div class="wais-suggestions-empty">Click chips above to see suggested notes. Select multiple to combine: the more descriptors suggest the same note, the higher its starting intensity if you add them.</div>`;
     return;
   }
 
@@ -3525,7 +3886,7 @@ buildNotesPanel();
 layout();
 startSim();
 recompute();
-autoDetectViewMode();  // pick Reset View or Notes based on viewport width
+autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
 
 window.addEventListener("resize", () => {
   layout();

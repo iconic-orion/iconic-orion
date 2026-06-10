@@ -22,7 +22,7 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-*(none active — nothing awaiting review)*
+- **`claude/thirsty-dijkstra-de159b`** — draft PR **[#8](https://github.com/iconic-orion/iconic-orion/pull/8)** against `prototype`. UX pass from the 2026-06-09 usability review: first-run nudge on the empty wheel (enthusiast-pitched, hosts the demo buttons), mobile breakpoint (≤760px stacks to one column), float-label de-clutter (wider collide, weak labels recede; phones get a clean dot map), header diet ("Reset View" → "Dashboard", demos out of the header). **Held in draft** — Nolan is landing a few more overall-UI fixes on this branch before merge. Worktree: `.claude/worktrees/thirsty-dijkstra-de159b/`.
 
 Recently merged into `prototype` (both now live on aromawheel.net):
 - **`feature/compound-lens`** — PR **#7** (merged 2026-06-06, merge commit `bdb8039`). The wheel's **"Organize by: Scent | Chemistry"** lens: scent-family tint on compounds + legend hover spotlight (feature A), and a full dual layout where chemical-class arcs replace note-group arcs and notes float toward the chemistry they evoke (feature C). Plus the curved, color-coded category labels seated inside the ring. Branch deleted.
