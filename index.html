@@ -950,7 +950,7 @@ const COMPOUNDS = [
   { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002).", note: "Lavender principal. About 40% of lavender oil. Floral-fresh." },
   { id: "bisabolol",     label: "α-Bisabolol",       class: "terpene",   threshold: "medium",   specificity: "signature", thresholdSrc: "~22 ppb (Mann & Staba 1986).", note: "Chamomile principal sesquiterpenol; soft floral-herbal." },
   // pyrazines
-  { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", specificity: "signature", thresholdSrc: "~2 ng/L water (Allen, Lacey, Boyd 1991).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
+  { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", specificity: "signature", thresholdSrc: "~2 ng/L water (Buttery, Seifert, Guadagni & Ling 1969).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
   { id: "edmpyr",        label: "2-Ethyl-3,5-dimethylpyrazine", class: "pyrazine", threshold: "low", specificity: "shared", thresholdSrc: "~0.04 ppb in water (Czerny et al. 2008).", note: "Earthy-roasted; key coffee odorant (Czerny et al.)." },
   { id: "dempyr",        label: "2,3-Diethyl-5-methylpyrazine", class: "pyrazine", threshold: "very-low", specificity: "shared", thresholdSrc: "~0.001 ppb (Czerny et al. 2008).", note: "Earthy-nutty roast; potent coffee aroma." },
   // furans / thiols
@@ -971,7 +971,7 @@ const COMPOUNDS = [
   { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
   { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
   { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
-  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau & Collin 2003).", note: "Cardboard/stale; beer & coffee staling marker." },
+  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; beer & coffee staling marker." },
   { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
   { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
   // ketones / norisoprenoids
@@ -982,7 +982,7 @@ const COMPOUNDS = [
   { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
   { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." },
   // Norisoprenoids
-  { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Naef et al. 2011).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents." },
+  { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Ahmed, Dennison, Dougherty & Shibamoto 1978).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents." },
   // Alcohols (non-terpene)
   { id: "octen3ol",      label: "1-Octen-3-ol",      class: "alcohol",   commonName: "mushroom alcohol", threshold: "low",      specificity: "signature", thresholdSrc: "~10 ppb (Combet et al. 2006).", note: "The 'mushroom alcohol.' Fresh-mushroom, forest-floor, blue-cheese accents." },
   // More furans (Maillard / fruit)
@@ -1003,7 +1003,7 @@ const EDGES = [
   { note: "grapefruit",  cpd: "limonene",  w: 0.55, cite: "Shaw 1979." },
   { note: "lemon",       cpd: "linalool",  w: 0.35, cite: "Flament 2002 (Coffee Flavor Chemistry)." },
   // Berry
-  { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Jiang & Zhang 2010 (berry esters)." },
+  { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Klesk & Qian 2003 (blackberry esters incl. ethyl hexanoate)." },
   { note: "berry",       cpd: "bdam",      w: 0.55, cite: "Sefton et al. 2011 (β-damascenone in wine/fruit)." },
   // Stonefruit / apple
   { note: "stonefruit",  cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
@@ -1057,7 +1057,7 @@ const EDGES = [
   { note: "almond",   cpd: "benzald",  w: 0.90, cite: "Ohloff 1994 (bitter-almond)." },
   { note: "hazelnut", cpd: "edmpyr",   w: 0.65, cite: "Czerny et al. 1999 (alkyl pyrazines, nutty)." },
   { note: "hazelnut", cpd: "dempyr",   w: 0.55, cite: "Czerny et al. 1999." },
-  { note: "peanut",   cpd: "edmpyr",   w: 0.70, cite: "Buttery et al. 1990 (peanut pyrazines)." },
+  { note: "peanut",   cpd: "edmpyr",   w: 0.70, cite: "Mason, Johnson & Hamming 1966 (roasted-peanut pyrazines)." },
 
   // Earthy
   { note: "woody",      cpd: "bcaryo",   w: 0.70, cite: "Jirovetz et al. 2002." },
@@ -1066,7 +1066,7 @@ const EDGES = [
   { note: "pine",       cpd: "myrcene",  w: 0.45, cite: "Ohloff 1994." },
   { note: "mushroom",   cpd: "hexanal",  w: 0.25, cite: "Combet et al. 2006 (C8 vs C6; partial overlap)." },
   { note: "green",      cpd: "hexanal",  w: 0.90, cite: "Hatanaka 1993 (green leaf volatiles, C6 aldehydes)." },
-  { note: "bellpepper", cpd: "ibmp",     w: 0.95, cite: "Allen, Lacey, Boyd 1991 (IBMP odor threshold ~2 ng/L)." },
+  { note: "bellpepper", cpd: "ibmp",     w: 0.95, cite: "Buttery, Seifert, Guadagni & Ling 1969 (IBMP in bell pepper; odor threshold ~2 ng/L)." },
   { note: "bellpepper", cpd: "myrcene",  w: 0.20, cite: "Buttery et al. 1969 (terpene contribution)." },
   { note: "tobacco",    cpd: "bdam",     w: 0.75, cite: "Sefton et al. 2011 (β-damascenone: cooked apple, honey, tobacco)." },
   { note: "tobacco",    cpd: "guaiacol", w: 0.35, cite: "Maga 1978 (phenolic notes in cured/smoked tobacco)." },
@@ -1076,7 +1076,7 @@ const EDGES = [
   { note: "vanilla",   cpd: "gnonal",    w: 0.45, cite: "Lee & Noble 2003 (oak lactones, vanilla-creamy)." },
   { note: "caramel",   cpd: "furfural",  w: 0.55, cite: "Flament 2002." },
   { note: "caramel",   cpd: "sotolon",   w: 0.55, cite: "Pham et al. 1995." },
-  { note: "honey",     cpd: "phenylacet",w: 0.85, cite: "Bonvehí 2005 (phenylacetaldehyde, honey marker)." },
+  { note: "honey",     cpd: "phenylacet",w: 0.85, cite: "Serra Bonvehí & Ventura Coll 2003 (phenylacetaldehyde, honey marker)." },
   { note: "honey",     cpd: "bdam",      w: 0.45, cite: "Sefton et al. 2011." },
   { note: "chocolate", cpd: "edmpyr",    w: 0.70, cite: "Counet et al. 2002 (cocoa pyrazines)." },
   { note: "chocolate", cpd: "phenylacet",w: 0.55, cite: "Counet et al. 2002." },
@@ -1091,10 +1091,10 @@ const EDGES = [
   { note: "yeasty",  cpd: "furfural", w: 0.30, cite: "Flament 2002 (bread crust)." },
   { note: "sulfury", cpd: "mfthiol",  w: 0.90, cite: "Mayer, Czerny, Grosch 2000 (methanethiol in fresh coffee)." },
   { note: "sulfury", cpd: "fft",      w: 0.35, cite: "Blank et al. 1992." },
-  { note: "cardboard", cpd: "e2non",  w: 0.95, cite: "Lermusieau & Collin 2003 ((E)-2-nonenal, beer staling)." },
+  { note: "cardboard", cpd: "e2non",  w: 0.95, cite: "Lermusieau, Noël, Liégeois & Collin 1999 ((E)-2-nonenal, beer staling)." },
 
   // ---- New notes' edges (Pineapple, Cherry, Mint) ----
-  { note: "pineapple",  cpd: "etbut",    w: 0.80, cite: "Berger 2007; Steingass 2017 (ethyl butanoate, pineapple ester profile)." },
+  { note: "pineapple",  cpd: "etbut",    w: 0.80, cite: "Berger 2007; Steingass, Carle & Schmarr 2015 (ethyl butanoate, pineapple ester profile)." },
   { note: "pineapple",  cpd: "ethex",    w: 0.55, cite: "Berger 2007 (ethyl hexanoate in pineapple)." },
   { note: "pineapple",  cpd: "iaac",     w: 0.40, cite: "Berger 2007 (isoamyl acetate, banana-pineapple ester crossover)." },
   { note: "pineapple",  cpd: "furaneol", w: 0.65, cite: "Pickenhagen et al. 1981 (furaneol in pineapple)." },
@@ -1107,8 +1107,8 @@ const EDGES = [
   { note: "mint",       cpd: "cineole",  w: 0.40, cite: "Lawrence 2007 (1,8-cineole, minor mint constituent)." },
 
   // ---- New compounds' edges to existing notes ----
-  { note: "violet",     cpd: "ionone",   w: 0.85, cite: "Naef et al. 2011 (β-ionone, violet principal odorant)." },
-  { note: "berry",      cpd: "ionone",   w: 0.40, cite: "Schreier 1984 (ionones in raspberry, blackberry)." },
+  { note: "violet",     cpd: "ionone",   w: 0.85, cite: "Ohloff 1994 (β-ionone, violet principal odorant)." },
+  { note: "berry",      cpd: "ionone",   w: 0.40, cite: "Klesk & Qian 2003 (α-/β-ionone important to blackberry aroma)." },
 
   { note: "mushroom",   cpd: "octen3ol", w: 0.90, cite: "Combet et al. 2006 (1-octen-3-ol, mushroom alcohol)." },
   { note: "mushroom",   cpd: "geosmin",  w: 0.70, cite: "Combet et al. 2006 (geosmin in some mushroom species)." },
