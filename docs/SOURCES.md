@@ -119,6 +119,18 @@ more compounds. Value shown is the figure quoted in the tool.
 | Buttery et al. 1995 | Furaneol (HDMF) | ~10 ppb |
 | Darriet et al. 2000 | Geosmin | ~0.01 ppb in water |
 | Lawrence 2007 | Menthol | ~50 ppb |
+| Perry & Hayes 2016 | Methyl anthranilate | ~300 ppb |
+| Larsen & Poll 1990 | Raspberry ketone | ~1-10 ppb |
+| Jennings & Sevenants 1964 | Ethyl (E,Z)-2,4-decadienoate | Bartlett-pear character impact |
+| Schieberle 1990 | (E,Z)-2,6-Nonadienal | ~0.01 ppb in water |
+| Buttery, Ling, Juliano & Turnbaugh 1983 | 2-Acetyl-1-pyrroline | ~0.1 ppb in water |
+| Pittet, Rittersbacher & Muralidhara 1970 | Maltol, ethyl maltol | caramel/cotton-candy; ethyl maltol roughly an order of magnitude stronger than maltol |
+| Takeoka et al. 1995 | cis-3-Hexen-1-ol | ~70 ppb |
+| Guth 1997 | 2-Phenylethanol | ~10 mg/L in wine |
+| Ohloff 1994 | trans-Anethole | anise/fennel principal, 80-95% of oil |
+| Curioni & Bosset 2002 | Butyric acid, isovaleric acid | cheese free-fatty-acid markers |
+| Buser, Zanier & Tanner 1982 | TCA (2,4,6-trichloroanisole) | ~4 ng/L |
+| Gunst & Verzele 1978 | MBT (3-methyl-2-butene-1-thiol) | ~4 ng/L in beer |
 
 ### Note→compound linkage sources
 
@@ -170,6 +182,17 @@ once per source, with the note links it supports.
 | Friedman 2017 | cinnamon → cinnamaldehyde / benzaldehyde |
 | Hatanaka 1993 | green → hexanal (green leaf volatiles) |
 | Lawrence 2007 | mint → menthol / 1,8-cineole |
+| Wang & De Luca 2005 | grape / concord → methyl anthranilate |
+| Larsen & Poll 1990 | raspberry → raspberry ketone / β-ionone |
+| Jennings & Sevenants 1964 | apple / pear → ethyl (E,Z)-2,4-decadienoate |
+| Schieberle 1990 | melon / cucumber → (E,Z)-2,6-nonadienal / cis-3-hexen-1-ol |
+| Schieberle 1991 | popcorn / fresh bread → 2-acetyl-1-pyrroline |
+| Pittet, Rittersbacher & Muralidhara 1970 | cotton candy / caramel → maltol / ethyl maltol |
+| Ohloff 1994 | anise → trans-anethole |
+| Serra Bonvehí & Ventura Coll 2003 | honey → 2-phenylethanol |
+| Curioni & Bosset 2002 | cheesy / sweaty → butyric acid / isovaleric acid |
+| Buser, Zanier & Tanner 1982 | musty / corked → TCA |
+| Gunst & Verzele 1978 | skunky / lightstruck → MBT |
 
 > **On the short-form linkage cites:** sources in the linkage table that are not
 > in the verified-full-bibliography table above (e.g. Flament 2002, Ohloff 1994,
@@ -198,7 +221,12 @@ Flament 2002 · Ohloff 1994 · Dimick & Hoskin 1983 · Salmon et al. 1996 ·
 Pino & Mesa 2006 · Engel & Tressl 1991 · Tominaga et al. 2000 · Lee & Noble 2003 ·
 Ranadive 1992 · Counet et al. 2002 · Underwood & Filipic 1963 ·
 Francis & Newton 2005 · Berger 2007 · Pickenhagen et al. 1981 ·
-Buttery et al. 1969 · Tressl & Friese 1978.
+Buttery et al. 1969 · Tressl & Friese 1978 · Perry & Hayes 2016 ·
+Larsen & Poll 1990 · Jennings & Sevenants 1964 · Schieberle 1990 ·
+Buttery, Ling, Juliano & Turnbaugh 1983 · Pittet, Rittersbacher &
+Muralidhara 1970 · Takeoka et al. 1995 · Guth 1997 · Curioni & Bosset 2002 ·
+Buser, Zanier & Tanner 1982 · Gunst & Verzele 1978 · Wang & De Luca 2005 ·
+Schieberle 1991.
 
 ### ✗ Original cite couldn't be verified — replacement found (✓ applied to index.html 2026-06-11)
 

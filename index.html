@@ -890,6 +890,9 @@ const NOTES = [
   { id: "cherry",      label: "Cherry",             group: "fruity",   common: true  },
   { id: "mango",       label: "Mango",              group: "fruity",   common: false },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false },
+  { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true  },
+  { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true  },
+  { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true  },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true  },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
@@ -901,6 +904,7 @@ const NOTES = [
   { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true  },
   { id: "smoky",       label: "Smoky",              group: "roasted",  common: true  },
   { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true  },
+  { id: "popcorn",     label: "Popcorn / fresh bread", group: "roasted", common: true },
   // spice
   { id: "clove",       label: "Clove",              group: "spice",    common: true  },
   { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true  },
@@ -924,12 +928,16 @@ const NOTES = [
   { id: "honey",       label: "Honey",              group: "sweet",    common: true  },
   { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true  },
   { id: "maple",       label: "Maple / brown sugar",group: "sweet",    common: true  },
+  { id: "cottoncandy", label: "Cotton candy",       group: "sweet",    common: true  },
   // fermented
   { id: "winey",       label: "Winey",              group: "fermented",common: false },
   { id: "buttery",     label: "Buttery",            group: "fermented",common: true  },
   { id: "yeasty",      label: "Yeasty / bready",    group: "fermented",common: true  },
   { id: "sulfury",     label: "Sulfury",            group: "fermented",common: false },
-  { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false }
+  { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false },
+  { id: "cheesy",      label: "Cheesy / sweaty",    group: "fermented",common: true  },
+  { id: "musty",       label: "Musty / corked",     group: "fermented",common: false },
+  { id: "skunky",      label: "Skunky",             group: "fermented",common: false }
 ];
 
 // Compounds with class, literature anchor, odor-threshold tier, and specificity.
@@ -990,7 +998,22 @@ const COMPOUNDS = [
   // More terpenes (eucalyptol, geosmin, menthol)
   { id: "cineole",       label: "1,8-Cineole",       class: "terpene",   commonName: "eucalyptol", threshold: "low",      specificity: "signature", thresholdSrc: "~12 ppb (Lis-Balchin 2002).", note: "Eucalyptol. Eucalyptus principal; also rosemary, sage, bay leaves, mint family." },
   { id: "geosmin",       label: "Geosmin",           class: "terpene",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Darriet et al. 2000).", note: "The 'wet earth' compound. Petrichor, beetroot, mushroom, cork taint." },
-  { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." }
+  { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." },
+  // ---- Library expansion: everyday-experience compounds ----
+  { id: "methanthr",     label: "Methyl anthranilate", class: "ester",   commonName: "methyl 2-aminobenzoate", threshold: "medium", specificity: "signature", thresholdSrc: "~300 ppb (Perry & Hayes 2016).", note: "The 'foxy' grape note. Character-impact compound of Concord / Vitis labrusca grapes and grape candy/soda; the 'cotton-candy grape' smell." },
+  { id: "raspketone",    label: "Raspberry ketone",  class: "ketone",    commonName: "4-(4-hydroxyphenyl)butan-2-one", threshold: "low", specificity: "signature", thresholdSrc: "~1–10 ppb (Larsen & Poll 1990).", note: "Character-impact compound of raspberry; sweet, jammy raspberry-preserve aroma." },
+  { id: "pearester",     label: "Ethyl (E,Z)-2,4-decadienoate", class: "ester", commonName: "pear ester", threshold: "low", specificity: "signature", thresholdSrc: "Bartlett-pear character impact (Jennings & Sevenants 1964).", note: "The 'pear ester.' Defines ripe Bartlett/Williams pear; green-fruity." },
+  { id: "nonadienal",    label: "(E,Z)-2,6-Nonadienal", class: "aldehyde", commonName: "cucumber / violet-leaf aldehyde", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Schieberle 1990).", note: "Fresh cucumber and melon rind; watery-green. Also violet leaf." },
+  { id: "acetylpyrroline", label: "2-Acetyl-1-pyrroline", class: "pyrroline", commonName: "2-AP", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.1 ppb in water (Buttery et al. 1983).", note: "Popcorn, fresh bread crust, basmati & jasmine rice. One molecule, the whole 'warm baked' smell." },
+  { id: "maltol",        label: "Maltol",            class: "pyranone",  commonName: "3-hydroxy-2-methyl-4H-pyranone", threshold: "high", specificity: "shared", thresholdSrc: "Caramel; relatively high threshold (Pittet, Rittersbacher & Muralidhara 1970).", note: "Warm caramel / cotton-candy / freshly-baked. A Maillard product in roasted malt, coffee, cocoa, and bread crust." },
+  { id: "ethylmaltol",   label: "Ethyl maltol",      class: "pyranone",  threshold: "medium", specificity: "signature", thresholdSrc: "Synthetic; ~order of magnitude stronger than maltol (Pittet et al. 1970).", note: "Synthetic flavorant (does not occur in nature). The intense cotton-candy / candy-floss smell of spun sugar, sodas, and confectionery." },
+  { id: "cishexenol",    label: "cis-3-Hexen-1-ol",  class: "alcohol",   commonName: "leaf alcohol", threshold: "low", specificity: "signature", thresholdSrc: "~70 ppb (Takeoka et al. 1995).", note: "The smell of fresh-cut grass and crushed leaves; sharper and greener than hexanal." },
+  { id: "phenethanol",   label: "2-Phenylethanol",   class: "alcohol",   commonName: "phenethyl alcohol", threshold: "high", specificity: "shared", thresholdSrc: "~10 mg/L in wine (Guth 1997).", note: "Soft rose-and-honey. Abundant in wine, beer, coffee, tea, and honey; a major rosy alcohol." },
+  { id: "anethole",      label: "trans-Anethole",    class: "phenylpropene", threshold: "low", specificity: "signature", thresholdSrc: "Anise/fennel principal, 80–95% of oil (Ohloff 1994).", note: "Sweet anise / licorice / fennel. Principal odorant of anise, star anise, fennel, and tarragon." },
+  { id: "butyricacid",   label: "Butyric acid",      class: "acid",      commonName: "butanoic acid", threshold: "low", specificity: "signature", thresholdSrc: "Cheese free-fatty-acid (Curioni & Bosset 2002).", note: "Sharp cheese tang — the smell of parmesan (and, at strength, of vomit). A fermentation / lipolysis product." },
+  { id: "isovalericacid",label: "Isovaleric acid",   class: "acid",      commonName: "3-methylbutanoic acid", threshold: "low", specificity: "signature", thresholdSrc: "Sweaty/cheese FFA (Curioni & Bosset 2002).", note: "Sweaty, gym-sock, aged-cheese. The reference standard flavorists use for 'dirty socks.'" },
+  { id: "tca",           label: "TCA",               class: "haloanisole", commonName: "2,4,6-trichloroanisole", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L (Buser, Zanier & Tanner 1982).", note: "'Corked.' Musty, wet-cardboard, damp-basement; the mold-derived fault that flattens a wine. Perceptible at parts-per-trillion." },
+  { id: "mbt",           label: "MBT",               class: "thiol",     commonName: "3-methyl-2-butene-1-thiol", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L in beer (Gunst & Verzele 1978).", note: "Skunky. The lightstruck-beer thiol — and chemically the same family as skunk spray. Formed when light hits hop compounds." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1119,7 +1142,44 @@ const EDGES = [
   { note: "coffee",     cpd: "furaneol", w: 0.35, cite: "Czerny et al. 1999 (furaneol in roasted coffee)." },
 
   { note: "pine",       cpd: "cineole",  w: 0.40, cite: "Lis-Balchin 2002 (1,8-cineole in pine and conifer families)." },
-  { note: "lavender",   cpd: "cineole",  w: 0.30, cite: "Lis-Balchin 2002 (1,8-cineole, minor lavender constituent)." }
+  { note: "lavender",   cpd: "cineole",  w: 0.30, cite: "Lis-Balchin 2002 (1,8-cineole, minor lavender constituent)." },
+
+  // ---- Library expansion edges ----
+  // Grape / concord
+  { note: "grape",      cpd: "methanthr", w: 0.90, cite: "Wang & De Luca 2005 (methyl anthranilate, Concord 'foxy' impact)." },
+  { note: "grape",      cpd: "bdam",      w: 0.40, cite: "Sefton et al. 2011 (β-damascenone in grape)." },
+  // Raspberry
+  { note: "raspberry",  cpd: "raspketone", w: 0.92, cite: "Larsen & Poll 1990 (raspberry ketone, character impact)." },
+  { note: "raspberry",  cpd: "ionone",    w: 0.50, cite: "Larsen & Poll 1990 (β-ionone among key raspberry odorants)." },
+  { note: "raspberry",  cpd: "furaneol",  w: 0.40, cite: "Schwab et al. 2008 (furaneol in Rubus berries)." },
+  // Pear (rides the existing Apple / pear note)
+  { note: "apple",      cpd: "pearester", w: 0.60, cite: "Jennings & Sevenants 1964 (ethyl 2,4-decadienoate, Bartlett pear)." },
+  // Melon / cucumber
+  { note: "melon",      cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, cucumber & muskmelon)." },
+  { note: "melon",      cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
+  // Popcorn / fresh bread
+  { note: "popcorn",    cpd: "acetylpyrroline", w: 0.95, cite: "Schieberle 1991 (2-acetyl-1-pyrroline, popcorn primary odorant)." },
+  { note: "toast",      cpd: "acetylpyrroline", w: 0.55, cite: "Schieberle 1991 (2-AP in wheat-bread crust)." },
+  { note: "coffee",     cpd: "acetylpyrroline", w: 0.30, cite: "Czerny et al. 1999 (2-AP a minor roasted-coffee odorant)." },
+  // Cotton candy
+  { note: "cottoncandy", cpd: "ethylmaltol", w: 0.90, cite: "Pittet et al. 1970 (ethyl maltol, intense cotton-candy)." },
+  { note: "cottoncandy", cpd: "maltol",     w: 0.70, cite: "Pittet, Rittersbacher & Muralidhara 1970 (maltol, caramel/cotton-candy)." },
+  { note: "caramel",    cpd: "maltol",     w: 0.60, cite: "Pittet et al. 1970 (maltol, caramel character)." },
+  // Green / cut grass
+  { note: "green",      cpd: "cishexenol", w: 0.85, cite: "Hatanaka 1993 (cis-3-hexenol, green leaf volatile)." },
+  // Rose / honey (2-phenylethanol)
+  { note: "rose",       cpd: "phenethanol", w: 0.70, cite: "Ohloff 1994 (2-phenylethanol, rose alcohol)." },
+  { note: "honey",      cpd: "phenethanol", w: 0.50, cite: "Serra Bonvehí & Ventura Coll 2003 (2-phenylethanol, honey marker)." },
+  // Anise / licorice (anethole — the principal, replacing the eugenol stretch)
+  { note: "anise",      cpd: "anethole",  w: 0.95, cite: "Ohloff 1994 (anethole, anise/fennel principal)." },
+  // Cheesy / sweaty
+  { note: "cheesy",     cpd: "butyricacid", w: 0.85, cite: "Curioni & Bosset 2002 (butyric acid, cheese FFA)." },
+  { note: "cheesy",     cpd: "isovalericacid", w: 0.82, cite: "Curioni & Bosset 2002 (isovaleric acid, sweaty/cheese FFA)." },
+  // Musty / corked
+  { note: "musty",      cpd: "tca",       w: 0.95, cite: "Buser, Zanier & Tanner 1982 (TCA, cork taint)." },
+  { note: "musty",      cpd: "geosmin",   w: 0.50, cite: "Darriet et al. 2000 (geosmin, musty/earthy crossover)." },
+  // Skunky
+  { note: "skunky",     cpd: "mbt",       w: 0.95, cite: "Gunst & Verzele 1978 (MBT, lightstruck/skunky thiol)." }
 ];
 
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
@@ -1136,14 +1196,19 @@ const COMPOUND_CLASS_COLOR = {
   "ketone":            "#ee665e",  // red
   "norisoprenoid":     "#d57bb4",  // orchid (was pale pink) — β-ionone is violet-scented
   "phenol":            "#6096c3",  // blue (was grey) — smoky-medicinal
-  "alcohol":           "#a584c2"   // soft purple (was sand) — earthy/mushroom
+  "alcohol":           "#a584c2",  // soft purple (was sand) — earthy/mushroom
+  "phenylpropene":     "#8fb56a",  // herb-green — anise/clove phenylpropanoids
+  "pyranone":          "#d98f5c",  // caramel — maltol sweet Maillard ring
+  "pyrroline":         "#c2693f",  // roast brown — 2-acetyl-1-pyrroline
+  "acid":              "#9aa63d",  // olive — short-chain fatty acids (cheese)
+  "haloanisole":       "#7d8a99"   // slate — musty chloroanisole faults
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
 // organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
 // get a short ring label so the 12 arc labels don't collide.
 const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
-const CLASS_SHORT = { "phenolic-aldehyde": "phen-ald", "norisoprenoid": "norisopr." };
+const CLASS_SHORT = { "phenolic-aldehyde": "phen-ald", "norisoprenoid": "norisopr.", "phenylpropene": "phenylprop.", "haloanisole": "halo-anisole" };
 const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color: COMPOUND_CLASS_COLOR[id] }));
 
 // ---------- INFO-TAB CONTENT ----------
@@ -1190,7 +1255,21 @@ const COMPOUND_ORIGINS = {
   furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard browning product: the same molecule shows up in roasted coffee, bread crust, and soy sauce, doing different work in each.",
   cineole:       "Eucalyptus leaves (the principal odorant, koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
   geosmin:       "Wet soil after rain, the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
-  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth, creating the chilly sensation even at room temperature."
+  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth, creating the chilly sensation even at room temperature.",
+  methanthr:     "Concord and other 'slip-skin' American grapes (Vitis labrusca) — the grape-jelly, grape-soda, 'cotton-candy grape' smell. Also a trace in citrus blossom and some honeys. Largely absent from European wine grapes.",
+  raspketone:    "Raspberries, where it's the defining aroma; also smaller amounts in cranberry, blackberry, and rhubarb. Famous enough as a flavor word that it's sold as a standalone fragrance/flavor chemical.",
+  pearester:     "Ripe Bartlett (Williams) pears above all, where it defines the 'pear' smell; also apple, quince, and Concord grape in traces. One of the most pear-specific molecules known.",
+  nonadienal:    "Fresh cucumber and melon rind, where it's the lead aroma; violet leaves, and the 'green' top note of many vegetables. Forms instantly when cucumber tissue is cut.",
+  acetylpyrroline: "Popcorn, the crust of fresh bread, and cooked aromatic rice (basmati, jasmine). Also pandan leaves and a trace in some breads and beers. Forms from proline during baking and roasting.",
+  maltol:        "Roasted malt, fresh bread crust, roasted coffee and cocoa, caramelized sugar, and toasted cereal. A natural product of sugar browning — the 'freshly baked' warmth.",
+  ethylmaltol:   "Does not occur in nature — a synthetic flavorant. You meet it constantly anyway: cotton candy, candy, fruit sodas, and sweet bakery products, where it supplies the intense spun-sugar smell.",
+  cishexenol:    "Fresh-cut grass, crushed green leaves, green tea, unripe fruit, and the green top note of olive oil. Released the instant leaf tissue is damaged — the literal 'smell of mowing the lawn.'",
+  phenethanol:   "Rose petals (a principal component of rose oil), plus honey, and large amounts made by yeast — so it's abundant in wine, beer, bread, and coffee. Soft, rosy, honeyed.",
+  anethole:      "Anise seed, star anise, fennel, and tarragon, where it dominates the essential oil; the smell of ouzo, sambuca, pastis, and black licorice.",
+  butyricacid:   "Parmesan and other aged cheeses, cultured butter, and (less appetizingly) human sweat and vomit. A product of fermentation and butterfat breakdown. Pleasant in trace, pungent in quantity.",
+  isovalericacid: "Aged cheeses, especially the rind funk; also the classic 'sweaty feet' smell, hops, and some fermented foods. The reference odorant for 'dirty socks' in sensory training.",
+  tca:           "Not a natural flavor at all — a contaminant. Made when molds methylate chlorine-based residues in cork, wood, and cardboard. The 'corked' smell of a faulty wine; also taints water and dried foods.",
+  mbt:           "Formed when light strikes hop compounds in beer (the 'lightstruck' or 'skunked' reaction), which is why beer is bottled in brown glass. Chemically kin to the thiols in skunk spray."
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -1207,7 +1286,12 @@ const COMPOUND_CLASS_INFO = {
   ketone:              "Carbonyl group in the middle of a carbon chain. Diacetyl is the buttery one (malolactic fermentation); other ketones span cooked-apple, floral, and tobacco-like notes.",
   norisoprenoid:       "Fragments of broken-down carotenoid pigments, the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
   phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers.",
-  alcohol:             "Compounds with a free hydroxyl (-OH) group that aren't classified elsewhere as a terpene or phenol family. Few but distinctive: 1-octen-3-ol is the classic 'mushroom alcohol' responsible for fresh-mushroom and forest-floor notes."
+  alcohol:             "Compounds with a free hydroxyl (-OH) group that aren't classified elsewhere as a terpene or phenol family. Few but distinctive: 1-octen-3-ol is the classic 'mushroom alcohol' responsible for fresh-mushroom and forest-floor notes; cis-3-hexen-1-ol is the smell of fresh-cut grass; 2-phenylethanol is rose-honey.",
+  phenylpropene:       "Aromatic rings carrying a three-carbon propene tail, built by plants from the amino acid phenylalanine. The backbone of warm spice smells: anethole is anise / licorice / fennel; eugenol is clove.",
+  pyranone:            "Six-membered oxygen rings from sugar browning (caramelization / Maillard). Warm, caramel, cotton-candy. Maltol is the natural one in roasted malt, coffee, and bread crust; ethyl maltol is its stronger synthetic cousin.",
+  pyrroline:           "A nitrogen ring formed when proline reacts with sugars under heat. 2-Acetyl-1-pyrroline is the single molecule behind popcorn, fresh bread crust, and the aroma of basmati and jasmine rice — detectable at trace levels.",
+  acid:                "Short-chain fatty acids with a free -COOH group. Sharp, sour, and funky: butyric acid is the tang of parmesan (and vomit at strength); isovaleric acid is sweaty / gym-sock. Products of fermentation and lipid breakdown.",
+  haloanisole:         "Chlorinated anisoles made when molds methylate chlorophenol residues. Almost always faults: 2,4,6-trichloroanisole (TCA) is 'cork taint' — the musty, wet-cardboard, damp-basement smell that flattens a wine, detectable at parts-per-trillion."
 };
 
 // Full bibliographic entries for the most-cited papers backing the note→compound
@@ -1350,7 +1434,11 @@ const WAIS_DESCRIPTORS = [
     { word: "bergamot",          notes: ["lemon", "orange", "lavender"] },
     { word: "orange peel",       notes: ["orange", "lemon"] },
     { word: "blueberry",         notes: ["berry"] },
-    { word: "raspberry",         notes: ["berry", "violet"] },
+    { word: "raspberry",         notes: ["raspberry", "berry", "violet"] },
+    { word: "grape / concord",   notes: ["grape"] },
+    { word: "melon",             notes: ["melon"] },
+    { word: "cucumber",          notes: ["melon", "green"] },
+    { word: "watermelon",        notes: ["melon"] },
     { word: "strawberry",        notes: ["berry"] },
     { word: "blackberry",        notes: ["berry", "violet"] },
     { word: "cranberry",         notes: ["berry"] },
@@ -1403,7 +1491,7 @@ const WAIS_DESCRIPTORS = [
     { word: "earthy / dirt",     notes: ["mushroom", "woody", "bellpepper"] },
     { word: "soil",              notes: ["mushroom", "woody", "tobacco", "bellpepper"] },
     { word: "wet earth",         notes: ["mushroom", "woody"] },
-    { word: "musty",             notes: ["mushroom", "woody", "cardboard"] },
+    { word: "musty",             notes: ["musty", "mushroom", "woody", "cardboard"] },
     { word: "dusty",             notes: ["woody", "cardboard"] },
     { word: "woody",             notes: ["woody", "pine", "tobacco"] },
     { word: "resinous",          notes: ["pine", "woody"] }
@@ -1412,7 +1500,10 @@ const WAIS_DESCRIPTORS = [
     { word: "sweet / dessert",   notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
     { word: "brown sugar",       notes: ["maple", "caramel"] },
     { word: "molasses",          notes: ["caramel", "maple", "burnt"] },
-    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] }
+    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] },
+    { word: "cotton candy",      notes: ["cottoncandy"] },
+    { word: "candy floss",       notes: ["cottoncandy"] },
+    { word: "spun sugar",        notes: ["cottoncandy", "caramel"] }
   ]},
   { category: "Nutty / Cocoa", entries: [
     { word: "nutty",             notes: ["almond", "hazelnut", "peanut"] },
@@ -1426,7 +1517,11 @@ const WAIS_DESCRIPTORS = [
     { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
     { word: "toasted grain",     notes: ["toast", "yeasty"] },
     { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise"] },
-    { word: "medicinal",         notes: ["clove", "anise"] }
+    { word: "medicinal",         notes: ["clove", "anise"] },
+    { word: "popcorn",           notes: ["popcorn"] },
+    { word: "fresh bread",       notes: ["popcorn", "toast", "yeasty"] },
+    { word: "basmati / jasmine rice", notes: ["popcorn"] },
+    { word: "licorice / fennel", notes: ["anise"] }
   ]},
   { category: "Fermented / Funky", entries: [
     { word: "fermented",         notes: ["winey", "yeasty", "buttery"] },
@@ -1434,9 +1529,14 @@ const WAIS_DESCRIPTORS = [
     { word: "funky",             notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
     { word: "kombucha-like",     notes: ["winey", "yeasty", "sulfury"] },
     { word: "lactic / yogurt",   notes: ["buttery", "yeasty"] },
-    { word: "cheesey / dairy",   notes: ["buttery", "sulfury"] },
+    { word: "cheesey / dairy",   notes: ["cheesy", "buttery", "sulfury"] },
+    { word: "sweaty / gym socks", notes: ["cheesy"] },
+    { word: "parmesan",          notes: ["cheesy"] },
     { word: "petting zoo",       notes: ["sulfury", "yeasty", "mushroom", "woody"] },
-    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] }
+    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] },
+    { word: "corked / musty",    notes: ["musty"] },
+    { word: "wet cardboard / basement", notes: ["musty", "cardboard"] },
+    { word: "skunky / lightstruck", notes: ["skunky", "sulfury"] }
   ]}
 ];
 
@@ -3509,8 +3609,8 @@ function renderMethodology() {
     <p>The tool ships with three kinds of data baked in:</p>
     <ul>
       <li><strong>Notes</strong> (~44 descriptors across 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
-      <li><strong>Compounds</strong> (~39 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
-      <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
+      <li><strong>Compounds</strong> (53 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
+      <li><strong>Edges</strong> (120 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
     </ul>
     <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture, never these numbers.)</p>
 
@@ -3770,7 +3870,10 @@ const waisSuggestionsEl = document.getElementById("wais-suggestions");
 // reason lives here so users who wonder "why is X in this group?" have a
 // one-hover answer without us having to restructure the groups themselves.
 const NOTE_GROUP_RATIONALE = {
-  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation."
+  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation.",
+  cheesy: "Cheesy sits in Fermented because its compounds — butyric and isovaleric acid — are free fatty acids released by microbial fermentation and the breakdown of butterfat during cheese ripening.",
+  musty: "Musty / corked sits in Fermented as the group's catch-all for microbial funk. Its marker, TCA, is made by molds methylating chlorophenols — not a fermentation you'd want, but a microbial origin all the same.",
+  skunky: "Skunky is grouped here alongside the other sulfur / funky notes for convenience, but its origin is unusual: MBT forms photochemically when light strikes hop compounds in beer, not by fermentation."
 };
 
 // Multi-select: which descriptor chips are currently active. Cleared each
