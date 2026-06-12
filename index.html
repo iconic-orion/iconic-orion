@@ -26,7 +26,7 @@
     --grp-sweet:   #dfa850;
     --grp-fermented: #6ebdab;
 
-    /* Pane widths — referenced both by the body grid and by the pane-toggle
+    /* Pane widths: referenced both by the body grid and by the pane-toggle
        positions, so both stay in sync if these change. */
     --notes-pane-w:  320px;
     --detail-pane-w: 360px;
@@ -74,7 +74,7 @@
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
   /* On mid-width viewports (tablet landscape, half-screen browser windows), the
      results pane flexes a bit narrower so the wheel has more room. Sliders pane
-     stays at 320 for usability — slider labels and the per-row buttons need it. */
+     stays at 320 for usability; slider labels and the per-row buttons need it. */
   @media (max-width: 1100px) { :root { --detail-pane-w: 280px; } }
   header .spacer { flex: 1; }
   header button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
@@ -98,7 +98,7 @@
     text-transform: uppercase; letter-spacing: 0.08em; align-self: center;
     border-right: 1px solid var(--line); background: var(--panel-2); }
 
-  /* Compound grid — lives inside the Analysis pane (right) as its default-state
+  /* Compound grid: lives inside the Analysis pane (right) as its default-state
      view when no compound is selected. Narrower than V1's middle-pane grid so
      cards stack as a single column in the 360px-wide analysis pane. */
   .compound-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -112,7 +112,7 @@
   .cpd-card .name { font-size: 13px; font-weight: 600; }
   /* Common-name reveal: a compound's everyday name, hidden until you hover
      (desktop) or long-press (mobile, which toggles .show-common via JS). Only
-     compounds whose label is a chemistry name carry one — they get .has-common. */
+     compounds whose label is a chemistry name carry one; they get .has-common. */
   .common-name { display: none; font-weight: 400; color: var(--ink-dim); }
   .has-common:hover .common-name,
   .has-common.show-common .common-name { display: inline; }
@@ -161,7 +161,7 @@
   .results-disclaimer { font-size: 11px; color: var(--ink-dim); line-height: 1.5;
     padding-top: 10px; border-top: 1px dotted var(--line); margin-top: 8px; }
 
-  /* Section 1 — Your inputs → arrows to key compounds */
+  /* Section 1: Your inputs → arrows to key compounds */
   .input-arrows { list-style: none; padding: 0; margin: 0;
     display: flex; flex-direction: column; gap: 8px; }
   .input-arrow-row { display: grid; grid-template-columns: minmax(70px, auto) auto 1fr;
@@ -177,7 +177,7 @@
   .arrow-target:hover { border-bottom-color: var(--accent); }
   .arrow-sep { color: var(--ink-dim); margin: 0 1px; }
 
-  /* Section 3 — Compact list of all active compounds */
+  /* Section 3: Compact list of all active compounds */
   .compound-compact { list-style: none; padding: 0; margin: 0;
     display: flex; flex-direction: column; gap: 4px; }
   .compact-row { display: grid;
@@ -197,7 +197,7 @@
   .compact-val { font-variant-numeric: tabular-nums; color: var(--accent);
     text-align: right; font-weight: 600; }
 
-  /* Empty-state compound browser — grouped by class, no signal/intensity yet */
+  /* Empty-state compound browser: grouped by class, no signal/intensity yet */
   .browse-compounds { list-style: none; padding: 0; margin: 8px 0 0;
     display: flex; flex-direction: column; gap: 10px; }
   .browse-class-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px;
@@ -295,7 +295,7 @@
     border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
     background: var(--bg); }
 
-  /* "Add suggested flavor notes" — the submit at the bottom of the
+  /* "Add suggested flavor notes": the submit at the bottom of the
      suggestions list. Prominent so the user sees it as the next action. */
   .wais-add-all-btn { display: block; width: 100%; margin-top: 16px;
     background: var(--accent); color: #1a1810; border: 1px solid var(--accent);
@@ -324,7 +324,7 @@
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 9px; dominant-baseline: middle; }
 
-  /* First-run nudge — centered in the empty wheel. The container ignores pointer
+  /* First-run nudge: centered in the empty wheel. The container ignores pointer
      events so it never blocks the wheel; only the demo buttons re-enable them. */
   .wheel-nudge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     width: min(320px, 80%); text-align: center; pointer-events: none; z-index: 5; }
@@ -347,7 +347,7 @@
   .group-header .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
   /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
-     Each note can have up to two confirmed entries — one per phase —
+     Each note can have up to two confirmed entries, one per phase,
      each with its own intensity. Confirming requires intensity > 0.
      Confirmed buttons show "Added"; clicking one opens edit/delete callout. */
   .note-row { display: grid; grid-template-columns: 1fr 28px; gap: 4px 8px; align-items: center;
@@ -387,7 +387,7 @@
   #godeeper-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.go-deeper #godeeper-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
-  /* Info button — small round "i" sitting next to Go Deeper */
+  /* Info button: small round "i" sitting next to Go Deeper */
   #info-open-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
     font-style: italic; font-family: ui-serif, Georgia, serif; font-size: 14px;
@@ -427,7 +427,7 @@
     font-size: 12px; background: var(--bg); color: var(--accent);
     padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
 
-  /* In-tab table of contents — a row of chips that jump to the h3 sections of
+  /* In-tab table of contents: a row of chips that jump to the h3 sections of
      the current tab. Wiring is a single delegated listener on the info body
      (see JS), so it survives the innerHTML swap on every tab switch. */
   .info-toc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
@@ -491,14 +491,14 @@
   .info-view-on-wheel:hover { text-decoration: underline; }
   .info-no-results { color: var(--ink-dim); font-style: italic; padding: 16px 0; text-align: center; }
 
-  /* Inline link styled as button — opens the info overlay on a specific tab.
+  /* Inline link styled as button: opens the info overlay on a specific tab.
      Used wherever we want to surface a one-click "go read the longer story" affordance
      (e.g. the limitations disclaimer in the analysis pane help text). */
   .inline-link { background: none; border: none; color: var(--accent); cursor: pointer;
     padding: 0; font: inherit; text-decoration: none; }
   .inline-link:hover { text-decoration: underline; }
 
-  /* Edit/delete callout — appears anchored above an "Added" button on click */
+  /* Edit/delete callout: appears anchored above an "Added" button on click */
   .entry-callout { position: absolute; z-index: 50; background: var(--panel-2);
     border: 1px solid var(--accent); border-radius: 6px; padding: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); min-width: 140px;
@@ -659,13 +659,13 @@
     g.compound text.node-label { display: none; }
 
     /* Chemistry mode only: the ring anchors are compounds, whose long names run
-       off a phone-width wheel. Hide them too — the curved class-arc labels
+       off a phone-width wheel. Hide them too; the curved class-arc labels
        (TERPENE, ESTER, …) still give the ring its legend, and tapping a dot
        opens the named detail card. Scent mode keeps its note anchor labels,
        shortened to their primary token (see wheelNoteLabel), which fit. */
     body.organize-chemistry g.note text.note-label { display: none; }
 
-    /* Every rendered note anchor carries .active, which bumps the label to 13px —
+    /* Every rendered note anchor carries .active, which bumps the label to 13px,
        too big for a phone wheel, where it shoves labels past the viewport edge.
        Pull scent-mode anchor labels down so they sit within the wheel. */
     .note.active .note-label, .note:hover .note-label { font-size: 10px; }
@@ -674,8 +674,8 @@
        size. Shrink them so the 8 scent families (incl. the tight nutty / spice /
        roasted run) clear each other. */
     text.group-arc-label { font-size: 9px; letter-spacing: 0.05em; }
-    /* Chemistry's 12 class labels — several long, several riding 1-compound
-       slivers — can't fit a phone ring legibly even shrunk, and abbreviating
+    /* Chemistry's 12 class labels (several long, several riding 1-compound
+       slivers) can't fit a phone ring legibly even shrunk, and abbreviating
        them just yields cryptic codes. Drop them like the compound anchors; the
        color bands decode via the legend and tapping a dot. */
     body.organize-chemistry text.group-arc-label { display: none; }
@@ -813,7 +813,7 @@
   </div>
 </div>
 
-<!-- "What am I smelling?" modal — translates evocative descriptors to suggested
+<!-- "What am I smelling?" modal: translates evocative descriptors to suggested
      notes from the existing vocabulary. Closed by ✕ button or Escape. -->
 <div id="wais-overlay" class="info-overlay" role="dialog" aria-modal="true" aria-labelledby="wais-title" hidden>
   <div class="info-overlay-content wais-content">
@@ -844,7 +844,7 @@ const GROUPS = [
 ];
 
 // Sensory notes. The `common` field (true = widely recognizable, false = niche /
-// requires familiarity) is no longer wired to any UI filter — all notes are
+// requires familiarity) is no longer wired to any UI filter; all notes are
 // always visible. Field is left in place because some legacy code paths and
 // potential future affordances (e.g. a "show me niche notes only" demo) may
 // still want to introspect it.
@@ -904,11 +904,11 @@ const NOTES = [
 ];
 
 // Compounds with class, literature anchor, odor-threshold tier, and specificity.
-// threshold tiers: "very-low" (sub-ppt to ppt — everyone smells trace amounts),
-//                  "low"      (ppt to low-ppb — most smellers detect),
-//                  "medium"   (mid-ppb — typical smellers detect at modest concentrations),
-//                  "high"     (ppm-range — mainly sensitive smellers / requires real concentration).
-// specificity:    "signature" (compound is essentially the marker of one note — e.g. cinnamaldehyde→cinnamon),
+// threshold tiers: "very-low" (sub-ppt to ppt, everyone smells trace amounts),
+//                  "low"      (ppt to low-ppb, most smellers detect),
+//                  "medium"   (mid-ppb, typical smellers detect at modest concentrations),
+//                  "high"     (ppm-range, mainly sensitive smellers / requires real concentration).
+// specificity:    "signature" (compound is essentially the marker of one note, e.g. cinnamaldehyde→cinnamon),
 //                 "shared"    (compound contributes to several notes across categories).
 const COMPOUNDS = [
   // terpenes
@@ -1105,12 +1105,12 @@ const COMPOUND_CLASS_COLOR = {
   "phenolic-aldehyde": "#cbb172",  // warm gold (was muddy sand)
   "aldehyde":          "#6ebdab",  // aqua
   "ketone":            "#ee665e",  // red
-  "norisoprenoid":     "#d57bb4",  // orchid (was pale pink) — β-ionone is violet-scented
-  "phenol":            "#6096c3",  // blue (was grey) — smoky-medicinal
-  "alcohol":           "#a584c2"   // soft purple (was sand) — earthy/mushroom
+  "norisoprenoid":     "#d57bb4",  // orchid (was pale pink), β-ionone is violet-scented
+  "phenol":            "#6096c3",  // blue (was grey), smoky-medicinal
+  "alcohol":           "#a584c2"   // soft purple (was sand), earthy/mushroom
 };
 
-// Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
+// Chemical classes as ring sectors: the dual of GROUPS, used when the wheel is
 // organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
 // get a short ring label so the 12 arc labels don't collide.
 const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
@@ -1120,7 +1120,7 @@ const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color
 // ---------- INFO-TAB CONTENT ----------
 // Per-compound natural-occurrence info. Per the project's editorial principle:
 // for an aromatic compound, *where it naturally occurs in general* is the most
-// useful per-compound information for a sensory-tasting audience — more useful
+// useful per-compound information for a sensory-tasting audience; more useful
 // than molecular formula or biosynthetic pathway. Keyed by compound id.
 const COMPOUND_ORIGINS = {
   limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates: the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
@@ -1185,7 +1185,7 @@ const COMPOUND_CLASS_INFO = {
 // edges. Each edge's short `cite` string is matched against the prefixes in
 // CITE_TO_REF below to find a full entry. Edges without a match fall back to
 // rendering the short cite string as-is. The catalog is intentionally small
-// and conservative — only papers where the full citation is well-established.
+// and conservative; only papers where the full citation is well-established.
 // Add more entries here as they're verified; no edge data changes needed.
 const REFERENCES = {
   "blank1992": {
@@ -1275,7 +1275,7 @@ const REFERENCES = {
 };
 
 // Map cite-string prefixes (or distinctive substrings) to REFERENCES keys.
-// Order matters when multiple prefixes could match — most specific first.
+// Order matters when multiple prefixes could match; most specific first.
 const CITE_TO_REF = [
   ["Blank, Sen, Grosch 1992",     "blank1992"],
   ["Blank et al. 1992",           "blank1992"],
@@ -1309,7 +1309,7 @@ function formatRefFull(ref) {
 
 // "What am I smelling?" descriptor map. Translates evocative everyday words
 // (floral, cheesey, petting zoo, musty…) to specific notes from the existing
-// vocabulary. The tool surfaces these as suggested sliders to try — it does
+// vocabulary. The tool surfaces these as suggested sliders to try; it does
 // NOT auto-set intensities; the user picks. Each descriptor maps to a curated
 // subset of NOTES ids. Add/edit freely as the note set grows.
 const WAIS_DESCRIPTORS = [
@@ -1411,7 +1411,7 @@ const WAIS_DESCRIPTORS = [
   ]}
 ];
 
-// Jargon glossary — words people have heard in tasting circles but might not own.
+// Jargon glossary: words people have heard in tasting circles but might not own.
 // Per [[project-information-access]]: define jargon, NOT baseline chemistry.
 // We're NOT defining "what is a carbon atom"; we ARE defining "what is a tannin."
 const JARGON = [
@@ -1450,7 +1450,7 @@ EDGES.forEach(e => {
 });
 
 // COMPOUND_SCENT_HOME: each compound's dominant note-group, by summed edge weight.
-// This is the "what scent family do we think of this compound as" signal — e.g.
+// This is the "what scent family do we think of this compound as" signal, e.g.
 // β-damascenone's edges (berry, apple, rose, coffee, tobacco…) sum heaviest into
 // fruity, so its home is "fruity" no matter where the live force layout parks it.
 // Used as the compound tint in scent mode so cohorts read at a glance. Computed
@@ -1469,9 +1469,9 @@ COMPOUNDS.forEach(c => {
 
 // ---------- STATE ----------
 // Input contract: each note can carry up to three independent confirmed entries:
-// - default (phase=null) — confirmed via the always-visible "Add" button.
-// - ortho (sniff) — confirmed via a button revealed by Go Deeper.
-// - retro (exhale) — confirmed via a button revealed by Go Deeper.
+// - default (phase=null): confirmed via the always-visible "Add" button.
+// - ortho (sniff): confirmed via a button revealed by Go Deeper.
+// - retro (exhale): confirmed via a button revealed by Go Deeper.
 // All three can coexist for the same note; their intensities aggregate as evidence.
 //
 // `entries` Map keys:
@@ -1528,11 +1528,11 @@ function hasAnyEntry(noteId) {
 
 // noteSignal: per-note aggregate intensity used by scoring/rendering.
 // Sums intensities across:
-//   - the null-phase (default) entry, if any — always visible, unaffected by phase filter.
+//   - the null-phase (default) entry, if any; always visible, unaffected by phase filter.
 //   - ortho-tagged entry, if not hidden by phase filter.
 //   - retro-tagged entry, if not hidden by phase filter.
 // Divides by 10 to match the old `noteWeights[id]/10` shape. NOT capped at the math
-// layer — logging multiple phases at high intensity is genuinely more evidence.
+// layer: logging multiple phases at high intensity is genuinely more evidence.
 function noteSignal(noteId) {
   if (!isNoteVisible(noteId)) return 0;
   let sum = 0;
@@ -1577,10 +1577,10 @@ function getVisibleCompoundNodes() {
 // ---------- SVG ICONS (ortho/retro) ----------
 // Schematic gender-neutral side profile of the upper airway. Both icons share
 // the same face silhouette + highlighted nasal passage (thicker stroke); only
-// the bold arrows differ. The shared anatomy is the visual anchor — what
+// the bold arrows differ. The shared anatomy is the visual anchor, what
 // changes is the air path:
-//   Ortho — bold arrow entering at the nostril, flowing into the nasal cavity.
-//   Retro — bold arrow rising from the mouth/oral cavity, traveling up through
+//   Ortho: bold arrow entering at the nostril, flowing into the nasal cavity.
+//   Retro: bold arrow rising from the mouth/oral cavity, traveling up through
 //           the nasopharynx, and exiting out the nostril (post-swallow exhale).
 // ViewBox is 28x24 to give the anatomy room; CSS renders at 22x18.
 const ICON_ORTHO = `<svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1795,7 +1795,7 @@ function drawNotes() {
         if (slider) slider.focus();
       }
       // Go Deeper: also surface this note's outbound compound graph in the
-      // analysis pane — the inverse of clicking a compound.
+      // analysis pane: the inverse of clicking a compound.
       if (state.goDeeper) {
         state.selectedNote = d.id;
         state.selectedCompound = null;
@@ -1902,8 +1902,8 @@ const ANCHOR_LABEL_NUDGE = {
 };
 
 // Compound anchors: the "periodic table" of class arcs. Unlike note anchors
-// (which render only when entered), ALL visible compounds show — faint by
-// default, brightening as evidence accrues — so the floating notes have stable
+// (which render only when entered), ALL visible compounds show, faint by
+// default, brightening as evidence accrues, so the floating notes have stable
 // neighborhoods to drift toward and the chemical structure is always legible.
 function drawCompoundAnchors() {
   const renderable = COMPOUNDS.filter(c => isCompoundVisible(c.id) && CPD_NODE_BY_ID[c.id]._x != null)
@@ -1993,7 +1993,7 @@ function updateSimulationCenter() {
 }
 
 // targetForce: each compound is pulled toward the centroid of its (weighted) note contributors,
-// scaled inward by total score (more evidence -> closer to center? no — keep at mid-ring).
+// scaled inward by total score (more evidence -> closer to center? no, keep at mid-ring).
 function targetForce(strength) {
   let s = strength;
   function force(alpha) {
@@ -2066,7 +2066,7 @@ function tick() {
 }
 
 // Scent mode: compounds float toward their active notes. Render those with
-// non-trivial evidence only — the empty wheel shows just the group arcs, and
+// non-trivial evidence only; the empty wheel shows just the group arcs, and
 // compounds populate as confirmed notes feed them.
 function renderCompoundFloats() {
   const renderable = getVisibleCompoundNodes().filter(n => n.intensity_raw > 0);
@@ -2122,7 +2122,7 @@ function renderCompoundFloats() {
 }
 
 // Chemistry mode: the entered notes float toward the chemical neighborhoods they
-// evoke. Mirror of renderCompoundFloats — render only notes that carry an entry,
+// evoke. Mirror of renderCompoundFloats: render only notes that carry an entry,
 // colored by their scent group, click scrolls to the matching slider row.
 function renderNoteFloats() {
   const renderable = noteNodes.filter(n => isNoteVisible(n.id) && hasAnyEntry(n.id));
@@ -2381,9 +2381,9 @@ function updateEdges() {
 
 // ---------- SCORING ----------
 // For each compound we compute:
-//   intensity_raw : Σ (noteWeight/10 × edge.w) — raw evidence of presence
+//   intensity_raw : Σ (noteWeight/10 × edge.w), raw evidence of presence
 //   intensity    : intensity_raw × threshold-tier perception multiplier
-//   confidence   : literature support — blend of (# active edges) and (peak active edge weight)
+//   confidence   : literature support, blend of (# active edges) and (peak active edge weight)
 function recompute() {
   compoundNodes.forEach(node => {
     const cpdMeta = CPD_BY_ID[node.id];
@@ -2422,7 +2422,7 @@ function recompute() {
     nn.score = noteSignal(nn.id);
     nn.radius = 5 + Math.min(12, nn.score * 8);
   });
-  // Redraw the anchor set — it changes whenever entries are added/removed (scent:
+  // Redraw the anchor set; it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
 
@@ -2448,7 +2448,7 @@ function buildNotesPanel() {
     notesPanel.appendChild(header);
     visible.forEach(n => notesPanel.appendChild(renderNoteRow(n)));
   });
-  // Re-apply any active search filter — the rebuild wiped search-hidden classes.
+  // Re-apply any active search filter; the rebuild wiped search-hidden classes.
   if (typeof applyNotesSearchFilter === "function") applyNotesSearchFilter();
 }
 
@@ -2540,9 +2540,9 @@ function updateRowPhaseButtons(row, noteId) {
   row.classList.toggle("has-entries", hasAnyEntry(noteId));
 }
 
-// Default (null phase) Add button: text-only — "Add" or "Added · N". The
+// Default (null phase) Add button: text-only, "Add" or "Added · N". The
 // ortho/retro buttons get the upper-airway icon + their phase name.
-// (The Edit/Delete callout strips icons for visual quiet — see openEntryCallout.)
+// (The Edit/Delete callout strips icons for visual quiet; see openEntryCallout.)
 function renderPhaseBtnContent(noteId, phase) {
   const entry = getEntry(noteId, phase);
   if (phase === null) {
@@ -2564,7 +2564,7 @@ function renderNoteRowPanel(noteId) {
   oldRow.replaceWith(newRow);
 }
 
-// Called after bulk entry changes (demos, reset) — full rebuild is simplest + safe.
+// Called after bulk entry changes (demos, reset); full rebuild is simplest + safe.
 function syncSliders() { buildNotesPanel(); }
 
 // Callout anchored above a clicked "Added" button: Edit? / Delete? / Nevermind.
@@ -2577,7 +2577,7 @@ function openEntryCallout(btn, noteId, phase) {
 
   const callout = document.createElement("div");
   callout.className = "entry-callout";
-  // Callout is text-only too — icons stay solely in the legend.
+  // Callout is text-only too; icons stay solely in the legend.
   callout.innerHTML = `
     <button data-action="edit" type="button"><span>Edit?</span></button>
     <button data-action="delete" type="button" class="danger"><span>Delete?</span></button>
@@ -2753,11 +2753,11 @@ function renderNoteDetail(noteId) {
 }
 
 // Default Compounds-pane view (no compound selected). Three stacked sections:
-//   1. Your inputs — for each confirmed note, the compounds it maps to in
+//   1. Your inputs: for each confirmed note, the compounds it maps to in
 //      literature, shown as direct arrows. Clickable to jump to that compound.
-//   2. Top compounds (by confidence) — ranked card grid of the top 6 active
+//   2. Top compounds (by confidence): ranked card grid of the top 6 active
 //      compounds, sorted by confidence (where the literature converges).
-//   3. All possible compounds — compact list of every active compound with a
+//   3. All possible compounds: compact list of every active compound with a
 //      small intensity bar, sorted by intensity desc. The completeness layer.
 function renderAnalysisGrid() {
   const pct = v => Math.round(Math.min(1, v) * 100);
@@ -2771,7 +2771,7 @@ function renderAnalysisGrid() {
 
   const disclaimerLine = `<div class="results-disclaimer">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></div>`;
 
-  // Empty state — nothing logged yet. Still render a browseable list of every
+  // Empty state: nothing logged yet. Still render a browseable list of every
   // compound in the library so users can click into them on their own without
   // having to slide a note first. Grouped by class; no intensity bars (no signal yet).
   if (activeNotes.length === 0 && allActive.length === 0) {
@@ -2997,7 +2997,7 @@ function renderCompoundDetail(cpdId, banner) {
 // data-view keys keep their original names internally to avoid churning
 // every state reference; the user-facing labels are what changed.
 // "Both hidden" (wheel only) is reachable via the toggles but unnamed in
-// the header tabs — emergent state, no tab highlights as active there.
+// the header tabs; emergent state, no tab highlights as active there.
 
 function applyPaneState() {
   document.body.classList.toggle("notes-hidden",  state.notesHidden);
@@ -3035,7 +3035,7 @@ function setView(v) {
 // Tapping a compound on the wheel should land you on its detail. On desktop the
 // analysis pane is usually already open; if it's collapsed (Notes view) we just
 // reveal it. On mobile only one panel shows at a time, so we switch to the
-// Compounds view — otherwise the tap would select a compound you can't see.
+// Compounds view; otherwise the tap would select a compound you can't see.
 function ensureDetailVisible() {
   if (window.matchMedia("(max-width: 760px)").matches) {
     setView("analysis");
@@ -3068,7 +3068,7 @@ hudToggleBtn.addEventListener("click", () => {
 function setOrganizeBy(mode) {
   if (mode === state.organizeBy) return;
   state.organizeBy = mode;
-  // Body flag lets CSS treat the two projections differently — used on mobile to
+  // Body flag lets CSS treat the two projections differently; used on mobile to
   // hide the long compound anchor labels that only exist in chemistry mode.
   document.body.classList.toggle("organize-chemistry", mode === "chemistry");
   document.querySelectorAll("#organize-tabs button").forEach(x =>
@@ -3093,7 +3093,7 @@ document.querySelectorAll("#organize-tabs button").forEach(b => {
   b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
 });
 
-// Per-pane toggle handlers — independent of the view presets.
+// Per-pane toggle handlers, independent of the view presets.
 document.getElementById("toggle-notes").addEventListener("click", () => {
   state.notesHidden = !state.notesHidden;
   applyPaneState();
@@ -3152,7 +3152,7 @@ function buildLegend() {
   const groupsBox  = document.getElementById("legend-groups");
   const classesBox = document.getElementById("legend-classes");
 
-  // Phase filter — show ortho / show retro. Phase tagging itself happens in the
+  // Phase filter: show ortho / show retro. Phase tagging itself happens in the
   // slider panel; this row controls which tagged entries contribute to scoring.
   phasesBox.innerHTML = PHASES.map(phase => {
     const hidden = state.hiddenPhases.has(phase);
@@ -3182,7 +3182,7 @@ function buildLegend() {
     `;
   }).join("");
 
-  // Compound classes — derive list of unique classes present in COMPOUNDS, in stable order
+  // Compound classes: derive list of unique classes present in COMPOUNDS, in stable order
   const classOrder = Array.from(new Set(COMPOUNDS.map(c => c.class)));
   classesBox.innerHTML = classOrder.map(cls => {
     const color = COMPOUND_CLASS_COLOR[cls] || "#aaa";
@@ -3300,7 +3300,7 @@ function setNotes(entries) {
 
 document.getElementById("reset").addEventListener("click", () => setNotes([]));
 
-// Coffee — default-mode showcase. No phase tags; just intensities.
+// Coffee: default-mode showcase. No phase tags; just intensities.
 // (Coffee experience is rich enough that most users can use it without phase tagging.)
 const DEMO_COFFEE = [
   { note: "coffee",     intensity: 9 },
@@ -3312,7 +3312,7 @@ const DEMO_COFFEE = [
   { note: "honey",      intensity: 3 }
 ];
 
-// Citrus mocktail — Go Deeper showcase. Mixes default-mode entries with
+// Citrus mocktail: Go Deeper showcase. Mixes default-mode entries with
 // ortho/retro-tagged ones to demonstrate dual-phase logging. Orange is
 // logged in both phases at different intensities (ortho-bright, retro-mild).
 // Loading this demo auto-enables Go Deeper.
@@ -3365,7 +3365,7 @@ document.getElementById("godeeper-toggle").addEventListener("click", () => {
 // ---------- INFO ("i") TAB ----------
 // Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
 // Lives alongside Go Deeper as a top-menu surface. Per project-information-access,
-// nothing here is gated — the i tab is a reference / glossary the user opens
+// nothing here is gated; the i tab is a reference / glossary the user opens
 // when they want it. The compound-origin info and jargon glossary inside
 // Types of Aroma are the main payoff (define jargon, not basics).
 const infoOverlayEl = document.getElementById("info-overlay");
@@ -3665,7 +3665,7 @@ function renderTypesOfAroma() {
     </div>
   `;
 
-  // Wire search input — live filter, no submit needed
+  // Wire search input: live filter, no submit needed
   const searchInput = document.getElementById("info-search-input");
   if (searchInput) {
     searchInput.addEventListener("input", () => {
@@ -3679,7 +3679,7 @@ function renderTypesOfAroma() {
     });
   }
 
-  // Wire "View on wheel" links — close overlay, select compound, surface in analysis
+  // Wire "View on wheel" links: close overlay, select compound, surface in analysis
   infoBodyEl.querySelectorAll(".info-view-on-wheel").forEach(btn => {
     btn.addEventListener("click", () => {
       const cpdId = btn.dataset.cpd;
@@ -3711,7 +3711,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && state.infoOpen) closeInfo();
 });
 
-// Delegated handler — any element with data-open-info="<tab>" opens the info
+// Delegated handler: any element with data-open-info="<tab>" opens the info
 // overlay on that tab. Lets us scatter "go read the longer story" links anywhere
 // in the UI (e.g. the limitations disclaimer in the analysis pane).
 document.addEventListener("click", (e) => {
@@ -3841,7 +3841,7 @@ function renderWaisSuggestionsMulti() {
     btn.addEventListener("click", (e) => e.stopPropagation());
   });
   // Clicking an individual suggestion still scrolls + focuses that slider
-  // (doesn't auto-set intensity — the explicit "Add suggested flavor notes"
+  // (doesn't auto-set intensity; the explicit "Add suggested flavor notes"
   // button does that for the whole set).
   waisSuggestionsEl.querySelectorAll(".wais-suggestion-item").forEach(li => {
     li.addEventListener("click", () => {
