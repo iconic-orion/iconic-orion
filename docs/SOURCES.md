@@ -131,6 +131,9 @@ more compounds. Value shown is the figure quoted in the tool.
 | Curioni & Bosset 2002 | Butyric acid, isovaleric acid | cheese free-fatty-acid markers |
 | Buser, Zanier & Tanner 1982 | TCA (2,4,6-trichloroanisole) | ~4 ng/L |
 | Gunst & Verzele 1978 | MBT (3-methyl-2-butene-1-thiol) | ~4 ng/L in beer |
+| Schieberle & Hofmann 1997 | Mesifurane (DMMF) | strawberry character-impact furanone |
+| Klesk & Qian 2003 | Ethyl 2-methylbutanoate | ~1.5 µg/L (intense fruity ester) |
+| Hatanaka 1993 | (E)-2-Hexenal | ~17 ppb green-leaf aldehyde |
 
 ### Note→compound linkage sources
 
@@ -193,6 +196,9 @@ once per source, with the note links it supports.
 | Curioni & Bosset 2002 | cheesy / sweaty → butyric acid / isovaleric acid |
 | Buser, Zanier & Tanner 1982 | musty / corked → TCA |
 | Gunst & Verzele 1978 | skunky / lightstruck → MBT |
+| Schieberle & Hofmann 1997 | strawberry → furaneol / mesifurane / ethyl 2-methylbutanoate / ethyl hexanoate |
+| Horvat & Senter 1985 | blueberry → linalool / (E)-2-hexenal / geraniol |
+| Klesk & Qian 2003 | blackberry → furaneol / ethyl hexanoate / α-/β-ionone / ethyl 2-methylbutanoate / linalool |
 
 > **On the short-form linkage cites:** sources in the linkage table that are not
 > in the verified-full-bibliography table above (e.g. Flament 2002, Ohloff 1994,
@@ -226,7 +232,7 @@ Larsen & Poll 1990 · Jennings & Sevenants 1964 · Schieberle 1990 ·
 Buttery, Ling, Juliano & Turnbaugh 1983 · Pittet, Rittersbacher &
 Muralidhara 1970 · Takeoka et al. 1995 · Guth 1997 · Curioni & Bosset 2002 ·
 Buser, Zanier & Tanner 1982 · Gunst & Verzele 1978 · Wang & De Luca 2005 ·
-Schieberle 1991.
+Schieberle 1991 · Schieberle & Hofmann 1997 · Horvat & Senter 1985.
 
 ### ✗ Original cite couldn't be verified — replacement found (✓ applied to index.html 2026-06-11)
 

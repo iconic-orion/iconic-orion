@@ -893,6 +893,9 @@ const NOTES = [
   { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true  },
   { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true  },
   { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true  },
+  { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true  },
+  { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true  },
+  { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true  },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true  },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
@@ -1013,7 +1016,11 @@ const COMPOUNDS = [
   { id: "butyricacid",   label: "Butyric acid",      class: "acid",      commonName: "butanoic acid", threshold: "low", specificity: "signature", thresholdSrc: "Cheese free-fatty-acid (Curioni & Bosset 2002).", note: "Sharp cheese tang — the smell of parmesan (and, at strength, of vomit). A fermentation / lipolysis product." },
   { id: "isovalericacid",label: "Isovaleric acid",   class: "acid",      commonName: "3-methylbutanoic acid", threshold: "low", specificity: "signature", thresholdSrc: "Sweaty/cheese FFA (Curioni & Bosset 2002).", note: "Sweaty, gym-sock, aged-cheese. The reference standard flavorists use for 'dirty socks.'" },
   { id: "tca",           label: "TCA",               class: "haloanisole", commonName: "2,4,6-trichloroanisole", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L (Buser, Zanier & Tanner 1982).", note: "'Corked.' Musty, wet-cardboard, damp-basement; the mold-derived fault that flattens a wine. Perceptible at parts-per-trillion." },
-  { id: "mbt",           label: "MBT",               class: "thiol",     commonName: "3-methyl-2-butene-1-thiol", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L in beer (Gunst & Verzele 1978).", note: "Skunky. The lightstruck-beer thiol — and chemically the same family as skunk spray. Formed when light hits hop compounds." }
+  { id: "mbt",           label: "MBT",               class: "thiol",     commonName: "3-methyl-2-butene-1-thiol", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L in beer (Gunst & Verzele 1978).", note: "Skunky. The lightstruck-beer thiol — and chemically the same family as skunk spray. Formed when light hits hop compounds." },
+  // ---- Berry differentiation: compounds that separate the berries ----
+  { id: "mesifurane",    label: "Mesifurane",        class: "furan",     commonName: "2,5-dimethyl-4-methoxy-3(2H)-furanone (DMMF)", threshold: "low", specificity: "signature", thresholdSrc: "Strawberry character-impact furanone (Schieberle & Hofmann 1997).", note: "The methyl ether of furaneol. With furaneol it forms the defining caramel-sweet, faintly sherry-like core of ripe strawberry." },
+  { id: "e2mb",          label: "Ethyl 2-methylbutanoate", class: "ester", threshold: "very-low", specificity: "shared", thresholdSrc: "~1.5 µg/L; intense green-apple/berry ester (Klesk & Qian 2003).", note: "One of the most potent fruity esters. The bright 'green-apple / jolly-rancher' top note across apple, strawberry, blackberry, blueberry, and pineapple." },
+  { id: "hex2enal",      label: "(E)-2-Hexenal",     class: "aldehyde",  commonName: "leaf aldehyde", threshold: "low", specificity: "shared", thresholdSrc: "~17 ppb green-leaf aldehyde (Hatanaka 1993).", note: "Sharp leafy-green, formed when leaf tissue is bruised. A lead note in blueberry, apple, and tomato." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1179,7 +1186,29 @@ const EDGES = [
   { note: "musty",      cpd: "tca",       w: 0.95, cite: "Buser, Zanier & Tanner 1982 (TCA, cork taint)." },
   { note: "musty",      cpd: "geosmin",   w: 0.50, cite: "Darriet et al. 2000 (geosmin, musty/earthy crossover)." },
   // Skunky
-  { note: "skunky",     cpd: "mbt",       w: 0.95, cite: "Gunst & Verzele 1978 (MBT, lightstruck/skunky thiol)." }
+  { note: "skunky",     cpd: "mbt",       w: 0.95, cite: "Gunst & Verzele 1978 (MBT, lightstruck/skunky thiol)." },
+
+  // ---- Berry differentiation edges (each berry gets its own profile) ----
+  // Strawberry — furanones + esters
+  { note: "strawberry", cpd: "furaneol",  w: 0.90, cite: "Schieberle & Hofmann 1997 (furaneol, strawberry character impact)." },
+  { note: "strawberry", cpd: "mesifurane", w: 0.70, cite: "Schieberle & Hofmann 1997 (mesifurane, strawberry)." },
+  { note: "strawberry", cpd: "e2mb",      w: 0.60, cite: "Schieberle & Hofmann 1997 (ethyl 2-methylbutanoate, strawberry)." },
+  { note: "strawberry", cpd: "ethex",     w: 0.45, cite: "Schieberle & Hofmann 1997 (ethyl hexanoate, strawberry)." },
+  { note: "strawberry", cpd: "gdecal",    w: 0.40, cite: "Schwab et al. 2008 (γ-decalactone in strawberry)." },
+  // Blueberry — linalool + green C6, low on furanones
+  { note: "blueberry",  cpd: "linalool",  w: 0.80, cite: "Horvat & Senter 1985 (linalool, blueberry key volatile)." },
+  { note: "blueberry",  cpd: "hex2enal",  w: 0.70, cite: "Horvat & Senter 1985 ((E)-2-hexenal, blueberry key volatile)." },
+  { note: "blueberry",  cpd: "geraniol",  w: 0.40, cite: "Horvat & Senter 1985 (geraniol in blueberry)." },
+  { note: "blueberry",  cpd: "ethex",     w: 0.35, cite: "Horvat & Senter 1985 (ester contribution)." },
+  // Blackberry — furaneol + ionones + esters (Klesk & Qian AEDA)
+  { note: "blackberry", cpd: "furaneol",  w: 0.70, cite: "Klesk & Qian 2003 (furaneol, blackberry)." },
+  { note: "blackberry", cpd: "ethex",     w: 0.60, cite: "Klesk & Qian 2003 (ethyl hexanoate, blackberry)." },
+  { note: "blackberry", cpd: "ionone",    w: 0.60, cite: "Klesk & Qian 2003 (α-/β-ionone, blackberry)." },
+  { note: "blackberry", cpd: "e2mb",      w: 0.55, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate, blackberry)." },
+  { note: "blackberry", cpd: "linalool",  w: 0.40, cite: "Klesk & Qian 2003 (linalool, blackberry)." },
+  // Strengthen the green-apple ester on apple and generic berry
+  { note: "apple",      cpd: "e2mb",      w: 0.55, cite: "Dimick & Hoskin 1983 (ethyl 2-methylbutanoate, green-apple ester)." },
+  { note: "berry",      cpd: "e2mb",      w: 0.40, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate across Rubus berries)." }
 ];
 
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
@@ -1269,7 +1298,10 @@ const COMPOUND_ORIGINS = {
   butyricacid:   "Parmesan and other aged cheeses, cultured butter, and (less appetizingly) human sweat and vomit. A product of fermentation and butterfat breakdown. Pleasant in trace, pungent in quantity.",
   isovalericacid: "Aged cheeses, especially the rind funk; also the classic 'sweaty feet' smell, hops, and some fermented foods. The reference odorant for 'dirty socks' in sensory training.",
   tca:           "Not a natural flavor at all — a contaminant. Made when molds methylate chlorine-based residues in cork, wood, and cardboard. The 'corked' smell of a faulty wine; also taints water and dried foods.",
-  mbt:           "Formed when light strikes hop compounds in beer (the 'lightstruck' or 'skunked' reaction), which is why beer is bottled in brown glass. Chemically kin to the thiols in skunk spray."
+  mbt:           "Formed when light strikes hop compounds in beer (the 'lightstruck' or 'skunked' reaction), which is why beer is bottled in brown glass. Chemically kin to the thiols in skunk spray.",
+  mesifurane:    "Strawberry above all, where with furaneol it sets the ripe-strawberry character; also arctic bramble, mango, and tomato. Caramel-sweet, faintly sherry-like.",
+  e2mb:          "Green apples (Granny Smith), strawberry, blackberry, blueberry, and pineapple. One of the most potent fruity esters — a little goes a long way.",
+  hex2enal:      "Crushed leaves and unripe / green fruit; a lead note in blueberry, apple, and tomato. Released the moment leaf tissue is bruised."
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -1433,14 +1465,14 @@ const WAIS_DESCRIPTORS = [
     { word: "tangerine",         notes: ["orange", "lemon"] },
     { word: "bergamot",          notes: ["lemon", "orange", "lavender"] },
     { word: "orange peel",       notes: ["orange", "lemon"] },
-    { word: "blueberry",         notes: ["berry"] },
+    { word: "blueberry",         notes: ["blueberry", "berry"] },
     { word: "raspberry",         notes: ["raspberry", "berry", "violet"] },
     { word: "grape / concord",   notes: ["grape"] },
     { word: "melon",             notes: ["melon"] },
     { word: "cucumber",          notes: ["melon", "green"] },
     { word: "watermelon",        notes: ["melon"] },
-    { word: "strawberry",        notes: ["berry"] },
-    { word: "blackberry",        notes: ["berry", "violet"] },
+    { word: "strawberry",        notes: ["strawberry", "berry"] },
+    { word: "blackberry",        notes: ["blackberry", "berry", "violet"] },
     { word: "cranberry",         notes: ["berry"] },
     { word: "red currant",       notes: ["berry"] },
     { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
