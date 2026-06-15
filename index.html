@@ -2618,6 +2618,16 @@ function recompute() {
     nn.score = noteSignal(nn.id);
     nn.radius = 5 + Math.min(12, nn.score * 8);
   });
+  // Clear stale selections: if the selected compound or note has lost all evidence
+  // it's no longer on the wheel, and keeping it selected leaves ghost edges drawn
+  // at full opacity from the note anchors to the compound's last simulated position.
+  if (state.selectedCompound && (CPD_NODE_BY_ID[state.selectedCompound]?.intensity_raw ?? 0) === 0) {
+    state.selectedCompound = null;
+  }
+  if (state.selectedNote && noteSignal(state.selectedNote) === 0) {
+    state.selectedNote = null;
+  }
+
   // Redraw the anchor set — it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
