@@ -72,7 +72,9 @@
   body.detail-hidden .pane-toggle.right { right: 0; }
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
+  .brand { display: flex; flex-direction: column; gap: 2px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
+  .tagline { font-size: 10px; color: var(--ink-dim); margin: 0; line-height: 1; letter-spacing: 0.01em; }
   /* On mid-width viewports (tablet landscape, half-screen browser windows), the
      results pane flexes a bit narrower so the wheel has more room. Sliders pane
      stays at 320 for usability — slider labels and the per-row buttons need it. */
@@ -337,7 +339,8 @@
     letter-spacing: 0.01em; margin-bottom: 7px; }
   .wheel-nudge .nudge-arrow { color: var(--accent); font-size: 15px; margin-right: 2px; }
   .wheel-nudge .nudge-sub { font-size: 11px; color: var(--ink-dim); line-height: 1.5; }
-  .wheel-nudge .nudge-demos { margin-top: 13px; pointer-events: auto;
+  .wheel-nudge .nudge-demos-label { font-size: 10px; color: var(--ink-dim); margin-top: 12px; margin-bottom: 5px; }
+  .wheel-nudge .nudge-demos { pointer-events: auto;
     display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   .wheel-nudge .nudge-demo { background: var(--panel-2); border: 1px solid var(--line);
     color: var(--ink); border-radius: 14px; padding: 4px 12px; font-size: 11px;
@@ -430,6 +433,18 @@
   .info-overlay-body code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 12px; background: var(--bg); color: var(--accent);
     padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
+
+  /* Translation ladder in How to Use */
+  .ladder { margin: 0 0 16px; display: flex; flex-direction: column; gap: 0; }
+  .ladder-step { display: grid; grid-template-columns: 22px 1fr;
+    grid-template-rows: auto auto; column-gap: 10px;
+    padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+  .ladder-n { grid-row: 1 / 3; align-self: center; font-size: 11px; font-weight: 700;
+    color: var(--accent); line-height: 1; }
+  .ladder-label { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .ladder-desc { font-size: 12px; color: var(--ink-dim); line-height: 1.45; margin-top: 3px; }
+  .ladder-arrow { text-align: center; font-size: 13px; color: var(--line); padding: 3px 0;
+    margin: 0 auto; line-height: 1; }
 
   /* In-tab table of contents — a row of chips that jump to the h3 sections of
      the current tab. Wiring is a single delegated listener on the info body
@@ -618,6 +633,7 @@
      it resolves to the sliders panel. Placed last in the sheet so it overrides
      every base rule above regardless of source order. */
   @media (max-width: 760px) {
+    .tagline { display: none; }
     /* One column, fixed grid regardless of which panes are "hidden" in JS state.
        Header grows to fit its wrapped controls; wheel takes a fixed band; the
        active panel fills and scrolls the rest. */
@@ -730,7 +746,10 @@
 </head>
 <body>
 <header>
-  <h1>Aroma Wheel</h1>
+  <div class="brand">
+    <h1>Aroma Wheel</h1>
+    <p class="tagline">Describe what you smell. Explore the chemistry behind it.</p>
+  </div>
   <span class="spacer"></span>
   <!-- All controls: always inline on desktop (display:contents makes children
        direct flex items); on mobile hidden until ••• expands them as a tray. -->
@@ -801,10 +820,17 @@
        Hidden the moment any note is logged; reappears after Start Over. -->
   <div id="wheel-nudge" class="wheel-nudge" hidden>
     <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
-    <div class="nudge-sub">Aromatic compounds appear here as you add notes. Tap any one to learn more.</div>
+    <div class="nudge-sub">Aromatic compounds appear as evidence accumulates — tap any one to see the chemistry and citations behind it. Works with coffee, tea, wine, beer, botanicals, and food.</div>
+    <div class="nudge-demos-label">Try an example:</div>
     <div class="nudge-demos">
-      <button type="button" class="nudge-demo" data-demo="coffee">Try: Coffee</button>
-      <button type="button" class="nudge-demo" data-demo="mocktail">Try: Citrus mocktail</button>
+      <button type="button" class="nudge-demo" data-demo="ethiopian">Ethiopian coffee</button>
+      <button type="button" class="nudge-demo" data-demo="ipa">IPA</button>
+      <button type="button" class="nudge-demo" data-demo="darkchoc">Dark chocolate</button>
+      <button type="button" class="nudge-demo" data-demo="lavender">Lavender</button>
+      <button type="button" class="nudge-demo" data-demo="blacktea">Black tea</button>
+      <button type="button" class="nudge-demo" data-demo="orangesoda">Orange soda</button>
+      <button type="button" class="nudge-demo" data-demo="marinara">Marinara</button>
+      <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
   </div>
   <!-- Mobile-only "Show compound labels" toggle. On phones the floating dot
@@ -890,6 +916,12 @@ const NOTES = [
   { id: "cherry",      label: "Cherry",             group: "fruity",   common: true  },
   { id: "mango",       label: "Mango",              group: "fruity",   common: false },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false },
+  { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true  },
+  { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true  },
+  { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true  },
+  { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true  },
+  { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true  },
+  { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true  },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true  },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
@@ -901,6 +933,7 @@ const NOTES = [
   { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true  },
   { id: "smoky",       label: "Smoky",              group: "roasted",  common: true  },
   { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true  },
+  { id: "popcorn",     label: "Popcorn / fresh bread", group: "roasted", common: true },
   // spice
   { id: "clove",       label: "Clove",              group: "spice",    common: true  },
   { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true  },
@@ -924,12 +957,17 @@ const NOTES = [
   { id: "honey",       label: "Honey",              group: "sweet",    common: true  },
   { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true  },
   { id: "maple",       label: "Maple / brown sugar",group: "sweet",    common: true  },
+  { id: "cottoncandy", label: "Cotton candy",       group: "sweet",    common: true  },
   // fermented
   { id: "winey",       label: "Winey",              group: "fermented",common: false },
   { id: "buttery",     label: "Buttery",            group: "fermented",common: true  },
   { id: "yeasty",      label: "Yeasty / bready",    group: "fermented",common: true  },
   { id: "sulfury",     label: "Sulfury",            group: "fermented",common: false },
-  { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false }
+  { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false },
+  { id: "cheesy",      label: "Cheesy",              group: "fermented",common: true  },
+  { id: "sweaty",      label: "Sweaty / funky",      group: "fermented",common: false },
+  { id: "musty",       label: "Musty / corked",     group: "fermented",common: false },
+  { id: "skunky",      label: "Skunky",             group: "fermented",common: false }
 ];
 
 // Compounds with class, literature anchor, odor-threshold tier, and specificity.
@@ -990,7 +1028,26 @@ const COMPOUNDS = [
   // More terpenes (eucalyptol, geosmin, menthol)
   { id: "cineole",       label: "1,8-Cineole",       class: "terpene",   commonName: "eucalyptol", threshold: "low",      specificity: "signature", thresholdSrc: "~12 ppb (Lis-Balchin 2002).", note: "Eucalyptol. Eucalyptus principal; also rosemary, sage, bay leaves, mint family." },
   { id: "geosmin",       label: "Geosmin",           class: "terpene",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Darriet et al. 2000).", note: "The 'wet earth' compound. Petrichor, beetroot, mushroom, cork taint." },
-  { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." }
+  { id: "menthol",       label: "Menthol",           class: "terpene",   threshold: "low",      specificity: "signature", thresholdSrc: "~50 ppb (Lawrence 2007).", note: "Peppermint principal. Produces a cooling chemesthetic sensation alongside its aroma." },
+  // ---- Library expansion: everyday-experience compounds ----
+  { id: "methanthr",     label: "Methyl anthranilate", class: "ester",   commonName: "methyl 2-aminobenzoate", threshold: "medium", specificity: "signature", thresholdSrc: "~300 ppb (Perry & Hayes 2016).", note: "The 'foxy' grape note. Character-impact compound of Concord / Vitis labrusca grapes and grape candy/soda. Paired with raspberry ketone it forms the backbone of artificial blue raspberry and cotton-candy confectionery flavors." },
+  { id: "raspketone",    label: "Raspberry ketone",  class: "ketone",    commonName: "4-(4-hydroxyphenyl)butan-2-one", threshold: "low", specificity: "signature", thresholdSrc: "~1–10 ppb (Larsen & Poll 1990).", note: "Character-impact compound of raspberry; sweet, jammy raspberry-preserve aroma. Combined with methyl anthranilate it drives the artificial blue raspberry and cotton-candy character used across confectionery." },
+  { id: "pearester",     label: "Ethyl (E,Z)-2,4-decadienoate", class: "ester", commonName: "pear ester", threshold: "low", specificity: "signature", thresholdSrc: "Bartlett-pear character impact (Jennings & Sevenants 1964).", note: "The 'pear ester.' Defines ripe Bartlett/Williams pear; green-fruity." },
+  { id: "nonadienal",    label: "(E,Z)-2,6-Nonadienal", class: "aldehyde", commonName: "cucumber / violet-leaf aldehyde", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Schieberle 1990).", note: "Fresh cucumber and melon rind; watery-green. Also violet leaf." },
+  { id: "acetylpyrroline", label: "2-Acetyl-1-pyrroline", class: "pyrroline", commonName: "2-AP", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.1 ppb in water (Buttery et al. 1983).", note: "Popcorn, fresh bread crust, basmati & jasmine rice. One molecule, the whole 'warm baked' smell." },
+  { id: "maltol",        label: "Maltol",            class: "pyranone",  commonName: "3-hydroxy-2-methyl-4H-pyranone", threshold: "high", specificity: "shared", thresholdSrc: "Caramel; relatively high threshold (Pittet, Rittersbacher & Muralidhara 1970).", note: "Warm caramel / cotton-candy / freshly-baked. A Maillard product in roasted malt, coffee, cocoa, and bread crust." },
+  { id: "ethylmaltol",   label: "Ethyl maltol",      class: "pyranone",  threshold: "medium", specificity: "signature", thresholdSrc: "Synthetic; ~order of magnitude stronger than maltol (Pittet et al. 1970).", note: "Synthetic flavorant (does not occur in nature). The intense cotton-candy / candy-floss smell of spun sugar, sodas, and confectionery." },
+  { id: "cishexenol",    label: "cis-3-Hexen-1-ol",  class: "alcohol",   commonName: "leaf alcohol", threshold: "low", specificity: "signature", thresholdSrc: "~70 ppb (Takeoka et al. 1995).", note: "The smell of fresh-cut grass and crushed leaves; sharper and greener than hexanal." },
+  { id: "phenethanol",   label: "2-Phenylethanol",   class: "alcohol",   commonName: "phenethyl alcohol", threshold: "high", specificity: "shared", thresholdSrc: "~10 mg/L in wine (Guth 1997).", note: "Soft rose-and-honey. Abundant in wine, beer, coffee, tea, and honey; a major rosy alcohol." },
+  { id: "anethole",      label: "trans-Anethole",    class: "phenylpropene", threshold: "low", specificity: "signature", thresholdSrc: "Anise/fennel principal, 80–95% of oil (Ohloff 1994).", note: "Sweet anise / licorice / fennel. Principal odorant of anise, star anise, fennel, and tarragon." },
+  { id: "butyricacid",   label: "Butyric acid",      class: "acid",      commonName: "butanoic acid", threshold: "low", specificity: "signature", thresholdSrc: "Cheese free-fatty-acid (Curioni & Bosset 2002).", note: "Sharp cheese tang — the smell of parmesan (and, at strength, of vomit). A fermentation / lipolysis product." },
+  { id: "isovalericacid",label: "Isovaleric acid",   class: "acid",      commonName: "3-methylbutanoic acid", threshold: "low", specificity: "signature", thresholdSrc: "Sweaty/cheese FFA (Curioni & Bosset 2002).", note: "Sweaty, gym-sock, aged-cheese. The reference standard flavorists use for 'dirty socks.'" },
+  { id: "tca",           label: "TCA",               class: "haloanisole", commonName: "2,4,6-trichloroanisole", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L (Buser, Zanier & Tanner 1982).", note: "'Corked.' Musty, wet-cardboard, damp-basement; the mold-derived fault that flattens a wine. Perceptible at parts-per-trillion." },
+  { id: "mbt",           label: "MBT",               class: "thiol",     commonName: "3-methyl-2-butene-1-thiol", threshold: "very-low", specificity: "signature", thresholdSrc: "~4 ng/L in beer (Gunst & Verzele 1978).", note: "Skunky. The lightstruck-beer thiol — and chemically the same family as skunk spray. Formed when light hits hop compounds." },
+  // ---- Berry differentiation: compounds that separate the berries ----
+  { id: "mesifurane",    label: "Mesifurane",        class: "furan",     commonName: "2,5-dimethyl-4-methoxy-3(2H)-furanone (DMMF)", threshold: "low", specificity: "signature", thresholdSrc: "Strawberry character-impact furanone (Schieberle & Hofmann 1997).", note: "The methyl ether of furaneol. With furaneol it forms the defining caramel-sweet, faintly sherry-like core of ripe strawberry." },
+  { id: "e2mb",          label: "Ethyl 2-methylbutanoate", class: "ester", threshold: "very-low", specificity: "shared", thresholdSrc: "~1.5 µg/L; intense green-apple/berry ester (Klesk & Qian 2003).", note: "One of the most potent fruity esters. The bright 'green-apple / jolly-rancher' top note across apple, strawberry, blackberry, blueberry, and pineapple." },
+  { id: "hex2enal",      label: "(E)-2-Hexenal",     class: "aldehyde",  commonName: "leaf aldehyde", threshold: "low", specificity: "shared", thresholdSrc: "~17 ppb green-leaf aldehyde (Hatanaka 1993).", note: "Sharp leafy-green, formed when leaf tissue is bruised. A lead note in blueberry, apple, and tomato." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1119,7 +1176,69 @@ const EDGES = [
   { note: "coffee",     cpd: "furaneol", w: 0.35, cite: "Czerny et al. 1999 (furaneol in roasted coffee)." },
 
   { note: "pine",       cpd: "cineole",  w: 0.40, cite: "Lis-Balchin 2002 (1,8-cineole in pine and conifer families)." },
-  { note: "lavender",   cpd: "cineole",  w: 0.30, cite: "Lis-Balchin 2002 (1,8-cineole, minor lavender constituent)." }
+  { note: "lavender",   cpd: "cineole",  w: 0.30, cite: "Lis-Balchin 2002 (1,8-cineole, minor lavender constituent)." },
+
+  // ---- Library expansion edges ----
+  // Grape / concord
+  { note: "grape",      cpd: "methanthr", w: 0.90, cite: "Wang & De Luca 2005 (methyl anthranilate, Concord 'foxy' impact)." },
+  { note: "grape",      cpd: "bdam",      w: 0.40, cite: "Sefton et al. 2011 (β-damascenone in grape)." },
+  // Raspberry
+  { note: "raspberry",  cpd: "raspketone", w: 0.92, cite: "Larsen & Poll 1990 (raspberry ketone, character impact)." },
+  { note: "raspberry",  cpd: "ionone",    w: 0.50, cite: "Larsen & Poll 1990 (β-ionone among key raspberry odorants)." },
+  { note: "raspberry",  cpd: "furaneol",  w: 0.40, cite: "Schwab et al. 2008 (furaneol in Rubus berries)." },
+  // Pear (rides the existing Apple / pear note)
+  { note: "apple",      cpd: "pearester", w: 0.60, cite: "Jennings & Sevenants 1964 (ethyl 2,4-decadienoate, Bartlett pear)." },
+  // Melon / cucumber
+  { note: "melon",      cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, cucumber & muskmelon)." },
+  { note: "melon",      cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
+  // Popcorn / fresh bread
+  { note: "popcorn",    cpd: "acetylpyrroline", w: 0.95, cite: "Schieberle 1991 (2-acetyl-1-pyrroline, popcorn primary odorant)." },
+  { note: "toast",      cpd: "acetylpyrroline", w: 0.55, cite: "Schieberle 1991 (2-AP in wheat-bread crust)." },
+  { note: "coffee",     cpd: "acetylpyrroline", w: 0.30, cite: "Czerny et al. 1999 (2-AP a minor roasted-coffee odorant)." },
+  // Cotton candy
+  { note: "cottoncandy", cpd: "ethylmaltol", w: 0.90, cite: "Pittet et al. 1970 (ethyl maltol, intense cotton-candy)." },
+  { note: "cottoncandy", cpd: "maltol",     w: 0.70, cite: "Pittet, Rittersbacher & Muralidhara 1970 (maltol, caramel/cotton-candy)." },
+  { note: "caramel",    cpd: "maltol",     w: 0.60, cite: "Pittet et al. 1970 (maltol, caramel character)." },
+  // Green / cut grass
+  { note: "green",      cpd: "cishexenol", w: 0.85, cite: "Hatanaka 1993 (cis-3-hexenol, green leaf volatile)." },
+  // Rose / honey (2-phenylethanol)
+  { note: "rose",       cpd: "phenethanol", w: 0.70, cite: "Ohloff 1994 (2-phenylethanol, rose alcohol)." },
+  { note: "honey",      cpd: "phenethanol", w: 0.50, cite: "Serra Bonvehí & Ventura Coll 2003 (2-phenylethanol, honey marker)." },
+  // Anise / licorice (anethole — the principal, replacing the eugenol stretch)
+  { note: "anise",      cpd: "anethole",  w: 0.95, cite: "Ohloff 1994 (anethole, anise/fennel principal)." },
+  // Cheesy (parmesan/tang) — butyric acid primary; isovaleric secondary (aged rind)
+  { note: "cheesy",     cpd: "butyricacid",    w: 0.85, cite: "Curioni & Bosset 2002 (butyric acid, cheese FFA)." },
+  { note: "cheesy",     cpd: "isovalericacid", w: 0.50, cite: "Curioni & Bosset 2002 (isovaleric acid, aged-cheese rind)." },
+  // Sweaty / funky — isovaleric acid primary; butyric secondary (rancid/sweaty at concentration)
+  { note: "sweaty",     cpd: "isovalericacid", w: 0.90, cite: "Curioni & Bosset 2002 (isovaleric acid, sweaty/gym-sock FFA)." },
+  { note: "sweaty",     cpd: "butyricacid",    w: 0.40, cite: "Curioni & Bosset 2002 (butyric acid, rancid/sweaty at higher concentration)." },
+  // Musty / corked
+  { note: "musty",      cpd: "tca",       w: 0.95, cite: "Buser, Zanier & Tanner 1982 (TCA, cork taint)." },
+  { note: "musty",      cpd: "geosmin",   w: 0.50, cite: "Darriet et al. 2000 (geosmin, musty/earthy crossover)." },
+  // Skunky
+  { note: "skunky",     cpd: "mbt",       w: 0.95, cite: "Gunst & Verzele 1978 (MBT, lightstruck/skunky thiol)." },
+
+  // ---- Berry differentiation edges (each berry gets its own profile) ----
+  // Strawberry — furanones + esters
+  { note: "strawberry", cpd: "furaneol",  w: 0.90, cite: "Schieberle & Hofmann 1997 (furaneol, strawberry character impact)." },
+  { note: "strawberry", cpd: "mesifurane", w: 0.70, cite: "Schieberle & Hofmann 1997 (mesifurane, strawberry)." },
+  { note: "strawberry", cpd: "e2mb",      w: 0.60, cite: "Schieberle & Hofmann 1997 (ethyl 2-methylbutanoate, strawberry)." },
+  { note: "strawberry", cpd: "ethex",     w: 0.45, cite: "Schieberle & Hofmann 1997 (ethyl hexanoate, strawberry)." },
+  { note: "strawberry", cpd: "gdecal",    w: 0.40, cite: "Schwab et al. 2008 (γ-decalactone in strawberry)." },
+  // Blueberry — linalool + green C6, low on furanones
+  { note: "blueberry",  cpd: "linalool",  w: 0.80, cite: "Horvat & Senter 1985 (linalool, blueberry key volatile)." },
+  { note: "blueberry",  cpd: "hex2enal",  w: 0.70, cite: "Horvat & Senter 1985 ((E)-2-hexenal, blueberry key volatile)." },
+  { note: "blueberry",  cpd: "geraniol",  w: 0.40, cite: "Horvat & Senter 1985 (geraniol in blueberry)." },
+  { note: "blueberry",  cpd: "ethex",     w: 0.35, cite: "Horvat & Senter 1985 (ester contribution)." },
+  // Blackberry — furaneol + ionones + esters (Klesk & Qian AEDA)
+  { note: "blackberry", cpd: "furaneol",  w: 0.70, cite: "Klesk & Qian 2003 (furaneol, blackberry)." },
+  { note: "blackberry", cpd: "ethex",     w: 0.60, cite: "Klesk & Qian 2003 (ethyl hexanoate, blackberry)." },
+  { note: "blackberry", cpd: "ionone",    w: 0.60, cite: "Klesk & Qian 2003 (α-/β-ionone, blackberry)." },
+  { note: "blackberry", cpd: "e2mb",      w: 0.55, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate, blackberry)." },
+  { note: "blackberry", cpd: "linalool",  w: 0.40, cite: "Klesk & Qian 2003 (linalool, blackberry)." },
+  // Strengthen the green-apple ester on apple and generic berry
+  { note: "apple",      cpd: "e2mb",      w: 0.55, cite: "Dimick & Hoskin 1983 (ethyl 2-methylbutanoate, green-apple ester)." },
+  { note: "berry",      cpd: "e2mb",      w: 0.40, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate across Rubus berries)." }
 ];
 
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
@@ -1136,14 +1255,19 @@ const COMPOUND_CLASS_COLOR = {
   "ketone":            "#ee665e",  // red
   "norisoprenoid":     "#d57bb4",  // orchid (was pale pink) — β-ionone is violet-scented
   "phenol":            "#6096c3",  // blue (was grey) — smoky-medicinal
-  "alcohol":           "#a584c2"   // soft purple (was sand) — earthy/mushroom
+  "alcohol":           "#a584c2",  // soft purple (was sand) — earthy/mushroom
+  "phenylpropene":     "#8fb56a",  // herb-green — anise/clove phenylpropanoids
+  "pyranone":          "#d98f5c",  // caramel — maltol sweet Maillard ring
+  "pyrroline":         "#c2693f",  // roast brown — 2-acetyl-1-pyrroline
+  "acid":              "#9aa63d",  // olive — short-chain fatty acids (cheese)
+  "haloanisole":       "#7d8a99"   // slate — musty chloroanisole faults
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
 // organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
 // get a short ring label so the 12 arc labels don't collide.
 const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
-const CLASS_SHORT = { "phenolic-aldehyde": "phen-ald", "norisoprenoid": "norisopr." };
+const CLASS_SHORT = { "phenolic-aldehyde": "phen-ald", "norisoprenoid": "norisopr.", "phenylpropene": "phenylprop.", "haloanisole": "halo-anisole" };
 const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color: COMPOUND_CLASS_COLOR[id] }));
 
 // ---------- INFO-TAB CONTENT ----------
@@ -1190,7 +1314,24 @@ const COMPOUND_ORIGINS = {
   furaneol:      "Strawberry, pineapple, raspberry, mango. Also a Maillard browning product: the same molecule shows up in roasted coffee, bread crust, and soy sauce, doing different work in each.",
   cineole:       "Eucalyptus leaves (the principal odorant, koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
   geosmin:       "Wet soil after rain, the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
-  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth, creating the chilly sensation even at room temperature."
+  menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth, creating the chilly sensation even at room temperature.",
+  methanthr:     "Concord and other 'slip-skin' American grapes (Vitis labrusca) — the grape-jelly, grape-soda, 'cotton-candy grape' smell. Also a trace in citrus blossom and some honeys. Largely absent from European wine grapes. In confectionery: paired with raspberry ketone it forms the core of artificial blue raspberry and cotton-candy flavors — the two compounds together are what most people are actually tasting when they recognize 'blue raspberry.'",
+  raspketone:    "Raspberries, where it's the defining aroma; also smaller amounts in cranberry, blackberry, and rhubarb. In confectionery: combined with methyl anthranilate (the Concord grape compound) it drives artificial blue raspberry and cotton-candy flavors across candy, soda, and bubble gum — a case where two natural-source compounds are deployed together to build a flavor that doesn't correspond to any single fruit.",
+  pearester:     "Ripe Bartlett (Williams) pears above all, where it defines the 'pear' smell; also apple, quince, and Concord grape in traces. One of the most pear-specific molecules known.",
+  nonadienal:    "Fresh cucumber and melon rind, where it's the lead aroma; violet leaves, and the 'green' top note of many vegetables. Forms instantly when cucumber tissue is cut.",
+  acetylpyrroline: "Popcorn, the crust of fresh bread, and cooked aromatic rice (basmati, jasmine). Also pandan leaves and a trace in some breads and beers. Forms from proline during baking and roasting.",
+  maltol:        "Roasted malt, fresh bread crust, roasted coffee and cocoa, caramelized sugar, and toasted cereal. A natural product of sugar browning — the 'freshly baked' warmth.",
+  ethylmaltol:   "Does not occur in nature — a synthetic flavorant. You meet it constantly anyway: cotton candy, candy, fruit sodas, and sweet bakery products, where it supplies the intense spun-sugar smell.",
+  cishexenol:    "Fresh-cut grass, crushed green leaves, green tea, unripe fruit, and the green top note of olive oil. Released the instant leaf tissue is damaged — the literal 'smell of mowing the lawn.'",
+  phenethanol:   "Rose petals (a principal component of rose oil), plus honey, and large amounts made by yeast — so it's abundant in wine, beer, bread, and coffee. Soft, rosy, honeyed.",
+  anethole:      "Anise seed, star anise, fennel, and tarragon, where it dominates the essential oil; the smell of ouzo, sambuca, pastis, and black licorice.",
+  butyricacid:   "Parmesan and other aged cheeses, cultured butter, and (less appetizingly) human sweat and vomit. A product of fermentation and butterfat breakdown. Pleasant in trace, pungent in quantity.",
+  isovalericacid: "Aged cheeses, especially the rind funk; also the classic 'sweaty feet' smell, hops, and some fermented foods. The reference odorant for 'dirty socks' in sensory training.",
+  tca:           "Not a natural flavor at all — a contaminant. Made when molds methylate chlorine-based residues in cork, wood, and cardboard. The 'corked' smell of a faulty wine; also taints water and dried foods.",
+  mbt:           "Formed when light strikes hop compounds in beer (the 'lightstruck' or 'skunked' reaction), which is why beer is bottled in brown glass. Chemically kin to the thiols in skunk spray.",
+  mesifurane:    "Strawberry above all, where with furaneol it sets the ripe-strawberry character; also arctic bramble, mango, and tomato. Caramel-sweet, faintly sherry-like.",
+  e2mb:          "Green apples (Granny Smith), strawberry, blackberry, blueberry, and pineapple. One of the most potent fruity esters — a little goes a long way.",
+  hex2enal:      "Crushed leaves and unripe / green fruit; a lead note in blueberry, apple, and tomato. Released the moment leaf tissue is bruised."
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -1207,7 +1348,12 @@ const COMPOUND_CLASS_INFO = {
   ketone:              "Carbonyl group in the middle of a carbon chain. Diacetyl is the buttery one (malolactic fermentation); other ketones span cooked-apple, floral, and tobacco-like notes.",
   norisoprenoid:       "Fragments of broken-down carotenoid pigments, the same chemistry as plant color. Wine-friendly compounds in this family include damascones (cooked apple, tobacco) and ionones (violet).",
   phenol:              "Aromatic ring carrying a hydroxyl group. Smoky, medicinal, sometimes clove-like (eugenol, guaiacol, 4-vinylguaiacol). Common in smoked foods, whisky, and certain coffees and wheat beers.",
-  alcohol:             "Compounds with a free hydroxyl (-OH) group that aren't classified elsewhere as a terpene or phenol family. Few but distinctive: 1-octen-3-ol is the classic 'mushroom alcohol' responsible for fresh-mushroom and forest-floor notes."
+  alcohol:             "Compounds with a free hydroxyl (-OH) group that aren't classified elsewhere as a terpene or phenol family. Few but distinctive: 1-octen-3-ol is the classic 'mushroom alcohol' responsible for fresh-mushroom and forest-floor notes; cis-3-hexen-1-ol is the smell of fresh-cut grass; 2-phenylethanol is rose-honey.",
+  phenylpropene:       "Aromatic rings carrying a three-carbon propene tail, built by plants from the amino acid phenylalanine. The backbone of warm spice smells: anethole is anise / licorice / fennel; eugenol is clove.",
+  pyranone:            "Six-membered oxygen rings from sugar browning (caramelization / Maillard). Warm, caramel, cotton-candy. Maltol is the natural one in roasted malt, coffee, and bread crust; ethyl maltol is its stronger synthetic cousin.",
+  pyrroline:           "A nitrogen ring formed when proline reacts with sugars under heat. 2-Acetyl-1-pyrroline is the single molecule behind popcorn, fresh bread crust, and the aroma of basmati and jasmine rice — detectable at trace levels.",
+  acid:                "Short-chain fatty acids with a free -COOH group. Sharp, sour, and funky: butyric acid is the tang of parmesan (and vomit at strength); isovaleric acid is sweaty / gym-sock. Products of fermentation and lipid breakdown.",
+  haloanisole:         "Chlorinated anisoles made when molds methylate chlorophenol residues. Almost always faults: 2,4,6-trichloroanisole (TCA) is 'cork taint' — the musty, wet-cardboard, damp-basement smell that flattens a wine, detectable at parts-per-trillion."
 };
 
 // Full bibliographic entries for the most-cited papers backing the note→compound
@@ -1349,10 +1495,14 @@ const WAIS_DESCRIPTORS = [
     { word: "tangerine",         notes: ["orange", "lemon"] },
     { word: "bergamot",          notes: ["lemon", "orange", "lavender"] },
     { word: "orange peel",       notes: ["orange", "lemon"] },
-    { word: "blueberry",         notes: ["berry"] },
-    { word: "raspberry",         notes: ["berry", "violet"] },
-    { word: "strawberry",        notes: ["berry"] },
-    { word: "blackberry",        notes: ["berry", "violet"] },
+    { word: "blueberry",         notes: ["blueberry", "berry"] },
+    { word: "raspberry",         notes: ["raspberry", "berry", "violet"] },
+    { word: "grape / concord",   notes: ["grape"] },
+    { word: "melon",             notes: ["melon"] },
+    { word: "cucumber",          notes: ["melon", "green"] },
+    { word: "watermelon",        notes: ["melon"] },
+    { word: "strawberry",        notes: ["strawberry", "berry"] },
+    { word: "blackberry",        notes: ["blackberry", "berry", "violet"] },
     { word: "cranberry",         notes: ["berry"] },
     { word: "red currant",       notes: ["berry"] },
     { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
@@ -1367,8 +1517,6 @@ const WAIS_DESCRIPTORS = [
     { word: "apricot",           notes: ["stonefruit"] },
     { word: "nectarine",         notes: ["stonefruit"] },
     { word: "tropical",          notes: ["mango", "passionfruit", "banana", "pineapple"] },
-    { word: "papaya",            notes: ["mango"] },
-    { word: "guava",             notes: ["passionfruit", "mango"] },
     { word: "lychee",            notes: ["rose"] },
     { word: "overripe fruit",    notes: ["berry", "stonefruit", "apple", "banana", "mango", "cherry"] },
     { word: "dried fruit",       notes: ["stonefruit", "berry", "apple", "mango", "cherry"] },
@@ -1403,7 +1551,7 @@ const WAIS_DESCRIPTORS = [
     { word: "earthy / dirt",     notes: ["mushroom", "woody", "bellpepper"] },
     { word: "soil",              notes: ["mushroom", "woody", "tobacco", "bellpepper"] },
     { word: "wet earth",         notes: ["mushroom", "woody"] },
-    { word: "musty",             notes: ["mushroom", "woody", "cardboard"] },
+    { word: "musty",             notes: ["musty", "mushroom", "woody", "cardboard"] },
     { word: "dusty",             notes: ["woody", "cardboard"] },
     { word: "woody",             notes: ["woody", "pine", "tobacco"] },
     { word: "resinous",          notes: ["pine", "woody"] }
@@ -1412,7 +1560,17 @@ const WAIS_DESCRIPTORS = [
     { word: "sweet / dessert",   notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
     { word: "brown sugar",       notes: ["maple", "caramel"] },
     { word: "molasses",          notes: ["caramel", "maple", "burnt"] },
-    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] }
+    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] },
+    { word: "cotton candy",      notes: ["cottoncandy"] },
+    { word: "candy floss",       notes: ["cottoncandy"] },
+    { word: "spun sugar",        notes: ["cottoncandy", "caramel"] }
+  ]},
+  { category: "Confectionery / Artificial", entries: [
+    // Artificial flavors are made from real aroma compounds — these chips show
+    // which natural volatiles manufacturers are actually deploying.
+    { word: "blue raspberry",    notes: ["raspberry", "berry", "grape"] },
+    { word: "bubble gum",        notes: ["banana", "strawberry", "vanilla", "berry"] },
+    { word: "tutti frutti",      notes: ["cherry", "pineapple", "banana", "orange", "berry"] }
   ]},
   { category: "Nutty / Cocoa", entries: [
     { word: "nutty",             notes: ["almond", "hazelnut", "peanut"] },
@@ -1426,7 +1584,11 @@ const WAIS_DESCRIPTORS = [
     { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
     { word: "toasted grain",     notes: ["toast", "yeasty"] },
     { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise"] },
-    { word: "medicinal",         notes: ["clove", "anise"] }
+    { word: "medicinal",         notes: ["clove", "anise"] },
+    { word: "popcorn",           notes: ["popcorn"] },
+    { word: "fresh bread",       notes: ["popcorn", "toast", "yeasty"] },
+    { word: "basmati / jasmine rice", notes: ["popcorn"] },
+    { word: "licorice / fennel", notes: ["anise"] }
   ]},
   { category: "Fermented / Funky", entries: [
     { word: "fermented",         notes: ["winey", "yeasty", "buttery"] },
@@ -1434,9 +1596,14 @@ const WAIS_DESCRIPTORS = [
     { word: "funky",             notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
     { word: "kombucha-like",     notes: ["winey", "yeasty", "sulfury"] },
     { word: "lactic / yogurt",   notes: ["buttery", "yeasty"] },
-    { word: "cheesey / dairy",   notes: ["buttery", "sulfury"] },
+    { word: "cheesey / dairy",   notes: ["cheesy", "buttery"] },
+    { word: "sweaty / gym socks", notes: ["sweaty"] },
+    { word: "parmesan",          notes: ["cheesy"] },
     { word: "petting zoo",       notes: ["sulfury", "yeasty", "mushroom", "woody"] },
-    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] }
+    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] },
+    { word: "corked / musty",    notes: ["musty"] },
+    { word: "wet cardboard / basement", notes: ["musty", "cardboard"] },
+    { word: "skunky / lightstruck", notes: ["skunky", "sulfury"] }
   ]}
 ];
 
@@ -2451,6 +2618,16 @@ function recompute() {
     nn.score = noteSignal(nn.id);
     nn.radius = 5 + Math.min(12, nn.score * 8);
   });
+  // Clear stale selections: if the selected compound or note has lost all evidence
+  // it's no longer on the wheel, and keeping it selected leaves ghost edges drawn
+  // at full opacity from the note anchors to the compound's last simulated position.
+  if (state.selectedCompound && (CPD_NODE_BY_ID[state.selectedCompound]?.intensity_raw ?? 0) === 0) {
+    state.selectedCompound = null;
+  }
+  if (state.selectedNote && noteSignal(state.selectedNote) === 0) {
+    state.selectedNote = null;
+  }
+
   // Redraw the anchor set — it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
@@ -3333,22 +3510,77 @@ function setNotes(entries) {
 
 document.getElementById("reset").addEventListener("click", () => setNotes([]));
 
-// Coffee — default-mode showcase. No phase tags; just intensities.
-// (Coffee experience is rich enough that most users can use it without phase tagging.)
-const DEMO_COFFEE = [
-  { note: "coffee",     intensity: 9 },
-  { note: "toast",      intensity: 6 },
-  { note: "smoky",      intensity: 2 },
-  { note: "chocolate",  intensity: 7 },
-  { note: "caramel",    intensity: 5 },
+// Ethiopian coffee — light-roast, fruit-forward, floral.
+const DEMO_ETHIOPIAN = [
+  { note: "coffee",     intensity: 7 },
+  { note: "berry",      intensity: 6 },
+  { note: "rose",       intensity: 4 },
   { note: "stonefruit", intensity: 4 },
-  { note: "honey",      intensity: 3 }
+  { note: "lemon",      intensity: 3 },
+  { note: "caramel",    intensity: 3 }
+];
+
+// IPA — resinous, citrusy, bitter.
+const DEMO_IPA = [
+  { note: "grapefruit", intensity: 8 },
+  { note: "pine",       intensity: 6 },
+  { note: "green",      intensity: 5 },
+  { note: "lemon",      intensity: 4 },
+  { note: "yeasty",     intensity: 3 },
+  { note: "caramel",    intensity: 2 }
+];
+
+// Dark chocolate — deep roast, fruity, slight smoke.
+const DEMO_DARK_CHOC = [
+  { note: "chocolate",  intensity: 9 },
+  { note: "coffee",     intensity: 4 },
+  { note: "caramel",    intensity: 4 },
+  { note: "berry",      intensity: 3 },
+  { note: "vanilla",    intensity: 3 },
+  { note: "smoky",      intensity: 2 }
+];
+
+// Lavender — floral, honey, woody.
+const DEMO_LAVENDER = [
+  { note: "lavender",   intensity: 9 },
+  { note: "rose",       intensity: 5 },
+  { note: "chamomile",  intensity: 4 },
+  { note: "honey",      intensity: 3 },
+  { note: "woody",      intensity: 2 }
+];
+
+// Black tea — floral, toasty, lightly sweet.
+const DEMO_BLACK_TEA = [
+  { note: "rose",       intensity: 4 },
+  { note: "chamomile",  intensity: 3 },
+  { note: "toast",      intensity: 5 },
+  { note: "caramel",    intensity: 3 },
+  { note: "honey",      intensity: 3 },
+  { note: "green",      intensity: 2 }
+];
+
+// Orange soda — bright citrus, sweet.
+const DEMO_ORANGE_SODA = [
+  { note: "orange",      intensity: 9 },
+  { note: "lemon",       intensity: 4 },
+  { note: "caramel",     intensity: 4 },
+  { note: "honey",       intensity: 3 },
+  { note: "cottoncandy", intensity: 3 }
+];
+
+// Marinara — herbaceous, vegetal, lightly winey.
+const DEMO_MARINARA = [
+  { note: "green",      intensity: 5 },
+  { note: "bellpepper", intensity: 4 },
+  { note: "pepper",     intensity: 4 },
+  { note: "winey",      intensity: 3 },
+  { note: "honey",      intensity: 2 }
 ];
 
 // Citrus mocktail — Go Deeper showcase. Mixes default-mode entries with
 // ortho/retro-tagged ones to demonstrate dual-phase logging. Orange is
 // logged in both phases at different intensities (ortho-bright, retro-mild).
-// Loading this demo auto-enables Go Deeper.
+// Loading this demo auto-enables Go Deeper. (Marked ✦ in the nudge.)
 const DEMO_MOCKTAIL = [
   { note: "grapefruit",   phase: "ortho", intensity: 9 },
   { note: "orange",       phase: "ortho", intensity: 7 },
@@ -3360,9 +3592,17 @@ const DEMO_MOCKTAIL = [
   { note: "green",        intensity: 2 }
 ];
 
-// Single entry point for the demos. The example launchers live in the empty-wheel
-// nudge (see FIRST-RUN NUDGE below); `name` is "coffee" | "mocktail".
-function loadDemo(name) { setNotes(name === "mocktail" ? DEMO_MOCKTAIL : DEMO_COFFEE); }
+const DEMOS = {
+  ethiopian:  DEMO_ETHIOPIAN,
+  ipa:        DEMO_IPA,
+  darkchoc:   DEMO_DARK_CHOC,
+  lavender:   DEMO_LAVENDER,
+  blacktea:   DEMO_BLACK_TEA,
+  orangesoda: DEMO_ORANGE_SODA,
+  marinara:   DEMO_MARINARA,
+  mocktail:   DEMO_MOCKTAIL
+};
+function loadDemo(name) { setNotes(DEMOS[name] || DEMOS.ethiopian); }
 
 // ---------- FIRST-RUN NUDGE ----------
 // Visible only while the wheel is empty; updateNudge() runs from recompute()
@@ -3509,8 +3749,8 @@ function renderMethodology() {
     <p>The tool ships with three kinds of data baked in:</p>
     <ul>
       <li><strong>Notes</strong> (~44 descriptors across 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
-      <li><strong>Compounds</strong> (~39 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
-      <li><strong>Edges</strong> (~80 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
+      <li><strong>Compounds</strong> (53 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
+      <li><strong>Edges</strong> (120 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
     </ul>
     <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture, never these numbers.)</p>
 
@@ -3565,6 +3805,7 @@ function renderHowToUse() {
     <p class="lede">Slide the descriptors you notice; compounds light up as evidence accumulates. That's the whole loop.</p>
 
     ${tocNav([
+      ["use-ladder", "The inference chain"],
       ["use-flow", "The basic flow"],
       ["use-views", "Two views"],
       ["use-organize", "Organize the wheel"],
@@ -3572,6 +3813,19 @@ function renderHowToUse() {
       ["use-deeper", "Go Deeper"],
       ["use-repeat", "Repeat-tasting"]
     ])}
+
+    <h3 id="use-ladder">The inference chain</h3>
+    <p>The tool translates your experience through four levels:</p>
+    <div class="ladder">
+      <div class="ladder-step"><span class="ladder-n">1</span><span class="ladder-label">What you perceive</span><span class="ladder-desc">Your sensory experience — "this smells floral, a little citrusy, with something earthy underneath."</span></div>
+      <div class="ladder-arrow">↓</div>
+      <div class="ladder-step"><span class="ladder-n">2</span><span class="ladder-label">Flavor notes</span><span class="ladder-desc">You translate that into descriptors from the wheel's vocabulary: <em>lavender</em>, <em>lemon</em>, <em>green</em>.</span></div>
+      <div class="ladder-arrow">↓</div>
+      <div class="ladder-step"><span class="ladder-n">3</span><span class="ladder-label">Shared patterns</span><span class="ladder-desc">Multiple notes converge on the same compounds — evidence accumulates where your perceptions agree.</span></div>
+      <div class="ladder-arrow">↓</div>
+      <div class="ladder-step"><span class="ladder-n">4</span><span class="ladder-label">Aromatic compounds</span><span class="ladder-desc">The compounds most likely present, ranked by how strongly your notes point to them and how easily each is perceived at trace amounts. Tap any one for its odor threshold and the citations behind it.</span></div>
+    </div>
+    <p>The step worth dwelling on is 3→4: the tool isn't matching a single word to a single molecule. It's looking for convergence across everything you reported. Lemon + grapefruit + passionfruit all point toward polyfunctional thiols — that triangulation is what gives the inference meaning.</p>
 
     <h3 id="use-flow">The basic flow</h3>
     <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
@@ -3770,7 +4024,11 @@ const waisSuggestionsEl = document.getElementById("wais-suggestions");
 // reason lives here so users who wonder "why is X in this group?" have a
 // one-hover answer without us having to restructure the groups themselves.
 const NOTE_GROUP_RATIONALE = {
-  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation."
+  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation.",
+  cheesy: "Cheesy sits in Fermented because its primary compound — butyric acid — is a free fatty acid released by microbial fermentation and the breakdown of butterfat during cheese ripening. The sharp parmesan tang is essentially concentrated fermentation byproduct.",
+  sweaty: "Sweaty sits in Fermented because isovaleric acid, its primary compound, is produced by bacterial breakdown of leucine — the same metabolic path that makes fermented foods funky and unwashed gym clothes recognizable. Same chemistry, different context.",
+  musty: "Musty / corked sits in Fermented as the group's catch-all for microbial funk. Its marker, TCA, is made by molds methylating chlorophenols — not a fermentation you'd want, but a microbial origin all the same.",
+  skunky: "Skunky is grouped here alongside the other sulfur / funky notes for convenience, but its origin is unusual: MBT forms photochemically when light strikes hop compounds in beer, not by fermentation."
 };
 
 // Multi-select: which descriptor chips are currently active. Cleared each

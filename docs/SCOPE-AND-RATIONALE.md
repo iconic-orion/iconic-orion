@@ -177,7 +177,7 @@ The claim is bounded, and naming the bounds is part of making it credible:
 - **No correction of the perceiver.** Two people with the same experience can
   report differently; the tool honors the report rather than "fixing" it.
 - **A curated set, not a full volatile profile.** Real samples carry dozens to
-  hundreds of volatiles; the tool models ~39 compounds chosen for usefulness in
+  hundreds of volatiles; the tool models 53 compounds chosen for usefulness in
   tasting.
 
 These limits are exactly *why* it's a suggestion engine and not a lab — and why
