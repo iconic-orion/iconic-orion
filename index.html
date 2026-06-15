@@ -72,7 +72,9 @@
   body.detail-hidden .pane-toggle.right { right: 0; }
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
+  .brand { display: flex; flex-direction: column; gap: 2px; }
   header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
+  .tagline { font-size: 10px; color: var(--ink-dim); margin: 0; line-height: 1; letter-spacing: 0.01em; }
   /* On mid-width viewports (tablet landscape, half-screen browser windows), the
      results pane flexes a bit narrower so the wheel has more room. Sliders pane
      stays at 320 for usability — slider labels and the per-row buttons need it. */
@@ -337,7 +339,8 @@
     letter-spacing: 0.01em; margin-bottom: 7px; }
   .wheel-nudge .nudge-arrow { color: var(--accent); font-size: 15px; margin-right: 2px; }
   .wheel-nudge .nudge-sub { font-size: 11px; color: var(--ink-dim); line-height: 1.5; }
-  .wheel-nudge .nudge-demos { margin-top: 13px; pointer-events: auto;
+  .wheel-nudge .nudge-demos-label { font-size: 10px; color: var(--ink-dim); margin-top: 12px; margin-bottom: 5px; }
+  .wheel-nudge .nudge-demos { pointer-events: auto;
     display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   .wheel-nudge .nudge-demo { background: var(--panel-2); border: 1px solid var(--line);
     color: var(--ink); border-radius: 14px; padding: 4px 12px; font-size: 11px;
@@ -430,6 +433,18 @@
   .info-overlay-body code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 12px; background: var(--bg); color: var(--accent);
     padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
+
+  /* Translation ladder in How to Use */
+  .ladder { margin: 0 0 16px; display: flex; flex-direction: column; gap: 0; }
+  .ladder-step { display: grid; grid-template-columns: 22px 1fr;
+    grid-template-rows: auto auto; column-gap: 10px;
+    padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+  .ladder-n { grid-row: 1 / 3; align-self: center; font-size: 11px; font-weight: 700;
+    color: var(--accent); line-height: 1; }
+  .ladder-label { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .ladder-desc { font-size: 12px; color: var(--ink-dim); line-height: 1.45; margin-top: 3px; }
+  .ladder-arrow { text-align: center; font-size: 13px; color: var(--line); padding: 3px 0;
+    margin: 0 auto; line-height: 1; }
 
   /* In-tab table of contents — a row of chips that jump to the h3 sections of
      the current tab. Wiring is a single delegated listener on the info body
@@ -618,6 +633,7 @@
      it resolves to the sliders panel. Placed last in the sheet so it overrides
      every base rule above regardless of source order. */
   @media (max-width: 760px) {
+    .tagline { display: none; }
     /* One column, fixed grid regardless of which panes are "hidden" in JS state.
        Header grows to fit its wrapped controls; wheel takes a fixed band; the
        active panel fills and scrolls the rest. */
@@ -730,7 +746,10 @@
 </head>
 <body>
 <header>
-  <h1>Aroma Wheel</h1>
+  <div class="brand">
+    <h1>Aroma Wheel</h1>
+    <p class="tagline">Describe what you smell. Explore the chemistry behind it.</p>
+  </div>
   <span class="spacer"></span>
   <!-- All controls: always inline on desktop (display:contents makes children
        direct flex items); on mobile hidden until ••• expands them as a tray. -->
@@ -801,10 +820,17 @@
        Hidden the moment any note is logged; reappears after Start Over. -->
   <div id="wheel-nudge" class="wheel-nudge" hidden>
     <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
-    <div class="nudge-sub">Aromatic compounds appear here as you add notes. Tap any one to learn more.</div>
+    <div class="nudge-sub">Aromatic compounds appear as evidence accumulates — tap any one to see the chemistry and citations behind it. Works with coffee, tea, wine, beer, botanicals, and food.</div>
+    <div class="nudge-demos-label">Try an example:</div>
     <div class="nudge-demos">
-      <button type="button" class="nudge-demo" data-demo="coffee">Try: Coffee</button>
-      <button type="button" class="nudge-demo" data-demo="mocktail">Try: Citrus mocktail</button>
+      <button type="button" class="nudge-demo" data-demo="ethiopian">Ethiopian coffee</button>
+      <button type="button" class="nudge-demo" data-demo="ipa">IPA</button>
+      <button type="button" class="nudge-demo" data-demo="darkchoc">Dark chocolate</button>
+      <button type="button" class="nudge-demo" data-demo="lavender">Lavender</button>
+      <button type="button" class="nudge-demo" data-demo="blacktea">Black tea</button>
+      <button type="button" class="nudge-demo" data-demo="orangesoda">Orange soda</button>
+      <button type="button" class="nudge-demo" data-demo="marinara">Marinara</button>
+      <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
   </div>
   <!-- Mobile-only "Show compound labels" toggle. On phones the floating dot
@@ -3465,22 +3491,77 @@ function setNotes(entries) {
 
 document.getElementById("reset").addEventListener("click", () => setNotes([]));
 
-// Coffee — default-mode showcase. No phase tags; just intensities.
-// (Coffee experience is rich enough that most users can use it without phase tagging.)
-const DEMO_COFFEE = [
-  { note: "coffee",     intensity: 9 },
-  { note: "toast",      intensity: 6 },
-  { note: "smoky",      intensity: 2 },
-  { note: "chocolate",  intensity: 7 },
-  { note: "caramel",    intensity: 5 },
+// Ethiopian coffee — light-roast, fruit-forward, floral.
+const DEMO_ETHIOPIAN = [
+  { note: "coffee",     intensity: 7 },
+  { note: "berry",      intensity: 6 },
+  { note: "rose",       intensity: 4 },
   { note: "stonefruit", intensity: 4 },
-  { note: "honey",      intensity: 3 }
+  { note: "lemon",      intensity: 3 },
+  { note: "caramel",    intensity: 3 }
+];
+
+// IPA — resinous, citrusy, bitter.
+const DEMO_IPA = [
+  { note: "grapefruit", intensity: 8 },
+  { note: "pine",       intensity: 6 },
+  { note: "green",      intensity: 5 },
+  { note: "lemon",      intensity: 4 },
+  { note: "yeasty",     intensity: 3 },
+  { note: "caramel",    intensity: 2 }
+];
+
+// Dark chocolate — deep roast, fruity, slight smoke.
+const DEMO_DARK_CHOC = [
+  { note: "chocolate",  intensity: 9 },
+  { note: "coffee",     intensity: 4 },
+  { note: "caramel",    intensity: 4 },
+  { note: "berry",      intensity: 3 },
+  { note: "vanilla",    intensity: 3 },
+  { note: "smoky",      intensity: 2 }
+];
+
+// Lavender — floral, honey, woody.
+const DEMO_LAVENDER = [
+  { note: "lavender",   intensity: 9 },
+  { note: "rose",       intensity: 5 },
+  { note: "chamomile",  intensity: 4 },
+  { note: "honey",      intensity: 3 },
+  { note: "woody",      intensity: 2 }
+];
+
+// Black tea — floral, toasty, lightly sweet.
+const DEMO_BLACK_TEA = [
+  { note: "rose",       intensity: 4 },
+  { note: "chamomile",  intensity: 3 },
+  { note: "toast",      intensity: 5 },
+  { note: "caramel",    intensity: 3 },
+  { note: "honey",      intensity: 3 },
+  { note: "green",      intensity: 2 }
+];
+
+// Orange soda — bright citrus, sweet.
+const DEMO_ORANGE_SODA = [
+  { note: "orange",      intensity: 9 },
+  { note: "lemon",       intensity: 4 },
+  { note: "caramel",     intensity: 4 },
+  { note: "honey",       intensity: 3 },
+  { note: "cottoncandy", intensity: 3 }
+];
+
+// Marinara — herbaceous, vegetal, lightly winey.
+const DEMO_MARINARA = [
+  { note: "green",      intensity: 5 },
+  { note: "bellpepper", intensity: 4 },
+  { note: "pepper",     intensity: 4 },
+  { note: "winey",      intensity: 3 },
+  { note: "honey",      intensity: 2 }
 ];
 
 // Citrus mocktail — Go Deeper showcase. Mixes default-mode entries with
 // ortho/retro-tagged ones to demonstrate dual-phase logging. Orange is
 // logged in both phases at different intensities (ortho-bright, retro-mild).
-// Loading this demo auto-enables Go Deeper.
+// Loading this demo auto-enables Go Deeper. (Marked ✦ in the nudge.)
 const DEMO_MOCKTAIL = [
   { note: "grapefruit",   phase: "ortho", intensity: 9 },
   { note: "orange",       phase: "ortho", intensity: 7 },
@@ -3492,9 +3573,17 @@ const DEMO_MOCKTAIL = [
   { note: "green",        intensity: 2 }
 ];
 
-// Single entry point for the demos. The example launchers live in the empty-wheel
-// nudge (see FIRST-RUN NUDGE below); `name` is "coffee" | "mocktail".
-function loadDemo(name) { setNotes(name === "mocktail" ? DEMO_MOCKTAIL : DEMO_COFFEE); }
+const DEMOS = {
+  ethiopian:  DEMO_ETHIOPIAN,
+  ipa:        DEMO_IPA,
+  darkchoc:   DEMO_DARK_CHOC,
+  lavender:   DEMO_LAVENDER,
+  blacktea:   DEMO_BLACK_TEA,
+  orangesoda: DEMO_ORANGE_SODA,
+  marinara:   DEMO_MARINARA,
+  mocktail:   DEMO_MOCKTAIL
+};
+function loadDemo(name) { setNotes(DEMOS[name] || DEMOS.ethiopian); }
 
 // ---------- FIRST-RUN NUDGE ----------
 // Visible only while the wheel is empty; updateNudge() runs from recompute()
@@ -3697,6 +3786,7 @@ function renderHowToUse() {
     <p class="lede">Slide the descriptors you notice; compounds light up as evidence accumulates. That's the whole loop.</p>
 
     ${tocNav([
+      ["use-ladder", "The inference chain"],
       ["use-flow", "The basic flow"],
       ["use-views", "Two views"],
       ["use-organize", "Organize the wheel"],
@@ -3704,6 +3794,19 @@ function renderHowToUse() {
       ["use-deeper", "Go Deeper"],
       ["use-repeat", "Repeat-tasting"]
     ])}
+
+    <h3 id="use-ladder">The inference chain</h3>
+    <p>The tool translates your experience through four levels:</p>
+    <div class="ladder">
+      <div class="ladder-step"><span class="ladder-n">1</span><span class="ladder-label">What you perceive</span><span class="ladder-desc">Your sensory experience — "this smells floral, a little citrusy, with something earthy underneath."</span></div>
+      <div class="ladder-arrow">↓</div>
+      <div class="ladder-step"><span class="ladder-n">2</span><span class="ladder-label">Flavor notes</span><span class="ladder-desc">You translate that into descriptors from the wheel's vocabulary: <em>lavender</em>, <em>lemon</em>, <em>green</em>.</span></div>
+      <div class="ladder-arrow">↓</div>
+      <div class="ladder-step"><span class="ladder-n">3</span><span class="ladder-label">Shared patterns</span><span class="ladder-desc">Multiple notes converge on the same compounds — evidence accumulates where your perceptions agree.</span></div>
+      <div class="ladder-arrow">↓</div>
+      <div class="ladder-step"><span class="ladder-n">4</span><span class="ladder-label">Aromatic compounds</span><span class="ladder-desc">The compounds most likely present, ranked by how strongly your notes point to them and how easily each is perceived at trace amounts. Tap any one for its odor threshold and the citations behind it.</span></div>
+    </div>
+    <p>The step worth dwelling on is 3→4: the tool isn't matching a single word to a single molecule. It's looking for convergence across everything you reported. Lemon + grapefruit + passionfruit all point toward polyfunctional thiols — that triangulation is what gives the inference meaning.</p>
 
     <h3 id="use-flow">The basic flow</h3>
     <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
