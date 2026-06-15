@@ -964,7 +964,8 @@ const NOTES = [
   { id: "yeasty",      label: "Yeasty / bready",    group: "fermented",common: true  },
   { id: "sulfury",     label: "Sulfury",            group: "fermented",common: false },
   { id: "cardboard",   label: "Cardboard / stale",  group: "fermented",common: false },
-  { id: "cheesy",      label: "Cheesy / sweaty",    group: "fermented",common: true  },
+  { id: "cheesy",      label: "Cheesy",              group: "fermented",common: true  },
+  { id: "sweaty",      label: "Sweaty / funky",      group: "fermented",common: false },
   { id: "musty",       label: "Musty / corked",     group: "fermented",common: false },
   { id: "skunky",      label: "Skunky",             group: "fermented",common: false }
 ];
@@ -1205,9 +1206,12 @@ const EDGES = [
   { note: "honey",      cpd: "phenethanol", w: 0.50, cite: "Serra Bonvehí & Ventura Coll 2003 (2-phenylethanol, honey marker)." },
   // Anise / licorice (anethole — the principal, replacing the eugenol stretch)
   { note: "anise",      cpd: "anethole",  w: 0.95, cite: "Ohloff 1994 (anethole, anise/fennel principal)." },
-  // Cheesy / sweaty
-  { note: "cheesy",     cpd: "butyricacid", w: 0.85, cite: "Curioni & Bosset 2002 (butyric acid, cheese FFA)." },
-  { note: "cheesy",     cpd: "isovalericacid", w: 0.82, cite: "Curioni & Bosset 2002 (isovaleric acid, sweaty/cheese FFA)." },
+  // Cheesy (parmesan/tang) — butyric acid primary; isovaleric secondary (aged rind)
+  { note: "cheesy",     cpd: "butyricacid",    w: 0.85, cite: "Curioni & Bosset 2002 (butyric acid, cheese FFA)." },
+  { note: "cheesy",     cpd: "isovalericacid", w: 0.50, cite: "Curioni & Bosset 2002 (isovaleric acid, aged-cheese rind)." },
+  // Sweaty / funky — isovaleric acid primary; butyric secondary (rancid/sweaty at concentration)
+  { note: "sweaty",     cpd: "isovalericacid", w: 0.90, cite: "Curioni & Bosset 2002 (isovaleric acid, sweaty/gym-sock FFA)." },
+  { note: "sweaty",     cpd: "butyricacid",    w: 0.40, cite: "Curioni & Bosset 2002 (butyric acid, rancid/sweaty at higher concentration)." },
   // Musty / corked
   { note: "musty",      cpd: "tca",       w: 0.95, cite: "Buser, Zanier & Tanner 1982 (TCA, cork taint)." },
   { note: "musty",      cpd: "geosmin",   w: 0.50, cite: "Darriet et al. 2000 (geosmin, musty/earthy crossover)." },
@@ -1592,8 +1596,8 @@ const WAIS_DESCRIPTORS = [
     { word: "funky",             notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
     { word: "kombucha-like",     notes: ["winey", "yeasty", "sulfury"] },
     { word: "lactic / yogurt",   notes: ["buttery", "yeasty"] },
-    { word: "cheesey / dairy",   notes: ["cheesy", "buttery", "sulfury"] },
-    { word: "sweaty / gym socks", notes: ["cheesy"] },
+    { word: "cheesey / dairy",   notes: ["cheesy", "buttery"] },
+    { word: "sweaty / gym socks", notes: ["sweaty"] },
     { word: "parmesan",          notes: ["cheesy"] },
     { word: "petting zoo",       notes: ["sulfury", "yeasty", "mushroom", "woody"] },
     { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] },
@@ -4011,7 +4015,8 @@ const waisSuggestionsEl = document.getElementById("wais-suggestions");
 // one-hover answer without us having to restructure the groups themselves.
 const NOTE_GROUP_RATIONALE = {
   buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation.",
-  cheesy: "Cheesy sits in Fermented because its compounds — butyric and isovaleric acid — are free fatty acids released by microbial fermentation and the breakdown of butterfat during cheese ripening.",
+  cheesy: "Cheesy sits in Fermented because its primary compound — butyric acid — is a free fatty acid released by microbial fermentation and the breakdown of butterfat during cheese ripening. The sharp parmesan tang is essentially concentrated fermentation byproduct.",
+  sweaty: "Sweaty sits in Fermented because isovaleric acid, its primary compound, is produced by bacterial breakdown of leucine — the same metabolic path that makes fermented foods funky and unwashed gym clothes recognizable. Same chemistry, different context.",
   musty: "Musty / corked sits in Fermented as the group's catch-all for microbial funk. Its marker, TCA, is made by molds methylating chlorophenols — not a fermentation you'd want, but a microbial origin all the same.",
   skunky: "Skunky is grouped here alongside the other sulfur / funky notes for convenience, but its origin is unusual: MBT forms photochemically when light strikes hop compounds in beer, not by fermentation."
 };
