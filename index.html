@@ -4199,6 +4199,9 @@ function wireMapZoom() {
   let dragging = false, dragMoved = false, startX = 0, startY = 0, startView = null;
   wrap.addEventListener("pointerdown", e => {
     if (e.button !== 0) return;
+    // Buttons and markers handle their own clicks; capturing the pointer
+    // here would retarget their click event to `wrap` and swallow it.
+    if (e.target.closest("button, .origin-marker")) return;
     dragging = true; dragMoved = false;
     startX = e.clientX; startY = e.clientY;
     startView = { x: mapView.x, y: mapView.y };
