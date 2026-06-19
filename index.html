@@ -749,6 +749,34 @@
   }
   #origins-view[hidden] { display: none !important; }
 
+  #origins-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #origins-detail-panel {
+    width: var(--detail-pane-w);
+    flex-shrink: 0;
+    border-left: 1px solid var(--line);
+    background: var(--panel);
+    overflow-y: auto;
+    padding: 16px;
+    position: relative;
+  }
+  #origins-detail-panel[hidden] { display: none; }
+  #origins-detail-panel h3 { margin: 0 0 4px; font-size: 14px; }
+  #origins-detail-panel .origin-region { color: var(--accent); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 12px; }
+  #origins-detail-panel p { font-size: 12px; line-height: 1.5; color: var(--ink-dim); }
+  #origins-detail-close {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; color: var(--ink-dim);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 4px;
+  }
+  #origins-detail-close:hover { color: var(--accent); }
+
   #origins-map-wrap {
     position: relative;
     flex: 1;
@@ -803,6 +831,7 @@
     pointer-events: none;
   }
   .origin-marker.active .origin-label { font-weight: 700; fill: var(--accent); }
+  .origin-cluster-box { fill: var(--panel-2); fill-opacity: 0.85; stroke: var(--line); stroke-width: 0.5; }
 
   #origins-reset-view {
     position: absolute; top: 10px; right: 10px; z-index: 5;
@@ -942,13 +971,19 @@
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
 </main>
 <div id="origins-view" hidden>
-  <div id="origins-map-wrap">
-    <button type="button" id="origins-close-btn" class="map-toggle-btn" title="Back to the aroma wheel" aria-label="Back to the aroma wheel">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
-    </button>
-    <div id="map-svg-container"></div>
-    <svg id="markers-svg" viewBox="0 0 2000 857" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
-    <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
+  <div id="origins-body">
+    <div id="origins-map-wrap">
+      <button type="button" id="origins-close-btn" class="map-toggle-btn" title="Back to the aroma wheel" aria-label="Back to the aroma wheel">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
+      </button>
+      <div id="map-svg-container"></div>
+      <svg id="markers-svg" viewBox="0 0 2000 857" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+      <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
+    </div>
+    <aside id="origins-detail-panel" hidden>
+      <button type="button" id="origins-detail-close" aria-label="Close">×</button>
+      <div id="origins-detail-content"></div>
+    </aside>
   </div>
   <div id="origins-legend">
     <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Known origin</span>
@@ -1337,7 +1372,7 @@ const NOTE_ORIGINS = {
   // fruity
   lemon:        { region: "South/Southeast Asia",       lat: 27,  lon: 85,   certainty: "approximate" },
   orange:       { region: "South China",                lat: 27,  lon: 110,  certainty: "approximate" },
-  grapefruit:   { region: "Caribbean",                  lat: 13,  lon: -59,  certainty: "known", country: "Barbados" },
+  grapefruit:   { region: "Caribbean",                  lat: 2.4, lon: -62.75, certainty: "known", country: "Barbados" },
   berry:        { region: "Temperate Northern Hemisphere", lat: 52, lon: 10,  certainty: "approximate" },
   stonefruit:   { region: "Northern China",             lat: 36,  lon: 108,  certainty: "known"       },
   apple:        { region: "Central Asia",               lat: 43,  lon: 77,   certainty: "known"       },
@@ -1373,12 +1408,12 @@ const NOTE_ORIGINS = {
   green:        { region: "Temperate Eurasia",          lat: 46,  lon: 30,   certainty: "approximate" },
   bellpepper:   { region: "Mesoamerica",                lat: 20,  lon: -100, certainty: "known", country: "Mexico" },
   mint:         { region: "Mediterranean / Europe",     lat: 42,  lon: 15,   certainty: "approximate" },
-  tobacco:      { region: "Caribbean / Mesoamerica",    lat: 18,  lon: -75,  certainty: "known"       },
+  tobacco:      { region: "Caribbean / Mesoamerica",    lat: 15.77, lon: -84.56, certainty: "known"       },
   // sweet
-  vanilla:      { region: "Veracruz, Mexico",           lat: 20,  lon: -96,  certainty: "known", country: "Mexico" },
+  vanilla:      { region: "Veracruz, Mexico",           lat: 19.13, lon: -98.96, certainty: "known", country: "Mexico" },
   caramel:      { region: "New Guinea / Southeast Asia",lat: -3,  lon: 143,  certainty: "approximate" },
   honey:        { region: "East Africa / Middle East",  lat: 12,  lon: 38,   certainty: "approximate" },
-  chocolate:    { region: "Mesoamerica",                lat: 15,  lon: -90,  certainty: "known"       },
+  chocolate:    { region: "Mesoamerica",                lat: 5.99, lon: -93.6, certainty: "known"       },
   maple:        { region: "Great Lakes / Northeast N. America", lat: 46, lon: -76, certainty: "known" },
   // fermented
   winey:        { region: "Caucasus (Georgia/Armenia)", lat: 42,  lon: 44,   certainty: "approximate" },
@@ -4345,6 +4380,65 @@ function layoutOriginLabelDirections(items) {
   return dirIndex;
 }
 
+// Notes whose dots fall within CLUSTER_R of each other share one label
+// anchor and one background box, with each note still keeping its own dot
+// and its own leader line back to that shared box — this is what keeps e.g.
+// a dozen Mediterranean notes from rendering a dozen overlapping labels.
+const CLUSTER_R = 14;
+
+function clusterOriginItems(items, radius) {
+  const parent = items.map((_, i) => i);
+  const find = i => { while (parent[i] !== i) i = parent[i]; return i; };
+  const union = (i, j) => { const a = find(i), b = find(j); if (a !== b) parent[a] = b; };
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      if (Math.hypot(items[i].x - items[j].x, items[i].y - items[j].y) < radius) union(i, j);
+    }
+  }
+  const groups = new Map();
+  items.forEach((it, i) => {
+    const root = find(i);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(it);
+  });
+  return Array.from(groups.values()).map(members => ({
+    id: members.map(m => m.id).join("+"),
+    x: members.reduce((s, m) => s + m.x, 0) / members.length,
+    y: members.reduce((s, m) => s + m.y, 0) / members.length,
+    members,
+  }));
+}
+
+// Plain-language note on how the dot got placed — not a citation in the
+// academic sense (no literature search backs individual placements), just
+// an honest account of the method so "how did you determine this" has a
+// real answer instead of a fabricated source.
+function originExplanation(origin) {
+  const base = origin.certainty === "known"
+    ? `Placed at ${origin.region}${origin.country ? `, ${origin.country}` : ""} as the specific, well-attested point of origin.`
+    : `Exact origin uncertain, or historically cultivated independently in more than one area — placed at ${origin.region}, the most strongly associated region.`;
+  return `${base} Position reflects the pre-Columbian Exchange framing used throughout this map: where a plant was cultivated or first used by humans before 1492 European contact, not necessarily where it is grown commercially today.`;
+}
+
+function openOriginDetail(note, origin) {
+  const panel = document.getElementById("origins-detail-panel");
+  const content = document.getElementById("origins-detail-content");
+  content.innerHTML = "";
+  const h3 = document.createElement("h3");
+  h3.textContent = note.label;
+  const regionLine = document.createElement("p");
+  regionLine.className = "origin-region";
+  regionLine.textContent = origin.country ? `${origin.region} · ${origin.country}` : origin.region;
+  const body = document.createElement("p");
+  body.textContent = originExplanation(origin);
+  content.append(h3, regionLine, body);
+  panel.hidden = false;
+}
+
+function estimateTextWidthPx(str, fontSizePx) {
+  return str.length * fontSizePx * 0.58;
+}
+
 function buildOriginMarkers() {
   const svg = document.getElementById("markers-svg");
   svg.innerHTML = "";
@@ -4358,67 +4452,104 @@ function buildOriginMarkers() {
     })
     .filter(Boolean);
 
-  const dirIndex = layoutOriginLabelDirections(items);
+  const clusters = clusterOriginItems(items, CLUSTER_R);
+  const dirIndex = layoutOriginLabelDirections(clusters);
+  const LABEL_LINE_H = 13;
 
-  items.forEach(({ id, note, origin, x, y }) => {
-    const color = groupColor(note.group);
-    const dir = ORIGIN_DIRS[dirIndex.get(id)];
-    const lx = x + dir.dx * LEADER_LEN, ly = y + dir.dy * LEADER_LEN;
-
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.classList.add("origin-marker");
-    g.dataset.note = note.id;
-    g.setAttribute("aria-label", note.label);
-
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.classList.add("origin-leader");
-    if (origin.certainty === "approximate") line.classList.add("dashed");
-    line.setAttribute("x1", x); line.setAttribute("y1", y);
-    line.setAttribute("x2", lx); line.setAttribute("y2", ly);
-    line.setAttribute("stroke", color);
-    // Keeps the line's screen-pixel thickness constant across zoom levels
-    // (the browser handles this natively; only fill-based geometry like the
-    // circle radius and text size need manual rescaling below).
-    line.setAttribute("vector-effect", "non-scaling-stroke");
-
-    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circle.setAttribute("cx", x); circle.setAttribute("cy", y);
-    circle.setAttribute("r", 5);
-    circle.setAttribute("fill", color);
-
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.classList.add("origin-label");
+  clusters.forEach(cluster => {
+    const dir = ORIGIN_DIRS[dirIndex.get(cluster.id)];
+    const lx = cluster.x + dir.dx * LEADER_LEN, ly = cluster.y + dir.dy * LEADER_LEN;
     const anchor = dir.dx > 0.3 ? "start" : dir.dx < -0.3 ? "end" : "middle";
+    const baseTy = ly + (dir.dy > 0.3 ? 10 : dir.dy < -0.3 ? -3 : 4);
     const tx = lx + (dir.dx > 0.3 ? 3 : dir.dx < -0.3 ? -3 : 0);
-    const ty = ly + (dir.dy > 0.3 ? 10 : dir.dy < -0.3 ? -3 : 4);
-    text.setAttribute("x", tx);
-    text.setAttribute("y", ty);
-    text.setAttribute("text-anchor", anchor);
-    text.setAttribute("fill", color);
-    text.textContent = origin.country ? `${note.label} (${origin.country})` : note.label;
 
-    // tooltip via <title>
-    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-    title.textContent = origin.country
-      ? `${note.label} — ${origin.region}, ${origin.country}`
-      : `${note.label} — ${origin.region}`;
-    g.appendChild(title);
+    const texts = [];
+    cluster.members.forEach(({ id, note, origin, x, y }, i) => {
+      const color = groupColor(note.group);
+      const ty = baseTy + i * LABEL_LINE_H;
 
-    g.appendChild(line);
-    g.appendChild(circle);
-    g.appendChild(text);
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.classList.add("origin-marker");
+      g.dataset.note = note.id;
+      g.setAttribute("aria-label", note.label);
 
-    g.addEventListener("click", () => {
-      if (hasAnyEntry(note.id)) {
-        deleteEntry(note.id, null);
-      } else {
-        commitEntry(note.id, null, 5);
-      }
-      syncSliders();
-      recompute();
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.classList.add("origin-leader");
+      if (origin.certainty === "approximate") line.classList.add("dashed");
+      line.setAttribute("x1", x); line.setAttribute("y1", y);
+      line.setAttribute("x2", lx); line.setAttribute("y2", ly);
+      line.setAttribute("stroke", color);
+      // Keeps the line's screen-pixel thickness constant across zoom levels
+      // (the browser handles this natively; only fill-based geometry like
+      // the circle radius and text size need manual rescaling below).
+      line.setAttribute("vector-effect", "non-scaling-stroke");
+
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+      circle.setAttribute("r", 5);
+      circle.setAttribute("fill", color);
+
+      // Position is stored as a LOCAL offset from the cluster anchor (lx,ly),
+      // not an absolute coordinate. refreshOriginMarkers() reapplies
+      // translate(lx,ly) scale(k) on every zoom change, which scales the
+      // text's offset-from-anchor, its line spacing, and its glyph size all
+      // together — otherwise (as shipped first) only font-size was rescaled
+      // and the box/line-spacing stayed fixed in user-units, so at high zoom
+      // the box visibly outgrew its own text.
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.classList.add("origin-label");
+      text.dataset.lx = lx; text.dataset.ly = ly;
+      text.dataset.localX = tx - lx; text.dataset.localY = ty - ly;
+      text.setAttribute("text-anchor", anchor);
+      text.setAttribute("fill", color);
+      text.textContent = origin.country ? `${note.label} (${origin.country})` : note.label;
+      texts.push(text);
+
+      const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      title.textContent = origin.country
+        ? `${note.label} — ${origin.region}, ${origin.country}`
+        : `${note.label} — ${origin.region}`;
+      g.appendChild(title);
+
+      g.appendChild(line);
+      g.appendChild(circle);
+      g.appendChild(text);
+
+      g.addEventListener("click", () => {
+        if (hasAnyEntry(note.id)) {
+          deleteEntry(note.id, null);
+        } else {
+          commitEntry(note.id, null, 5);
+        }
+        syncSliders();
+        recompute();
+        openOriginDetail(note, origin);
+      });
+
+      svg.appendChild(g);
     });
 
-    svg.appendChild(g);
+    // Shared background box for clusters of 2+, sized from the longest
+    // label so it visually reads as one group rather than separate floating
+    // labels — inserted after the fact so it can sit behind the text it
+    // belongs to without a second measurement pass.
+    if (cluster.members.length > 1) {
+      const longest = Math.max(...cluster.members.map(m =>
+        estimateTextWidthPx(m.origin.country ? `${m.note.label} (${m.origin.country})` : m.note.label, 11)
+      ));
+      const boxW = longest + 10;
+      const boxH = cluster.members.length * LABEL_LINE_H + 6;
+      const boxX = anchor === "start" ? tx - 5 : anchor === "end" ? tx - longest - 5 : tx - boxW / 2;
+      const boxY = baseTy - 10;
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.classList.add("origin-cluster-box");
+      rect.dataset.lx = lx; rect.dataset.ly = ly;
+      rect.dataset.localX = boxX - lx; rect.dataset.localY = boxY - ly;
+      rect.setAttribute("width", boxW);
+      rect.setAttribute("height", boxH);
+      rect.setAttribute("rx", 3);
+      svg.insertBefore(rect, texts[0].closest("g"));
+    }
   });
 
   refreshOriginMarkers();
@@ -4435,8 +4566,17 @@ function refreshOriginMarkers() {
     g.classList.toggle("dimmed", anyActive && !active);
     const circle = g.querySelector("circle");
     if (circle) circle.setAttribute("r", (active ? 8 : 5) * mapZoomRatio);
-    const label = g.querySelector(".origin-label");
-    if (label) label.style.fontSize = `${labelFontSizeUserUnits()}px`;
+  });
+
+  // Labels and cluster boxes are stored as a local offset from their anchor
+  // (data-lx/ly, data-local-x/y) so this single transform can scale their
+  // distance-from-anchor, their glyph size, and (for the box) their width/
+  // height all together — keeping the box sized to its own text at any zoom.
+  const k = labelFontSizeUserUnits() / LABEL_BASE_PX;
+  svg.querySelectorAll(".origin-label, .origin-cluster-box").forEach(el => {
+    const lx = +el.dataset.lx, ly = +el.dataset.ly;
+    const lox = +el.dataset.localX, loy = +el.dataset.localY;
+    el.setAttribute("transform", `translate(${lx} ${ly}) scale(${k}) translate(${lox} ${loy})`);
   });
 }
 
@@ -4446,10 +4586,14 @@ function refreshOriginMarkers() {
 function setOriginsMode(isOrigins) {
   document.body.classList.toggle("origins-mode", isOrigins);
   document.getElementById("origins-view").hidden = !isOrigins;
+  document.getElementById("origins-detail-panel").hidden = true;
   if (isOrigins) loadOrigins();
 }
 document.getElementById("origins-open-btn").addEventListener("click", () => setOriginsMode(true));
 document.getElementById("origins-close-btn").addEventListener("click", () => setOriginsMode(false));
+document.getElementById("origins-detail-close").addEventListener("click", () => {
+  document.getElementById("origins-detail-panel").hidden = true;
+});
 
 // refreshOriginMarkers() is called from recompute() whenever originsLoaded is true.
 </script>
