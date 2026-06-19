@@ -23,6 +23,7 @@ When a body of work is big enough to need multiple coherent commits before it's 
 ### Current feature branches (in flight)
 
 - **`claude/ui-pass-2`** — draft PR **[#9](https://github.com/iconic-orion/iconic-orion/pull/9)** against `prototype`. Second UI pass: mobile + overall refinements following the PR #8 merge. **In progress** — slices accumulate here before merge.
+- **`claude/upbeat-mendel-6ef2f6`** — draft PR **[#13](https://github.com/iconic-orion/iconic-orion/pull/13)** against `prototype`. Origins map: compass-icon toggle on the wheel opens a full-screen world map of ingredient cultivation regions (pre-Columbian Exchange framing), synced note selection, scroll-zoom/drag-pan, neighbor-aware label layout. **In progress** — fine-tuning against deploy preview before merge.
 
 Recently merged into `prototype`:
 - **`claude/thirsty-dijkstra-de159b`** — PR **#8** (merged 2026-06-10, merge commit `4c074d0`). UX pass: first-run nudge, mobile single-column breakpoint (≤760px), compound callout labels (mobile toggle with leader lines), collapsible HUD header (view tabs always visible, ••• expands secondary controls), float-label de-clutter, data palette saturation pass, copy polish (em-dash strip, Note Suggester pruning, Methodology sources note). Branch safe to delete.
