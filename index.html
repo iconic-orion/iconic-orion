@@ -1368,6 +1368,12 @@ const COMPOUND_ORIGINS = {
 // Pre-Columbian Exchange framing: shows where the plant was cultivated by humans
 // before 1492, not where it is commercially dominant today.
 // certainty: "known" = solid leader line; "approximate" = dashed leader line.
+// fullExplanation: optional full replacement of the auto-generated detail-panel
+// text, for notes whose origin isn't a cultivated plant at all (smoky).
+// Some notes (cardboard, sulfury, mushroom) are deliberately absent: they're
+// sensory/process artifacts (oxidation, fermentation off-notes, ubiquitous fungal
+// volatiles) with no defensible single place of origin, so they render with no
+// marker rather than a forced/fabricated location.
 const NOTE_ORIGINS = {
   // fruity
   lemon:        { region: "South/Southeast Asia",       lat: 27,  lon: 85,   certainty: "approximate" },
@@ -1390,7 +1396,8 @@ const NOTE_ORIGINS = {
   // roasted
   coffee:       { region: "Ethiopian Highlands",        lat: 9,   lon: 39,   certainty: "known"       },
   toast:        { region: "Fertile Crescent",           lat: 35,  lon: 38,   certainty: "approximate" },
-  smoky:        { region: "Fertile Crescent",           lat: 33,  lon: 36,   certainty: "approximate" },
+  smoky:        { region: "Wonderwerk Cave",            lat: -53.66, lon: 21.78, certainty: "approximate", country: "South Africa",
+                  fullExplanation: "Not a cultivated plant, so this isn't placed under the pre-Columbian Exchange framing used elsewhere on this map. Wonderwerk Cave holds some of the oldest widely-accepted evidence of controlled fire use by early humans (Berna et al. 2012) — a defensible, though contested and certainly not exclusive, anchor point for where the smoky note's underlying experience begins." },
   burnt:        { region: "New Guinea / Southeast Asia",lat: -5,  lon: 144,  certainty: "approximate" },
   // spice
   clove:        { region: "Maluku Islands",             lat: -1,  lon: 128,  certainty: "known", country: "Indonesia" },
@@ -1404,7 +1411,6 @@ const NOTE_ORIGINS = {
   // earthy
   woody:        { region: "Temperate Northern forests", lat: 56,  lon: 60,   certainty: "approximate" },
   pine:         { region: "Northern Eurasia",           lat: 55,  lon: 40,   certainty: "approximate" },
-  mushroom:     { region: "Temperate Eurasia",          lat: 50,  lon: 15,   certainty: "approximate" },
   green:        { region: "Temperate Eurasia",          lat: 46,  lon: 30,   certainty: "approximate" },
   bellpepper:   { region: "Mesoamerica",                lat: 20,  lon: -100, certainty: "known", country: "Mexico" },
   mint:         { region: "Mediterranean / Europe",     lat: 42,  lon: 15,   certainty: "approximate" },
@@ -1419,8 +1425,6 @@ const NOTE_ORIGINS = {
   winey:        { region: "Caucasus (Georgia/Armenia)", lat: 42,  lon: 44,   certainty: "approximate" },
   buttery:      { region: "Fertile Crescent",           lat: 34,  lon: 40,   certainty: "approximate" },
   yeasty:       { region: "Fertile Crescent",           lat: 33,  lon: 40,   certainty: "approximate" },
-  sulfury:      { region: "Mediterranean (volcanic)",   lat: 37,  lon: 15,   certainty: "approximate" },
-  cardboard:    { region: "Temperate Eurasia",          lat: 48,  lon: 20,   certainty: "approximate" },
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -4414,10 +4418,13 @@ function clusterOriginItems(items, radius) {
 // an honest account of the method so "how did you determine this" has a
 // real answer instead of a fabricated source.
 function originExplanation(origin) {
+  if (origin.fullExplanation) return origin.fullExplanation;
   const base = origin.certainty === "known"
     ? `Placed at ${origin.region}${origin.country ? `, ${origin.country}` : ""} as the specific, well-attested point of origin.`
     : `Exact origin uncertain, or historically cultivated independently in more than one area — placed at ${origin.region}, the most strongly associated region.`;
-  return `${base} Position reflects the pre-Columbian Exchange framing used throughout this map: where a plant was cultivated or first used by humans before 1492 European contact, not necessarily where it is grown commercially today.`;
+  const framing = origin.framingNote
+    || `Position reflects the pre-Columbian Exchange framing used throughout this map: where a plant was cultivated or first used by humans before 1492 European contact, not necessarily where it is grown commercially today.`;
+  return `${base} ${framing}`;
 }
 
 function openOriginDetail(note, origin) {
