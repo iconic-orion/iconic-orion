@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Temporal — a 24-hour atmospheric clock</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --panel-bg: rgba(8, 10, 24, 0.72);
+    --panel-border: rgba(255, 255, 255, 0.14);
+    --ink: rgba(255, 255, 255, 0.92);
+    --ink-dim: rgba(255, 255, 255, 0.6);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #05060f;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: var(--ink);
+  }
+  #stage { position: fixed; inset: 0; display: block; }
+
+  /* Numeric time readout — always visible, high contrast (accessibility) */
+  #readout {
+    position: fixed;
+    left: 50%;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+  #clock {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: clamp(2.4rem, 9vw, 5rem);
+    letter-spacing: 0.03em;
+    line-height: 1;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+  }
+  #meta {
+    margin-top: 0.5em;
+    font-size: clamp(0.72rem, 2.6vw, 0.95rem);
+    color: var(--ink-dim);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+  }
+  #meta .offset { display: none; }
+  #meta.show-offset .offset { display: inline; }
+
+  /* Settings */
+  #gear {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+    z-index: 7;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--panel-border);
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    color: var(--ink);
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 0.4s ease, background 0.2s ease;
+  }
+  #gear:hover { background: rgba(20, 24, 48, 0.85); }
+  #gear.open { transform: rotate(60deg); }
+
+  #panel {
+    position: fixed;
+    top: calc(max(14px, env(safe-area-inset-top)) + 54px);
+    left: max(14px, env(safe-area-inset-left));
+    z-index: 6;
+    width: min(280px, calc(100vw - 28px));
+    padding: 16px 18px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--panel-border);
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    transform-origin: top left;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  #panel.open { opacity: 1; transform: none; pointer-events: auto; }
+  #panel h2 {
+    margin: 0 0 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  #panel label.field { display: block; margin-bottom: 16px; }
+  #panel label.field span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+  }
+  #tz {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--panel-border);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--ink);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.88rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle input {
+    appearance: none;
+    width: 38px;
+    height: 22px;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.18);
+    position: relative;
+    cursor: pointer;
+    flex: none;
+    transition: background 0.2s ease;
+  }
+  .toggle input::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s ease;
+  }
+  .toggle input:checked { background: rgba(120, 190, 255, 0.85); }
+  .toggle input:checked::after { transform: translateX(16px); }
+  .hint {
+    margin: 4px 0 0;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <canvas id="stage" aria-label="A 24-hour atmospheric clock visualizing the day as a color gradient with the current time marked. The exact time is shown in the readout below."></canvas>
+
+  <button id="gear" aria-label="Settings" aria-expanded="false" title="Settings">⚙</button>
+
+  <div id="panel" role="dialog" aria-label="Clock settings">
+    <h2>Temporal</h2>
+    <label class="field">
+      <span>Timezone</span>
+      <select id="tz"></select>
+    </label>
+    <label class="toggle"><input type="checkbox" id="t-pulse" checked /> Pulse on current minute</label>
+    <label class="toggle"><input type="checkbox" id="t-ticker" checked /> Seconds ticker</label>
+    <label class="toggle"><input type="checkbox" id="t-dial" /> Seconds dial</label>
+    <label class="toggle"><input type="checkbox" id="t-offset" /> Show UTC offset</label>
+    <p class="hint">The gradient is a fixed universal day — midnight to midnight. The glowing line is now.</p>
+  </div>
+
+  <div id="readout" aria-live="polite">
+    <div id="clock">--:--:--</div>
+    <div id="meta"><span class="tzname"></span><span class="offset"></span></div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---- 24 color stops: one per hour, a full day/night cycle ----
+  // midnight indigo -> dawn rose -> bright noon sky -> golden dusk -> midnight
+  const PALETTE = [
+    "#0a0e27", "#0c1030", "#0e1238", "#121642", // 0-3  deep night
+    "#1a1d4e", "#34295f", "#6b3f6e", "#b05878", // 4-7  pre-dawn -> rose
+    "#e8825e", "#f4a259", "#f4c95d", "#cfd97a", // 8-11 sunrise -> warm morning
+    "#aee0f0", "#8fcfe8", "#79bfe0", "#6aaed6", // 12-15 bright noon -> afternoon
+    "#7f9ec8", "#c98a76", "#e8825e", "#c25a5a", // 16-19 golden hour -> sunset
+    "#7a3f63", "#3f2a57", "#1e1c44", "#121438"  // 20-23 dusk -> night
+  ];
+
+  const RGB = PALETTE.map(hexToRgb);
+
+  function hexToRgb(h) {
+    const n = parseInt(h.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgbStr(c, a) {
+    return `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a == null ? 1 : a})`;
+  }
+  function mix(a, b, t) {
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  }
+  function lighten(c, amt) {
+    return [c[0] + (255 - c[0]) * amt, c[1] + (255 - c[1]) * amt, c[2] + (255 - c[2]) * amt];
+  }
+  // color at fraction of day [0,1), wrapping across the 24 stops
+  function colorAt(f) {
+    const x = ((f % 1) + 1) % 1 * 24;
+    const i = Math.floor(x);
+    return mix(RGB[i % 24], RGB[(i + 1) % 24], x - i);
+  }
+  const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+  // ---- Timezones ----
+  const ZONES = [
+    ["UTC", "UTC"],
+    ["Honolulu", "Pacific/Honolulu"],
+    ["Anchorage", "America/Anchorage"],
+    ["Los Angeles", "America/Los_Angeles"],
+    ["Denver", "America/Denver"],
+    ["Chicago", "America/Chicago"],
+    ["New York", "America/New_York"],
+    ["São Paulo", "America/Sao_Paulo"],
+    ["London", "Europe/London"],
+    ["Paris / Berlin", "Europe/Paris"],
+    ["Cairo", "Africa/Cairo"],
+    ["Moscow", "Europe/Moscow"],
+    ["Dubai", "Asia/Dubai"],
+    ["Mumbai / Delhi", "Asia/Kolkata"],
+    ["Bangkok", "Asia/Bangkok"],
+    ["Shanghai", "Asia/Shanghai"],
+    ["Tokyo / Seoul", "Asia/Tokyo"],
+    ["Sydney", "Australia/Sydney"],
+    ["Auckland", "Pacific/Auckland"]
+  ];
+
+  let localZone = "UTC";
+  try { localZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) {}
+  // make sure the local zone is selectable
+  if (!ZONES.some(z => z[1] === localZone)) {
+    ZONES.unshift([localZone.split("/").pop().replace(/_/g, " ") + " (local)", localZone]);
+  }
+
+  const state = {
+    tz: ZONES.some(z => z[1] === localZone) ? localZone : "UTC",
+    pulse: true,
+    ticker: true,
+    dial: false,
+    offset: false
+  };
+
+  // cache the timezone offset (ms) — recompute at most a few times a minute
+  let offCacheKey = -1, offCacheVal = 0;
+  function tzOffsetMs(tz, nowMs) {
+    const key = Math.floor(nowMs / 15000) + "|" + tz;
+    if (key === offCacheKey) return offCacheVal;
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+    const p = {};
+    for (const part of dtf.formatToParts(new Date(nowMs))) p[part.type] = part.value;
+    const asUTC = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+    offCacheKey = key;
+    offCacheVal = asUTC - nowMs;
+    return offCacheVal;
+  }
+
+  // ---- Canvas setup ----
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d");
+  let W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+  // ---- Drawing ----
+  function drawGradient(portrait) {
+    let g;
+    if (portrait) {
+      g = ctx.createLinearGradient(0, 0, 0, H);       // top = midnight, bottom = next midnight
+    } else {
+      g = ctx.createLinearGradient(0, 0, W, H);       // diagonal top-left -> bottom-right
+    }
+    for (let i = 0; i <= 24; i++) {
+      g.addColorStop(i / 24, rgbStr(RGB[i % 24]));
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // subtle atmospheric grain/vignette for depth
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.28)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawNowIndicator(fraction, portrait) {
+    const col = lighten(colorAt(fraction), 0.55);
+    if (portrait) {
+      const y = fraction * H;
+      // soft atmospheric glow
+      ctx.save();
+      ctx.filter = "blur(26px)";
+      const gg = ctx.createLinearGradient(0, y - 60, 0, y + 60);
+      gg.addColorStop(0, rgbStr(col, 0));
+      gg.addColorStop(0.5, rgbStr(col, 0.55));
+      gg.addColorStop(1, rgbStr(col, 0));
+      ctx.fillStyle = gg;
+      ctx.fillRect(0, y - 60, W, 120);
+      ctx.restore();
+      // crisp line
+      ctx.strokeStyle = rgbStr(col, 0.95);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    } else {
+      const px = fraction * W, py = fraction * H;
+      const len = Math.hypot(W, H);
+      const dx = W / len, dy = H / len;     // gradient direction
+      const nx = -dy, ny = dx;              // perpendicular
+      ctx.save();
+      ctx.filter = "blur(28px)";
+      ctx.strokeStyle = rgbStr(col, 0.5);
+      ctx.lineWidth = 70;
+      ctx.beginPath();
+      ctx.moveTo(px - nx * len, py - ny * len);
+      ctx.lineTo(px + nx * len, py + ny * len);
+      ctx.stroke();
+      ctx.restore();
+      ctx.strokeStyle = rgbStr(col, 0.95);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px - nx * len, py - ny * len);
+      ctx.lineTo(px + nx * len, py + ny * len);
+      ctx.stroke();
+    }
+  }
+
+  // The minute mesoscale: 60 columns, newest = current minute, sliding continuously.
+  function drawMinuteStrip(dayMs, portrait, geo) {
+    const M = Math.floor(dayMs / 60000);
+    const secFrac = (dayMs % 60000) / 60000;
+    const pulsePhase = state.pulse ? (0.5 + 0.5 * Math.sin((dayMs % 1000) / 1000 * Math.PI * 2 - Math.PI / 2)) : 0;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(geo.x, geo.y, geo.w, geo.h);
+    ctx.clip();
+
+    const cell = portrait ? geo.h / 60 : geo.w / 60;
+
+    for (let k = 0; k <= 60; k++) {
+      const slot = k - secFrac;                 // continuous slide toward the "old" end
+      if (slot < -1 || slot > 60) continue;
+      const edgeFade = clamp(Math.min(slot + 1, 60 - slot), 0, 1);
+      if (edgeFade <= 0) continue;
+
+      const recency = clamp(slot / 59, 0, 1);   // 0 = oldest, 1 = newest
+      const minuteOfDay = (((M - 59 + k) % 1440) + 1440) % 1440;
+      let col = colorAt(minuteOfDay / 1440);
+      // age desaturates toward a cool dark
+      col = mix([24, 28, 54], col, 0.3 + 0.7 * recency);
+
+      let alpha = edgeFade * (0.16 + 0.84 * recency);
+      const len = 0.22 + 0.78 * Math.pow(recency, 0.8);
+      const isCurrent = (k === 59);
+
+      if (isCurrent && state.pulse) {
+        col = lighten(col, 0.18 + 0.32 * pulsePhase);
+        alpha = Math.min(1, alpha + 0.15 * pulsePhase);
+      }
+
+      ctx.fillStyle = rgbStr(col, alpha);
+      if (portrait) {
+        // horizontal bars stacked top(old) -> bottom(new), growing leftward from right edge
+        const barLen = len * geo.w;
+        const yTop = geo.y + slot * cell + cell * 0.12;
+        const bh = cell * 0.76;
+        roundRect(geo.x + geo.w - barLen, yTop, barLen, bh, Math.min(bh / 2, 3));
+        ctx.fill();
+        if (isCurrent && state.pulse) {
+          ctx.save();
+          ctx.filter = "blur(8px)";
+          ctx.fillStyle = rgbStr(lighten(col, 0.4), 0.4 * pulsePhase);
+          ctx.fillRect(geo.x + geo.w - barLen, yTop - 2, barLen, bh + 4);
+          ctx.restore();
+        }
+      } else {
+        // vertical bars left(old) -> right(new), rising from the bottom edge
+        const barH = len * geo.h;
+        const xL = geo.x + slot * cell + cell * 0.12;
+        const bw = cell * 0.76;
+        roundRect(xL, geo.y + geo.h - barH, bw, barH, Math.min(bw / 2, 3));
+        ctx.fill();
+        if (isCurrent && state.pulse) {
+          ctx.save();
+          ctx.filter = "blur(8px)";
+          ctx.fillStyle = rgbStr(lighten(col, 0.4), 0.4 * pulsePhase);
+          ctx.fillRect(xL - 2, geo.y + geo.h - barH, bw + 4, barH);
+          ctx.restore();
+        }
+      }
+    }
+
+    // microscale: thin ticker sweeping across the strip once per minute
+    if (state.ticker) {
+      ctx.fillStyle = "rgba(255,255,255,0.32)";
+      if (portrait) {
+        const y = geo.y + secFrac * geo.h;
+        ctx.fillRect(geo.x, y - 0.75, geo.w, 1.5);
+      } else {
+        const x = geo.x + secFrac * geo.w;
+        ctx.fillRect(x - 0.75, geo.y, 1.5, geo.h);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function drawDial(dayMs, cx, cy, r) {
+    const secFloat = (dayMs % 60000) / 1000;     // 0..60 with sub-second
+    const frac = secFloat / 60;
+    ctx.save();
+    // backdrop
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 6, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(6,8,20,0.45)";
+    ctx.fill();
+    // 60 ticks
+    for (let i = 0; i < 60; i++) {
+      const a = -Math.PI / 2 + (i / 60) * Math.PI * 2;
+      const major = i % 5 === 0;
+      const r0 = r - (major ? 8 : 5);
+      const passed = (i / 60) <= frac;
+      ctx.strokeStyle = passed ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.22)";
+      ctx.lineWidth = major ? 2 : 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+      ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+      ctx.stroke();
+    }
+    // sweeping hand
+    const ha = -Math.PI / 2 + frac * Math.PI * 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ha) * (r - 6), cy + Math.sin(ha) * (r - 6));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    if (w < 0) { x += w; w = -w; }
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ---- Readout ----
+  const elClock = document.getElementById("clock");
+  const elMeta = document.getElementById("meta");
+  const elTzName = elMeta.querySelector(".tzname");
+  const elOffset = elMeta.querySelector(".offset");
+  let lastClock = "";
+  const pad = n => String(n).padStart(2, "0");
+
+  function updateReadout(h, m, s, offMs) {
+    const str = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    if (str !== lastClock) { elClock.textContent = str; lastClock = str; }
+    const label = (ZONES.find(z => z[1] === state.tz) || [state.tz])[0];
+    const offMin = Math.round(offMs / 60000);
+    const sign = offMin >= 0 ? "+" : "-";
+    const ah = Math.floor(Math.abs(offMin) / 60), am = Math.abs(offMin) % 60;
+    const offStr = ` · UTC${sign}${ah}${am ? ":" + pad(am) : ""}`;
+    if (elTzName.textContent !== label) elTzName.textContent = label;
+    if (elOffset.textContent !== offStr) elOffset.textContent = offStr;
+  }
+
+  // ---- Main loop ----
+  function frame() {
+    const now = Date.now();
+    const offset = tzOffsetMs(state.tz, now);
+    const local = now + offset;
+    const dayMs = ((local % 86400000) + 86400000) % 86400000;
+    const fraction = dayMs / 86400000;
+    const h = Math.floor(dayMs / 3600000);
+    const m = Math.floor(dayMs / 60000) % 60;
+    const s = Math.floor(dayMs / 1000) % 60;
+
+    const portrait = H >= W;
+
+    drawGradient(portrait);
+    drawNowIndicator(fraction, portrait);
+
+    const small = Math.min(W, H) < 320;     // collapse mesoscale on tiny screens
+    if (!small) {
+      let geo;
+      if (portrait) {
+        const sw = clamp(W * 0.16, 44, 130);
+        geo = { x: W - sw, y: 0, w: sw, h: H };
+      } else {
+        const sh = clamp(H * 0.18, 44, 150);
+        geo = { x: 0, y: H - sh, w: W, h: sh };
+      }
+      drawMinuteStrip(dayMs, portrait, geo);
+    }
+
+    if (state.dial) {
+      const r = clamp(Math.min(W, H) * 0.06, 26, 48);
+      let cx, cy;
+      if (portrait) {
+        const sw = clamp(W * 0.16, 44, 130);
+        cx = W - sw - r - 18; cy = r + 22;
+      } else {
+        const sh = clamp(H * 0.18, 44, 150);
+        cx = W - r - 22; cy = H - sh - r - 22;
+      }
+      drawDial(dayMs, cx, cy, r);
+    }
+
+    updateReadout(h, m, s, offset);
+    requestAnimationFrame(frame);
+  }
+
+  // ---- Controls wiring ----
+  const sel = document.getElementById("tz");
+  for (const [label, id] of ZONES) {
+    const o = document.createElement("option");
+    o.value = id; o.textContent = label;
+    sel.appendChild(o);
+  }
+  sel.value = state.tz;
+  sel.addEventListener("change", () => { state.tz = sel.value; offCacheKey = -1; });
+
+  const gear = document.getElementById("gear");
+  const panel = document.getElementById("panel");
+  gear.addEventListener("click", () => {
+    const open = panel.classList.toggle("open");
+    gear.classList.toggle("open", open);
+    gear.setAttribute("aria-expanded", String(open));
+  });
+
+  function bindToggle(id, key, onChange) {
+    const el = document.getElementById(id);
+    el.checked = state[key];
+    el.addEventListener("change", () => { state[key] = el.checked; if (onChange) onChange(); });
+  }
+  bindToggle("t-pulse", "pulse");
+  bindToggle("t-ticker", "ticker");
+  bindToggle("t-dial", "dial");
+  bindToggle("t-offset", "offset", () => {
+    elMeta.classList.toggle("show-offset", state.offset);
+  });
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
