@@ -533,6 +533,45 @@
     ctx.closePath();
   }
 
+  // The current time, anchored to wherever the sun's time-of-day position
+  // crosses the horizon — even at night, when the sun itself isn't drawn.
+  function drawTimeLabel(fraction, geo, h, m, s) {
+    const { horizonY } = geo;
+    const tickX = fraction * W;
+
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(tickX, horizonY - 5);
+    ctx.lineTo(tickX, horizonY + 5);
+    ctx.stroke();
+
+    const label = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    ctx.font = "600 15px ui-sans-serif, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const halfW = ctx.measureText(label).width / 2 + 6;
+    const x = clamp(tickX, halfW, W - halfW);
+    const y = horizonY + 16;
+
+    ctx.lineWidth = 3;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "rgba(0,0,0,0.7)";
+    ctx.strokeText(label, x, y);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.fillText(label, x, y);
+
+    // if clamping shifted the label off its tick (near the screen edges), show the link
+    if (Math.abs(x - tickX) > 1) {
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tickX, horizonY + 5);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+  }
+
   // ---- Readout ----
   const elClock = document.getElementById("clock");
   const elMeta = document.getElementById("meta");
@@ -582,6 +621,8 @@
       const stripH = clamp((H - geo.horizonY) * 0.7, 40, 130);
       drawMinuteStrip(dayMs, { x: 0, y: H - stripH, w: W, h: stripH });
     }
+
+    drawTimeLabel(fraction, geo, h, m, s);
 
     if (state.dial) {
       const r = clamp(Math.min(W, H) * 0.06, 26, 48);
