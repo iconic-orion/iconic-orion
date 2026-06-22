@@ -100,7 +100,7 @@
     text-transform: uppercase;
     color: var(--ink-dim);
   }
-  #panel label.field { display: block; margin-bottom: 16px; }
+  #panel .field { display: block; margin-bottom: 16px; }
   #panel label.field span {
     display: block;
     margin-bottom: 6px;
@@ -117,6 +117,20 @@
     font-size: 0.9rem;
     cursor: pointer;
   }
+  .locbtn {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--panel-border);
+    background: rgba(120, 190, 255, 0.16);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .locbtn:hover { background: rgba(120, 190, 255, 0.28); }
+  .locbtn:disabled { opacity: 0.55; cursor: default; }
   .toggle {
     display: flex;
     align-items: center;
@@ -159,7 +173,7 @@
 </style>
 </head>
 <body>
-  <canvas id="stage" aria-label="A 24-hour atmospheric clock: the sky is colored by hour, midnight to midnight, and a sun traces today's path from sunrise to sunset, its height marking the current time. The exact time is shown in the readout below.">
+  <canvas id="stage" aria-label="A 24-hour atmospheric clock: the sky is colored by hour, midnight to midnight, and a sun traces today's path from sunrise to sunset, its height marking the current time. The exact time is shown in the readout below."></canvas>
 
   <button id="gear" aria-label="Settings" aria-expanded="false" title="Settings">⚙</button>
 
@@ -169,6 +183,10 @@
       <span>Timezone</span>
       <select id="tz"></select>
     </label>
+    <div class="field">
+      <button id="loc-btn" type="button" class="locbtn">Use my location</button>
+      <p class="hint" id="loc-status">Enables real sunrise/sunset for the sun's path.</p>
+    </div>
     <label class="toggle"><input type="checkbox" id="t-pulse" checked /> Pulse on current minute</label>
     <label class="toggle"><input type="checkbox" id="t-ticker" checked /> Seconds ticker</label>
     <label class="toggle"><input type="checkbox" id="t-dial" /> Seconds dial</label>
@@ -293,12 +311,94 @@
   window.addEventListener("resize", resize);
   resize();
 
+  // ---- Solar position (low-precision algorithm, same family as SunCalc.js) ----
+  function rad(deg) { return deg * Math.PI / 180; }
+  const J1970 = 2440588, J2000 = 2451545, OBLIQUITY = rad(23.4397);
+  function toJulian(ms) { return ms / 86400000 - 0.5 + J1970; }
+  function fromJulian(j) { return (j + 0.5 - J1970) * 86400000; }
+  function toDays(ms) { return toJulian(ms) - J2000; }
+  function solarMeanAnomaly(d) { return rad(357.5291 + 0.98560028 * d); }
+  function eclipticLongitude(M) {
+    const C = rad(1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    return M + C + rad(102.9372) + Math.PI;
+  }
+  function declination(L) { return Math.asin(Math.sin(OBLIQUITY) * Math.sin(L)); }
+  const J0 = 0.0009;
+  function julianCycle(d, lw) { return Math.round(d - J0 - lw / (2 * Math.PI)); }
+  function approxTransit(Ht, lw, n) { return J0 + (Ht + lw) / (2 * Math.PI) + n; }
+  function solarTransitJ(ds, M, L) { return J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L); }
+  function hourAngle(h, phi, d) { return Math.acos((Math.sin(h) - Math.sin(phi) * Math.sin(d)) / (Math.cos(phi) * Math.cos(d))); }
+
+  // returns { sunrise, sunset } as ms-since-epoch, or null for polar day/night
+  function getSunTimes(nowMs, lat, lon) {
+    const lw = rad(-lon), phi = rad(lat);
+    const d = toDays(nowMs);
+    const n = julianCycle(d, lw);
+    const ds = approxTransit(0, lw, n);
+    const M = solarMeanAnomaly(ds);
+    const L = eclipticLongitude(M);
+    const dec = declination(L);
+    const Jnoon = solarTransitJ(ds, M, L);
+    const w = hourAngle(rad(-0.833), phi, dec);
+    if (Number.isNaN(w)) return null;
+    const Jset = solarTransitJ(approxTransit(w, lw, n), M, L);
+    const Jrise = Jnoon - (Jset - Jnoon);
+    return { sunrise: fromJulian(Jrise), sunset: fromJulian(Jset) };
+  }
+
+  let SUNRISE_F = 0.25, SUNSET_F = 0.75;   // stylized default; replaced once a location is known
+  let geoCoords = null, sunTimesMs = null, sunTimesDayIdx = null;
+
+  function dayFraction(ms, tz) {
+    const local = ms + tzOffsetMs(tz, ms);
+    return (((local % 86400000) + 86400000) % 86400000) / 86400000;
+  }
+
+  function applySunTimesToFractions() {
+    if (!sunTimesMs) return;
+    SUNRISE_F = dayFraction(sunTimesMs.sunrise, state.tz);
+    SUNSET_F = dayFraction(sunTimesMs.sunset, state.tz);
+  }
+
+  function refreshSunTimes() {
+    if (!geoCoords) return;
+    const dayIdx = Math.floor(Date.now() / 86400000);
+    if (dayIdx === sunTimesDayIdx) return;
+    sunTimesDayIdx = dayIdx;
+    const times = getSunTimes(Date.now(), geoCoords.lat, geoCoords.lon);
+    if (!times) {
+      sunTimesMs = null;
+      locStatus.textContent = "The sun doesn't rise or set today at this latitude.";
+      return;
+    }
+    sunTimesMs = times;
+    applySunTimesToFractions();
+    updateLocStatus();
+  }
+
+  function fmtFrac(f) {
+    const total = Math.round(f * 1440) % 1440;
+    return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+  }
+
   const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
   // ---- Drawing: sky + horizon + sun path ----
-  // Solar elevation proxy across the day: -1 at midnight, 0 at 6h/18h, +1 at noon.
-  function elevation(f) { return -Math.cos(f * Math.PI * 2); }
-  const SUNRISE_F = 0.25, SUNSET_F = 0.75;   // where elevation(f) crosses zero
+  // Solar elevation proxy across the day: -1 at midnight, +1 at noon, 0 at sunrise/sunset.
+  function elevation(f) {
+    const noon = (SUNRISE_F + SUNSET_F) / 2;
+    const dayHalf = (SUNSET_F - SUNRISE_F) / 2;
+    const nightHalf = 0.5 - dayHalf;
+    let d = f - noon;
+    d -= Math.round(d);
+    if (Math.abs(d) <= dayHalf) {
+      return Math.cos((d / dayHalf) * (Math.PI / 2));
+    }
+    const midnight = noon + 0.5;
+    let dn = f - midnight;
+    dn -= Math.round(dn);
+    return -Math.cos((dn / nightHalf) * (Math.PI / 2));
+  }
 
   function layout() {
     const portrait = H >= W;
@@ -421,6 +521,36 @@
       ctx.stroke();
       ctx.restore();
     }
+  }
+
+  // Sunrise/sunset labels at the horizon edges of today's visible arc (real location only).
+  function drawSunBounds(geo) {
+    if (!sunTimesMs) return;
+    const { horizonY } = geo;
+    const mark = (f, text) => {
+      const tickX = f * W;
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tickX, horizonY - 6);
+      ctx.lineTo(tickX, horizonY + 1);
+      ctx.stroke();
+
+      ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      const halfW = ctx.measureText(text).width / 2 + 5;
+      const x = clamp(tickX, halfW, W - halfW);
+      const y = horizonY - 10;
+
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(0,0,0,0.7)";
+      ctx.strokeText(text, x, y);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillText(text, x, y);
+    };
+    mark(SUNRISE_F, `Sunrise ${fmtFrac(SUNRISE_F)}`);
+    mark(SUNSET_F, `Sunset ${fmtFrac(SUNSET_F)}`);
   }
 
   // The minute mesoscale: 60 columns along the ground, newest = current minute, sliding continuously.
@@ -594,6 +724,7 @@
 
   // ---- Main loop ----
   function frame() {
+    refreshSunTimes();
     const now = Date.now();
     const offset = tzOffsetMs(state.tz, now);
     const local = now + offset;
@@ -608,6 +739,7 @@
     drawSky(fraction, geo);
     drawGround(fraction, geo);
     drawSunPath(fraction, geo);
+    drawSunBounds(geo);
 
     // subtle full-canvas vignette for depth
     const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75);
@@ -641,7 +773,46 @@
     sel.appendChild(o);
   }
   sel.value = state.tz;
-  sel.addEventListener("change", () => { state.tz = sel.value; offCacheKey = -1; });
+  sel.addEventListener("change", () => {
+    state.tz = sel.value;
+    offCacheKey = -1;
+    if (sunTimesMs) {
+      applySunTimesToFractions();
+      updateLocStatus();
+    }
+  });
+
+  const locBtn = document.getElementById("loc-btn");
+  const locStatus = document.getElementById("loc-status");
+
+  function updateLocStatus() {
+    if (sunTimesMs) {
+      locStatus.textContent = `Sunrise ${fmtFrac(SUNRISE_F)} · Sunset ${fmtFrac(SUNSET_F)}`;
+    }
+  }
+
+  locBtn.addEventListener("click", () => {
+    if (!("geolocation" in navigator)) {
+      locStatus.textContent = "Geolocation isn't available in this browser.";
+      return;
+    }
+    locBtn.disabled = true;
+    locStatus.textContent = "Locating…";
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        geoCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        sunTimesDayIdx = null;
+        refreshSunTimes();
+        locBtn.disabled = false;
+        locBtn.textContent = "Update location";
+      },
+      err => {
+        locStatus.textContent = "Couldn't get your location (" + err.message + ").";
+        locBtn.disabled = false;
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 }
+    );
+  });
 
   const gear = document.getElementById("gear");
   const panel = document.getElementById("panel");
