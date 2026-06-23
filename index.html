@@ -865,6 +865,28 @@
   }
   #origins-reset-view:hover { border-color: var(--accent); color: var(--accent); }
 
+  #origins-map-controls {
+    position: absolute; bottom: 10px; right: 10px; z-index: 5;
+    display: flex; align-items: flex-end; gap: 8px;
+  }
+  #origins-map-controls button {
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; line-height: 1;
+  }
+  #origins-map-controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .omc-pan {
+    display: grid; grid-template-columns: 26px 26px 26px; grid-template-rows: 26px 26px 26px;
+    gap: 2px;
+  }
+  .omc-pan button { border-radius: 4px; }
+  #pan-up    { grid-column: 2; grid-row: 1; }
+  #pan-left  { grid-column: 1; grid-row: 2; }
+  #pan-right { grid-column: 3; grid-row: 2; }
+  #pan-down  { grid-column: 2; grid-row: 3; }
+  .omc-zoom { display: flex; flex-direction: column; gap: 2px; }
+  .omc-zoom button { width: 26px; height: 26px; border-radius: 4px; font-size: 15px; font-weight: 600; }
+
   #origins-legend {
     padding: 8px 16px;
     font-size: 11px; line-height: 1; color: var(--ink-dim);
@@ -986,6 +1008,18 @@
       <div id="map-svg-container"></div>
       <svg id="markers-svg" viewBox="0 0 2000 857" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
       <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
+      <div id="origins-map-controls">
+        <div class="omc-pan">
+          <button type="button" id="pan-up" aria-label="Pan up" title="Pan up">&#9650;</button>
+          <button type="button" id="pan-left" aria-label="Pan left" title="Pan left">&#9664;</button>
+          <button type="button" id="pan-right" aria-label="Pan right" title="Pan right">&#9654;</button>
+          <button type="button" id="pan-down" aria-label="Pan down" title="Pan down">&#9660;</button>
+        </div>
+        <div class="omc-zoom">
+          <button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+          <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
+        </div>
+      </div>
     </div>
     <aside id="origins-detail-panel" hidden>
       <button type="button" id="origins-detail-close" aria-label="Close">×</button>
@@ -4344,6 +4378,28 @@ function resetMapView() {
   applyMapView();
 }
 
+// fx/fy (0 to 1) mark the point within the view that stays fixed while
+// zooming, so wheel-zoom can center on the cursor while the +/- buttons
+// zoom around the view's own center.
+function zoomMapAt(factor, fx, fy) {
+  const px = mapView.x + fx * mapView.w, py = mapView.y + fy * mapView.h;
+  const newW = Math.min(SVG_W, Math.max(MAP_MIN_W, mapView.w * factor));
+  const newH = Math.min(SVG_H, Math.max(SVG_H * (MAP_MIN_W / SVG_W), mapView.h * factor));
+  mapView.w = newW;
+  mapView.h = newH;
+  mapView.x = Math.min(Math.max(px - fx * newW, 0), SVG_W - newW);
+  mapView.y = Math.min(Math.max(py - fy * newH, 0), SVG_H - newH);
+  applyMapView();
+}
+
+// dxFrac/dyFrac are fractions of the current view's width/height, so each
+// pan step covers the same relative distance regardless of zoom level.
+function panMapBy(dxFrac, dyFrac) {
+  mapView.x = Math.min(Math.max(mapView.x + dxFrac * mapView.w, 0), SVG_W - mapView.w);
+  mapView.y = Math.min(Math.max(mapView.y + dyFrac * mapView.h, 0), SVG_H - mapView.h);
+  applyMapView();
+}
+
 function wireMapZoom() {
   const wrap = document.getElementById("origins-map-wrap");
   wrap.addEventListener("wheel", e => {
@@ -4351,18 +4407,16 @@ function wireMapZoom() {
     const rect = wrap.getBoundingClientRect();
     const fx = (e.clientX - rect.left) / rect.width;
     const fy = (e.clientY - rect.top) / rect.height;
-    const px = mapView.x + fx * mapView.w;
-    const py = mapView.y + fy * mapView.h;
     const zoom = e.deltaY < 0 ? 0.88 : 1 / 0.88;
-    const newW = Math.min(SVG_W, Math.max(MAP_MIN_W, mapView.w * zoom));
-    const newH = Math.min(SVG_H, Math.max(SVG_H * (MAP_MIN_W / SVG_W), mapView.h * zoom));
-    mapView.w = newW;
-    mapView.h = newH;
-    mapView.x = Math.min(Math.max(px - fx * newW, 0), SVG_W - newW);
-    mapView.y = Math.min(Math.max(py - fy * newH, 0), SVG_H - newH);
-    applyMapView();
+    zoomMapAt(zoom, fx, fy);
   }, { passive: false });
   document.getElementById("origins-reset-view").addEventListener("click", resetMapView);
+  document.getElementById("zoom-in").addEventListener("click", () => zoomMapAt(0.8, 0.5, 0.5));
+  document.getElementById("zoom-out").addEventListener("click", () => zoomMapAt(1 / 0.8, 0.5, 0.5));
+  document.getElementById("pan-up").addEventListener("click", () => panMapBy(0, -0.25));
+  document.getElementById("pan-down").addEventListener("click", () => panMapBy(0, 0.25));
+  document.getElementById("pan-left").addEventListener("click", () => panMapBy(-0.25, 0));
+  document.getElementById("pan-right").addEventListener("click", () => panMapBy(0.25, 0));
 
   // Drag-to-pan. Marker clicks still fire (no movement = no pan), but once
   // the pointer has moved past a small threshold we treat it as a drag and
