@@ -905,6 +905,14 @@
   @media (max-width: 760px) {
     body.origins-mode { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     #origins-view { grid-column: 1; }
+    /* Stack map-over-panel instead of side-by-side, same idea as the wheel's
+       mobile layout: the map keeps the top half, and the citation panel
+       takes the bottom half once a marker is selected, rather than being
+       squeezed into a narrow sidebar. */
+    #origins-body { flex-direction: column; }
+    #origins-map-wrap { flex: 1 1 50%; min-height: 0; }
+    #origins-detail-panel { width: auto; flex: 1 1 50%; min-height: 0;
+      border-left: none; border-top: 1px solid var(--line); }
   }
 </style>
 </head>
@@ -4330,6 +4338,7 @@ autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
 window.addEventListener("resize", () => {
   layout();
   if (sim) sim.alpha(0.5).restart();
+  if (originsLoaded) refreshOriginMarkers();
 });
 
 // ── Origins map ──────────────────────────────────────────────────────────────
@@ -4358,10 +4367,24 @@ const MAP_MIN_W = SVG_W / 16;  // ~16x zoom-in ceiling
 // also get more prominent, rather than overlapping harder while staying flat.
 let mapZoomRatio = 1;
 const LABEL_BASE_PX = 11, LABEL_MAX_PX = 22, LABEL_ZOOM_EXP = 0.5;
+const MARKER_BASE_R = 5, MARKER_ACTIVE_R = 8;
 
-function labelFontSizeUserUnits() {
+// Real screen pixels per SVG user-unit, at the *current* container size and
+// zoom. mapZoomRatio alone isn't enough: a phone's map pane is much narrower
+// than a desktop one, so the same viewBox zoom level maps to far fewer
+// screen pixels per unit there. preserveAspectRatio="xMidYMid meet" means
+// the smaller of the width/height ratios is the one that actually applies.
+function mapPxPerUnit() {
+  const svg = document.getElementById("markers-svg");
+  if (!svg) return 1;
+  const rect = svg.getBoundingClientRect();
+  if (!rect.width || !rect.height) return 1;
+  return Math.min(rect.width / mapView.w, rect.height / mapView.h);
+}
+
+function labelFontSizeUserUnits(pxPerUnit) {
   const screenPx = Math.min(LABEL_MAX_PX, LABEL_BASE_PX * Math.pow(1 / mapZoomRatio, LABEL_ZOOM_EXP));
-  return screenPx * mapZoomRatio;
+  return screenPx / pxPerUnit;
 }
 
 function applyMapView() {
@@ -4794,6 +4817,7 @@ function buildOriginMarkers() {
 function refreshOriginMarkers() {
   const svg = document.getElementById("markers-svg");
   if (!svg) return;
+  const pxPerUnit = mapPxPerUnit();
   const anyActive = NOTES.some(n => hasAnyEntry(n.id));
   svg.querySelectorAll(".origin-marker").forEach(g => {
     const noteId = g.dataset.note;
@@ -4801,14 +4825,16 @@ function refreshOriginMarkers() {
     g.classList.toggle("active", active);
     g.classList.toggle("dimmed", anyActive && !active);
     const circle = g.querySelector("circle");
-    if (circle) circle.setAttribute("r", (active ? 8 : 5) * mapZoomRatio);
+    if (circle) circle.setAttribute("r", (active ? MARKER_ACTIVE_R : MARKER_BASE_R) / pxPerUnit);
   });
 
   // Labels and cluster boxes are stored as a local offset from their anchor
   // (data-lx/ly, data-local-x/y) so this single transform can scale their
   // distance-from-anchor, their glyph size, and (for the box) their width/
-  // height all together — keeping the box sized to its own text at any zoom.
-  const k = labelFontSizeUserUnits() / LABEL_BASE_PX;
+  // height all together — keeping the box sized to its own text at any zoom
+  // *and* at any actual container size (a phone's map pane is much narrower
+  // than a desktop one, so the same zoom level needs a bigger correction).
+  const k = labelFontSizeUserUnits(pxPerUnit) / LABEL_BASE_PX;
   svg.querySelectorAll(".origin-label, .origin-cluster-box").forEach(el => {
     const lx = +el.dataset.lx, ly = +el.dataset.ly;
     const lox = +el.dataset.localX, loy = +el.dataset.localY;
