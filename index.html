@@ -858,6 +858,26 @@
   .origin-marker.active .origin-label { font-weight: 700; fill: var(--accent); }
   .origin-cluster-box { fill: var(--panel-2); fill-opacity: 0.85; stroke: var(--line); stroke-width: 0.5; }
 
+  /* Search-hit ring sits on top of the marker's own active/dimmed state
+     (set via inline opacity in JS so it overrides the entry-selection
+     dimming unambiguously rather than fighting it on CSS specificity). */
+  .origin-marker.search-hit circle { stroke: #fff; stroke-width: 2; }
+  .origin-marker.search-hit .origin-label { font-weight: 700; }
+
+  #origins-search-wrap {
+    position: absolute; top: 10px; left: 10px; z-index: 5;
+    display: flex; align-items: center; gap: 6px;
+  }
+  #origins-search {
+    width: 170px; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; font-size: 11px; font-family: inherit;
+  }
+  #origins-search:focus { outline: none; border-color: var(--accent); }
+  #origins-search-count { font-size: 10px; color: var(--ink-dim);
+    background: rgba(0,0,0,0.4); padding: 3px 6px; border-radius: 4px; }
+  #origins-search-count:empty { display: none; }
+
   #origins-reset-view {
     position: absolute; top: 10px; right: 10px; z-index: 5;
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
@@ -1015,6 +1035,10 @@
     <div id="origins-map-wrap">
       <div id="map-svg-container"></div>
       <svg id="markers-svg" viewBox="0 0 2000 857" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+      <div id="origins-search-wrap">
+        <input type="search" id="origins-search" placeholder="Search ingredients…" autocomplete="off" />
+        <span id="origins-search-count"></span>
+      </div>
       <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
       <div id="origins-map-controls">
         <div class="omc-pan">
@@ -4481,6 +4505,36 @@ function wireMapZoom() {
 }
 wireMapZoom();
 
+// Search highlights matching markers without touching note selection (no
+// entries get added/removed) — it's a lookup aid, not another way to pick
+// notes. Inline opacity (rather than a CSS class) wins over the existing
+// active/dimmed-by-selection styling unambiguously, instead of depending on
+// stylesheet order to referee the two states.
+function applyOriginsSearch(query) {
+  const q = query.trim().toLowerCase();
+  const countEl = document.getElementById("origins-search-count");
+  const markers = document.querySelectorAll("#markers-svg .origin-marker");
+  if (!q) {
+    markers.forEach(g => { g.style.opacity = ""; g.classList.remove("search-hit"); });
+    countEl.textContent = "";
+    return;
+  }
+  let hits = 0;
+  markers.forEach(g => {
+    const note = NOTE_BY_ID[g.dataset.note];
+    const match = note && note.label.toLowerCase().includes(q);
+    g.classList.toggle("search-hit", !!match);
+    g.style.opacity = match ? "" : "0.12";
+    if (match) hits++;
+  });
+  countEl.textContent = hits === 0 ? "No matches" : `${hits} match${hits === 1 ? "" : "es"}`;
+}
+
+function wireOriginsSearch() {
+  document.getElementById("origins-search").addEventListener("input", e => applyOriginsSearch(e.target.value));
+}
+wireOriginsSearch();
+
 function loadOrigins() {
   if (originsLoaded) { refreshOriginMarkers(); return; }
   const tpl = document.getElementById("world-svg-tpl");
@@ -4850,6 +4904,8 @@ function setOriginsMode(isOrigins) {
   document.body.classList.toggle("origins-mode", isOrigins);
   document.getElementById("origins-view").hidden = !isOrigins;
   document.getElementById("origins-detail-panel").hidden = true;
+  document.getElementById("origins-search").value = "";
+  applyOriginsSearch("");
   if (isOrigins) loadOrigins();
 }
 document.getElementById("origins-toggle-btn").addEventListener("click", () => {
