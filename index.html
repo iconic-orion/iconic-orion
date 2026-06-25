@@ -4768,6 +4768,21 @@ function estimateTextWidthPx(str, fontSizePx) {
   return str.length * fontSizePx * 0.58;
 }
 
+// Cycled by cluster (not by aroma group, which the dots/leaders/text already
+// use) so two clusters sitting next to each other read as visibly separate
+// groups. Pastel + low alpha keeps it a quiet grouping cue rather than a
+// second competing color-coding system on top of the existing one.
+const CLUSTER_PALETTE = [
+  { fill: "rgba(123,175,212,0.22)", stroke: "rgba(123,175,212,0.65)" },  // sky blue
+  { fill: "rgba(143,217,182,0.22)", stroke: "rgba(143,217,182,0.65)" },  // mint
+  { fill: "rgba(195,166,224,0.22)", stroke: "rgba(195,166,224,0.65)" },  // lavender
+  { fill: "rgba(242,184,128,0.22)", stroke: "rgba(242,184,128,0.65)" },  // peach
+  { fill: "rgba(229,160,184,0.22)", stroke: "rgba(229,160,184,0.65)" },  // rose
+  { fill: "rgba(232,221,138,0.22)", stroke: "rgba(232,221,138,0.65)" },  // lemon
+  { fill: "rgba(127,205,196,0.22)", stroke: "rgba(127,205,196,0.65)" },  // teal
+  { fill: "rgba(229,148,136,0.22)", stroke: "rgba(229,148,136,0.65)" },  // coral
+];
+
 function buildOriginMarkers() {
   const svg = document.getElementById("markers-svg");
   svg.innerHTML = "";
@@ -4784,6 +4799,7 @@ function buildOriginMarkers() {
   const clusters = clusterOriginItems(items, CLUSTER_R);
   const dirIndex = layoutOriginLabelDirections(clusters);
   const LABEL_LINE_H = 13;
+  let clusterColorIndex = 0;
 
   clusters.forEach(cluster => {
     const dir = ORIGIN_DIRS[dirIndex.get(cluster.id)];
@@ -4870,6 +4886,8 @@ function buildOriginMarkers() {
       const boxH = cluster.members.length * LABEL_LINE_H + 6;
       const boxX = anchor === "start" ? tx - 5 : anchor === "end" ? tx - longest - 5 : tx - boxW / 2;
       const boxY = baseTy - 10;
+      const palette = CLUSTER_PALETTE[clusterColorIndex % CLUSTER_PALETTE.length];
+      clusterColorIndex++;
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       rect.classList.add("origin-cluster-box");
       rect.dataset.lx = lx; rect.dataset.ly = ly;
@@ -4877,6 +4895,8 @@ function buildOriginMarkers() {
       rect.setAttribute("width", boxW);
       rect.setAttribute("height", boxH);
       rect.setAttribute("rx", 3);
+      rect.style.fill = palette.fill;
+      rect.style.stroke = palette.stroke;
       svg.insertBefore(rect, texts[0].closest("g"));
     }
   });
