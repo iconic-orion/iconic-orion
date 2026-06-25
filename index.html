@@ -404,6 +404,16 @@
   #origins-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
   body.origins-mode #origins-toggle-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Jiggle toggle: only unhidden by JS once devicemotion support is detected
+     (most desktops have no accelerometer, so the button stays hidden there). */
+  #jiggle-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; }
+  #jiggle-toggle[hidden] { display: none; }
+  #jiggle-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
+  #jiggle-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  body.jiggle-on #jiggle-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+
   /* Info button — small round "i" sitting next to Go Deeper */
   #info-open-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
@@ -684,6 +694,7 @@
     header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
     header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
     header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
+    header.hud-open #jiggle-toggle { grid-row: 5; grid-column: 2; justify-self: end; margin-top: 6px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -995,6 +1006,10 @@
     <button id="origins-toggle-btn" title="Map of the regions where each ingredient behind this flavor note was first domesticated">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
       World Map
+    </button>
+    <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
+      Jiggle
     </button>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
@@ -2138,6 +2153,7 @@ const state = {
   pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
+  jiggleEnabled: false,       // device-motion delight toggle (notes nudge with phone tilt/shake)
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
@@ -3744,6 +3760,11 @@ function setOrganizeBy(mode) {
   gEdges.selectAll("*").remove();
   gComps.selectAll("*").remove();
   gNotes.selectAll("*").remove();
+  // Clear any jiggle offset too — which container is "the notes layer" swaps
+  // with the mode, and a stale translate left on the other one would shift
+  // its new occupant (compound anchors or floats) out of position.
+  gComps.attr("transform", null);
+  gNotes.attr("transform", null);
   gArcs.selectAll("path.group-arc, text.group-arc-label, path.arc-label-path").remove();
   // Repoint the force sim at the new float set (compounds in scent, notes in
   // chemistry) so d3 integrates the right nodes.
@@ -4086,6 +4107,83 @@ function setGoDeeper(on) {
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   setGoDeeper(!state.goDeeper);
 });
+
+// ---------- JIGGLE (device motion) ----------
+// Mobile delight feature: tilt or shake the phone and the flavor notes nudge
+// in response. devicemotion's accelerationIncludingGravity captures both a
+// tilt bias (gravity leaning toward the low side) and transient shake spikes
+// (real acceleration) in the same reading — exactly "moved or tilted" in one
+// signal, no separate orientation listener needed.
+//
+// "The flavor notes" are whichever top-level group currently renders them:
+// gNotes in Scent mode (fixed rim dots), gComps in Chemistry mode (where
+// notes are the simulated floats and gComps's usual occupant, compounds,
+// sits fixed on the rim instead). Jiggling the wrong one in Chemistry mode
+// would nudge compounds, not notes — see jiggleTargetGroup().
+let jiggleDX = 0, jiggleDY = 0;     // smoothed offset applied to the notes layer
+let jiggleRAF = null;
+let motionListenerAttached = false;
+const JIGGLE_MAX = 7;               // px clamp so it nudges, doesn't fling the layer around
+const JIGGLE_SMOOTH = 0.12;         // low-pass filter factor; lower = lazier, smoother motion
+
+function jiggleTargetGroup() { return inChemistry() ? gComps : gNotes; }
+
+function onDeviceMotion(e) {
+  const g = e.accelerationIncludingGravity;
+  if (!g) return;
+  // Device x/y axes map loosely to screen x/y when the phone is held upright
+  // in portrait — good enough for a playful nudge, not a precise tilt model.
+  const tx = Math.max(-JIGGLE_MAX, Math.min(JIGGLE_MAX, g.x || 0));
+  const ty = Math.max(-JIGGLE_MAX, Math.min(JIGGLE_MAX, -(g.y || 0)));
+  jiggleDX += (tx - jiggleDX) * JIGGLE_SMOOTH;
+  jiggleDY += (ty - jiggleDY) * JIGGLE_SMOOTH;
+}
+
+function jiggleTick() {
+  jiggleTargetGroup().attr("transform", `translate(${jiggleDX.toFixed(2)},${jiggleDY.toFixed(2)})`);
+  jiggleRAF = requestAnimationFrame(jiggleTick);
+}
+
+function setJiggle(on) {
+  state.jiggleEnabled = !!on;
+  document.body.classList.toggle("jiggle-on", state.jiggleEnabled);
+  jiggleToggleBtn.setAttribute("aria-pressed", String(state.jiggleEnabled));
+  if (state.jiggleEnabled) {
+    if (!jiggleRAF) jiggleTick();
+  } else {
+    if (jiggleRAF) { cancelAnimationFrame(jiggleRAF); jiggleRAF = null; }
+    // Snap both possible target groups back to identity so switching Organize
+    // mode mid-jiggle never leaves a stale offset on the one not in use.
+    gNotes.attr("transform", null);
+    gComps.attr("transform", null);
+    jiggleDX = 0; jiggleDY = 0;
+  }
+}
+
+const jiggleToggleBtn = document.getElementById("jiggle-toggle");
+// Most desktops have no accelerometer; only surface the button where the API
+// exists at all. (Presence doesn't guarantee a real sensor, but absence
+// reliably means no point offering it.)
+if ('ondevicemotion' in window) {
+  jiggleToggleBtn.hidden = false;
+  jiggleToggleBtn.addEventListener("click", async () => {
+    if (state.jiggleEnabled) { setJiggle(false); return; }
+    if (!motionListenerAttached) {
+      // iOS 13+ gates motion behind an explicit permission prompt that must
+      // be triggered by a user gesture — this click is that gesture. Other
+      // platforms have no such API and start listening immediately.
+      if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+        try {
+          const result = await DeviceMotionEvent.requestPermission();
+          if (result !== "granted") return;
+        } catch { return; }
+      }
+      window.addEventListener("devicemotion", onDeviceMotion);
+      motionListenerAttached = true;
+    }
+    setJiggle(true);
+  });
+}
 
 // ---------- INFO ("i") TAB ----------
 // Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
