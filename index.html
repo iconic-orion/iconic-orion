@@ -572,7 +572,7 @@
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
   aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
-  /* Note-detail view (Go Deeper inverse mode) */
+  /* Note-detail view (inverse mode: a note selected on the wheel) */
   aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
     border-radius: 50%; margin-right: 8px; vertical-align: middle; }
   aside.detail .note-entries { font-size: 11px; color: var(--ink-dim); margin: 8px 0 14px;
@@ -2139,7 +2139,7 @@ const state = {
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   selectedCompound: null,
-  selectedNote: null,       // when set (Go Deeper only), analysis pane shows the inverse view: compounds this note links to
+  selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
   hoveredCompound: null,
   infoOpen: false,        // is the "i" info overlay shown
@@ -2443,14 +2443,12 @@ function drawNotes() {
         const slider = row.querySelector("input[type=range]");
         if (slider) slider.focus();
       }
-      // Go Deeper: also surface this note's outbound compound graph in the
-      // analysis pane — the inverse of clicking a compound.
-      if (state.goDeeper) {
-        state.selectedNote = d.id;
-        state.selectedCompound = null;
-        gComps.selectAll("g.compound").classed("selected", false);
-        renderDetail();
-      }
+      // Also surface this note's outbound compound graph in the analysis
+      // pane — the inverse of clicking a compound.
+      state.selectedNote = d.id;
+      state.selectedCompound = null;
+      gComps.selectAll("g.compound").classed("selected", false);
+      renderDetail();
     });
   enter.append("circle").attr("r", 5);
   enter.append("text").attr("class", "note-label");
@@ -2793,11 +2791,9 @@ function renderNoteFloats() {
         const slider = row.querySelector("input[type=range]");
         if (slider) slider.focus();
       }
-      if (state.goDeeper) {
-        state.selectedNote = d.id;
-        state.selectedCompound = null;
-        renderDetail();
-      }
+      state.selectedNote = d.id;
+      state.selectedCompound = null;
+      renderDetail();
     })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -3337,14 +3333,14 @@ const commonTag = c => c && c.commonName ? ` <span class="common-name">(${c.comm
 })();
 
 function renderDetail() {
-  // Three modes: inverse note-view (Go Deeper, when a note is selected),
+  // Three modes: inverse note-view (when a note is selected),
   // compound detail (when a compound is selected), or the default grid.
   if (state.selectedNote) renderNoteDetail(state.selectedNote);
   else if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
   else renderAnalysisGrid();
 }
 
-// Inverse view (Go Deeper): show which compounds a given note maps to,
+// Inverse view: show which compounds a given note maps to,
 // sorted by base edge weight. Clicking a compound name switches to that
 // compound's full detail. "← All compounds" returns to grid mode.
 function renderNoteDetail(noteId) {
@@ -4287,7 +4283,7 @@ function renderHowToUse() {
     <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
 
     <h3 id="use-views">Two views of the same thing</h3>
-    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
+    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail; click a note for its inverse — the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
     <p>The <strong>Compounds pane</strong> (grey panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
@@ -4307,7 +4303,7 @@ function renderHowToUse() {
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to).</p>
+    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it.</p>
 
     <h3 id="use-repeat">Repeat-tasting</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
