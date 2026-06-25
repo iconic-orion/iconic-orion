@@ -395,7 +395,9 @@
      wheel canvas) so it has no chance of colliding with the mobile-only
      "Show compound labels" callout, which used to sit in the same corner. */
   #origins-toggle-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; }
+  #origins-toggle-btn svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
   #origins-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
   body.origins-mode #origins-toggle-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
@@ -958,7 +960,10 @@
          (hidden on desktop; grid-placed in the mobile tray). -->
     <div class="hud-divider" aria-hidden="true"></div>
     <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
-    <button id="origins-toggle-btn" title="Map of the regions where each ingredient behind this flavor note was first domesticated">Ingredient Origins</button>
+    <button id="origins-toggle-btn" title="Map of the regions where each ingredient behind this flavor note was first domesticated">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
+      World Map
+    </button>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
   </div>
