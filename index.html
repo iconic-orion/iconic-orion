@@ -667,6 +667,17 @@
     header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
     header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
     header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
+
+    /* The 28px-tall buttons that work fine for a mouse are too small to
+       reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
+       Bump touch targets only in the open mobile tray; desktop sizing,
+       which is mouse-driven, is untouched. */
+    header.hud-open .hud-extra button,
+    header.hud-open #view-tabs button,
+    header.hud-open #organize-tabs button {
+      min-height: 44px; padding: 10px 14px;
+    }
+    header.hud-open #info-open-btn { width: 44px; height: 44px; }
     /* Dashboard is redundant on mobile (single-column layout shows same as Notes).
        Hide the tab; setView() redirects its state to note-input. */
     #view-tabs button[data-view="dashboard"] { display: none; }
