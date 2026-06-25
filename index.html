@@ -564,9 +564,10 @@
   aside.detail li .note-name { color: var(--ink); }
   aside.detail li .weight { color: var(--accent); font-variant-numeric: tabular-nums; }
   aside.detail li .cite { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 2px; font-style: italic; }
-  /* Expanded bibliographic citation (Go Deeper). More structured than the
+  /* Expanded bibliographic citation. More structured than the
      short cite line: indented block, slight border accent, journal name
-     italicized. */
+     italicized. Shown whenever an edge's cite string matches a REFERENCES
+     entry; falls back to the short cite line otherwise. */
   aside.detail li .cite-full { font-style: normal; padding: 6px 8px;
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
@@ -3379,7 +3380,7 @@ function renderNoteDetail(noteId) {
           ? `<li><span class="cite">No compounds linked to this note in the current data.</span></li>`
           : edges.map(e => {
               const cpd = CPD_BY_ID[e.cpd];
-              const ref = state.goDeeper ? refForCite(e.cite) : null;
+              const ref = refForCite(e.cite);
               const citeHtml = ref
                 ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
                 : `<span class="cite">${e.cite}</span>`;
@@ -3624,9 +3625,9 @@ function renderCompoundDetail(cpdId, banner) {
             .filter(p => !state.hiddenPhases.has(p) && getEntry(e.note, p) !== undefined)
             .map(p => `<span style="color:var(--ink-dim); font-size:10px;">${p}:${getEntry(e.note, p)}</span>`)
             .join(" ");
-          // In Go Deeper mode, render the full bibliographic citation if we
-          // have one in REFERENCES; otherwise fall back to the short string.
-          const ref = state.goDeeper ? refForCite(e.cite) : null;
+          // Render the full bibliographic citation if we have one in
+          // REFERENCES; otherwise fall back to the short cite string.
+          const ref = refForCite(e.cite);
           const citeHtml = ref
             ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
             : `<span class="cite">${e.cite}</span>`;
@@ -4082,8 +4083,8 @@ function setGoDeeper(on) {
     }
     syncSliders();  // rebuild the panel so each slider snaps to its synced value
   }
-  // Refresh analysis pane so any open compound detail re-renders
-  // (full-citation expansion is gated on state.goDeeper).
+  // Refresh analysis pane so any open compound/note detail re-renders
+  // with the right phase-tagging affordances for the new mode.
   renderDetail();
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
@@ -4306,7 +4307,7 @@ function renderHowToUse() {
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
+    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to).</p>
 
     <h3 id="use-repeat">Repeat-tasting</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>

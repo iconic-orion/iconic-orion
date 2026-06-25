@@ -72,7 +72,8 @@ verified.
 ### Verified full bibliographic entries
 
 These are the citations with confirmed journal/volume/pages in the tool's
-`REFERENCES` catalog. Rendered in the app's "Go Deeper" mode.
+`REFERENCES` catalog. Rendered in full wherever the app shows a compound's
+contributing-notes citations (Compounds pane and note inverse view).
 
 | Short cite | Full reference |
 |---|---|
