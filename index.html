@@ -4764,10 +4764,6 @@ function openOriginDetail(note, origin) {
   panel.hidden = false;
 }
 
-function estimateTextWidthPx(str, fontSizePx) {
-  return str.length * fontSizePx * 0.58;
-}
-
 // Cycled by cluster (not by aroma group, which the dots/leaders/text already
 // use) so two clusters sitting next to each other read as visibly separate
 // groups. Pastel + low alpha keeps it a quiet grouping cue rather than a
@@ -4877,11 +4873,12 @@ function buildOriginMarkers() {
     // Shared background box for clusters of 2+, sized from the longest
     // label so it visually reads as one group rather than separate floating
     // labels — inserted after the fact so it can sit behind the text it
-    // belongs to without a second measurement pass.
+    // belongs to without a second measurement pass. Measured from the real
+    // rendered text (the members loop above already appended these to the
+    // live SVG) rather than a character-count estimate, which ran wide and
+    // left a visible gap between the box edge and the text it was sizing.
     if (cluster.members.length > 1) {
-      const longest = Math.max(...cluster.members.map(m =>
-        estimateTextWidthPx(m.origin.country ? `${m.note.label} (${m.origin.country})` : m.note.label, 11)
-      ));
+      const longest = Math.max(...texts.map(t => t.getBBox().width));
       const boxW = longest + 10;
       const boxH = cluster.members.length * LABEL_LINE_H + 6;
       const boxX = anchor === "start" ? tx - 5 : anchor === "end" ? tx - longest - 5 : tx - boxW / 2;
