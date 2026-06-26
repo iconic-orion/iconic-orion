@@ -366,10 +366,16 @@
   #compass-close-btn { background: none; border: none; color: var(--ink-dim);
     cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
   #compass-close-btn:hover { color: var(--ink); }
+  /* Compact override of the shared .tabs look — three tabs need to fit a
+     200px-wide widget, where the header's roomier tab groups don't. */
+  .compass-mode-tabs { display: flex; width: 100%; border: none; border-radius: 0;
+    border-bottom: 1px solid var(--line); }
+  .compass-mode-tabs button { flex: 1; padding: 4px 2px; font-size: 9px; border-radius: 0; }
   #compass-svg { display: block; width: 100%; height: 200px; }
   .compass-grid { fill: none; stroke: var(--line); }
   .compass-spoke { stroke: var(--line); }
   .compass-axis-label { font-size: 8px; fill: var(--ink-dim); }
+  .compass-empty { font-size: 10px; fill: var(--ink-dim); dominant-baseline: middle; }
   .compass-shape { fill: var(--accent); fill-opacity: 0.25;
     stroke: var(--accent); stroke-width: 1.5; transition: d 0.2s; }
   .compass-caption { font-size: 9px; color: var(--ink-dim); line-height: 1.4;
@@ -723,16 +729,6 @@
   .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; }
   .edge.lit { stroke-opacity: 0.55; }
 
-  /* Starburst display shape: each item's spike-line runs center→tip (opacity
-     carries its own evidence weight, set per-item in JS); the tip circle and
-     label reuse the exact same styling as Bubbles mode. The single closed
-     starburst-shape path traces all tips, giving the overall silhouette —
-     a translucent accent fill so the "star" outline pops as one shape. */
-  .spike-line { pointer-events: none; stroke-width: 1.5; }
-  .starburst-shape { fill: var(--accent); fill-opacity: 0.10;
-    stroke: var(--accent); stroke-opacity: 0.4; stroke-width: 1.5;
-    pointer-events: none; transition: opacity 0.2s; }
-
   .compound { cursor: pointer; }
   .compound circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
   .compound:hover circle { stroke: var(--accent); }
@@ -784,10 +780,9 @@
     /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
          row 1   VIEW | Notes Compounds            (i)
          row 2   ORGANIZE | Scent Chemistry
-         row 3   SHAPE | Bubbles Starburst
-         row 4   ──────────── divider ────────────
-         row 5   Go Deeper                  Start Over
-         row 6   World Map                  Settings
+         row 3   ──────────── divider ────────────
+         row 4   Go Deeper                  Start Over
+         row 5   World Map                  Settings
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
        dictate the mobile layout. */
     header.hud-open .hud-extra {
@@ -798,13 +793,12 @@
     header.hud-open #view-tabs       { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
     header.hud-open #organize-tabs    { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open #shape-tabs       { grid-row: 3; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open .hud-divider      { display: block; grid-row: 4; grid-column: 1 / -1;
+    header.hud-open .hud-divider      { display: block; grid-row: 3; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #godeeper-toggle  { grid-row: 5; grid-column: 1; justify-self: start; }
-    header.hud-open #reset            { grid-row: 5; grid-column: 2; justify-self: end; }
-    header.hud-open #origins-toggle-btn { grid-row: 6; grid-column: 1; justify-self: start; margin-top: 6px; }
-    header.hud-open #settings-wrap { grid-row: 6; grid-column: 2; justify-self: end; margin-top: 6px; }
+    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
+    header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
+    header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
+    header.hud-open #settings-wrap { grid-row: 5; grid-column: 2; justify-self: end; margin-top: 6px; }
     header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
@@ -897,8 +891,7 @@
   /* Wheel-only controls don't do anything on the map yet, so they're greyed
      out (not hidden) as a signal they're inert here rather than missing. */
   body.origins-mode #view-tabs,
-  body.origins-mode #organize-tabs,
-  body.origins-mode #shape-tabs {
+  body.origins-mode #organize-tabs {
     opacity: 0.4; pointer-events: none;
   }
 
@@ -1111,11 +1104,6 @@
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
-    <div class="tabs" id="shape-tabs" title="How the floating set (compounds in Scent mode, notes in Chemistry mode) is drawn: pulled-by-evidence bubbles, or a fixed-angle starburst whose spike length is intensity.">
-      <span class="tabs-label">Shape</span>
-      <button data-shape="bubbles" class="active">Bubbles</button>
-      <button data-shape="starburst">Starburst</button>
-    </div>
     <!-- Mobile-only divider between the View/Organize settings and the actions
          (hidden on desktop; grid-placed in the mobile tray). -->
     <div class="hud-divider" aria-hidden="true"></div>
@@ -1216,17 +1204,24 @@
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
-  <!-- Perception Compass: a small fixed-axis terpene radar, draggable, toggled
-       from the settings gear. Distinct from the main wheel/Starburst — same
-       fixed 10 axes for everyone, so two different people's shapes are
-       directly comparable at a glance regardless of which notes they logged. -->
+  <!-- Perception Compass: a small draggable radar, toggled from the settings
+       gear. Three axis modes (see #compass-mode-tabs): Notes / Compounds —
+       the user's own top-10 active items, live — and Terpenes, a fixed
+       10-axis set (a nod to the predecessor prototype) where every session
+       uses the same axes, so two different people's shapes are directly
+       comparable regardless of which notes they logged. -->
   <div id="aroma-compass" class="aroma-compass" hidden>
     <div class="compass-header" id="compass-drag-handle">
       <span>Perception Compass</span>
       <button type="button" id="compass-close-btn" aria-label="Hide compass" title="Hide compass">×</button>
     </div>
+    <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Terpenes: a fixed set, same for everyone.">
+      <button data-compass-mode="notes" class="active">Notes</button>
+      <button data-compass-mode="compounds">Compounds</button>
+      <button data-compass-mode="terpenes">Terpenes</button>
+    </div>
     <svg id="compass-svg" viewBox="0 0 200 200"></svg>
-    <div class="compass-caption">Your closest terpene-profile match — an estimate of perception, not a lab measurement.</div>
+    <div class="compass-caption" id="compass-caption"></div>
   </div>
 </main>
 <div id="origins-view" hidden>
@@ -2322,8 +2317,8 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
-  displayShape: "bubbles",  // "bubbles" | "starburst" — how the floating set is drawn
   compassVisible: false,    // Perception Compass widget shown/hidden
+  compassMode: "notes",      // "notes" | "compounds" | "terpenes" — which axis set the compass shows
   compassPos: null,         // {x,y} once dragged; null = default corner position
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
   spotlight: null,           // null | { kind: "group" | "class", id }
@@ -2439,9 +2434,6 @@ let R_COMPOUND_MAX = R_NOTE * 0.55;
 const root = svg.append("g");
 const gArcs   = root.append("g").attr("class", "group-arcs");
 const gEdges  = root.append("g").attr("class", "edges");
-// Closed silhouette connecting starburst spike tips (Starburst display shape
-// only). Sits beneath gComps so the tip circles/lines draw on top of its fill.
-const gStarburst = root.append("g").attr("class", "starburst-outline");
 const gComps  = root.append("g").attr("class", "compounds");
 const gNotes  = root.append("g").attr("class", "notes");
 const gLabels   = root.append("g").attr("class", "labels");
@@ -2458,17 +2450,14 @@ function layout() {
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
   root.attr("transform", `translate(0,0)`);
-  // Both run unconditionally now (not just for whichever set is on the ring
-  // this mode): Starburst display shape needs a stable _angle for whichever
-  // set is FLOATING too, and these are the only functions that assign one.
-  computeNotePositions();
-  computeCompoundPositions();
   if (inChemistry()) {
     // Dual layout: chemical-class arcs on the ring, compounds anchored in them;
     // the entered notes float (rendered from the sim tick / recompute).
+    computeCompoundPositions();
     drawClassArcs();
     drawCompoundAnchors();
   } else {
+    computeNotePositions();
     drawGroupArcs();
     drawNotes();
   }
@@ -2498,20 +2487,9 @@ function computeNotePositions() {
     n._angle = a;
     n._x = CX + Math.cos(a) * R_NOTE;
     n._y = CY + Math.sin(a) * R_NOTE;
-    // Mirror onto the force-sim node too (computeCompoundPositions already
-    // writes its angle onto CPD_NODE_BY_ID directly) — renderNoteStarburst
-    // reads _angle off noteNodes, not off this NOTES-array object.
-    const nn = NOTE_NODE_BY_ID[n.id];
-    if (nn) { nn._angle = a; nn._x = n._x; nn._y = n._y; }
   });
   // Hidden notes get null positions (and won't render)
-  NOTES.forEach(n => {
-    if (!isNoteVisible(n.id)) {
-      n._angle = null; n._x = null; n._y = null;
-      const nn = NOTE_NODE_BY_ID[n.id];
-      if (nn) { nn._angle = null; nn._x = null; nn._y = null; }
-    }
-  });
+  NOTES.forEach(n => { if (!isNoteVisible(n.id)) { n._angle = null; n._x = null; n._y = null; } });
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
@@ -2894,7 +2872,7 @@ function tick() {
       n.y = CY + dy/r * R_COMPOUND_MAX;
     }
   });
-  renderFloats();
+  if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
   updateEdges();
   updateCallouts();
 }
@@ -3007,165 +2985,6 @@ function renderNoteFloats() {
   applySpotlight();
 }
 function hoveredCompound() { return state.hoveredCompound; }
-
-// Single dispatch point for "draw whatever the floating set currently is" —
-// the only thing tick() (and anything else that needs a fresh float redraw)
-// needs to call. Keeps the bubbles-vs-starburst branch in one place.
-function renderFloats() {
-  if (state.displayShape === "starburst") {
-    if (inChemistry()) renderNoteStarburst(); else renderCompoundStarburst();
-  } else {
-    if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
-  }
-}
-
-// ---------- STARBURST (alternate display shape) ----------
-// Instead of bubbles pulled around by the force sim, every visible item gets
-// a FIXED angular slot — the same _angle computeNotePositions() /
-// computeCompoundPositions() already assign for anchor duty, just reused
-// here for the floating set instead — and a radius driven purely by its
-// current score. Spike length is the read: tall = loud evidence, flat nub =
-// none. Rendering every visible item (not just active ones) keeps the ring
-// complete so the silhouette reads as one star rather than a scatter of
-// disconnected points.
-function starburstRadius(score) {
-  const t = Math.max(0, Math.min(1, score));
-  const rMin = R_COMPOUND_MAX * 0.08;
-  return rMin + (R_COMPOUND_MAX - rMin) * t;
-}
-// points: [{x,y}, ...] already in angular order. A single closed path keyed
-// by array identity, so this just updates one element rather than churning.
-function drawStarburstOutline(points) {
-  const line = d3.line().x(d => d.x).y(d => d.y).curve(d3.curveLinearClosed);
-  gStarburst.selectAll("path.starburst-shape").data([points]).join("path")
-    .attr("class", "starburst-shape")
-    .attr("d", line);
-}
-
-function renderCompoundStarburst() {
-  const renderable = getVisibleCompoundNodes().filter(n => n._angle != null);
-  renderable.sort((a, b) => a._angle - b._angle);   // angular order for a clean closed outline
-  renderable.forEach(n => {
-    const r = starburstRadius(n.score);
-    n.x = CX + Math.cos(n._angle) * r;
-    n.y = CY + Math.sin(n._angle) * r;
-  });
-  drawStarburstOutline(renderable.map(n => ({ x: n.x, y: n.y })));
-
-  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
-  sel.exit().remove();
-  const enter = sel.enter().append("g").attr("class", "compound")
-    .on("mouseenter", function(e, d) {
-      state.hoveredCompound = d.id;
-      d3.select(this).raise();
-      updateEdges();
-    })
-    .on("mouseleave", () => { state.hoveredCompound = null; updateEdges(); })
-    .on("click", (e, d) => {
-      state.selectedCompound = d.id;
-      state.selectedNote = null;
-      ensureDetailVisible();
-      renderDetail();
-      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
-    });
-  enter.append("line").attr("class", "spike-line");
-  enter.append("circle");
-  enter.append("text").attr("class", "node-label");
-
-  const merged = sel.merge(enter)
-    .attr("transform", d => `translate(${d.x},${d.y})`)
-    .classed("selected", d => d.id === state.selectedCompound);
-
-  merged.select("line.spike-line")
-    .attr("x1", d => CX - d.x).attr("y1", d => CY - d.y)
-    .attr("x2", 0).attr("y2", 0)
-    .attr("stroke", d => compoundColor(d))
-    .attr("stroke-opacity", d => 0.25 + 0.55 * Math.min(1, d.score));
-
-  merged.select("circle")
-    .attr("r", d => 3 + Math.min(4, d.score * 3))
-    .attr("fill", d => compoundColor(d))
-    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
-
-  const maxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
-  const labelThresh = maxScore * 0.33;
-  merged.select("text")
-    .attr("x", d => Math.cos(d._angle) * 10)
-    .attr("y", d => Math.sin(d._angle) * 10)
-    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
-    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
-    .attr("fill-opacity", d =>
-      (d.id === state.selectedCompound || d.id === hoveredCompound()) ? 1
-      : d.score >= labelThresh ? 0.92
-      : 0.16)
-    .text(d => d.label);
-
-  applySpotlight();
-}
-
-// Chemistry mode's starburst: notes are the floating set there, mirroring
-// renderCompoundStarburst exactly over NOTES/noteNodes instead.
-function renderNoteStarburst() {
-  const renderable = noteNodes.filter(n => isNoteVisible(n.id) && n._angle != null);
-  renderable.sort((a, b) => a._angle - b._angle);
-  renderable.forEach(n => {
-    const r = starburstRadius(n.score);
-    n.x = CX + Math.cos(n._angle) * r;
-    n.y = CY + Math.sin(n._angle) * r;
-  });
-  drawStarburstOutline(renderable.map(n => ({ x: n.x, y: n.y })));
-
-  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
-  sel.exit().remove();
-  const enter = sel.enter().append("g").attr("class", "compound")
-    .on("mouseenter", function(e, d) {
-      state.hoveredNote = d.id;
-      d3.select(this).raise();
-      updateEdges();
-    })
-    .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
-    .on("click", (e, d) => {
-      const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
-      if (row) {
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
-        row.classList.add("flash");
-        setTimeout(() => row.classList.remove("flash"), 600);
-        const slider = row.querySelector("input[type=range]");
-        if (slider) slider.focus();
-      }
-      state.selectedNote = d.id;
-      state.selectedCompound = null;
-      renderDetail();
-    });
-  enter.append("line").attr("class", "spike-line");
-  enter.append("circle");
-  enter.append("text").attr("class", "node-label");
-
-  const merged = sel.merge(enter)
-    .attr("transform", d => `translate(${d.x},${d.y})`)
-    .classed("selected", d => d.id === state.selectedNote);
-
-  merged.select("line.spike-line")
-    .attr("x1", d => CX - d.x).attr("y1", d => CY - d.y)
-    .attr("x2", 0).attr("y2", 0)
-    .attr("stroke", d => groupColor(d.group))
-    .attr("stroke-opacity", d => 0.25 + 0.55 * Math.min(1, d.score));
-
-  merged.select("circle")
-    .attr("r", d => 3 + Math.min(4, d.score * 3))
-    .attr("fill", d => groupColor(d.group))
-    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
-
-  merged.select("text")
-    .attr("x", d => Math.cos(d._angle) * 10)
-    .attr("y", d => Math.sin(d._angle) * 10)
-    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
-    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
-    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedNote || d.id === state.hoveredNote ? 0.95 : 0.4)
-    .text(d => d.label);
-
-  applySpotlight();
-}
 
 // ---------- COMPOUND CALLOUT LABELS (mobile) ----------
 // When the user enables "Show compound labels", each visible compound dot gets a
@@ -3429,14 +3248,10 @@ function recompute() {
   // which notes show; chemistry: compound-anchor brightness tracks score).
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
 
-  // Starburst positions are a pure function of _angle + score — no physics
-  // needed — so draw them synchronously here rather than only via the sim's
-  // next tick. (Bubbles mode still gets that immediate frame too, harmlessly;
-  // the ongoing tick-driven animation layers on top as it settles.)
-  renderFloats();
-  updateEdges();
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
+  // Perception Compass draws synchronously here rather than via the sim's
+  // tick — its axes are a pure function of scores, no physics involved.
   if (typeof renderCompass === "function") renderCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
@@ -4134,24 +3949,6 @@ document.querySelectorAll("#organize-tabs button").forEach(b => {
   b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
 });
 
-// "Shape" toggle: how the floating set is drawn, independent of Organize.
-function setDisplayShape(shape) {
-  if (shape === state.displayShape) return;
-  state.displayShape = shape;
-  document.querySelectorAll("#shape-tabs button").forEach(x =>
-    x.classList.toggle("active", x.dataset.shape === shape));
-  // Wipe the float layer so leftover drag-positioned bubbles or spike lines
-  // from the outgoing shape don't linger under the incoming one.
-  gComps.selectAll("*").remove();
-  gStarburst.selectAll("*").remove();
-  if (sim) sim.alpha(0.6).restart();
-  renderFloats();
-  updateEdges();
-}
-document.querySelectorAll("#shape-tabs button").forEach(b => {
-  b.addEventListener("click", () => setDisplayShape(b.dataset.shape));
-});
-
 // Per-pane toggle handlers — independent of the view presets.
 document.getElementById("toggle-notes").addEventListener("click", () => {
   state.notesHidden = !state.notesHidden;
@@ -4618,71 +4415,125 @@ if ('ondevicemotion' in window) {
 }
 
 // ---------- PERCEPTION COMPASS ----------
-// A small, draggable radar with a FIXED, NAMED set of axes — every terpene
-// compound in the library, same order for every session — unlike Starburst
-// (which spans the full, currently-visible compound set). The fixed axis set
-// is the point: two different people's compass shapes are directly
-// comparable at a glance, however different the notes behind them were,
-// because the coordinate system never changes. Driven by the exact same
-// note→compound scoring as the rest of the app; nothing new to translate.
-const COMPASS_COMPOUNDS = COMPOUNDS.filter(c => c.class === "terpene");
-// Shorter labels for this cramped widget — full names (β-Caryophyllene,
-// 1,8-Cineole, α-Pinene, α-Bisabolol) run wide at 8px in a 200px box.
-const COMPASS_LABEL = { bcaryo: "Caryophyllene", apinene: "Pinene", bisabolol: "Bisabolol", cineole: "Cineole" };
+// A small, draggable radar with three axis modes:
+//   - Notes / Compounds: the user's OWN top-10 active items by score, live —
+//     a personal-fingerprint shape. Axes themselves change as input changes,
+//     not just the data on them.
+//   - Terpenes: a FIXED, NAMED set — every terpene compound in the library,
+//     same order for every session, a nod to the predecessor prototype.
+//     Comparable across different people's sessions precisely because the
+//     axes never move; Notes/Compounds trade that away to show exactly what
+//     the person actually reported instead.
+// All three are driven by the exact same note→compound scoring as the rest
+// of the app — nothing new to translate, just scores read onto axes.
+const COMPASS_TERPENES = COMPOUNDS.filter(c => c.class === "terpene");
 const COMPASS_CX = 100, COMPASS_CY = 100, COMPASS_R = 65, COMPASS_LABEL_R = 78;
-COMPASS_COMPOUNDS.forEach((c, i) => { c._compassAngle = -Math.PI / 2 + i * (2 * Math.PI / COMPASS_COMPOUNDS.length); });
+COMPASS_TERPENES.forEach((c, i) => { c._compassAngle = -Math.PI / 2 + i * (2 * Math.PI / COMPASS_TERPENES.length); });
+
+const COMPASS_CAPTION = {
+  notes: "Your top flavor notes by intensity — exactly what you reported, not an estimate.",
+  compounds: "Your top compounds by current score, derived from your notes like the rest of the app.",
+  terpenes: "Your closest terpene-profile match — an estimate of perception, not a lab measurement."
+};
+
+// Shorten long compound names for this cramped widget (β-Caryophyllene,
+// 1,8-Cineole, 4-Vinylguaiacol, ...). Note labels rarely need it; harmless
+// to run them through too.
+function compassShortLabel(label) {
+  const s = label.replace(/^[αβγ]-/, "").replace(/^\d[\d,]*-/, "");
+  return s.length > 14 ? s.slice(0, 13) + "…" : s;
+}
+
+// Resolves the current axis set as [{ key, angle, label, t }], t already
+// clamped 0..1 for radius. Terpenes is always all 10, regardless of
+// activity — that completeness is what keeps it a stable, comparable
+// coordinate system. Notes/Compounds only include active (score > 0) items,
+// capped to the strongest 10, evenly spaced in score-descending order.
+function compassAxisItems() {
+  const mode = state.compassMode;
+  if (mode === "terpenes") {
+    return COMPASS_TERPENES.map(c => ({
+      key: c.id, angle: c._compassAngle, label: compassShortLabel(c.label),
+      t: Math.max(0, Math.min(1, CPD_NODE_BY_ID[c.id].score || 0))
+    }));
+  }
+  const pool = mode === "compounds"
+    ? compoundNodes.filter(n => n.score > 0)
+        .map(n => ({ id: n.id, label: CPD_BY_ID[n.id].label, raw: n.score, t: Math.min(1, n.score) }))
+    : NOTES.filter(n => noteSignal(n.id) > 0)
+        // noteSignal() already divides by 10 (single-slider intensity -> 0..1);
+        // don't divide again here.
+        .map(n => ({ id: n.id, label: n.label, raw: noteSignal(n.id), t: Math.min(1, noteSignal(n.id)) }));
+  const top = pool.sort((a, b) => b.raw - a.raw).slice(0, 10);
+  return top.map((item, i) => ({
+    key: item.id, angle: -Math.PI / 2 + i * (2 * Math.PI / top.length),
+    label: compassShortLabel(item.label), t: item.t
+  }));
+}
 
 const compassEl = document.getElementById("aroma-compass");
 const compassSvg = d3.select("#compass-svg").attr("viewBox", "0 0 200 200");
 const compassToggleBtn = document.getElementById("compass-toggle");
+const compassCaptionEl = document.getElementById("compass-caption");
 
-// Static grid (rings + spokes + axis labels) — the axis set never changes at
-// runtime, so this draws once per show rather than on every recompute.
-function buildCompassGrid() {
-  compassSvg.selectAll("*").remove();
-  const gGrid = compassSvg.append("g").attr("class", "compass-grid-layer");
-  [0.33, 0.66, 1].forEach(t => {
-    const pts = COMPASS_COMPOUNDS.map(c =>
-      `${COMPASS_CX + Math.cos(c._compassAngle) * COMPASS_R * t},${COMPASS_CY + Math.sin(c._compassAngle) * COMPASS_R * t}`);
-    gGrid.append("polygon").attr("class", "compass-grid").attr("points", pts.join(" "));
-  });
-  gGrid.selectAll("line.compass-spoke").data(COMPASS_COMPOUNDS).join("line")
-    .attr("class", "compass-spoke")
-    .attr("x1", COMPASS_CX).attr("y1", COMPASS_CY)
-    .attr("x2", c => COMPASS_CX + Math.cos(c._compassAngle) * COMPASS_R)
-    .attr("y2", c => COMPASS_CY + Math.sin(c._compassAngle) * COMPASS_R);
-  compassSvg.selectAll("text.compass-axis-label").data(COMPASS_COMPOUNDS).join("text")
-    .attr("class", "compass-axis-label")
-    .attr("x", c => COMPASS_CX + Math.cos(c._compassAngle) * COMPASS_LABEL_R)
-    .attr("y", c => COMPASS_CY + Math.sin(c._compassAngle) * COMPASS_LABEL_R)
-    .attr("text-anchor", c => Math.cos(c._compassAngle) > 0.2 ? "start" : Math.cos(c._compassAngle) < -0.2 ? "end" : "middle")
-    .attr("dominant-baseline", c => Math.sin(c._compassAngle) > 0.2 ? "hanging" : Math.sin(c._compassAngle) < -0.2 ? "baseline" : "middle")
-    .text(c => COMPASS_LABEL[c.id] || c.label);
-  compassSvg.append("path").attr("class", "compass-shape");
-}
-
-// The one thing that actually changes: redraw the data polygon from each
-// terpene's current score. Same clamp-to-1 convention as the rest of the app.
+// Rebuilds grid + labels + data polygon together every call. Cheap at <=10
+// axes, and Notes/Compounds need the axis SET itself to update live, not
+// just the data on it, so there's no real "static part" left to cache.
 function renderCompass() {
   if (!state.compassVisible) return;
+  compassCaptionEl.textContent = COMPASS_CAPTION[state.compassMode];
+  const items = compassAxisItems();
+  compassSvg.selectAll("*").remove();
+  if (items.length === 0) {
+    compassSvg.append("text").attr("class", "compass-empty")
+      .attr("x", COMPASS_CX).attr("y", COMPASS_CY).attr("text-anchor", "middle")
+      .text("No notes logged yet");
+    return;
+  }
+  const gGrid = compassSvg.append("g").attr("class", "compass-grid-layer");
+  [0.33, 0.66, 1].forEach(t => {
+    const pts = items.map(it =>
+      `${COMPASS_CX + Math.cos(it.angle) * COMPASS_R * t},${COMPASS_CY + Math.sin(it.angle) * COMPASS_R * t}`);
+    gGrid.append("polygon").attr("class", "compass-grid").attr("points", pts.join(" "));
+  });
+  gGrid.selectAll("line.compass-spoke").data(items).join("line")
+    .attr("class", "compass-spoke")
+    .attr("x1", COMPASS_CX).attr("y1", COMPASS_CY)
+    .attr("x2", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R)
+    .attr("y2", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R);
+  compassSvg.selectAll("text.compass-axis-label").data(items).join("text")
+    .attr("class", "compass-axis-label")
+    .attr("x", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_LABEL_R)
+    .attr("y", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_LABEL_R)
+    .attr("text-anchor", it => Math.cos(it.angle) > 0.2 ? "start" : Math.cos(it.angle) < -0.2 ? "end" : "middle")
+    .attr("dominant-baseline", it => Math.sin(it.angle) > 0.2 ? "hanging" : Math.sin(it.angle) < -0.2 ? "baseline" : "middle")
+    .text(it => it.label);
   const line = d3.line()
-    .x(c => COMPASS_CX + Math.cos(c._compassAngle) * COMPASS_R * Math.min(1, CPD_NODE_BY_ID[c.id].score || 0))
-    .y(c => COMPASS_CY + Math.sin(c._compassAngle) * COMPASS_R * Math.min(1, CPD_NODE_BY_ID[c.id].score || 0))
+    .x(it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R * it.t)
+    .y(it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R * it.t)
     .curve(d3.curveLinearClosed);
-  compassSvg.select("path.compass-shape").attr("d", line(COMPASS_COMPOUNDS));
+  compassSvg.append("path").attr("class", "compass-shape").attr("d", line(items));
 }
 
 function setCompassVisible(visible) {
   state.compassVisible = !!visible;
   compassEl.hidden = !state.compassVisible;
   document.body.classList.toggle("compass-on", state.compassVisible);
-  if (state.compassVisible) {
-    buildCompassGrid();
-    renderCompass();
-  }
+  if (state.compassVisible) renderCompass();
 }
 compassToggleBtn.addEventListener("click", () => setCompassVisible(!state.compassVisible));
 document.getElementById("compass-close-btn").addEventListener("click", () => setCompassVisible(false));
+
+function setCompassMode(mode) {
+  if (mode === state.compassMode) return;
+  state.compassMode = mode;
+  document.querySelectorAll("#compass-mode-tabs button").forEach(x =>
+    x.classList.toggle("active", x.dataset.compassMode === mode));
+  renderCompass();
+}
+document.querySelectorAll("#compass-mode-tabs button").forEach(b => {
+  b.addEventListener("click", () => setCompassMode(b.dataset.compassMode));
+});
 
 // Drag: header is the handle. Switches from the default top/right CSS anchor
 // to an explicit left/top once moved, then stays there (clamped to the
