@@ -361,8 +361,17 @@
     padding: 6px 4px; border-radius: 4px; position: relative; }
   .note-row:hover { background: var(--panel-2); }
   .note-row .note-label-text { font-size: 12px; cursor: pointer; grid-column: 1; }
+  /* .val is an <input type=number>: same right-aligned readout look as the
+     old static span at rest, but borders on row-hover/focus to hint it's
+     typeable — an alternate to the slider for setting 0-10 directly. */
   .note-row .val { font-size: 11px; color: var(--ink-dim); text-align: right;
-    font-variant-numeric: tabular-nums; grid-column: 2; }
+    font-variant-numeric: tabular-nums; grid-column: 2; width: 28px;
+    background: transparent; border: 1px solid transparent; border-radius: 3px;
+    padding: 0 2px; font-family: inherit; -moz-appearance: textfield; }
+  .note-row .val::-webkit-inner-spin-button,
+  .note-row .val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .note-row:hover .val { border-color: var(--line); }
+  .note-row .val:focus { outline: none; border-color: var(--accent); color: var(--ink); background: var(--bg); }
   .note-row input[type=range] { grid-column: 1 / span 2; width: 100%; accent-color: var(--accent);
     margin: 2px 0; }
   .note-row.has-entries .note-label-text { color: var(--accent); }
@@ -3210,31 +3219,52 @@ function renderNoteRow(n) {
   lbl.setAttribute("for", "slider-" + n.id);
   lbl.textContent = n.label;
 
-  const val = document.createElement("span");
+  // Typed alternative to the slider: same 0-10 range, kept in sync both ways.
+  const val = document.createElement("input");
+  val.type = "number"; val.min = 0; val.max = 10; val.step = 1;
+  val.inputMode = "numeric";
   val.className = "val";
-  val.textContent = state.pendingIntensity[n.id] || 0;
+  val.value = state.pendingIntensity[n.id] || 0;
+  val.setAttribute("aria-label", `${n.label} intensity, 0 to 10`);
 
   const slider = document.createElement("input");
   slider.type = "range"; slider.min = 0; slider.max = 10; slider.step = 1;
   slider.id = "slider-" + n.id;
   slider.value = state.pendingIntensity[n.id] || 0;
-  slider.addEventListener("input", () => {
-    const v = +slider.value;
+
+  // Shared by both inputs so typing a number and dragging the slider commit
+  // through the exact same path (Go Deeper pending-vs-live-commit logic).
+  function setIntensity(v) {
+    v = Math.max(0, Math.min(10, Math.round(v)));
     state.pendingIntensity[n.id] = v;
-    val.textContent = v;
+    slider.value = v;
+    val.value = v;
     if (state.goDeeper) {
-      // Go Deeper: slider sets pending intensity; user clicks a phase button
-      // to commit. Existing entries untouched until they explicitly act.
+      // Go Deeper: slider/typed value sets pending intensity; user clicks a
+      // phase button to commit. Existing entries untouched until they act.
       updateRowPhaseButtons(row, n.id);
     } else {
-      // Default mode: slider directly creates / updates / deletes the
-      // null-phase entry in real-time. No commit step.
+      // Default mode: directly creates / updates / deletes the null-phase
+      // entry in real-time. No commit step.
       if (v > 0) commitEntry(n.id, null, v);
       else       deleteEntry(n.id, null);
       row.classList.toggle("has-entries", hasAnyEntry(n.id));
       recompute();
     }
+  }
+  slider.addEventListener("input", () => setIntensity(+slider.value));
+  val.addEventListener("input", () => {
+    // Ignore empty/mid-typing states (e.g. just cleared the field, or "-")
+    // rather than snapping to 0 before they've finished typing a real number.
+    const raw = val.value.trim();
+    if (raw === "" || Number.isNaN(+raw)) return;
+    setIntensity(+raw);
   });
+  val.addEventListener("blur", () => {
+    // Snap the field back to the committed value if left empty/invalid.
+    val.value = state.pendingIntensity[n.id] || 0;
+  });
+  val.addEventListener("keydown", (e) => { if (e.key === "Enter") val.blur(); });
 
   const btns = document.createElement("div");
   btns.className = "phase-buttons";
