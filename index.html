@@ -688,6 +688,17 @@
 
   .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; }
   .edge.lit { stroke-opacity: 0.55; }
+
+  /* Starburst display shape: each item's spike-line runs center→tip (opacity
+     carries its own evidence weight, set per-item in JS); the tip circle and
+     label reuse the exact same styling as Bubbles mode. The single closed
+     starburst-shape path traces all tips, giving the overall silhouette —
+     a translucent accent fill so the "star" outline pops as one shape. */
+  .spike-line { pointer-events: none; stroke-width: 1.5; }
+  .starburst-shape { fill: var(--accent); fill-opacity: 0.10;
+    stroke: var(--accent); stroke-opacity: 0.4; stroke-width: 1.5;
+    pointer-events: none; transition: opacity 0.2s; }
+
   .compound { cursor: pointer; }
   .compound circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
   .compound:hover circle { stroke: var(--accent); }
@@ -739,8 +750,10 @@
     /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
          row 1   VIEW | Notes Compounds            (i)
          row 2   ORGANIZE | Scent Chemistry
-         row 3   ──────────── divider ────────────
-         row 4   Go Deeper                  Start Over
+         row 3   SHAPE | Bubbles Starburst
+         row 4   ──────────── divider ────────────
+         row 5   Go Deeper                  Start Over
+         row 6   World Map                  Settings
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
        dictate the mobile layout. */
     header.hud-open .hud-extra {
@@ -751,12 +764,13 @@
     header.hud-open #view-tabs       { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
     header.hud-open #organize-tabs    { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open .hud-divider      { display: block; grid-row: 3; grid-column: 1 / -1;
+    header.hud-open #shape-tabs       { grid-row: 3; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open .hud-divider      { display: block; grid-row: 4; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
-    header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
-    header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
-    header.hud-open #settings-wrap { grid-row: 5; grid-column: 2; justify-self: end; margin-top: 6px; }
+    header.hud-open #godeeper-toggle  { grid-row: 5; grid-column: 1; justify-self: start; }
+    header.hud-open #reset            { grid-row: 5; grid-column: 2; justify-self: end; }
+    header.hud-open #origins-toggle-btn { grid-row: 6; grid-column: 1; justify-self: start; margin-top: 6px; }
+    header.hud-open #settings-wrap { grid-row: 6; grid-column: 2; justify-self: end; margin-top: 6px; }
     header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
@@ -849,7 +863,8 @@
   /* Wheel-only controls don't do anything on the map yet, so they're greyed
      out (not hidden) as a signal they're inert here rather than missing. */
   body.origins-mode #view-tabs,
-  body.origins-mode #organize-tabs {
+  body.origins-mode #organize-tabs,
+  body.origins-mode #shape-tabs {
     opacity: 0.4; pointer-events: none;
   }
 
@@ -1061,6 +1076,11 @@
       <span class="tabs-label">Organize</span>
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
+    </div>
+    <div class="tabs" id="shape-tabs" title="How the floating set (compounds in Scent mode, notes in Chemistry mode) is drawn: pulled-by-evidence bubbles, or a fixed-angle starburst whose spike length is intensity.">
+      <span class="tabs-label">Shape</span>
+      <button data-shape="bubbles" class="active">Bubbles</button>
+      <button data-shape="starburst">Starburst</button>
     </div>
     <!-- Mobile-only divider between the View/Organize settings and the actions
          (hidden on desktop; grid-placed in the mobile tray). -->
@@ -2252,6 +2272,7 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
+  displayShape: "bubbles",  // "bubbles" | "starburst" — how the floating set is drawn
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false        // mobile callout labels toggle
@@ -2366,6 +2387,9 @@ let R_COMPOUND_MAX = R_NOTE * 0.55;
 const root = svg.append("g");
 const gArcs   = root.append("g").attr("class", "group-arcs");
 const gEdges  = root.append("g").attr("class", "edges");
+// Closed silhouette connecting starburst spike tips (Starburst display shape
+// only). Sits beneath gComps so the tip circles/lines draw on top of its fill.
+const gStarburst = root.append("g").attr("class", "starburst-outline");
 const gComps  = root.append("g").attr("class", "compounds");
 const gNotes  = root.append("g").attr("class", "notes");
 const gLabels   = root.append("g").attr("class", "labels");
@@ -2382,14 +2406,17 @@ function layout() {
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
   root.attr("transform", `translate(0,0)`);
+  // Both run unconditionally now (not just for whichever set is on the ring
+  // this mode): Starburst display shape needs a stable _angle for whichever
+  // set is FLOATING too, and these are the only functions that assign one.
+  computeNotePositions();
+  computeCompoundPositions();
   if (inChemistry()) {
     // Dual layout: chemical-class arcs on the ring, compounds anchored in them;
     // the entered notes float (rendered from the sim tick / recompute).
-    computeCompoundPositions();
     drawClassArcs();
     drawCompoundAnchors();
   } else {
-    computeNotePositions();
     drawGroupArcs();
     drawNotes();
   }
@@ -2419,9 +2446,20 @@ function computeNotePositions() {
     n._angle = a;
     n._x = CX + Math.cos(a) * R_NOTE;
     n._y = CY + Math.sin(a) * R_NOTE;
+    // Mirror onto the force-sim node too (computeCompoundPositions already
+    // writes its angle onto CPD_NODE_BY_ID directly) — renderNoteStarburst
+    // reads _angle off noteNodes, not off this NOTES-array object.
+    const nn = NOTE_NODE_BY_ID[n.id];
+    if (nn) { nn._angle = a; nn._x = n._x; nn._y = n._y; }
   });
   // Hidden notes get null positions (and won't render)
-  NOTES.forEach(n => { if (!isNoteVisible(n.id)) { n._angle = null; n._x = null; n._y = null; } });
+  NOTES.forEach(n => {
+    if (!isNoteVisible(n.id)) {
+      n._angle = null; n._x = null; n._y = null;
+      const nn = NOTE_NODE_BY_ID[n.id];
+      if (nn) { nn._angle = null; nn._x = null; nn._y = null; }
+    }
+  });
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
 }
 
@@ -2804,7 +2842,7 @@ function tick() {
       n.y = CY + dy/r * R_COMPOUND_MAX;
     }
   });
-  if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
+  renderFloats();
   updateEdges();
   updateCallouts();
 }
@@ -2917,6 +2955,165 @@ function renderNoteFloats() {
   applySpotlight();
 }
 function hoveredCompound() { return state.hoveredCompound; }
+
+// Single dispatch point for "draw whatever the floating set currently is" —
+// the only thing tick() (and anything else that needs a fresh float redraw)
+// needs to call. Keeps the bubbles-vs-starburst branch in one place.
+function renderFloats() {
+  if (state.displayShape === "starburst") {
+    if (inChemistry()) renderNoteStarburst(); else renderCompoundStarburst();
+  } else {
+    if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
+  }
+}
+
+// ---------- STARBURST (alternate display shape) ----------
+// Instead of bubbles pulled around by the force sim, every visible item gets
+// a FIXED angular slot — the same _angle computeNotePositions() /
+// computeCompoundPositions() already assign for anchor duty, just reused
+// here for the floating set instead — and a radius driven purely by its
+// current score. Spike length is the read: tall = loud evidence, flat nub =
+// none. Rendering every visible item (not just active ones) keeps the ring
+// complete so the silhouette reads as one star rather than a scatter of
+// disconnected points.
+function starburstRadius(score) {
+  const t = Math.max(0, Math.min(1, score));
+  const rMin = R_COMPOUND_MAX * 0.08;
+  return rMin + (R_COMPOUND_MAX - rMin) * t;
+}
+// points: [{x,y}, ...] already in angular order. A single closed path keyed
+// by array identity, so this just updates one element rather than churning.
+function drawStarburstOutline(points) {
+  const line = d3.line().x(d => d.x).y(d => d.y).curve(d3.curveLinearClosed);
+  gStarburst.selectAll("path.starburst-shape").data([points]).join("path")
+    .attr("class", "starburst-shape")
+    .attr("d", line);
+}
+
+function renderCompoundStarburst() {
+  const renderable = getVisibleCompoundNodes().filter(n => n._angle != null);
+  renderable.sort((a, b) => a._angle - b._angle);   // angular order for a clean closed outline
+  renderable.forEach(n => {
+    const r = starburstRadius(n.score);
+    n.x = CX + Math.cos(n._angle) * r;
+    n.y = CY + Math.sin(n._angle) * r;
+  });
+  drawStarburstOutline(renderable.map(n => ({ x: n.x, y: n.y })));
+
+  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
+  sel.exit().remove();
+  const enter = sel.enter().append("g").attr("class", "compound")
+    .on("mouseenter", function(e, d) {
+      state.hoveredCompound = d.id;
+      d3.select(this).raise();
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredCompound = null; updateEdges(); })
+    .on("click", (e, d) => {
+      state.selectedCompound = d.id;
+      state.selectedNote = null;
+      ensureDetailVisible();
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+    });
+  enter.append("line").attr("class", "spike-line");
+  enter.append("circle");
+  enter.append("text").attr("class", "node-label");
+
+  const merged = sel.merge(enter)
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .classed("selected", d => d.id === state.selectedCompound);
+
+  merged.select("line.spike-line")
+    .attr("x1", d => CX - d.x).attr("y1", d => CY - d.y)
+    .attr("x2", 0).attr("y2", 0)
+    .attr("stroke", d => compoundColor(d))
+    .attr("stroke-opacity", d => 0.25 + 0.55 * Math.min(1, d.score));
+
+  merged.select("circle")
+    .attr("r", d => 3 + Math.min(4, d.score * 3))
+    .attr("fill", d => compoundColor(d))
+    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
+
+  const maxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
+  const labelThresh = maxScore * 0.33;
+  merged.select("text")
+    .attr("x", d => Math.cos(d._angle) * 10)
+    .attr("y", d => Math.sin(d._angle) * 10)
+    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
+    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
+    .attr("fill-opacity", d =>
+      (d.id === state.selectedCompound || d.id === hoveredCompound()) ? 1
+      : d.score >= labelThresh ? 0.92
+      : 0.16)
+    .text(d => d.label);
+
+  applySpotlight();
+}
+
+// Chemistry mode's starburst: notes are the floating set there, mirroring
+// renderCompoundStarburst exactly over NOTES/noteNodes instead.
+function renderNoteStarburst() {
+  const renderable = noteNodes.filter(n => isNoteVisible(n.id) && n._angle != null);
+  renderable.sort((a, b) => a._angle - b._angle);
+  renderable.forEach(n => {
+    const r = starburstRadius(n.score);
+    n.x = CX + Math.cos(n._angle) * r;
+    n.y = CY + Math.sin(n._angle) * r;
+  });
+  drawStarburstOutline(renderable.map(n => ({ x: n.x, y: n.y })));
+
+  const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
+  sel.exit().remove();
+  const enter = sel.enter().append("g").attr("class", "compound")
+    .on("mouseenter", function(e, d) {
+      state.hoveredNote = d.id;
+      d3.select(this).raise();
+      updateEdges();
+    })
+    .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
+    .on("click", (e, d) => {
+      const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.classList.add("flash");
+        setTimeout(() => row.classList.remove("flash"), 600);
+        const slider = row.querySelector("input[type=range]");
+        if (slider) slider.focus();
+      }
+      state.selectedNote = d.id;
+      state.selectedCompound = null;
+      renderDetail();
+    });
+  enter.append("line").attr("class", "spike-line");
+  enter.append("circle");
+  enter.append("text").attr("class", "node-label");
+
+  const merged = sel.merge(enter)
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .classed("selected", d => d.id === state.selectedNote);
+
+  merged.select("line.spike-line")
+    .attr("x1", d => CX - d.x).attr("y1", d => CY - d.y)
+    .attr("x2", 0).attr("y2", 0)
+    .attr("stroke", d => groupColor(d.group))
+    .attr("stroke-opacity", d => 0.25 + 0.55 * Math.min(1, d.score));
+
+  merged.select("circle")
+    .attr("r", d => 3 + Math.min(4, d.score * 3))
+    .attr("fill", d => groupColor(d.group))
+    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
+
+  merged.select("text")
+    .attr("x", d => Math.cos(d._angle) * 10)
+    .attr("y", d => Math.sin(d._angle) * 10)
+    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
+    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
+    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedNote || d.id === state.hoveredNote ? 0.95 : 0.4)
+    .text(d => d.label);
+
+  applySpotlight();
+}
 
 // ---------- COMPOUND CALLOUT LABELS (mobile) ----------
 // When the user enables "Show compound labels", each visible compound dot gets a
@@ -3180,6 +3377,12 @@ function recompute() {
   // which notes show; chemistry: compound-anchor brightness tracks score).
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
 
+  // Starburst positions are a pure function of _angle + score — no physics
+  // needed — so draw them synchronously here rather than only via the sim's
+  // next tick. (Bubbles mode still gets that immediate frame too, harmlessly;
+  // the ongoing tick-driven animation layers on top as it settles.)
+  renderFloats();
+  updateEdges();
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
   if (typeof updateNudge === "function") updateNudge();
@@ -3876,6 +4079,24 @@ function setOrganizeBy(mode) {
 }
 document.querySelectorAll("#organize-tabs button").forEach(b => {
   b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
+});
+
+// "Shape" toggle: how the floating set is drawn, independent of Organize.
+function setDisplayShape(shape) {
+  if (shape === state.displayShape) return;
+  state.displayShape = shape;
+  document.querySelectorAll("#shape-tabs button").forEach(x =>
+    x.classList.toggle("active", x.dataset.shape === shape));
+  // Wipe the float layer so leftover drag-positioned bubbles or spike lines
+  // from the outgoing shape don't linger under the incoming one.
+  gComps.selectAll("*").remove();
+  gStarburst.selectAll("*").remove();
+  if (sim) sim.alpha(0.6).restart();
+  renderFloats();
+  updateEdges();
+}
+document.querySelectorAll("#shape-tabs button").forEach(b => {
+  b.addEventListener("click", () => setDisplayShape(b.dataset.shape));
 });
 
 // Per-pane toggle handlers — independent of the view presets.
