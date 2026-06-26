@@ -394,6 +394,31 @@
   #godeeper-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.go-deeper #godeeper-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* "Event horizon" transition on Go Deeper switching on (playDeeperWarp()).
+     main.wheel normally clips its SVG at the panel edge; while warping it's
+     let loose so the scaled-up wheel can visually spill over the whole
+     screen instead of being cropped to its usual grid cell. */
+  body.warp-active main.wheel { overflow: visible; z-index: 250; }
+  body.warp-active #svg { pointer-events: none; }
+  #svg { transform-origin: 50% 50%; transition: transform 650ms cubic-bezier(0.55,0,0.85,0.45); }
+  body.warp-active #svg { transform: scale(6); }
+
+  /* The overlay "core" is a circle far bigger than any viewport, parked at
+     scale(0.015) (a pinprick) and animated up to scale(1.05) — the visual
+     of a singularity rushing outward to swallow the screen. Its radial
+     gradient (bright center, near-black rim) is what makes the swallow read
+     as an event horizon rather than a plain screen wipe. */
+  #deeper-warp { position: fixed; inset: 0; z-index: 300; pointer-events: none;
+    overflow: hidden; opacity: 0; transition: opacity 150ms ease-out; }
+  #deeper-warp[hidden] { display: none; }
+  #deeper-warp.warp-show { opacity: 1; }
+  #deeper-warp.warp-fade { opacity: 0; transition: opacity 380ms ease-out; }
+  #deeper-warp-core { position: absolute; left: 50%; top: 50%; width: 100vmax; height: 100vmax;
+    margin: -50vmax 0 0 -50vmax; border-radius: 50%; transform: scale(0.015);
+    background: radial-gradient(circle, var(--accent) 0%, rgba(15,12,9,0.96) 55%, #000 100%); }
+  #deeper-warp.warp-active #deeper-warp-core { transform: scale(1.05);
+    transition: transform 650ms cubic-bezier(0.55,0,0.85,0.45); }
+
   /* Ingredient Origins HUD toggle: lives in the header (not floating on the
      wheel canvas) so it has no chance of colliding with the mobile-only
      "Show compound labels" callout, which used to sit in the same corner. */
@@ -1185,6 +1210,11 @@
     </div>
   </div>
 </div>
+
+<!-- "Event horizon" transition played once when Go Deeper switches on (see
+     playDeeperWarp()). Purely decorative — pointer-events:none — and skipped
+     entirely under prefers-reduced-motion. -->
+<div id="deeper-warp" aria-hidden="true" hidden><div id="deeper-warp-core"></div></div>
 
 <script>
 // ---------- DATA ----------
@@ -4128,8 +4158,37 @@ function setGoDeeper(on) {
   // with the right phase-tagging affordances for the new mode.
   renderDetail();
 }
+// ---------- "EVENT HORIZON" WARP (Go Deeper entry transition) ----------
+// Plays once, only on the off→on flip, as a brief "falling through a
+// wormhole" flourish: the wheel (and every note/compound bubble on it,
+// since they're all children of the scaled element) rushes toward the
+// viewer while a radial vignette closes in from the edges, the two meeting
+// in a full-screen flash. The actual state flip happens at that flash —
+// hidden behind it — so the per-row Add/Ortho/Retro buttons are just
+// already there when the overlay fades away, like arriving somewhere new.
+const deeperWarpEl = document.getElementById("deeper-warp");
+const WARP_SCALE_MS = 650;
+const WARP_FADE_MS = 380;
+function playDeeperWarp(onComplete) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onComplete(); return; }
+  deeperWarpEl.hidden = false;
+  document.body.classList.add("warp-active");
+  // Next frame so the opacity/scale transitions engage from their resting
+  // values instead of jumping straight to the end state.
+  requestAnimationFrame(() => deeperWarpEl.classList.add("warp-show", "warp-active"));
+  setTimeout(() => {
+    onComplete();
+    deeperWarpEl.classList.add("warp-fade");
+    setTimeout(() => {
+      document.body.classList.remove("warp-active");
+      deeperWarpEl.classList.remove("warp-show", "warp-active", "warp-fade");
+      deeperWarpEl.hidden = true;
+    }, WARP_FADE_MS);
+  }, WARP_SCALE_MS);
+}
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
-  setGoDeeper(!state.goDeeper);
+  if (state.goDeeper) { setGoDeeper(false); return; }
+  playDeeperWarp(() => setGoDeeper(true));
 });
 
 // ---------- SETTINGS MENU (gear) ----------
