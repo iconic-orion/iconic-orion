@@ -103,6 +103,20 @@
     text-transform: uppercase; letter-spacing: 0.08em; align-self: center;
     border-right: 1px solid var(--line); background: var(--panel-2); }
 
+  /* Workspace switch (Wheel | Map): the primary "which screen" control. Given
+     a slightly heavier accent border so it reads as the top of the hierarchy,
+     distinct from the lighter wheel-control segmented groups beside it. Its
+     buttons carry an icon + label. */
+  .workspace-tabs { border-color: var(--accent); }
+  .workspace-tabs button { display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 6px 12px; }
+  .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
+  /* Desktop-only vertical divider between workspace switch and wheel controls. */
+  .hud-vdivider { width: 1px; align-self: stretch; margin: 6px 2px;
+    background: var(--line); }
+  /* Desktop-only flexible gap that right-aligns the utilities cluster. */
+  .hud-spacer { flex: 1; }
+
   /* Compound grid — lives inside the Analysis pane (right) as its default-state
      view when no compound is selected. Narrower than V1's middle-pane grid so
      cards stack as a single column in the 360px-wide analysis pane. */
@@ -473,16 +487,6 @@
   .warp-layer-5 { background: radial-gradient(circle, rgba(90,65,35,0.98) 0%, rgba(15,12,9,0.96) 50%, #000 85%, #000 100%);
     transition-delay: 160ms; }
 
-  /* Ingredient Origins HUD toggle: lives in the header (not floating on the
-     wheel canvas) so it has no chance of colliding with the mobile-only
-     "Show compound labels" callout, which used to sit in the same corner. */
-  #origins-toggle-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; }
-  #origins-toggle-btn svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
-  #origins-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-  body.origins-mode #origins-toggle-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
-
   /* Settings gear: a small anchored dropdown for secondary toggles that don't
      need their own header slot. Holds Jiggle today; built to take more later
      without the header growing a button per feature. */
@@ -509,9 +513,10 @@
   #jiggle-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.jiggle-on #jiggle-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Compass: a first-class header toggle (promoted out of the settings gear). */
   #compass-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; width: 100%; }
+    display: inline-flex; align-items: center; gap: 5px; }
   #compass-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
@@ -778,27 +783,32 @@
       font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
     /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
-         row 1   VIEW | Notes Compounds            (i)
-         row 2   ORGANIZE | Scent Chemistry
-         row 3   ──────────── divider ────────────
-         row 4   Go Deeper                  Start Over
-         row 5   World Map                  Settings
+         row 1   [ Wheel | Map ]                   (i)
+         row 2   PANELS | Notes Both Results
+         row 3   ORGANIZE | Scent Chemistry
+         row 4   Compass                    Go Deeper
+         row 5   ──────────── divider ────────────
+         row 6   Settings                   Start Over
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
-       dictate the mobile layout. */
+       dictate the mobile layout. The desktop-only .hud-vdivider and .hud-spacer
+       are removed from the grid flow entirely. */
     header.hud-open .hud-extra {
       display: grid; grid-template-columns: 1fr auto;
       gap: 10px 12px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
       margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
-    header.hud-open #view-tabs       { grid-row: 1; grid-column: 1; justify-self: start; }
+    header.hud-open .hud-vdivider,
+    header.hud-open .hud-spacer     { display: none; }
+    header.hud-open #workspace-tabs  { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
-    header.hud-open #organize-tabs    { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open .hud-divider      { display: block; grid-row: 3; grid-column: 1 / -1;
+    header.hud-open #view-tabs       { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open #organize-tabs    { grid-row: 3; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open #compass-toggle   { grid-row: 4; grid-column: 1; justify-self: start; }
+    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 2; justify-self: end; }
+    header.hud-open .hud-divider      { display: block; grid-row: 5; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
-    header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
-    header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
-    header.hud-open #settings-wrap { grid-row: 5; grid-column: 2; justify-self: end; margin-top: 6px; }
+    header.hud-open #settings-wrap   { grid-row: 6; grid-column: 1; justify-self: start; margin-top: 6px; }
+    header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: end; margin-top: 6px; }
     header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
@@ -807,7 +817,8 @@
        which is mouse-driven, is untouched. */
     header.hud-open .hud-extra button,
     header.hud-open #view-tabs button,
-    header.hud-open #organize-tabs button {
+    header.hud-open #organize-tabs button,
+    header.hud-open #workspace-tabs button {
       min-height: 44px; padding: 10px 14px;
     }
     header.hud-open #info-open-btn { width: 44px; height: 44px; }
@@ -888,10 +899,14 @@
   body.origins-mode aside.detail,
   body.origins-mode .pane-toggle { display: none !important; }
   body.origins-mode { grid-template-columns: 1fr; }
-  /* Wheel-only controls don't do anything on the map yet, so they're greyed
-     out (not hidden) as a signal they're inert here rather than missing. */
+  /* Wheel-only controls don't do anything on the map, so they're greyed out
+     (not hidden) as a signal they're inert here rather than missing. The
+     workspace switch itself stays live — it's how you get back to the wheel. */
   body.origins-mode #view-tabs,
-  body.origins-mode #organize-tabs {
+  body.origins-mode #organize-tabs,
+  body.origins-mode #compass-toggle,
+  body.origins-mode #godeeper-toggle,
+  body.origins-mode .hud-vdivider {
     opacity: 0.4; pointer-events: none;
   }
 
@@ -1089,30 +1104,47 @@
     <h1>Aroma Wheel</h1>
     <p class="tagline">Describe what you smell. Explore the chemistry behind it.</p>
   </div>
-  <span class="spacer"></span>
   <!-- All controls: always inline on desktop (display:contents makes children
-       direct flex items); on mobile hidden until ••• expands them as a tray. -->
+       direct flex items); on mobile hidden until ••• expands them as a tray.
+       The desktop left/right split is done by .hud-spacer inside this group. -->
   <div class="hud-extra" id="hud-extra">
-    <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
-      <span class="tabs-label">View</span>
+    <!-- Workspace switch (primary nav): which screen am I on. The two visual
+         explorers — the wheel, and the origins world map. -->
+    <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the tasting wheel and the world map of ingredient origins.">
+      <button data-workspace="wheel" class="active" title="The tasting wheel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3" stroke-linecap="round"/></svg>
+        Wheel
+      </button>
+      <button data-workspace="map" title="World map of ingredient cultivation origins">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
+        Map
+      </button>
+    </div>
+    <!-- Desktop-only divider separating the workspace switch from wheel controls. -->
+    <div class="hud-vdivider" aria-hidden="true"></div>
+    <div class="tabs" id="view-tabs" title="Which side panels are open around the wheel.">
+      <span class="tabs-label">Panels</span>
       <button data-view="note-input">Notes</button>
-      <button data-view="dashboard" class="active">Dashboard</button>
-      <button data-view="analysis">Compounds</button>
+      <button data-view="dashboard" class="active">Both</button>
+      <button data-view="analysis">Results</button>
     </div>
     <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
       <span class="tabs-label">Organize</span>
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
-    <!-- Mobile-only divider between the View/Organize settings and the actions
+    <button id="compass-toggle" title="Perception Compass: a draggable radar of your strongest notes, compounds, or a fixed terpene profile — a shareable snapshot of your tasting.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
+      Compass
+    </button>
+    <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
+    <!-- Mobile-only divider between the wheel controls and the utilities
          (hidden on desktop; grid-placed in the mobile tray). -->
     <div class="hud-divider" aria-hidden="true"></div>
-    <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
-    <button id="origins-toggle-btn" title="Map of the regions where each ingredient behind this flavor note was first domesticated">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
-      World Map
-    </button>
-    <div class="settings-wrap" id="settings-wrap">
+    <!-- Desktop-only flexible gap: pushes the utilities cluster to the far right
+         while workspace + wheel controls stay left. Hidden in the mobile grid. -->
+    <span class="hud-spacer" aria-hidden="true"></span>
+    <div class="settings-wrap" id="settings-wrap" hidden>
       <button type="button" id="settings-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M18 12h2.6M16.2 16.2l1.8 1.8M12 18v2.6M7.8 16.2l-1.8 1.8M6 12H3.4M7.8 7.8 5.9 5.9M12 6V3.4M16.2 7.8l1.8-1.8" stroke-linecap="round"/></svg>
       </button>
@@ -1120,10 +1152,6 @@
         <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
           Jiggle
-        </button>
-        <button id="compass-toggle" title="Small draggable terpene radar in the wheel's corner — the same fixed axes for everyone, so different tasting experiences are directly comparable.">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
-          Compass
         </button>
       </div>
     </div>
@@ -4392,9 +4420,12 @@ function setJiggle(on) {
 const jiggleToggleBtn = document.getElementById("jiggle-toggle");
 // Most desktops have no accelerometer; only surface the button where the API
 // exists at all. (Presence doesn't guarantee a real sensor, but absence
-// reliably means no point offering it.)
+// reliably means no point offering it.) Jiggle is currently the gear's only
+// item, so the gear itself only appears where Jiggle does — no empty dropdown
+// on desktops without motion support.
 if ('ondevicemotion' in window) {
   jiggleToggleBtn.hidden = false;
+  document.getElementById("settings-wrap").hidden = false;
   jiggleToggleBtn.addEventListener("click", async () => {
     if (state.jiggleEnabled) { setJiggle(false); return; }
     if (!motionListenerAttached) {
@@ -4787,9 +4818,11 @@ function renderHowToUse() {
     <ul>
       <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
+      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated. The wheel controls grey out on the map since they don't apply there.</li>
+      <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Both</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Compass (header).</strong> Pops up a small draggable radar — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or a fixed terpene profile.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
-      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Dashboard</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
@@ -5685,10 +5718,14 @@ function setOriginsMode(isOrigins) {
   document.getElementById("origins-detail-panel").hidden = true;
   document.getElementById("origins-search").value = "";
   applyOriginsSearch("");
+  // Keep the workspace switch's active highlight in sync with the actual mode.
+  document.querySelectorAll("#workspace-tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.workspace === (isOrigins ? "map" : "wheel")));
   if (isOrigins) loadOrigins();
 }
-document.getElementById("origins-toggle-btn").addEventListener("click", () => {
-  setOriginsMode(!document.body.classList.contains("origins-mode"));
+// Workspace switch (Wheel | Map) — the primary "which screen" control.
+document.querySelectorAll("#workspace-tabs button").forEach(b => {
+  b.addEventListener("click", () => setOriginsMode(b.dataset.workspace === "map"));
 });
 document.getElementById("origins-detail-close").addEventListener("click", () => {
   document.getElementById("origins-detail-panel").hidden = true;
