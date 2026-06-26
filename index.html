@@ -404,11 +404,27 @@
   #origins-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
   body.origins-mode #origins-toggle-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Settings gear: a small anchored dropdown for secondary toggles that don't
+     need their own header slot. Holds Jiggle today; built to take more later
+     without the header growing a button per feature. */
+  .settings-wrap { position: relative; display: inline-flex; }
+  #settings-toggle-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; }
+  #settings-toggle-btn svg { width: 15px; height: 15px; display: block; }
+  #settings-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  body.settings-open #settings-toggle-btn { border-color: var(--accent); color: var(--accent); }
+  .settings-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px; min-width: 130px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column; gap: 4px; }
+  .settings-menu[hidden] { display: none; }
+
   /* Jiggle toggle: only unhidden by JS once devicemotion support is detected
      (most desktops have no accelerometer, so the button stays hidden there). */
   #jiggle-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; }
+    display: inline-flex; align-items: center; gap: 5px; width: 100%; }
   #jiggle-toggle[hidden] { display: none; }
   #jiggle-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
   #jiggle-toggle:hover { border-color: var(--accent); color: var(--accent); }
@@ -694,7 +710,8 @@
     header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
     header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
     header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
-    header.hud-open #jiggle-toggle { grid-row: 5; grid-column: 2; justify-self: end; margin-top: 6px; }
+    header.hud-open #settings-wrap { grid-row: 5; grid-column: 2; justify-self: end; margin-top: 6px; }
+    header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -1007,10 +1024,17 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
       World Map
     </button>
-    <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
-      Jiggle
-    </button>
+    <div class="settings-wrap" id="settings-wrap">
+      <button type="button" id="settings-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M18 12h2.6M16.2 16.2l1.8 1.8M12 18v2.6M7.8 16.2l-1.8 1.8M6 12H3.4M7.8 7.8 5.9 5.9M12 6V3.4M16.2 7.8l1.8-1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div class="settings-menu" id="settings-menu" hidden>
+        <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
+          Jiggle
+        </button>
+      </div>
+    </div>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
   </div>
@@ -4106,6 +4130,30 @@ function setGoDeeper(on) {
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   setGoDeeper(!state.goDeeper);
+});
+
+// ---------- SETTINGS MENU (gear) ----------
+// Small anchored dropdown for secondary toggles that don't warrant their own
+// header button. Holds Jiggle for now; more can land inside without the
+// header growing a button per feature.
+const settingsWrap = document.getElementById("settings-wrap");
+const settingsToggleBtn = document.getElementById("settings-toggle-btn");
+const settingsMenu = document.getElementById("settings-menu");
+function setSettingsMenu(open) {
+  settingsMenu.hidden = !open;
+  settingsToggleBtn.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("settings-open", open);
+}
+settingsToggleBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setSettingsMenu(settingsMenu.hidden);
+});
+// Outside click / Escape closes it, same convention as the info overlay.
+document.addEventListener("click", (e) => {
+  if (!settingsMenu.hidden && !settingsWrap.contains(e.target)) setSettingsMenu(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !settingsMenu.hidden) setSettingsMenu(false);
 });
 
 // ---------- JIGGLE (device motion) ----------
