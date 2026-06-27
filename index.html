@@ -1420,9 +1420,22 @@ const GROUPS = [
 // still want to introspect it.
 const NOTES = [
   // fruity
+  // Citrus varietals (lime/yuzu/meyerlemon/mandarin/bergamot/bloodorange/pomelo)
+  // are subOf lemon/orange/grapefruit — same pattern as the cereal grains:
+  // present in the data (own compound, citation, map origin) but no slider of
+  // their own. Go Deeper on lemon/orange/grapefruit surfaces the comparison
+  // table (varietalRows()) instead of six-to-seven near-duplicate sliders.
   { id: "lemon",       label: "Lemon",              group: "fruity",   common: true  },
+  { id: "lime",        label: "Lime",               group: "fruity",   common: true,  subOf: "lemon" },
+  { id: "yuzu",        label: "Yuzu",                group: "fruity",   common: false, subOf: "lemon" },
+  { id: "meyerlemon",  label: "Meyer lemon",        group: "fruity",   common: false, subOf: "lemon" },
   { id: "orange",      label: "Orange",             group: "fruity",   common: true  },
+  { id: "mandarin",    label: "Mandarin / tangerine", group: "fruity", common: true,  subOf: "orange" },
+  { id: "bergamot",    label: "Bergamot",           group: "fruity",   common: false, subOf: "orange" },
+  { id: "bloodorange", label: "Blood orange",       group: "fruity",   common: false, subOf: "orange",
+    noStandoutNote: "Blood orange's defining trait is anthocyanin pigment in the flesh, not a distinct aroma compound — its volatile profile largely tracks regular sweet orange. The red color is a taste/visual identity, not a smell one." },
   { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true  },
+  { id: "pomelo",      label: "Pomelo / pummelo",   group: "fruity",   common: false, subOf: "grapefruit" },
   { id: "berry",       label: "Berry",              group: "fruity",   common: true  },
   { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true  },
   { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true  },
@@ -1517,7 +1530,7 @@ const COMPOUNDS = [
   { id: "geraniol",      label: "Geraniol",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~3.2 ppb (Buttery 1981).", note: "Rose-like monoterpenoid." },
   { id: "bcaryo",        label: "β-Caryophyllene",   class: "terpene",   threshold: "high",     specificity: "shared",    thresholdSrc: "~64 ppb (Jirovetz et al. 2002).", note: "Woody-spicy sesquiterpene; pepper." },
   { id: "apinene",       label: "α-Pinene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~6 ppb (Buttery 1981).", note: "Pine-resinous monoterpene." },
-  { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002).", note: "Lavender principal. About 40% of lavender oil. Floral-fresh." },
+  { id: "linalylacetate",label: "Linalyl acetate",   class: "ester",     threshold: "medium",   specificity: "signature", thresholdSrc: "~10 ppb (Lis-Balchin 2002); also bergamot's principal aroma component.", note: "Lavender principal — about 40% of lavender oil, floral-fresh. Also the defining compound of bergamot, the citrus side of the same smell." },
   { id: "bisabolol",     label: "α-Bisabolol",       class: "terpene",   threshold: "medium",   specificity: "signature", thresholdSrc: "~22 ppb (Mann & Staba 1986).", note: "Chamomile principal sesquiterpenol; soft floral-herbal." },
   // pyrazines
   { id: "ibmp",          label: "IBMP",              class: "pyrazine",  threshold: "very-low", specificity: "signature", thresholdSrc: "~2 ng/L water (Buttery, Seifert, Guadagni & Ling 1969).", note: "2-methoxy-3-isobutylpyrazine; bell pepper, Sauvignon, robusta." },
@@ -1582,9 +1595,15 @@ const COMPOUNDS = [
   { id: "e2mb",          label: "Ethyl 2-methylbutanoate", class: "ester", threshold: "very-low", specificity: "shared", thresholdSrc: "~1.5 µg/L; intense green-apple/berry ester (Klesk & Qian 2003).", note: "One of the most potent fruity esters. The bright 'green-apple / jolly-rancher' top note across apple, strawberry, blackberry, blueberry, and pineapple." },
   { id: "hex2enal",      label: "(E)-2-Hexenal",     class: "aldehyde",  commonName: "leaf aldehyde", threshold: "low", specificity: "shared", thresholdSrc: "~17 ppb green-leaf aldehyde (Hatanaka 1993).", note: "Sharp leafy-green, formed when leaf tissue is bruised. A lead note in blueberry, apple, and tomato." },
   // ---- Ginger / grains expansion ----
-  { id: "geranial",      label: "Geranial",          class: "aldehyde",  commonName: "(E)-citral", threshold: "low", specificity: "signature", thresholdSrc: "Top-FD raw-ginger odorant alongside eucalyptol, linalool, isoeugenol (Pang, Cao, Wang, Qiu & Kong 2017).", note: "Fresh ginger's lemony-sharp top note; also half of lemongrass's 'citral' character (paired with its isomer neral)." },
+  { id: "geranial",      label: "Geranial",          class: "aldehyde",  commonName: "(E)-citral", threshold: "low", specificity: "signature", thresholdSrc: "Top-FD raw-ginger odorant alongside eucalyptol, linalool, isoeugenol (Pang, Cao, Wang, Qiu & Kong 2017); also one of lime's dominant odor-active compounds (Chisholm et al. 2003).", note: "Fresh ginger's lemony-sharp top note; also one of lime's most dominant odor-active compounds, and half of lemongrass's 'citral' character (paired with its isomer neral)." },
   { id: "zingiberene",   label: "α-Zingiberene",     class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "Most abundant sesquiterpene in fresh ginger oil, commonly >35% of total volatiles (ginger GC-MS composition studies).", note: "Ginger's namesake sesquiterpene — the single most abundant aroma compound by volume, though geranial and the other minor volatiles are perceptually louder." },
-  { id: "dms",           label: "Dimethyl sulfide",  class: "sulfide",   commonName: "DMS", threshold: "low", specificity: "signature", thresholdSrc: "~5 µg/L detection, ~30–60 µg/L flavor threshold in beer (Anness & Bamforth 1982).", note: "Cooked-corn / cooked-vegetable note released from malted barley during kilning and boiling — the textbook brewing off-flavor when it overshoots." }
+  { id: "dms",           label: "Dimethyl sulfide",  class: "sulfide",   commonName: "DMS", threshold: "low", specificity: "signature", thresholdSrc: "~5 µg/L detection, ~30–60 µg/L flavor threshold in beer (Anness & Bamforth 1982).", note: "Cooked-corn / cooked-vegetable note released from malted barley during kilning and boiling — the textbook brewing off-flavor when it overshoots." },
+  // ---- Citrus varietal expansion ----
+  { id: "citronellal",   label: "Citronellal",       class: "aldehyde",  threshold: "low", specificity: "signature", thresholdSrc: "Elevated in Meyer lemon vs. true lemon, alongside thymol (Liu, Li & Ho 2022).", note: "Citronella-rosy aldehyde. Meyer lemon carries noticeably more of it (and less citral) than true lemon, part of why it reads softer and more floral." },
+  { id: "yuzunone",      label: "Yuzunone",          class: "ketone",    commonName: "(6Z,8E)-undeca-6,8,10-trien-3-one", threshold: "low", specificity: "signature", thresholdSrc: "Identified for the first time in yuzu and not detected in other citrus species studied (Miyazawa et al. 2009).", note: "Found nowhere else in citrus when first characterized — about as close to a one-fruit signature compound as aroma chemistry gets." },
+  { id: "nmeanthr",      label: "Methyl N-methylanthranilate", class: "ester", threshold: "low", specificity: "signature", thresholdSrc: "Key contributor to mandarin cold-pressed oil aroma, alongside thymol (Wilson & Shaw 1981).", note: "The N-methylated cousin of methyl anthranilate (grape's 'foxy' note) — a sharper, more pungent compound unique to mandarin/tangerine peel oil." },
+  { id: "nootkatone",    label: "Nootkatone",        class: "ketone",    threshold: "low", specificity: "signature", thresholdSrc: "Detectable to ~1 ppm in water; identified as grapefruit's defining flavor constituent (MacLeod & Buigues 1964).", note: "The grapefruit compound — woody, bitter, unmistakably grapefruit even at trace levels. Forms naturally from the oxidation of valencene." },
+  { id: "sinensal",      label: "α/β-Sinensal",      class: "aldehyde",  threshold: "low", specificity: "signature", thresholdSrc: "Found specifically in white pomelo peel in GC-MS profiling (Gupta, Dhua, Sahu, Abate & Mastinu 2021).", note: "A sesquiterpene aldehyde pair distinguishing pomelo from its own descendant, grapefruit, even though the two share most of their other chemistry." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1595,7 +1614,23 @@ const EDGES = [
   { note: "orange",      cpd: "limonene",  w: 0.95, cite: "Shaw 1979." },
   { note: "grapefruit",  cpd: "mh3",       w: 0.80, cite: "Tominaga et al. 1998 (3-MH in Sauvignon = grapefruit/passionfruit)." },
   { note: "grapefruit",  cpd: "limonene",  w: 0.55, cite: "Shaw 1979." },
+  { note: "grapefruit",  cpd: "nootkatone", w: 0.85, cite: "MacLeod & Buigues 1964 (nootkatone, grapefruit's defining flavor constituent)." },
   { note: "lemon",       cpd: "linalool",  w: 0.35, cite: "Flament 2002 (Coffee Flavor Chemistry)." },
+  // Citrus varietals — lemon/orange/grapefruit's actual chemistry (limonene-
+  // heavy, broadly shared across citrus) vs. the one compound that genuinely
+  // sets each named varietal apart, surfaced in the Go Deeper table.
+  { note: "lime",        cpd: "limonene",  w: 0.85, cite: "Chisholm et al. 2003 (limonene majority component, key lime oil)." },
+  { note: "lime",        cpd: "geranial",  w: 0.55, cite: "Chisholm et al. 2003 (geranial/neral among lime's dominant odor-active compounds)." },
+  { note: "yuzu",        cpd: "limonene",  w: 0.80, cite: "Miyazawa et al. 2009 (limonene-dominant base, as with most citrus peel oil)." },
+  { note: "yuzu",        cpd: "yuzunone",  w: 0.75, cite: "Miyazawa et al. 2009 (yuzunone, identified only in yuzu among citrus species studied)." },
+  { note: "meyerlemon",  cpd: "limonene",   w: 0.85, cite: "Liu, Li & Ho 2022 (limonene-dominant base, as with true lemon)." },
+  { note: "meyerlemon",  cpd: "citronellal", w: 0.55, cite: "Liu, Li & Ho 2022 (elevated citronellal vs. true lemon, from its mandarin parentage)." },
+  { note: "mandarin",    cpd: "limonene",  w: 0.85, cite: "Wilson & Shaw 1981 (limonene-dominant base)." },
+  { note: "mandarin",    cpd: "nmeanthr",  w: 0.65, cite: "Wilson & Shaw 1981 (methyl N-methylanthranilate, key mandarin cold-pressed-oil odorant)." },
+  { note: "bergamot",    cpd: "linalylacetate", w: 0.70, cite: "Bergamot's principal aroma component, the same lavender-defining ester on the citrus side." },
+  { note: "bergamot",    cpd: "limonene",  w: 0.50, cite: "Shared limonene base typical of citrus peel oils." },
+  { note: "pomelo",      cpd: "limonene",  w: 0.80, cite: "Gupta et al. 2021 (limonene-dominant base, shared with descendant grapefruit)." },
+  { note: "pomelo",      cpd: "sinensal",  w: 0.50, cite: "Gupta et al. 2021 (α/β-sinensal found specifically in white pomelo peel)." },
   // Berry
   { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Klesk & Qian 2003 (blackberry esters incl. ethyl hexanoate)." },
   { note: "berry",       cpd: "bdam",      w: 0.55, cite: "Sefton et al. 2011 (β-damascenone in wine/fruit)." },
@@ -1932,6 +1967,30 @@ const NOTE_ORIGINS = {
                   cultivationDate: "First written description around 1750, in Barbados.",
                   modernNote: "Grapefruit is one of the youngest fruits on this map. It arose as a chance hybrid of pomelo and sweet orange, not a domesticated wild species, and wasn't deliberately cultivated for decades after its first description.",
                   citeKeys: ["hughes1750grapefruit"] },
+  lime:         { region: "Eastern Himalayan foothills, spread via the Citrus Route", lat: 26, lon: 92, certainty: "approximate",
+                  cultivationDate: "Cultivated in its Southeast Asian homeland for over 4000 years; reached the Mediterranean only around the 10th century CE, carried west by Arab traders along the so-called Citrus Route.",
+                  modernNote: "Lime's interesting story is the multi-thousand-year lag between domestication near its origin and its arrival in the Mediterranean and, later, the Americas (via 16th-century Spanish and Portuguese explorers).",
+                  citeKeys: ["wu2018citrus"] },
+  yuzu:         { region: "Yangtze River basin, central China", lat: 30, lon: 112, certainty: "approximate",
+                  modernNote: "Yuzu is itself a natural hybrid (mandarin × ichang papeda). It was introduced to Japan and Korea during the Tang dynasty (618-907 CE) and became far more culturally central there than in its native China." },
+  meyerlemon:   { region: "Beijing area, China", lat: 39.9, lon: 116.3, certainty: "known", country: "China",
+                  cultivationDate: "Found in 1908 by USDA plant explorer Frank N. Meyer, growing as a dwarf potted houseplant near Fengtai, just outside Beijing.",
+                  modernNote: "Unlike almost everything else on this map, Meyer lemon's origin point is a single well-documented discovery, not a prehistoric domestication inferred from genetics or archaeology — Meyer collected it on a USDA plant-exploration trip and introduced it to the US the same year.",
+                  citeKeys: ["fairchild1938meyer"] },
+  mandarin:     { region: "Nanling Mountains, South China", lat: 25, lon: 113, certainty: "known", country: "China",
+                  cultivationDate: "Genomic analysis traces cultivated mandarin's split from wild populations to roughly 500,000 years ago when ancestors entered the Yangtze and Pearl River basins, with two independent domestication events on either side of the Nanling range.",
+                  modernNote: "China has cultivated mandarin for an estimated four millennia, making it one of the oldest continuously cultivated citrus in its own right, not just a sweet-orange ingredient.",
+                  citeKeys: ["wang2018mandarin"] },
+  bergamot:     { region: "Calabria, Italy", lat: 38.1, lon: 15.9, certainty: "approximate", country: "Italy",
+                  modernNote: "Genuinely unresolved: leading theories have bergamot arriving via Columbus from the Antilles, via the Canary Islands, or simply arising as a spontaneous 17th-century hybrid in Calabrian orchards. Today over 90% of world production still comes from that same Calabrian coast." },
+  bloodorange:  { region: "Sicily, Italy", lat: 37.5, lon: 15, certainty: "known", country: "Italy",
+                  cultivationDate: "First documented in Giovanni Battista Ferrari's 1646 botanical treatise Hesperides, describing red-fleshed oranges; the spontaneous bud mutation that produces the anthocyanin pigmentation is generally placed in 17th–18th century Sicily.",
+                  modernNote: "Blood orange isn't a domesticated species at all — it's a spontaneous pigment mutation in already-domesticated sweet orange, favored by Sicily's volcanic soil and sharp autumn temperature swings, which is why classic blood-orange varieties still concentrate around Mount Etna.",
+                  citeKeys: ["ferrari1646orange"] },
+  pomelo:       { region: "Southeast Asia (Thailand / Malaysia / Indonesia)", lat: 5, lon: 102, certainty: "known",
+                  cultivationDate: "One of the small number of true wild Citrus species (alongside citron and mandarin) that all other cultivated citrus descend from as hybrids; cultivated in China for over two thousand years.",
+                  modernNote: "Pomelo is grapefruit's own ancestor — roughly 63% of the grapefruit genome traces back to it — making this the rare case on the map where a 'varietal' actually predates the thing it's being compared against.",
+                  citeKeys: ["wu2018citrus"] },
   stonefruit:   { region: "Yangzi River valley, China", lat: 36, lon: 108, certainty: "known",
                   cultivationDate: "Selection for preferred peach stones dates to roughly 8000 years before present. Stones close to modern size and shape appear by about 5300 to 4300 years before present.",
                   modernNote: "Early peach stones are notably smaller than modern fruit. Size and shape changed gradually over thousands of years, not through one domestication event.",
@@ -2238,6 +2297,48 @@ const REFERENCES = {
     title: "Dimethyl sulphide — a review.",
     journal: "Journal of the Institute of Brewing",
     volume: "88", issue: "4", pages: "244–252"
+  },
+  "liu2022lemonlime": {
+    authors: "Liu, S., Li, S., & Ho, C.-T.",
+    year: 2022,
+    title: "Dietary bioactives and essential oils of lemon and lime fruits.",
+    journal: "Food Science and Human Wellness",
+    volume: "11", issue: "4", pages: "753–764"
+  },
+  "miyazawa2009yuzu": {
+    authors: "Miyazawa, N., Tomita, N., Kurobayashi, Y., et al.",
+    year: 2009,
+    title: "Novel character impact compounds in Yuzu (Citrus junos Sieb. ex Tanaka) peel oil.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "57", issue: "5", pages: "1990–1996"
+  },
+  "wilson1981mandarin": {
+    authors: "Wilson, C.W. III, & Shaw, P.E.",
+    year: 1981,
+    title: "Importance of thymol, methyl N-methylanthranilate, and monoterpene hydrocarbons to the aroma and flavor of mandarin cold-pressed oils.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "29", issue: "3", pages: "494–496"
+  },
+  "macleod1964nootkatone": {
+    authors: "MacLeod, W.D. Jr., & Buigues, N.M.",
+    year: 1964,
+    title: "Sesquiterpenes. I. Nootkatone, a new grapefruit flavor constituent.",
+    journal: "Journal of Food Science",
+    volume: "29", issue: "5", pages: "565–568"
+  },
+  "chisholm2003lime": {
+    authors: "Chisholm, M.G., Wilson, M.A., & Gaskey, G.M.",
+    year: 2003,
+    title: "Characterization of aroma volatiles in key lime essential oils (Citrus aurantifolia Swingle).",
+    journal: "Flavour and Fragrance Journal",
+    volume: "18", pages: "106–115"
+  },
+  "gupta2021pomelo": {
+    authors: "Gupta, A.K., Dhua, S., Sahu, P.P., Abate, G., & Mastinu, A.",
+    year: 2021,
+    title: "Variation in phytochemical, antioxidant and volatile composition of pomelo fruit (Citrus grandis (L.) Osbeck) during seasonal growth and development.",
+    journal: "Plants",
+    volume: "10", issue: "9", pages: "1941"
   }
 };
 
@@ -2264,7 +2365,14 @@ const CITE_TO_REF = [
   ["Pang, Cao, Wang, Qiu & Kong 2017", "pang2017ginger"],
   ["Aceña et al. 2011",           "acena2011pistachio"],
   ["Gong, Kerrihard & Pegg 2018",  "gong2018pecan"],
-  ["Anness & Bamforth 1982",      "anness1982dms"]
+  ["Anness & Bamforth 1982",      "anness1982dms"],
+  ["Liu, Li & Ho 2022",           "liu2022lemonlime"],
+  ["Miyazawa et al. 2009",        "miyazawa2009yuzu"],
+  ["Wilson & Shaw 1981",          "wilson1981mandarin"],
+  ["MacLeod & Buigues 1964",      "macleod1964nootkatone"],
+  ["Chisholm et al. 2003",        "chisholm2003lime"],
+  ["Gupta, Dhua, Sahu, Abate & Mastinu 2021", "gupta2021pomelo"],
+  ["Gupta et al. 2021",           "gupta2021pomelo"]
 ];
 
 function refForCite(citeString) {
@@ -2320,6 +2428,9 @@ const ORIGIN_REFERENCES = {
   fuller2007oldworld: { authors: "Fuller, D.Q.", year: 2007, title: "Contrasting patterns in crop domestication and domestication rates: recent archaeobotanical insights from the Old World.", journal: "Annals of Botany", volume: "100", issue: "5", pages: "903–924" },
   manning2011millet: { authors: "Manning, K., Pelling, R., Higham, T., Schwenniger, J.L., & Fuller, D.Q.", year: 2011, title: "4500-year old domesticated pearl millet (Pennisetum glaucum (L.) R. Br.) from the Tilemsi Valley, Mali: new insights into an alternative cereal domestication pathway.", journal: "Journal of Archaeological Science", volume: "38", issue: "2", pages: "312–322" },
   jarvis2017quinoa: { authors: "Jarvis, D.E., Ho, Y.S., Lightfoot, D.J., et al.", year: 2017, title: "The genome of Chenopodium quinoa.", journal: "Nature", volume: "542", issue: "7641", pages: "307–312" },
+  wang2018mandarin: { authors: "Wang, L., He, F., Huang, Y., et al.", year: 2018, title: "Genome of wild mandarin and domestication history of mandarin.", journal: "Molecular Plant", volume: "11", issue: "8", pages: "1024–1037" },
+  fairchild1938meyer: { type: "book", authors: "Fairchild, D.", year: 1938, title: "The World Was My Garden: Travels of a Plant Explorer.", publisher: "Charles Scribner's Sons", note: "Memoir by Meyer's USDA supervisor documenting Frank N. Meyer's 1905-1918 plant-collecting expeditions through China, including the 1908 discovery of the dwarf lemon that bears his name." },
+  ferrari1646orange: { type: "historical", authors: "Ferrari, G.B.", year: 1646, title: "Hesperides, sive de malorum aureorum cultura et usu libri quatuor", note: "Botanical treatise describing red-fleshed oranges observed via Mediterranean trade routes; the earliest known written reference to what would become the blood orange." },
 };
 
 function formatOriginRef(ref) {
@@ -2338,10 +2449,14 @@ const WAIS_DESCRIPTORS = [
   { category: "Fruity", entries: [
     { word: "fruity",            notes: ["berry", "apple", "stonefruit", "banana", "mango", "passionfruit", "cherry", "pineapple"] },
     { word: "citrusy",           notes: ["lemon", "orange", "grapefruit"] },
-    { word: "lime",              notes: ["lemon", "grapefruit"] },
-    { word: "tangerine",         notes: ["orange", "lemon"] },
-    { word: "bergamot",          notes: ["lemon", "orange", "lavender"] },
-    { word: "orange peel",       notes: ["orange", "lemon"] },
+    { word: "lime",              notes: ["lime"] },
+    { word: "yuzu",              notes: ["yuzu"] },
+    { word: "meyer lemon",       notes: ["meyerlemon"] },
+    { word: "tangerine / mandarin", notes: ["mandarin"] },
+    { word: "bergamot",          notes: ["bergamot", "lavender"] },
+    { word: "blood orange",      notes: ["bloodorange"] },
+    { word: "pomelo / pummelo",  notes: ["pomelo"] },
+    { word: "orange peel",       notes: ["orange"] },
     { word: "blueberry",         notes: ["blueberry", "berry"] },
     { word: "raspberry",         notes: ["raspberry", "berry", "violet"] },
     { word: "grape / concord",   notes: ["grape"] },
@@ -3779,17 +3894,20 @@ function renderDetail() {
 // Inverse view: show which compounds a given note maps to,
 // sorted by base edge weight. Clicking a compound name switches to that
 // compound's full detail. "← All compounds" returns to grid mode.
-// Six grains collapse to one "Cereal" slider (see NOTES: subOf "cereal"),
-// since raw-grain aroma is genuinely dominated by a shared hexanal base —
-// six near-identical sliders would overstate how distinct they actually are.
-// This computes each grain's one real point of difference (if the literature
-// has one) straight from its EDGES, so the Go Deeper table never drifts out
-// of sync with the underlying compound data.
-const CEREAL_BASE_CPD = "hexanal";
-function cerealVarietalRows() {
-  return NOTES.filter(n => n.subOf === "cereal").map(n => {
+// Some quick-use notes (Cereal, and citrus's Lemon/Orange/Grapefruit) collapse
+// several real varietals into one slider, because their raw chemistry is
+// genuinely too similar to justify a slider each — six grains share a hexanal
+// base; lemon/lime/yuzu/Meyer-lemon all share a limonene base. This computes
+// each subOf child's one real point of difference from the parent (if the
+// literature has one) straight from EDGES, so the Go Deeper table can never
+// drift out of sync with the underlying compound data. A child whose every
+// edge is also one of the parent's edges (no compound of its own) falls back
+// to its noStandoutNote if set, or a generic honest default.
+function varietalRows(parentId) {
+  const parentCpdIds = new Set((NOTE_EDGES[parentId] || []).map(e => e.cpd));
+  return NOTES.filter(n => n.subOf === parentId).map(n => {
     const edges = (NOTE_EDGES[n.id] || []).slice().sort((a, b) => b.w - a.w);
-    const distinguishing = edges.find(e => e.cpd !== CEREAL_BASE_CPD);
+    const distinguishing = edges.find(e => !parentCpdIds.has(e.cpd));
     return { note: n, cpd: distinguishing ? CPD_BY_ID[distinguishing.cpd] : null };
   });
 }
@@ -3841,26 +3959,30 @@ function renderNoteDetail(noteId) {
       </ul>
     </div>
 
-    ${noteId === "cereal" ? `
+    ${(() => {
+      const rows = varietalRows(noteId);
+      if (rows.length === 0) return "";
+      return `
     <div class="section">
-      <div class="section-title">How the six grains differ</div>
+      <div class="section-title">How ${n.label}'s varietals differ</div>
       <table class="cereal-table">
-        <thead><tr><th>Grain</th><th>What sets it apart</th></tr></thead>
+        <thead><tr><th>Variety</th><th>What sets it apart</th></tr></thead>
         <tbody>
-          ${cerealVarietalRows().map(r => `
+          ${rows.map(r => `
             <tr>
               <td>${r.note.label}</td>
               <td>${r.cpd
                 ? `<span class="note-name view-cpd${commonClass(r.cpd)}" data-cpd="${r.cpd.id}" title="Switch to this compound's detail">${r.cpd.label}</span>
                    <div class="cereal-table-blurb">${r.cpd.note}</div>`
-                : `<span class="cereal-table-none">Shares the base cereal-aldehyde profile below — no literature-confirmed standout compound yet.</span>`}
+                : `<span class="cereal-table-none">${r.note.noStandoutNote || `Shares ${n.label}'s base profile above — no literature-confirmed standout compound yet.`}</span>`}
               </td>
             </tr>`).join("")}
         </tbody>
       </table>
-      <p class="cereal-table-caption">All six share hexanal's green/grassy base (above); this is what's layered on top of it where the evidence actually shows something distinct — not where it'd be tidy to invent six different stories.</p>
+      <p class="cereal-table-caption">This is what's layered on top of ${n.label}'s own shared compounds (above), where the evidence actually shows something distinct — not where it'd be tidy to invent a difference for every variety.</p>
     </div>
-    ` : ""}
+      `;
+    })()}
   `;
 
   // Back to grid
