@@ -725,6 +725,21 @@
   aside.detail li .view-cpd { cursor: pointer; color: var(--ink);
     border-bottom: 1px dotted var(--ink-dim); }
   aside.detail li .view-cpd:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  /* Cereal Go-Deeper table: the six grains collapse to one "Cereal" slider
+     (their raw aroma chemistry is genuinely too similar to justify six rows
+     in the input panel — see CEREAL_VARIETAL_TABLE/cerealVarietalRows()), so
+     this table is the only place their one real point of difference (if any)
+     surfaces. Plain <table>, not the div-grid used elsewhere, since tabular
+     data is exactly what it is. */
+  aside.detail .cereal-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 2px; }
+  aside.detail .cereal-table th { text-align: left; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-dim); padding: 0 8px 6px 0; border-bottom: 1px solid var(--line); }
+  aside.detail .cereal-table td { padding: 7px 8px 7px 0; border-bottom: 1px dotted var(--line);
+    vertical-align: top; line-height: 1.4; }
+  aside.detail .cereal-table td:first-child { white-space: nowrap; color: var(--ink); font-weight: 600; }
+  aside.detail .cereal-table-blurb { color: var(--ink-dim); margin-top: 1px; }
+  aside.detail .cereal-table-none { color: var(--ink-dim); font-style: italic; }
+  aside.detail .cereal-table-caption { font-size: 11px; color: var(--ink-dim); margin-top: 8px; line-height: 1.5; }
 
   /* SVG text on the wheel. The paint-order trick draws a background-color
      stroke behind the fill so labels remain readable when they overlap each
@@ -822,6 +837,12 @@
       margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
     header.hud-open .hud-vdivider,
     header.hud-open .hud-spacer     { display: none; }
+    /* Full-width sliders ate the whole row, so a vertical scroll gesture
+       starting almost anywhere over the note list got read as a drag on
+       whichever slider sat underneath the touch point — reported live by
+       multiple users. Left-justify each slider to a third of the row width;
+       the other two-thirds is dead space a touch-scroll can safely cross. */
+    .note-row input[type=range] { width: 33%; }
     header.hud-open #workspace-tabs  { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
     header.hud-open #view-tabs       { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
@@ -1428,15 +1449,32 @@ const NOTES = [
   { id: "smoky",       label: "Smoky",              group: "roasted",  common: true  },
   { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true  },
   { id: "popcorn",     label: "Popcorn / fresh bread", group: "roasted", common: true },
+  // Cereal is the quick-use default; rice/wheat/barley/oats/millet/quinoa below
+  // are subOf "cereal" — present in the data (their own compounds, citations,
+  // and world-map origin) but not rendered as their own slider. isNoteVisible()
+  // hides any subOf note from the slider panel, legend, search, and wheel
+  // floats; Go Deeper's note detail for "cereal" is the only place they surface,
+  // as the distinguishing-compound table (see CEREAL_VARIETAL_TABLE).
+  { id: "cereal",      label: "Cereal / grain",     group: "roasted",  common: true  },
+  { id: "rice",        label: "Rice",               group: "roasted",  common: true,  subOf: "cereal" },
+  { id: "wheat",       label: "Wheat",              group: "roasted",  common: true,  subOf: "cereal" },
+  { id: "barley",      label: "Barley / malt",      group: "roasted",  common: true,  subOf: "cereal" },
+  { id: "oats",        label: "Oats",               group: "roasted",  common: true,  subOf: "cereal" },
+  { id: "millet",      label: "Millet",             group: "roasted",  common: false, subOf: "cereal" },
+  { id: "quinoa",      label: "Quinoa",             group: "roasted",  common: false, subOf: "cereal" },
   // spice
   { id: "clove",       label: "Clove",              group: "spice",    common: true  },
   { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true  },
   { id: "pepper",      label: "Black pepper",       group: "spice",    common: true  },
   { id: "anise",       label: "Anise / licorice",   group: "spice",    common: true  },
+  { id: "ginger",      label: "Ginger",             group: "spice",    common: true  },
   // nutty
   { id: "almond",      label: "Almond",             group: "nutty",    common: true  },
   { id: "hazelnut",    label: "Hazelnut",           group: "nutty",    common: false },
   { id: "peanut",      label: "Peanut",             group: "nutty",    common: true  },
+  { id: "coconut",     label: "Coconut",            group: "nutty",    common: true  },
+  { id: "pistachio",   label: "Pistachio",          group: "nutty",    common: true  },
+  { id: "pecan",       label: "Pecan",              group: "nutty",    common: true  },
   // earthy
   { id: "woody",       label: "Woody / cedar",      group: "earthy",   common: true  },
   { id: "pine",        label: "Pine / resin",       group: "earthy",   common: true  },
@@ -1498,12 +1536,13 @@ const COMPOUNDS = [
   // lactones
   { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone; also mango." },
   { id: "gnonal",        label: "γ-Nonalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~30 ppb (Schwab et al. 2008).", note: "Coconut-creamy lactone; aged spirits." },
+  { id: "ddecal",        label: "δ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "signature", thresholdSrc: "Native virgin-coconut-oil headspace lactone (Dimzon, Tantengco, Oquendo & Dayrit 2021).", note: "The lactone raw coconut oil itself actually carries — distinct from γ-decalactone/γ-nonalactone, the louder 'coconut' compounds flavorists reach for instead." },
   { id: "sotolon",       label: "Sotolon",           class: "lactone",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.3 ppb (Pham et al. 1995).", note: "Maple/fenugreek/curry; aged sake, vin jaune." },
   // aldehydes
   { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
   { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
   { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
-  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; beer & coffee staling marker." },
+  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; the beer and coffee staling marker. Also a high-impact aldehyde in raw millet, where the same waxy-cardboard edge is just part of the grain's native smell rather than a sign of age." },
   { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
   { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
   // ketones / norisoprenoids
@@ -1541,7 +1580,11 @@ const COMPOUNDS = [
   // ---- Berry differentiation: compounds that separate the berries ----
   { id: "mesifurane",    label: "Mesifurane",        class: "furan",     commonName: "2,5-dimethyl-4-methoxy-3(2H)-furanone (DMMF)", threshold: "low", specificity: "signature", thresholdSrc: "Strawberry character-impact furanone (Schieberle & Hofmann 1997).", note: "The methyl ether of furaneol. With furaneol it forms the defining caramel-sweet, faintly sherry-like core of ripe strawberry." },
   { id: "e2mb",          label: "Ethyl 2-methylbutanoate", class: "ester", threshold: "very-low", specificity: "shared", thresholdSrc: "~1.5 µg/L; intense green-apple/berry ester (Klesk & Qian 2003).", note: "One of the most potent fruity esters. The bright 'green-apple / jolly-rancher' top note across apple, strawberry, blackberry, blueberry, and pineapple." },
-  { id: "hex2enal",      label: "(E)-2-Hexenal",     class: "aldehyde",  commonName: "leaf aldehyde", threshold: "low", specificity: "shared", thresholdSrc: "~17 ppb green-leaf aldehyde (Hatanaka 1993).", note: "Sharp leafy-green, formed when leaf tissue is bruised. A lead note in blueberry, apple, and tomato." }
+  { id: "hex2enal",      label: "(E)-2-Hexenal",     class: "aldehyde",  commonName: "leaf aldehyde", threshold: "low", specificity: "shared", thresholdSrc: "~17 ppb green-leaf aldehyde (Hatanaka 1993).", note: "Sharp leafy-green, formed when leaf tissue is bruised. A lead note in blueberry, apple, and tomato." },
+  // ---- Ginger / grains expansion ----
+  { id: "geranial",      label: "Geranial",          class: "aldehyde",  commonName: "(E)-citral", threshold: "low", specificity: "signature", thresholdSrc: "Top-FD raw-ginger odorant alongside eucalyptol, linalool, isoeugenol (Pang, Cao, Wang, Qiu & Kong 2017).", note: "Fresh ginger's lemony-sharp top note; also half of lemongrass's 'citral' character (paired with its isomer neral)." },
+  { id: "zingiberene",   label: "α-Zingiberene",     class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "Most abundant sesquiterpene in fresh ginger oil, commonly >35% of total volatiles (ginger GC-MS composition studies).", note: "Ginger's namesake sesquiterpene — the single most abundant aroma compound by volume, though geranial and the other minor volatiles are perceptually louder." },
+  { id: "dms",           label: "Dimethyl sulfide",  class: "sulfide",   commonName: "DMS", threshold: "low", specificity: "signature", thresholdSrc: "~5 µg/L detection, ~30–60 µg/L flavor threshold in beer (Anness & Bamforth 1982).", note: "Cooked-corn / cooked-vegetable note released from malted barley during kilning and boiling — the textbook brewing off-flavor when it overshoots." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1596,6 +1639,24 @@ const EDGES = [
   { note: "burnt",   cpd: "furfural", w: 0.60, cite: "Flament 2002." },
   { note: "burnt",   cpd: "guaiacol", w: 0.45, cite: "Maga 1978." },
 
+  // Grains — raw cereal aroma is genuinely dominated by the same lipid-oxidation
+  // aldehyde (hexanal) across species. "cereal" (the slider users actually see)
+  // carries that shared base; rice/wheat/barley/oats/millet/quinoa (subOf
+  // "cereal", no slider of their own — see NOTES) layer in the one compound
+  // (if any) the literature actually supports as a further differentiator,
+  // surfaced only in the Go Deeper comparison table (CEREAL_VARIETAL_TABLE).
+  { note: "cereal",  cpd: "hexanal",        w: 0.65, cite: "Raw-grain lipid-oxidation aldehyde, shared base across cereals." },
+  { note: "rice",    cpd: "hexanal",        w: 0.65, cite: "Profiling studies of raw/milled rice volatiles (lipid-oxidation aldehydes)." },
+  { note: "rice",    cpd: "acetylpyrroline", w: 0.45, cite: "Buttery et al. 1983; the aromatic-rice (basmati/jasmine) marker, weak-to-absent in non-aromatic varieties." },
+  { note: "wheat",   cpd: "hexanal",        w: 0.70, cite: "Green wheat / wheat flour mill-stream volatile studies (hexanal, nonanal, 2-pentylfuran)." },
+  { note: "wheat",   cpd: "acetylpyrroline", w: 0.30, cite: "Schieberle 1991 (2-AP precursor pathway, wheat-bread crust)." },
+  { note: "barley",  cpd: "hexanal",  w: 0.55, cite: "Raw-grain lipid-oxidation aldehyde, shared base across cereals." },
+  { note: "barley",  cpd: "dms",      w: 0.65, cite: "Anness & Bamforth 1982 (dimethyl sulfide, malted barley, cooked-corn character)." },
+  { note: "oats",    cpd: "hexanal",  w: 0.70, cite: "Early oat-groat GC-MS studies (C6 aldehydes dominate raw/hay-like aroma)." },
+  { note: "millet",  cpd: "hexanal",  w: 0.65, cite: "Foxtail/pearl millet volatile profiling (hexanal highest-content aldehyde)." },
+  { note: "millet",  cpd: "e2non",    w: 0.45, cite: "Foxtail millet volatile studies ((E)-2-nonenal, high-OAV millet aldehyde)." },
+  { note: "quinoa",  cpd: "hexanal",  w: 0.60, cite: "Almaguer et al. 2023 (unmalted-quinoa aroma baseline)." },
+
   // Spice
   { note: "clove",    cpd: "eugenol",  w: 0.95, cite: "Ohloff 1994." },
   { note: "clove",    cpd: "vinguai",  w: 0.75, cite: "Tressl & Friese 1978 (4-vinylguaiacol, clove note)." },
@@ -1603,12 +1664,21 @@ const EDGES = [
   { note: "cinnamon", cpd: "benzald",   w: 0.25, cite: "Friedman 2017 (minor cinnamon constituent)." },
   { note: "pepper",   cpd: "bcaryo",   w: 0.85, cite: "Jirovetz et al. 2002 (β-caryophyllene in pepper)." },
   { note: "anise",    cpd: "eugenol",  w: 0.35, cite: "Ohloff 1994 (phenylpropene class)." },
+  { note: "ginger",   cpd: "geranial",    w: 0.85, cite: "Pang et al. 2017 (AEDA, fresh-ginger top odorant)." },
+  { note: "ginger",   cpd: "zingiberene", w: 0.60, cite: "Most-abundant sesquiterpene in fresh ginger oil GC-MS profiles." },
+  { note: "ginger",   cpd: "linalool",    w: 0.35, cite: "Pang et al. 2017 (linalool among highest-FD raw-ginger odorants)." },
 
   // Nutty
   { note: "almond",   cpd: "benzald",  w: 0.90, cite: "Ohloff 1994 (bitter-almond)." },
   { note: "hazelnut", cpd: "edmpyr",   w: 0.65, cite: "Czerny et al. 1999 (alkyl pyrazines, nutty)." },
   { note: "hazelnut", cpd: "dempyr",   w: 0.55, cite: "Czerny et al. 1999." },
   { note: "peanut",   cpd: "edmpyr",   w: 0.70, cite: "Mason, Johnson & Hamming 1966 (roasted-peanut pyrazines)." },
+  { note: "coconut",  cpd: "ddecal",   w: 0.85, cite: "Dimzon et al. 2021 (δ-lactones, virgin-coconut-oil headspace)." },
+  { note: "coconut",  cpd: "gnonal",   w: 0.40, cite: "Widely-used coconut-flavor descriptor compound, though not itself native to raw coconut (per Dimzon et al. 2021)." },
+  { note: "pistachio", cpd: "apinene", w: 0.60, cite: "Aceña et al. 2011 (α-pinene, key raw-pistachio odorant)." },
+  { note: "pistachio", cpd: "myrcene", w: 0.55, cite: "Aceña et al. 2011 (β-myrcene, key raw-pistachio odorant)." },
+  { note: "pistachio", cpd: "edmpyr",  w: 0.75, cite: "Aceña et al. 2011 (2-ethyl-3,5-dimethylpyrazine, roasted Kerman pistachio, FD 1024)." },
+  { note: "pecan",    cpd: "hexanal",  w: 0.70, cite: "Gong, Kerrihard & Pegg 2018 (HS-SPME-GC-MS, raw Georgia pecans)." },
 
   // Earthy
   { note: "woody",      cpd: "bcaryo",   w: 0.70, cite: "Jirovetz et al. 2002." },
@@ -1754,7 +1824,8 @@ const COMPOUND_CLASS_COLOR = {
   "pyranone":          "#d98f5c",  // caramel — maltol sweet Maillard ring
   "pyrroline":         "#c2693f",  // roast brown — 2-acetyl-1-pyrroline
   "acid":              "#9aa63d",  // olive — short-chain fatty acids (cheese)
-  "haloanisole":       "#7d8a99"   // slate — musty chloroanisole faults
+  "haloanisole":       "#7d8a99",  // slate — musty chloroanisole faults
+  "sulfide":           "#5e9e8f"   // teal-grey — distinct from thiol (R-S-R, not R-SH); malt/cooked-vegetable
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
@@ -1772,14 +1843,14 @@ const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color
 const COMPOUND_ORIGINS = {
   limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates: the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
   linalool:      "Lavender (≈30% of lavender oil), coriander seed (≈60–80% of its essential oil), green coffee beans, chamomile, basil, mint, ginger, citrus peel oils. One of the most widespread floral monoterpenes in nature.",
-  myrcene:       "Hops (the resinous-mango note in IPAs), ripe mango, hemp, lemongrass, thyme, parsley, bay. Same molecule across all of them.",
+  myrcene:       "Hops (the resinous-mango note in IPAs), ripe mango, raw pistachio kernels, hemp, lemongrass, thyme, parsley, bay. Same molecule across all of them.",
   geraniol:      "Rose petals, geranium leaves, palmarosa, citronella (the candle), lemongrass, lemon, bay, ginger. The same compound makes rose smell like rose and citronella repel mosquitoes.",
   bcaryo:        "Black pepper (where it drives the woody-spicy bite), clove, hops, hemp, basil, cinnamon, rosemary, oregano, copaiba balsam.",
-  apinene:       "Pine resin (the namesake: the smell of a pine forest), rosemary, frankincense, hemp, basil, dill, eucalyptus, juniper berries.",
+  apinene:       "Pine resin (the namesake: the smell of a pine forest), rosemary, frankincense, hemp, basil, dill, eucalyptus, juniper berries, raw pistachio kernels.",
   linalylacetate:"Lavender (≈40% of lavender oil) and bergamot, the citrus that makes Earl Grey tea smell like Earl Grey. Also sage and clary sage.",
   bisabolol:     "Chamomile (the soft-floral note you smell in chamomile tea); candeia tree, the main Brazilian commercial source.",
   ibmp:          "Bell pepper (where it IS the green-pepper note), peas, asparagus, galbanum resin, robusta coffee, Sauvignon Blanc grapes. Detectable at parts-per-trillion, one of the most potent odorants known.",
-  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn. Doesn't exist in raw coffee beans; built from scratch by the heat of roasting (the Maillard reaction).",
+  edmpyr:        "Roasted coffee, hazelnut, roasted cocoa, popcorn, roasted pistachio (its main aroma-active compound). Doesn't exist in raw coffee beans or raw pistachios; built from scratch by the heat of roasting (the Maillard reaction).",
   dempyr:        "Roasted coffee (a key driver of the deep-roast smell) and baked goods. Another Maillard creation, made by heat rather than extracted from any raw ingredient.",
   furfural:      "Roasted coffee, bread crust, almonds, popcorn, caramelized sugar, baked goods. A general signature of sugar getting hot enough to brown.",
   fft:           "Freshly brewed coffee: the sulfur compound that makes coffee smell like coffee. Also roasted sesame and popcorn. Fades within hours of brewing.",
@@ -1791,10 +1862,14 @@ const COMPOUND_ORIGINS = {
   iaac:          "Banana (where it IS the banana smell), pear, banana-flavored candy. The signature ester of yeast fermentation.",
   gdecal:        "Peach, apricot, mango, ripe stonefruit, dairy. The soft fuzzy-peach quality on the back of your throat.",
   gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids, giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
+  ddecal:        "Virgin coconut oil's own headspace — the lactone raw coconut actually carries. Milder and less 'coconut-flavor-extract' than γ-decalactone/γ-nonalactone, the louder lactones flavorists reach for instead.",
   sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources: the principal smell of maple syrup IS the principal smell of fenugreek seed.",
   vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging, a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
   cinnamald:     "Cinnamon bark: over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon, what most US grocery 'cinnamon' actually is).",
-  hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells, released the instant a leaf is torn.",
+  hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells, released the instant a leaf is torn. Also the dominant raw-grain aldehyde across wheat, rice, oats, barley, millet, and quinoa alike — most of why uncooked cereals smell so similar to each other.",
+  geranial:      "Fresh ginger rhizome's brightest top note. Also half of lemongrass and lemon myrtle's 'citral' character, paired there with its near-identical isomer neral.",
+  zingiberene:   "Fresh ginger rhizome — its single most abundant aroma compound by volume, though not its loudest-smelling one. Trace amounts also turn up in basil and turmeric, both close botanical relatives.",
+  dms:           "Malted barley during kilning and mashing, where it reads as a sweet, cooked-corn note. The same molecule overshooting is brewing's most infamous off-flavor — the line between 'malty' and 'creamed corn' is a matter of degree, not kind.",
   e2non:         "Stale beer, stale coffee, cucumber, wet cardboard, old books. A marker of oxidative aging; it appears as a beverage or paper sits with oxygen.",
   benzald:       "Bitter almond, marzipan, cherry pits, apricot kernels, almond extract. All the kernels of the stone-fruit family share it; they're botanical cousins.",
   phenylacet:    "Honey (the principal floral-honey note), rose, hyacinth, buckwheat honey, cocoa. Made when the amino acid phenylalanine breaks down under heat or fermentation.",
@@ -1904,6 +1979,30 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Sugarcane domesticated from wild Saccharum robustum roughly 8000 years ago in this region.",
                   modernNote: "Early sugarcane was chewed as cane, not refined. Burnt-sugar notes depend on industrial-era refining and caramelization, a much more recent development than the plant itself.",
                   citeKeys: ["garsmeur2025sugarcane"] },
+  rice:         { region: "Lower Yangtze Valley", lat: 30, lon: 120, certainty: "known", country: "China",
+                  cultivationDate: "Spikelet-base evidence from the Lower Yangtze shows rice domestication was a gradual process spanning roughly 6900 to 6600 BCE, tracked by the slow rise of non-shattering grains in the archaeological record.",
+                  modernNote: "Domestication is measured here the same way as wheat: not by a single invention but by tracking what fraction of recovered spikelet bases show the non-shattering trait over centuries.",
+                  citeKeys: ["fuller2009rice"] },
+  wheat:        { region: "Fertile Crescent", lat: 35, lon: 38, certainty: "approximate",
+                  cultivationDate: "The same gradual domestication process behind the toast note. The non-shattering trait needed for reliable harvest took over 1000 years to fix, emerging around 9500 years before present.",
+                  modernNote: "Wheat-the-grain and toast-the-aroma share an origin point on this map for a reason: the toasted-bread smell depends on this same domesticated trait, not just on heat.",
+                  citeKeys: ["tanno2006wheat"] },
+  barley:       { region: "Israel / Jordan area, Fertile Crescent", lat: 32, lon: 36, certainty: "known",
+                  cultivationDate: "AFLP analysis of wild and cultivated lines points to a single main domestication of barley from wild Hordeum spontaneum roughly 10,000 years ago, with the southern Fertile Crescent the most probable origin area.",
+                  modernNote: "A second, independent barley domestication 1,500 to 3,000 km further east later contributed most of the diversity found from Central Asia to East Asia — two separate stories, not one spreading outward.",
+                  citeKeys: ["badr2000barley"] },
+  oats:         { region: "Bronze Age Europe", lat: 50, lon: 10, certainty: "approximate",
+                  cultivationDate: "Oat's wild ancestor (Avena sterilis) is a Fertile Crescent plant, but oat itself wasn't deliberately farmed there. It traveled as an uninvited weed in wheat and barley fields and was only domesticated in its own right around 3000 years ago, in cooler, wetter Bronze Age Europe.",
+                  modernNote: "This is \"secondary domestication\": a weed that rode along with two other crops into a climate that favored it, and only later got bred as a crop in its own right — not one farmer's deliberate choice.",
+                  citeKeys: ["fuller2007oldworld"] },
+  millet:       { region: "Tilemsi Valley, Mali", lat: 17, lon: -1, certainty: "known", country: "Mali",
+                  cultivationDate: "Domesticated pearl millet from the Tilemsi Valley dates to roughly 2500 BCE, the earliest secure evidence for this West African domestication pathway.",
+                  modernNote: "Millet was domesticated at least twice independently: pearl millet in the West African Sahel, and common/foxtail millet roughly 10,000 years ago in northern China — this map anchors on the African pathway, not the (older) Chinese one.",
+                  citeKeys: ["manning2011millet"] },
+  quinoa:       { region: "Lake Titicaca Basin", lat: -16, lon: -69, certainty: "known", country: "Bolivia / Peru",
+                  cultivationDate: "Archaeological evidence places quinoa domestication in the Andes before 3000 BCE, in the area around Lake Titicaca.",
+                  modernNote: "Genome sequencing finds two distinct quinoa lineages — highland and coastal Andean — that appear to have been domesticated independently from each other, not one center spreading to the other.",
+                  citeKeys: ["jarvis2017quinoa"] },
   // spice
   clove:        { region: "Maluku Islands", lat: -1, lon: 128, certainty: "known", country: "Indonesia",
                   cultivationDate: "Native exclusively to a handful of small islands off Halmahera. The earliest well-dated archaeological clove specimen, found at the trade port of Mantai, Sri Lanka, dates to roughly 900 to 1100 CE.",
@@ -1918,6 +2017,8 @@ const NOTE_ORIGINS = {
                   modernNote: "Black, white, and green peppercorns all come from the same fruit. Processing, not separate domestication, accounts for the different products.",
                   citeKeys: ["kingwell2018spice"] },
   anise:        { region: "Eastern Mediterranean",      lat: 35,  lon: 36,   certainty: "approximate" },
+  ginger:       { region: "Maritime Southeast Asia", lat: 1, lon: 110, certainty: "approximate",
+                  modernNote: "Ginger has no known wild population — it survives only in cultivation, kept going for millennia by replanting rhizome cuttings rather than seed. That total dependency on people makes its deep origin point unusually hard to pin to a single place or date." },
   // nutty
   almond:       { region: "Iran / Central Asia", lat: 36, lon: 56, certainty: "known",
                   cultivationDate: "Genetic evidence points to initial domestication roughly 5000 years ago in Central or Western Asia.",
@@ -1931,6 +2032,18 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Peanut macrofossils from the western slopes of the northern Peruvian Andes date to between roughly 9240 and 5500 radiocarbon years before present.",
                   modernNote: "The strains recovered archaeologically did not grow naturally in the immediate area, meaning early cultivators were already moving and tending the plant rather than simply gathering it.",
                   citeKeys: ["dillehay2007peanut"] },
+  coconut:      { region: "Central Indo-Pacific (Malay Peninsula to New Guinea)", lat: -2, lon: 140, certainty: "known",
+                  cultivationDate: "Genetic and archaeological evidence places Pacific coconut domestication during the Austronesian expansion, roughly 1500 to 3000 BCE.",
+                  modernNote: "Genetics finds two distinct coconut populations, Pacific and Indo-Atlantic, descending from largely independent domestication histories in the same species rather than one center spreading outward.",
+                  citeKeys: ["gunn2011coconut"] },
+  pistachio:    { region: "Central Asia (Iran / Afghanistan)", lat: 36, lon: 65, certainty: "known",
+                  cultivationDate: "Pistachio seeds were already a common wild-harvested food by around 6750 BCE in Bronze Age Central Asia. Deliberate cultivation within its native range, then westward spread to the Levant and Mediterranean, followed by the end of the 1st millennium BCE.",
+                  modernNote: "Pistachio has relied on grafting, not seed selection, for most of its history — domestication here looks like locking a single favored wild tree in place rather than breeding a new one across generations.",
+                  citeKeys: ["mirmakhamad2022pistachio"] },
+  pecan:        { region: "Mississippi River Valley / South-Central North America", lat: 31, lon: -92, certainty: "known", country: "United States",
+                  cultivationDate: "Pecans were a significant wild food source across their native range for at least 8,000 years. Formal cultivar development — grafting named varieties onto seedling stock — only began in 19th-century Louisiana.",
+                  modernNote: "Pecan is one of the few major tree nuts domesticated mostly in the historical record rather than prehistory: closer to hazelnut's pattern of long wild harvesting capped by a comparatively recent, well-documented push into formal cultivation.",
+                  citeKeys: ["hall2000pecan"] },
   // earthy
   bellpepper:   { region: "Mesoamerica", lat: 20, lon: -100, certainty: "known", country: "Mexico",
                   cultivationDate: "Starch microfossils place Capsicum domestication and dispersal across the Americas by at least 6000 years before present.",
@@ -1996,7 +2109,8 @@ const COMPOUND_CLASS_INFO = {
   pyranone:            "Six-membered oxygen rings from sugar browning (caramelization / Maillard). Warm, caramel, cotton-candy. Maltol is the natural one in roasted malt, coffee, and bread crust; ethyl maltol is its stronger synthetic cousin.",
   pyrroline:           "A nitrogen ring formed when proline reacts with sugars under heat. 2-Acetyl-1-pyrroline is the single molecule behind popcorn, fresh bread crust, and the aroma of basmati and jasmine rice — detectable at trace levels.",
   acid:                "Short-chain fatty acids with a free -COOH group. Sharp, sour, and funky: butyric acid is the tang of parmesan (and vomit at strength); isovaleric acid is sweaty / gym-sock. Products of fermentation and lipid breakdown.",
-  haloanisole:         "Chlorinated anisoles made when molds methylate chlorophenol residues. Almost always faults: 2,4,6-trichloroanisole (TCA) is 'cork taint' — the musty, wet-cardboard, damp-basement smell that flattens a wine, detectable at parts-per-trillion."
+  haloanisole:         "Chlorinated anisoles made when molds methylate chlorophenol residues. Almost always faults: 2,4,6-trichloroanisole (TCA) is 'cork taint' — the musty, wet-cardboard, damp-basement smell that flattens a wine, detectable at parts-per-trillion.",
+  sulfide:             "Sulfur bonded between two carbon groups (R-S-R) rather than to hydrogen like a thiol (R-SH) — a related but distinct family. Dimethyl sulfide is the textbook example: a cooked-corn, cooked-vegetable note released from malted barley."
 };
 
 // Full bibliographic entries for the most-cited papers backing the note→compound
@@ -2089,6 +2203,41 @@ const REFERENCES = {
     title: "Review of quantitative analyses of citrus essential oils.",
     journal: "Journal of Agricultural and Food Chemistry",
     volume: "27", issue: "2", pages: "246–257"
+  },
+  "dimzon2021coconut": {
+    authors: "Dimzon, I.K.D., Tantengco, G.B., Oquendo, N.A., & Dayrit, F.M.",
+    year: 2021,
+    title: "Profile of volatile organic compounds (VOCs) from cold-processed and heat-treated virgin coconut oil (VCO) samples.",
+    journal: "Proceedings",
+    volume: "70", issue: "1", pages: "85"
+  },
+  "pang2017ginger": {
+    authors: "Pang, X., Cao, J., Wang, D., Qiu, J., & Kong, F.",
+    year: 2017,
+    title: "Identification of ginger (Zingiber officinale Roscoe) volatiles and localization of aroma-active constituents by GC–olfactometry.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "65", issue: "20", pages: "4140–4145"
+  },
+  "acena2011pistachio": {
+    authors: "Aceña, L., Vera, L., Guasch, J., Busto, O., & Mestres, M.",
+    year: 2011,
+    title: "Determination of roasted pistachio (Pistacia vera L.) key odorants by headspace solid-phase microextraction and gas chromatography-olfactometry.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "59", issue: "6", pages: "2518–2523"
+  },
+  "gong2018pecan": {
+    authors: "Gong, Y., Kerrihard, A.L., & Pegg, R.B.",
+    year: 2018,
+    title: "Characterization of the volatile compounds in raw and roasted Georgia pecans by HS-SPME-GC-MS.",
+    journal: "Journal of Food Science",
+    volume: "83", issue: "11", pages: "2753–2760"
+  },
+  "anness1982dms": {
+    authors: "Anness, B.J., & Bamforth, C.W.",
+    year: 1982,
+    title: "Dimethyl sulphide — a review.",
+    journal: "Journal of the Institute of Brewing",
+    volume: "88", issue: "4", pages: "244–252"
   }
 };
 
@@ -2109,7 +2258,13 @@ const CITE_TO_REF = [
   ["Verstrepen et al. 2003",      "verstrepen2003"],
   ["Mayer, Czerny, Grosch 2000",  "mayer2000"],
   ["Hatanaka 1993",               "hatanaka1993"],
-  ["Shaw 1979",                   "shaw1979"]
+  ["Shaw 1979",                   "shaw1979"],
+  ["Dimzon et al. 2021",          "dimzon2021coconut"],
+  ["Pang et al. 2017",            "pang2017ginger"],
+  ["Pang, Cao, Wang, Qiu & Kong 2017", "pang2017ginger"],
+  ["Aceña et al. 2011",           "acena2011pistachio"],
+  ["Gong, Kerrihard & Pegg 2018",  "gong2018pecan"],
+  ["Anness & Bamforth 1982",      "anness1982dms"]
 ];
 
 function refForCite(citeString) {
@@ -2157,6 +2312,14 @@ const ORIGIN_REFERENCES = {
   garsmeur2025sugarcane: { authors: "Garsmeur, O., Rio, S., Pompidor, N., et al.", year: 2025, title: "The genomic footprints of wild Saccharum species trace domestication, diversification, and modern breeding of sugarcane.", journal: "Cell", volume: "188", issue: "25", pages: "7252–7266" },
   evershed2008dairy: { authors: "Evershed, R.P., et al.", year: 2008, title: "Earliest date for milk use in the Near East and southeastern Europe linked to cattle herding.", journal: "Nature", volume: "455", issue: "7212", pages: "528–531" },
   berna2012fire: { authors: "Berna, F., Goldberg, P., Horwitz, L.K., et al.", year: 2012, title: "Microstratigraphic evidence of in situ fire in the Acheulean strata of Wonderwerk Cave, Northern Cape province, South Africa.", journal: "PNAS", volume: "109", issue: "20", pages: "E1215–E1220" },
+  gunn2011coconut: { authors: "Gunn, B.F., Baudouin, L., & Olsen, K.M.", year: 2011, title: "Independent origins of cultivated coconut (Cocos nucifera L.) in the Old World tropics.", journal: "PLOS ONE", volume: "6", issue: "6", pages: "e21143" },
+  mirmakhamad2022pistachio: { authors: "Mir-Makhamad, B., Bjørn, R., Stark, S., & Spengler, R.N.", year: 2022, title: "Pistachio (Pistacia vera) domestication and dispersal out of Central Asia.", journal: "Agronomy", volume: "12", issue: "8", pages: "1758" },
+  hall2000pecan: { authors: "Hall, G.D.", year: 2000, title: "Pecan food potential in prehistoric North America.", journal: "Economic Botany", volume: "54", issue: "1", pages: "103–112" },
+  fuller2009rice: { authors: "Fuller, D.Q., Qin, L., Zheng, Y., Zhao, Z., Chen, X., Hosoya, L.A., & Sun, G.", year: 2009, title: "The domestication process and domestication rate in rice: spikelet bases from the Lower Yangtze.", journal: "Science", volume: "323", issue: "5921", pages: "1607–1610" },
+  badr2000barley: { authors: "Badr, A., Müller, K., Schäfer-Pregl, R., El Rabey, H., Effgen, S., Ibrahim, H.H., Pozzi, C., Rohde, W., & Salamini, F.", year: 2000, title: "On the origin and domestication history of barley (Hordeum vulgare).", journal: "Molecular Biology and Evolution", volume: "17", issue: "4", pages: "499–510" },
+  fuller2007oldworld: { authors: "Fuller, D.Q.", year: 2007, title: "Contrasting patterns in crop domestication and domestication rates: recent archaeobotanical insights from the Old World.", journal: "Annals of Botany", volume: "100", issue: "5", pages: "903–924" },
+  manning2011millet: { authors: "Manning, K., Pelling, R., Higham, T., Schwenniger, J.L., & Fuller, D.Q.", year: 2011, title: "4500-year old domesticated pearl millet (Pennisetum glaucum (L.) R. Br.) from the Tilemsi Valley, Mali: new insights into an alternative cereal domestication pathway.", journal: "Journal of Archaeological Science", volume: "38", issue: "2", pages: "312–322" },
+  jarvis2017quinoa: { authors: "Jarvis, D.E., Ho, Y.S., Lightfoot, D.J., et al.", year: 2017, title: "The genome of Chenopodium quinoa.", journal: "Nature", volume: "542", issue: "7641", pages: "307–312" },
 };
 
 function formatOriginRef(ref) {
@@ -2257,21 +2420,32 @@ const WAIS_DESCRIPTORS = [
     { word: "tutti frutti",      notes: ["cherry", "pineapple", "banana", "orange", "berry"] }
   ]},
   { category: "Nutty / Cocoa", entries: [
-    { word: "nutty",             notes: ["almond", "hazelnut", "peanut"] },
+    { word: "nutty",             notes: ["almond", "hazelnut", "peanut", "pistachio", "pecan"] },
     { word: "cocoa nib",         notes: ["chocolate", "coffee"] },
     { word: "dark chocolate",    notes: ["chocolate", "coffee", "burnt"] },
-    { word: "milk chocolate",    notes: ["chocolate", "vanilla", "honey"] }
+    { word: "milk chocolate",    notes: ["chocolate", "vanilla", "honey"] },
+    { word: "coconut",           notes: ["coconut"] },
+    { word: "pistachio",         notes: ["pistachio"] },
+    { word: "pecan",             notes: ["pecan"] }
   ]},
   { category: "Roast / Spice", entries: [
     { word: "roasty",            notes: ["coffee", "toast", "smoky", "burnt"] },
     { word: "burnt / charred",   notes: ["smoky", "burnt"] },
     { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
-    { word: "toasted grain",     notes: ["toast", "yeasty"] },
-    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise"] },
+    { word: "toasted grain",     notes: ["toast", "yeasty", "cereal"] },
+    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise", "ginger"] },
     { word: "medicinal",         notes: ["clove", "anise"] },
+    { word: "gingery",           notes: ["ginger"] },
+    { word: "candied ginger / ginger ale", notes: ["ginger"] },
     { word: "popcorn",           notes: ["popcorn"] },
     { word: "fresh bread",       notes: ["popcorn", "toast", "yeasty"] },
-    { word: "basmati / jasmine rice", notes: ["popcorn"] },
+    { word: "basmati / jasmine rice", notes: ["cereal", "popcorn"] },
+    { word: "boiled / steamed rice",  notes: ["cereal"] },
+    { word: "raw wheat dough / flour", notes: ["cereal", "green"] },
+    { word: "malty / malt",      notes: ["cereal", "toast"] },
+    { word: "oats / oatmeal",    notes: ["cereal"] },
+    { word: "millet",            notes: ["cereal"] },
+    { word: "quinoa",            notes: ["cereal"] },
     { word: "licorice / fennel", notes: ["anise"] }
   ]},
   { category: "Fermented / Funky", entries: [
@@ -2445,6 +2619,7 @@ function countEntriesForPhase(phase) {
 function isNoteVisible(noteId) {
   const n = NOTE_BY_ID[noteId];
   if (!n) return false;
+  if (n.subOf) return false;
   if (state.hiddenGroups.has(n.group)) return false;
   return true;
 }
@@ -3604,6 +3779,21 @@ function renderDetail() {
 // Inverse view: show which compounds a given note maps to,
 // sorted by base edge weight. Clicking a compound name switches to that
 // compound's full detail. "← All compounds" returns to grid mode.
+// Six grains collapse to one "Cereal" slider (see NOTES: subOf "cereal"),
+// since raw-grain aroma is genuinely dominated by a shared hexanal base —
+// six near-identical sliders would overstate how distinct they actually are.
+// This computes each grain's one real point of difference (if the literature
+// has one) straight from its EDGES, so the Go Deeper table never drifts out
+// of sync with the underlying compound data.
+const CEREAL_BASE_CPD = "hexanal";
+function cerealVarietalRows() {
+  return NOTES.filter(n => n.subOf === "cereal").map(n => {
+    const edges = (NOTE_EDGES[n.id] || []).slice().sort((a, b) => b.w - a.w);
+    const distinguishing = edges.find(e => e.cpd !== CEREAL_BASE_CPD);
+    return { note: n, cpd: distinguishing ? CPD_BY_ID[distinguishing.cpd] : null };
+  });
+}
+
 function renderNoteDetail(noteId) {
   const n = NOTE_BY_ID[noteId];
   const g = GROUP_BY_ID[n.group];
@@ -3650,6 +3840,27 @@ function renderNoteDetail(noteId) {
             }).join("")}
       </ul>
     </div>
+
+    ${noteId === "cereal" ? `
+    <div class="section">
+      <div class="section-title">How the six grains differ</div>
+      <table class="cereal-table">
+        <thead><tr><th>Grain</th><th>What sets it apart</th></tr></thead>
+        <tbody>
+          ${cerealVarietalRows().map(r => `
+            <tr>
+              <td>${r.note.label}</td>
+              <td>${r.cpd
+                ? `<span class="note-name view-cpd${commonClass(r.cpd)}" data-cpd="${r.cpd.id}" title="Switch to this compound's detail">${r.cpd.label}</span>
+                   <div class="cereal-table-blurb">${r.cpd.note}</div>`
+                : `<span class="cereal-table-none">Shares the base cereal-aldehyde profile below — no literature-confirmed standout compound yet.</span>`}
+              </td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+      <p class="cereal-table-caption">All six share hexanal's green/grassy base (above); this is what's layered on top of it where the evidence actually shows something distinct — not where it'd be tidy to invent six different stories.</p>
+    </div>
+    ` : ""}
   `;
 
   // Back to grid
@@ -4503,7 +4714,28 @@ if ('ondevicemotion' in window) {
 // All three are driven by the exact same note→compound scoring as the rest
 // of the app — nothing new to translate, just scores read onto axes.
 const COMPASS_CX = 100, COMPASS_CY = 100, COMPASS_R = 65, COMPASS_LABEL_R = 78;
+// The grid/circle stays centered in a 0-200 square, but the viewBox extends
+// 20 units past it on each side (-20 to 220) so side labels at LABEL_R=78
+// (only 22 units from the 0/200 edge) have real room before truncating —
+// at the original 0-200 bounds almost every label needed an ellipsis.
+const COMPASS_VB_MINX = -20, COMPASS_VB_MAXX = 220;
 const COMPASS_BASE_W = 200; // #compass-content's unscaled width; applyCompassScale() derives everything else from this
+
+// Binary-searches for the longest prefix of `label` (plus an ellipsis) that
+// fits in maxW viewBox units, measured with the live SVG text node so it
+// matches actual font metrics exactly. Falls back to a bare ellipsis if even
+// one character can't fit.
+function truncateSvgTextToWidth(textEl, label, maxW) {
+  textEl.textContent = label;
+  if (maxW <= 0 || textEl.getComputedTextLength() <= maxW) return;
+  let lo = 0, hi = label.length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    textEl.textContent = label.slice(0, mid) + "…";
+    if (textEl.getComputedTextLength() <= maxW) lo = mid; else hi = mid - 1;
+  }
+  textEl.textContent = lo > 0 ? label.slice(0, lo) + "…" : "…";
+}
 
 const COMPASS_CAPTION = {
   notes: "Your top flavor notes by intensity — exactly what you reported, not an estimate.",
@@ -4550,7 +4782,7 @@ function compassAxisItems() {
 
 const compassEl = document.getElementById("aroma-compass");
 const compassContentEl = document.getElementById("compass-content");
-const compassSvg = d3.select("#compass-svg").attr("viewBox", "0 0 200 200");
+const compassSvg = d3.select("#compass-svg").attr("viewBox", `${COMPASS_VB_MINX} 0 ${COMPASS_VB_MAXX - COMPASS_VB_MINX} 200`);
 const compassToggleBtn = document.getElementById("compass-toggle");
 const compassCaptionEl = document.getElementById("compass-caption");
 const compassClassSelectEl = document.getElementById("compass-class-select");
@@ -4603,7 +4835,18 @@ function renderCompass() {
       .attr("y", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_LABEL_R)
       .attr("text-anchor", it => Math.cos(it.angle) > 0.2 ? "start" : Math.cos(it.angle) < -0.2 ? "end" : "middle")
       .attr("dominant-baseline", it => Math.sin(it.angle) > 0.2 ? "hanging" : Math.sin(it.angle) < -0.2 ? "baseline" : "middle")
-      .text(it => it.label);
+      .each(function(it) {
+        // Long labels (e.g. "Peach / stonefruit") can run past the 0-200
+        // viewBox and get cut off by .aroma-compass's overflow:hidden — clip
+        // to an ellipsis instead so the full word is never silently lost.
+        const anchor = this.getAttribute("text-anchor");
+        const x = +this.getAttribute("x");
+        const pad = 4;
+        const maxW = anchor === "start" ? COMPASS_VB_MAXX - pad - x
+          : anchor === "end" ? x - pad - COMPASS_VB_MINX
+          : 2 * Math.min(x - pad - COMPASS_VB_MINX, COMPASS_VB_MAXX - pad - x);
+        truncateSvgTextToWidth(this, it.label, maxW);
+      });
     const line = d3.line()
       .x(it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R * it.t)
       .y(it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R * it.t)
@@ -4612,7 +4855,7 @@ function renderCompass() {
   }
   // Mode/data changes can change #compass-content's natural height (e.g.
   // the class dropdown adds a row); re-fit the outer box at the current scale.
-  applyCompassScale(state.compassWidth || COMPASS_BASE_W);
+  applyCompassScale(state.compassWidth || compassDefaultWidth());
 }
 
 function setCompassVisible(visible) {
@@ -4658,6 +4901,18 @@ function applyCompassPos(pos) {
 // every time, so it never clips and never leaves a gap. Natural height is
 // re-measured on every call (not cached) since it can vary by mode (the
 // class dropdown row only exists in Class mode).
+const COMPASS_MIN_W = 140;
+// Default (un-dragged, un-resized) width: COMPASS_BASE_W is sized for
+// desktop's corner-widget use case. On mobile's single-column layout
+// wheelEl (main.wheel) spans the full viewport width, so capping the
+// default at a fraction of *that* still gave ~198px on a 360px phone —
+// barely smaller, and still ~75% of the wheel ring's own diameter (the
+// ring is roughly 0.72x the pane width). Use 0.4 instead of 0.55 so the
+// default actually reads as a corner accent, not a second wheel-sized
+// panel, while desktop (wide wheelEl) is unaffected since COMPASS_BASE_W
+// keeps winning the Math.min there regardless of fraction.
+function compassDefaultWidth() { return Math.max(COMPASS_MIN_W, Math.min(COMPASS_BASE_W, wheelEl.clientWidth * 0.4)); }
+
 function applyCompassScale(widthPx) {
   const scale = widthPx / COMPASS_BASE_W;
   compassContentEl.style.transform = "none";
@@ -4670,11 +4925,11 @@ function applyCompassScale(widthPx) {
 (function setupCompassDragAndResize() {
   const handle = document.getElementById("compass-drag-handle");
   const resizeHandle = document.getElementById("compass-resize-handle");
-  const MIN_W = 140;
+  const MIN_W = COMPASS_MIN_W;
   function maxWidth() { return Math.max(MIN_W, wheelEl.clientWidth * 0.85); }
 
   if (state.compassPos) applyCompassPos(state.compassPos);
-  applyCompassScale(state.compassWidth || COMPASS_BASE_W);
+  applyCompassScale(state.compassWidth || compassDefaultWidth());
 
   let dragging = false, dragStartX, dragStartY, dragStartLeft, dragStartTop;
   handle.addEventListener("pointerdown", (e) => {
