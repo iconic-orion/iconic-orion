@@ -103,6 +103,20 @@
     text-transform: uppercase; letter-spacing: 0.08em; align-self: center;
     border-right: 1px solid var(--line); background: var(--panel-2); }
 
+  /* Workspace switch (Wheel | Map): the primary "which screen" control. Given
+     a slightly heavier accent border so it reads as the top of the hierarchy,
+     distinct from the lighter wheel-control segmented groups beside it. Its
+     buttons carry an icon + label. */
+  .workspace-tabs { border-color: var(--accent); }
+  .workspace-tabs button { display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 6px 12px; }
+  .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
+  /* Desktop-only vertical divider between workspace switch and wheel controls. */
+  .hud-vdivider { width: 1px; align-self: stretch; margin: 6px 2px;
+    background: var(--line); }
+  /* Desktop-only flexible gap that right-aligns the utilities cluster. */
+  .hud-spacer { flex: 1; }
+
   /* Compound grid — lives inside the Analysis pane (right) as its default-state
      view when no compound is selected. Narrower than V1's middle-pane grid so
      cards stack as a single column in the 360px-wide analysis pane. */
@@ -348,6 +362,62 @@
     transition: border-color 0.15s, color 0.15s; }
   .wheel-nudge .nudge-demo:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* Perception Compass: small draggable, resizable radar widget, corner-
+     anchored by default (top/right) until dragged, at which point JS
+     switches it to an explicit left/top position. z-index 20: above wheel
+     SVG content (no z-index of its own) and the mobile callout-toggle (5),
+     below pane-toggle (100) and any modal overlay (200+).
+     #compass-content is a fixed-base-size (200px wide) box that JS scales
+     via transform — see applyCompassScale() — so every child (header text,
+     tabs, svg, caption) grows/shrinks together in proportion. #aroma-compass
+     itself is resized in lockstep (its width/height tracks the scaled
+     content's rendered footprint) so it never clips or leaves a gap. */
+  .aroma-compass { position: absolute; top: 12px; right: 12px; z-index: 20;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    overflow: hidden; }
+  .aroma-compass[hidden] { display: none; }
+  .compass-content { width: 200px; transform-origin: top left; }
+  .compass-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px; background: var(--panel-2); cursor: grab;
+    font-size: 11px; color: var(--ink-dim); text-transform: uppercase;
+    letter-spacing: 0.04em; user-select: none; touch-action: none; }
+  .compass-header.dragging { cursor: grabbing; }
+  #compass-close-btn { background: none; border: none; color: var(--ink-dim);
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+  #compass-close-btn:hover { color: var(--ink); }
+  /* Compact override of the shared .tabs look — three tabs need to fit a
+     200px-wide widget, where the header's roomier tab groups don't. */
+  .compass-mode-tabs { display: flex; width: 100%; border: none; border-radius: 0;
+    border-bottom: 1px solid var(--line); }
+  .compass-mode-tabs button { flex: 1; padding: 4px 2px; font-size: 9px; border-radius: 0; }
+  .compass-class-select { display: block; width: 100%; box-sizing: border-box;
+    background: var(--panel-2); color: var(--ink); border: none;
+    border-bottom: 1px solid var(--line); border-radius: 0;
+    font-size: 9px; padding: 3px 6px; font-family: inherit; }
+  .compass-class-select[hidden] { display: none; }
+  #compass-svg { display: block; width: 100%; height: 200px; }
+  .compass-grid { fill: none; stroke: var(--line); }
+  .compass-spoke { stroke: var(--line); }
+  .compass-axis-label { font-size: 8px; fill: var(--ink-dim); }
+  .compass-empty { font-size: 10px; fill: var(--ink-dim); dominant-baseline: middle; }
+  .compass-shape { fill: var(--accent); fill-opacity: 0.25;
+    stroke: var(--accent); stroke-width: 1.5; transition: d 0.2s; }
+  .compass-caption { font-size: 9px; color: var(--ink-dim); line-height: 1.4;
+    padding: 6px 8px 8px; font-style: italic; }
+
+  /* Resize handle: a sibling of .compass-content (not scaled with it), so it
+     stays a consistent, easily-grabbable size at any compass scale. Sits
+     just inside the corner so it's never clipped by the outer box's own
+     overflow:hidden. */
+  .compass-resize-handle { position: absolute; right: 2px; bottom: 2px;
+    width: 18px; height: 18px; padding: 0; display: flex; align-items: center;
+    justify-content: center; background: var(--panel-2); color: var(--ink-dim);
+    border: 1px solid var(--line); border-radius: 4px; cursor: nwse-resize;
+    touch-action: none; }
+  .compass-resize-handle svg { width: 12px; height: 12px; }
+  .compass-resize-handle:hover { color: var(--accent); border-color: var(--accent); }
+
   .group-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--ink-dim); padding: 12px 4px 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
     display: flex; align-items: center; gap: 8px; }
@@ -361,8 +431,17 @@
     padding: 6px 4px; border-radius: 4px; position: relative; }
   .note-row:hover { background: var(--panel-2); }
   .note-row .note-label-text { font-size: 12px; cursor: pointer; grid-column: 1; }
+  /* .val is an <input type=number>: same right-aligned readout look as the
+     old static span at rest, but borders on row-hover/focus to hint it's
+     typeable — an alternate to the slider for setting 0-10 directly. */
   .note-row .val { font-size: 11px; color: var(--ink-dim); text-align: right;
-    font-variant-numeric: tabular-nums; grid-column: 2; }
+    font-variant-numeric: tabular-nums; grid-column: 2; width: 28px;
+    background: transparent; border: 1px solid transparent; border-radius: 3px;
+    padding: 0 2px; font-family: inherit; -moz-appearance: textfield; }
+  .note-row .val::-webkit-inner-spin-button,
+  .note-row .val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .note-row:hover .val { border-color: var(--line); }
+  .note-row .val:focus { outline: none; border-color: var(--accent); color: var(--ink); background: var(--bg); }
   .note-row input[type=range] { grid-column: 1 / span 2; width: 100%; accent-color: var(--accent);
     margin: 2px 0; }
   .note-row.has-entries .note-label-text { color: var(--accent); }
@@ -394,15 +473,76 @@
   #godeeper-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.go-deeper #godeeper-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
-  /* Ingredient Origins HUD toggle: lives in the header (not floating on the
-     wheel canvas) so it has no chance of colliding with the mobile-only
-     "Show compound labels" callout, which used to sit in the same corner. */
-  #origins-toggle-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+  /* "Event horizon" transition on Go Deeper switching on (playDeeperWarp()).
+     main.wheel normally clips its SVG at the panel edge; while warping it's
+     let loose so the scaled-up wheel can visually spill over the whole
+     screen instead of being cropped to its usual grid cell. */
+  body.warp-active main.wheel { overflow: visible; z-index: 250; }
+  body.warp-active #svg { pointer-events: none; }
+  #svg { transform-origin: 50% 50%; transition: transform 650ms cubic-bezier(0.55,0,0.85,0.45); }
+  body.warp-active #svg { transform: scale(6); }
+
+  /* Five rings, each a circle far bigger than any viewport, parked at
+     scale(0.015) (a pinprick) and animated up to scale(1.05). Each ring's
+     transition-delay fires a beat after the one before it, so they don't
+     swell in unison — ring 1 rushes out first, ring 2 chases a beat later,
+     and so on, reading as successive layers passing as you descend rather
+     than one flat blob. Each ring's own gradient also gets progressively
+     darker/more opaque outward (ring 1 stays glassy at its rim, ring 5 goes
+     fully opaque black), so the screen darkens in waves rather than one cut,
+     with ring 5's full blackout landing the actual mode-switch moment. */
+  #deeper-warp { position: fixed; inset: 0; z-index: 300; pointer-events: none;
+    overflow: hidden; opacity: 0; transition: opacity 150ms ease-out; }
+  #deeper-warp[hidden] { display: none; }
+  #deeper-warp.warp-show { opacity: 1; }
+  #deeper-warp.warp-fade { opacity: 0; transition: opacity 380ms ease-out; }
+  .warp-layer { position: absolute; left: 50%; top: 50%; width: 100vmax; height: 100vmax;
+    margin: -50vmax 0 0 -50vmax; border-radius: 50%; transform: scale(0.015);
+    transition: transform 600ms cubic-bezier(0.55,0,0.85,0.45); }
+  #deeper-warp.warp-active .warp-layer { transform: scale(1.05); }
+  .warp-layer-1 { background: radial-gradient(circle, var(--accent) 0%, rgba(184,140,72,0.85) 35%, rgba(60,45,28,0.35) 70%, rgba(0,0,0,0) 100%); }
+  .warp-layer-2 { background: radial-gradient(circle, rgba(216,166,87,0.92) 0%, rgba(140,104,60,0.75) 38%, rgba(40,30,20,0.45) 72%, rgba(0,0,0,0) 100%);
+    transition-delay: 40ms; }
+  .warp-layer-3 { background: radial-gradient(circle, rgba(190,140,70,0.95) 0%, rgba(110,80,48,0.8) 42%, rgba(25,18,12,0.65) 75%, rgba(0,0,0,0.1) 100%);
+    transition-delay: 80ms; }
+  .warp-layer-4 { background: radial-gradient(circle, rgba(150,108,55,0.97) 0%, rgba(70,50,30,0.88) 45%, rgba(10,8,6,0.85) 78%, rgba(0,0,0,0.4) 100%);
+    transition-delay: 120ms; }
+  .warp-layer-5 { background: radial-gradient(circle, rgba(90,65,35,0.98) 0%, rgba(15,12,9,0.96) 50%, #000 85%, #000 100%);
+    transition-delay: 160ms; }
+
+  /* Settings gear: a small anchored dropdown for secondary toggles that don't
+     need their own header slot. Holds Jiggle today; built to take more later
+     without the header growing a button per feature. */
+  .settings-wrap { position: relative; display: inline-flex; }
+  #settings-toggle-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; }
+  #settings-toggle-btn svg { width: 15px; height: 15px; display: block; }
+  #settings-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  body.settings-open #settings-toggle-btn { border-color: var(--accent); color: var(--accent); }
+  .settings-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px; min-width: 130px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column; gap: 4px; }
+  .settings-menu[hidden] { display: none; }
+
+  /* Jiggle toggle: only unhidden by JS once devicemotion support is detected
+     (most desktops have no accelerometer, so the button stays hidden there). */
+  #jiggle-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; width: 100%; }
+  #jiggle-toggle[hidden] { display: none; }
+  #jiggle-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
+  #jiggle-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  body.jiggle-on #jiggle-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+
+  /* Compass: a first-class header toggle (promoted out of the settings gear). */
+  #compass-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 5px; }
-  #origins-toggle-btn svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
-  #origins-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-  body.origins-mode #origins-toggle-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  #compass-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
+  #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
   /* Info button — small round "i" sitting next to Go Deeper */
   #info-open-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
@@ -564,14 +704,15 @@
   aside.detail li .note-name { color: var(--ink); }
   aside.detail li .weight { color: var(--accent); font-variant-numeric: tabular-nums; }
   aside.detail li .cite { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 2px; font-style: italic; }
-  /* Expanded bibliographic citation (Go Deeper). More structured than the
+  /* Expanded bibliographic citation. More structured than the
      short cite line: indented block, slight border accent, journal name
-     italicized. */
+     italicized. Shown whenever an edge's cite string matches a REFERENCES
+     entry; falls back to the short cite line otherwise. */
   aside.detail li .cite-full { font-style: normal; padding: 6px 8px;
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
   aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
-  /* Note-detail view (Go Deeper inverse mode) */
+  /* Note-detail view (inverse mode: a note selected on the wheel) */
   aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
     border-radius: 50%; margin-right: 8px; vertical-align: middle; }
   aside.detail .note-entries { font-size: 11px; color: var(--ink-dim); margin: 8px 0 14px;
@@ -615,6 +756,7 @@
 
   .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; }
   .edge.lit { stroke-opacity: 0.55; }
+
   .compound { cursor: pointer; }
   .compound circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
   .compound:hover circle { stroke: var(--accent); }
@@ -664,25 +806,33 @@
       font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
     /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
-         row 1   VIEW | Notes Compounds            (i)
-         row 2   ORGANIZE | Scent Chemistry
-         row 3   ──────────── divider ────────────
-         row 4   Go Deeper                  Start Over
+         row 1   [ Wheel | Map ]                   (i)
+         row 2   PANELS | Notes Both Results
+         row 3   ORGANIZE | Scent Chemistry
+         row 4   Compass                    Go Deeper
+         row 5   ──────────── divider ────────────
+         row 6   Settings                   Start Over
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
-       dictate the mobile layout. */
+       dictate the mobile layout. The desktop-only .hud-vdivider and .hud-spacer
+       are removed from the grid flow entirely. */
     header.hud-open .hud-extra {
       display: grid; grid-template-columns: 1fr auto;
       gap: 10px 12px; align-items: center;
       order: 10; flex-basis: 100%; width: 100%;
       margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
-    header.hud-open #view-tabs       { grid-row: 1; grid-column: 1; justify-self: start; }
+    header.hud-open .hud-vdivider,
+    header.hud-open .hud-spacer     { display: none; }
+    header.hud-open #workspace-tabs  { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
-    header.hud-open #organize-tabs    { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open .hud-divider      { display: block; grid-row: 3; grid-column: 1 / -1;
+    header.hud-open #view-tabs       { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open #organize-tabs    { grid-row: 3; grid-column: 1 / -1; justify-self: start; }
+    header.hud-open #compass-toggle   { grid-row: 4; grid-column: 1; justify-self: start; }
+    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 2; justify-self: end; }
+    header.hud-open .hud-divider      { display: block; grid-row: 5; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 1; justify-self: start; }
-    header.hud-open #reset            { grid-row: 4; grid-column: 2; justify-self: end; }
-    header.hud-open #origins-toggle-btn { grid-row: 5; grid-column: 1; justify-self: start; margin-top: 6px; }
+    header.hud-open #settings-wrap   { grid-row: 6; grid-column: 1; justify-self: start; margin-top: 6px; }
+    header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: end; margin-top: 6px; }
+    header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -690,7 +840,8 @@
        which is mouse-driven, is untouched. */
     header.hud-open .hud-extra button,
     header.hud-open #view-tabs button,
-    header.hud-open #organize-tabs button {
+    header.hud-open #organize-tabs button,
+    header.hud-open #workspace-tabs button {
       min-height: 44px; padding: 10px 14px;
     }
     header.hud-open #info-open-btn { width: 44px; height: 44px; }
@@ -722,6 +873,15 @@
        colored, positioned, and tappable, and names surface in the panel below
        and the detail card on tap. Ring anchor labels (.note-label) stay. */
     g.compound text.node-label { display: none; }
+
+    /* Same 44px touch-target bump as the rest of the mobile tray, applied to
+       the compass's own controls. The resize handle especially needs this —
+       at 18px it's nearly impossible to grab precisely by touch. Desktop
+       (mouse-driven) sizing is untouched. */
+    .compass-resize-handle { width: 44px; height: 44px; }
+    .compass-resize-handle svg { width: 18px; height: 18px; }
+    #compass-close-btn { width: 44px; height: 44px; display: flex;
+      align-items: center; justify-content: center; }
 
     /* Chemistry mode only: the ring anchors are compounds, whose long names run
        off a phone-width wheel. Hide them too — the curved class-arc labels
@@ -771,10 +931,14 @@
   body.origins-mode aside.detail,
   body.origins-mode .pane-toggle { display: none !important; }
   body.origins-mode { grid-template-columns: 1fr; }
-  /* Wheel-only controls don't do anything on the map yet, so they're greyed
-     out (not hidden) as a signal they're inert here rather than missing. */
+  /* Wheel-only controls don't do anything on the map, so they're greyed out
+     (not hidden) as a signal they're inert here rather than missing. The
+     workspace switch itself stays live — it's how you get back to the wheel. */
   body.origins-mode #view-tabs,
-  body.origins-mode #organize-tabs {
+  body.origins-mode #organize-tabs,
+  body.origins-mode #compass-toggle,
+  body.origins-mode #godeeper-toggle,
+  body.origins-mode .hud-vdivider {
     opacity: 0.4; pointer-events: none;
   }
 
@@ -972,29 +1136,57 @@
     <h1>Aroma Wheel</h1>
     <p class="tagline">Describe what you smell. Explore the chemistry behind it.</p>
   </div>
-  <span class="spacer"></span>
   <!-- All controls: always inline on desktop (display:contents makes children
-       direct flex items); on mobile hidden until ••• expands them as a tray. -->
+       direct flex items); on mobile hidden until ••• expands them as a tray.
+       The desktop left/right split is done by .hud-spacer inside this group. -->
   <div class="hud-extra" id="hud-extra">
-    <div class="tabs" id="view-tabs" title="View mode. The wheel is always shown; tabs control which side panes are visible.">
-      <span class="tabs-label">View</span>
+    <!-- Workspace switch (primary nav): which screen am I on. The two visual
+         explorers — the wheel, and the origins world map. -->
+    <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the tasting wheel and the world map of ingredient origins.">
+      <button data-workspace="wheel" class="active" title="The tasting wheel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3" stroke-linecap="round"/></svg>
+        Wheel
+      </button>
+      <button data-workspace="map" title="World map of ingredient cultivation origins">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
+        Map
+      </button>
+    </div>
+    <!-- Desktop-only divider separating the workspace switch from wheel controls. -->
+    <div class="hud-vdivider" aria-hidden="true"></div>
+    <div class="tabs" id="view-tabs" title="Which side panels are open around the wheel.">
+      <span class="tabs-label">Panels</span>
       <button data-view="note-input">Notes</button>
-      <button data-view="dashboard" class="active">Dashboard</button>
-      <button data-view="analysis">Compounds</button>
+      <button data-view="dashboard" class="active">Both</button>
+      <button data-view="analysis">Results</button>
     </div>
     <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
       <span class="tabs-label">Organize</span>
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
-    <!-- Mobile-only divider between the View/Organize settings and the actions
+    <button id="compass-toggle" title="Perception Compass: a draggable, resizable radar of your strongest notes, compounds, or a fixed chemical-class profile — a shareable snapshot of your tasting.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
+      Compass
+    </button>
+    <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
+    <!-- Mobile-only divider between the wheel controls and the utilities
          (hidden on desktop; grid-placed in the mobile tray). -->
     <div class="hud-divider" aria-hidden="true"></div>
-    <button id="godeeper-toggle" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
-    <button id="origins-toggle-btn" title="Map of the regions where each ingredient behind this flavor note was first domesticated">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor" stroke="none"/><path d="M12 2.3v2M12 19.7v2M2.3 12h2M19.7 12h2" stroke-linecap="round"/></svg>
-      World Map
-    </button>
+    <!-- Desktop-only flexible gap: pushes the utilities cluster to the far right
+         while workspace + wheel controls stay left. Hidden in the mobile grid. -->
+    <span class="hud-spacer" aria-hidden="true"></span>
+    <div class="settings-wrap" id="settings-wrap" hidden>
+      <button type="button" id="settings-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M18 12h2.6M16.2 16.2l1.8 1.8M12 18v2.6M7.8 16.2l-1.8 1.8M6 12H3.4M7.8 7.8 5.9 5.9M12 6V3.4M16.2 7.8l1.8-1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div class="settings-menu" id="settings-menu" hidden>
+        <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
+          Jiggle
+        </button>
+      </div>
+    </div>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
   </div>
@@ -1072,6 +1264,35 @@
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
+  <!-- Perception Compass: a small draggable, resizable radar, toggled from
+       the settings gear. Three axis modes (see #compass-mode-tabs): Notes /
+       Compounds — the user's own top-10 active items, live — and Class, a
+       fixed axis set over one chemical class at a time (dropdown-selectable;
+       defaults to terpene, a nod to the predecessor prototype), where every
+       session uses the same axes for that class, so two different people's
+       shapes are directly comparable regardless of which notes they logged.
+       #compass-content is the part that visually scales on resize (see
+       applyCompassScale()); the resize handle itself stays a fixed, always-
+       grabbable size outside that scaling. -->
+  <div id="aroma-compass" class="aroma-compass" hidden>
+    <div id="compass-content" class="compass-content">
+      <div class="compass-header" id="compass-drag-handle">
+        <span>Perception Compass</span>
+        <button type="button" id="compass-close-btn" aria-label="Hide compass" title="Hide compass">×</button>
+      </div>
+      <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Class: a fixed set over one chemical class, same axes for everyone.">
+        <button data-compass-mode="notes" class="active">Notes</button>
+        <button data-compass-mode="compounds">Compounds</button>
+        <button data-compass-mode="class">Class</button>
+      </div>
+      <select id="compass-class-select" class="compass-class-select" hidden title="Which chemical class to show as the fixed axis set"></select>
+      <svg id="compass-svg" viewBox="0 0 200 200"></svg>
+      <div class="compass-caption" id="compass-caption"></div>
+    </div>
+    <button type="button" id="compass-resize-handle" class="compass-resize-handle" aria-label="Resize compass" title="Drag to resize">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M13 6h5v5M11 18H6v-5"/></svg>
+    </button>
+  </div>
 </main>
 <div id="origins-view" hidden>
   <div id="origins-body">
@@ -1144,6 +1365,17 @@
       <div id="wais-suggestions" class="wais-suggestions"></div>
     </div>
   </div>
+</div>
+
+<!-- "Event horizon" transition played once when Go Deeper switches on (see
+     playDeeperWarp()). Purely decorative — pointer-events:none — and skipped
+     entirely under prefers-reduced-motion. -->
+<div id="deeper-warp" aria-hidden="true" hidden>
+  <div class="warp-layer warp-layer-1"></div>
+  <div class="warp-layer warp-layer-2"></div>
+  <div class="warp-layer warp-layer-3"></div>
+  <div class="warp-layer warp-layer-4"></div>
+  <div class="warp-layer warp-layer-5"></div>
 </div>
 
 <script>
@@ -2137,8 +2369,9 @@ const state = {
   pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
+  jiggleEnabled: false,       // device-motion delight toggle (notes nudge with phone tilt/shake)
   selectedCompound: null,
-  selectedNote: null,       // when set (Go Deeper only), analysis pane shows the inverse view: compounds this note links to
+  selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
   hoveredCompound: null,
   infoOpen: false,        // is the "i" info overlay shown
@@ -2154,6 +2387,11 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
+  compassVisible: false,    // Perception Compass widget shown/hidden
+  compassMode: "notes",      // "notes" | "compounds" | "class" — which axis set the compass shows
+  compassClass: "terpene",  // chemical class shown in "class" mode (dropdown-selectable)
+  compassPos: null,         // {x,y} once dragged; null = default corner position
+  compassWidth: null,       // px, once resized; null = default 200px width
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false        // mobile callout labels toggle
@@ -2442,14 +2680,12 @@ function drawNotes() {
         const slider = row.querySelector("input[type=range]");
         if (slider) slider.focus();
       }
-      // Go Deeper: also surface this note's outbound compound graph in the
-      // analysis pane — the inverse of clicking a compound.
-      if (state.goDeeper) {
-        state.selectedNote = d.id;
-        state.selectedCompound = null;
-        gComps.selectAll("g.compound").classed("selected", false);
-        renderDetail();
-      }
+      // Also surface this note's outbound compound graph in the analysis
+      // pane — the inverse of clicking a compound.
+      state.selectedNote = d.id;
+      state.selectedCompound = null;
+      gComps.selectAll("g.compound").classed("selected", false);
+      renderDetail();
     });
   enter.append("circle").attr("r", 5);
   enter.append("text").attr("class", "note-label");
@@ -2792,11 +3028,9 @@ function renderNoteFloats() {
         const slider = row.querySelector("input[type=range]");
         if (slider) slider.focus();
       }
-      if (state.goDeeper) {
-        state.selectedNote = d.id;
-        state.selectedCompound = null;
-        renderDetail();
-      }
+      state.selectedNote = d.id;
+      state.selectedCompound = null;
+      renderDetail();
     })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -3088,6 +3322,9 @@ function recompute() {
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
+  // Perception Compass draws synchronously here rather than via the sim's
+  // tick — its axes are a pure function of scores, no physics involved.
+  if (typeof renderCompass === "function") renderCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
 }
@@ -3125,31 +3362,52 @@ function renderNoteRow(n) {
   lbl.setAttribute("for", "slider-" + n.id);
   lbl.textContent = n.label;
 
-  const val = document.createElement("span");
+  // Typed alternative to the slider: same 0-10 range, kept in sync both ways.
+  const val = document.createElement("input");
+  val.type = "number"; val.min = 0; val.max = 10; val.step = 1;
+  val.inputMode = "numeric";
   val.className = "val";
-  val.textContent = state.pendingIntensity[n.id] || 0;
+  val.value = state.pendingIntensity[n.id] || 0;
+  val.setAttribute("aria-label", `${n.label} intensity, 0 to 10`);
 
   const slider = document.createElement("input");
   slider.type = "range"; slider.min = 0; slider.max = 10; slider.step = 1;
   slider.id = "slider-" + n.id;
   slider.value = state.pendingIntensity[n.id] || 0;
-  slider.addEventListener("input", () => {
-    const v = +slider.value;
+
+  // Shared by both inputs so typing a number and dragging the slider commit
+  // through the exact same path (Go Deeper pending-vs-live-commit logic).
+  function setIntensity(v) {
+    v = Math.max(0, Math.min(10, Math.round(v)));
     state.pendingIntensity[n.id] = v;
-    val.textContent = v;
+    slider.value = v;
+    val.value = v;
     if (state.goDeeper) {
-      // Go Deeper: slider sets pending intensity; user clicks a phase button
-      // to commit. Existing entries untouched until they explicitly act.
+      // Go Deeper: slider/typed value sets pending intensity; user clicks a
+      // phase button to commit. Existing entries untouched until they act.
       updateRowPhaseButtons(row, n.id);
     } else {
-      // Default mode: slider directly creates / updates / deletes the
-      // null-phase entry in real-time. No commit step.
+      // Default mode: directly creates / updates / deletes the null-phase
+      // entry in real-time. No commit step.
       if (v > 0) commitEntry(n.id, null, v);
       else       deleteEntry(n.id, null);
       row.classList.toggle("has-entries", hasAnyEntry(n.id));
       recompute();
     }
+  }
+  slider.addEventListener("input", () => setIntensity(+slider.value));
+  val.addEventListener("input", () => {
+    // Ignore empty/mid-typing states (e.g. just cleared the field, or "-")
+    // rather than snapping to 0 before they've finished typing a real number.
+    const raw = val.value.trim();
+    if (raw === "" || Number.isNaN(+raw)) return;
+    setIntensity(+raw);
   });
+  val.addEventListener("blur", () => {
+    // Snap the field back to the committed value if left empty/invalid.
+    val.value = state.pendingIntensity[n.id] || 0;
+  });
+  val.addEventListener("keydown", (e) => { if (e.key === "Enter") val.blur(); });
 
   const btns = document.createElement("div");
   btns.className = "phase-buttons";
@@ -3336,14 +3594,14 @@ const commonTag = c => c && c.commonName ? ` <span class="common-name">(${c.comm
 })();
 
 function renderDetail() {
-  // Three modes: inverse note-view (Go Deeper, when a note is selected),
+  // Three modes: inverse note-view (when a note is selected),
   // compound detail (when a compound is selected), or the default grid.
   if (state.selectedNote) renderNoteDetail(state.selectedNote);
   else if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
   else renderAnalysisGrid();
 }
 
-// Inverse view (Go Deeper): show which compounds a given note maps to,
+// Inverse view: show which compounds a given note maps to,
 // sorted by base edge weight. Clicking a compound name switches to that
 // compound's full detail. "← All compounds" returns to grid mode.
 function renderNoteDetail(noteId) {
@@ -3379,7 +3637,7 @@ function renderNoteDetail(noteId) {
           ? `<li><span class="cite">No compounds linked to this note in the current data.</span></li>`
           : edges.map(e => {
               const cpd = CPD_BY_ID[e.cpd];
-              const ref = state.goDeeper ? refForCite(e.cite) : null;
+              const ref = refForCite(e.cite);
               const citeHtml = ref
                 ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
                 : `<span class="cite">${e.cite}</span>`;
@@ -3624,9 +3882,9 @@ function renderCompoundDetail(cpdId, banner) {
             .filter(p => !state.hiddenPhases.has(p) && getEntry(e.note, p) !== undefined)
             .map(p => `<span style="color:var(--ink-dim); font-size:10px;">${p}:${getEntry(e.note, p)}</span>`)
             .join(" ");
-          // In Go Deeper mode, render the full bibliographic citation if we
-          // have one in REFERENCES; otherwise fall back to the short string.
-          const ref = state.goDeeper ? refForCite(e.cite) : null;
+          // Render the full bibliographic citation if we have one in
+          // REFERENCES; otherwise fall back to the short cite string.
+          const ref = refForCite(e.cite);
           const citeHtml = ref
             ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
             : `<span class="cite">${e.cite}</span>`;
@@ -3747,6 +4005,11 @@ function setOrganizeBy(mode) {
   gEdges.selectAll("*").remove();
   gComps.selectAll("*").remove();
   gNotes.selectAll("*").remove();
+  // Clear any jiggle offset too — which container is "the notes layer" swaps
+  // with the mode, and a stale translate left on the other one would shift
+  // its new occupant (compound anchors or floats) out of position.
+  gComps.attr("transform", null);
+  gNotes.attr("transform", null);
   gArcs.selectAll("path.group-arc, text.group-arc-label, path.arc-label-path").remove();
   // Repoint the force sim at the new float set (compounds in scent, notes in
   // chemistry) so d3 integrates the right nodes.
@@ -4082,13 +4345,386 @@ function setGoDeeper(on) {
     }
     syncSliders();  // rebuild the panel so each slider snaps to its synced value
   }
-  // Refresh analysis pane so any open compound detail re-renders
-  // (full-citation expansion is gated on state.goDeeper).
+  // Refresh analysis pane so any open compound/note detail re-renders
+  // with the right phase-tagging affordances for the new mode.
   renderDetail();
 }
+// ---------- "EVENT HORIZON" WARP (Go Deeper entry transition) ----------
+// Plays once, only on the off→on flip, as a brief "falling through a
+// wormhole" flourish: the wheel (and every note/compound bubble on it,
+// since they're all children of the scaled element) rushes toward the
+// viewer while five successively-delayed vignette rings close in from the
+// edges (see the .warp-layer-* rules), the last one landing as a full-screen
+// blackout. The actual state flip happens at that blackout — hidden behind
+// it — so the per-row Add/Ortho/Retro buttons are just already there when
+// the overlay fades away, like arriving somewhere new.
+const deeperWarpEl = document.getElementById("deeper-warp");
+// Must be >= the last ring's transition-delay (160ms) + its own duration
+// (600ms) so layer 5 has actually finished closing before we cut.
+const WARP_SCALE_MS = 760;
+const WARP_FADE_MS = 380;
+function playDeeperWarp(onComplete) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onComplete(); return; }
+  deeperWarpEl.hidden = false;
+  document.body.classList.add("warp-active");
+  // Next frame so the opacity/scale transitions engage from their resting
+  // values instead of jumping straight to the end state.
+  requestAnimationFrame(() => deeperWarpEl.classList.add("warp-show", "warp-active"));
+  setTimeout(() => {
+    onComplete();
+    deeperWarpEl.classList.add("warp-fade");
+    setTimeout(() => {
+      document.body.classList.remove("warp-active");
+      deeperWarpEl.classList.remove("warp-show", "warp-active", "warp-fade");
+      deeperWarpEl.hidden = true;
+    }, WARP_FADE_MS);
+  }, WARP_SCALE_MS);
+}
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
-  setGoDeeper(!state.goDeeper);
+  if (state.goDeeper) { setGoDeeper(false); return; }
+  playDeeperWarp(() => setGoDeeper(true));
 });
+
+// ---------- SETTINGS MENU (gear) ----------
+// Small anchored dropdown for secondary toggles that don't warrant their own
+// header button. Holds Jiggle for now; more can land inside without the
+// header growing a button per feature.
+const settingsWrap = document.getElementById("settings-wrap");
+const settingsToggleBtn = document.getElementById("settings-toggle-btn");
+const settingsMenu = document.getElementById("settings-menu");
+function setSettingsMenu(open) {
+  settingsMenu.hidden = !open;
+  settingsToggleBtn.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("settings-open", open);
+}
+settingsToggleBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setSettingsMenu(settingsMenu.hidden);
+});
+// Outside click / Escape closes it, same convention as the info overlay.
+document.addEventListener("click", (e) => {
+  if (!settingsMenu.hidden && !settingsWrap.contains(e.target)) setSettingsMenu(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !settingsMenu.hidden) setSettingsMenu(false);
+});
+
+// ---------- JIGGLE (device motion) ----------
+// Mobile delight feature: tilt or shake the phone and the flavor notes nudge
+// in response. devicemotion's accelerationIncludingGravity captures both a
+// tilt bias (gravity leaning toward the low side) and transient shake spikes
+// (real acceleration) in the same reading — exactly "moved or tilted" in one
+// signal, no separate orientation listener needed.
+//
+// "The flavor notes" are whichever top-level group currently renders them:
+// gNotes in Scent mode (fixed rim dots), gComps in Chemistry mode (where
+// notes are the simulated floats and gComps's usual occupant, compounds,
+// sits fixed on the rim instead). Jiggling the wrong one in Chemistry mode
+// would nudge compounds, not notes — see jiggleTargetGroup().
+let jiggleDX = 0, jiggleDY = 0;     // smoothed offset applied to the notes layer
+let jiggleRAF = null;
+let motionListenerAttached = false;
+const JIGGLE_MAX = 7;               // px clamp so it nudges, doesn't fling the layer around
+const JIGGLE_SMOOTH = 0.12;         // low-pass filter factor; lower = lazier, smoother motion
+
+function jiggleTargetGroup() { return inChemistry() ? gComps : gNotes; }
+
+function onDeviceMotion(e) {
+  const g = e.accelerationIncludingGravity;
+  if (!g) return;
+  // Device x/y axes map loosely to screen x/y when the phone is held upright
+  // in portrait — good enough for a playful nudge, not a precise tilt model.
+  const tx = Math.max(-JIGGLE_MAX, Math.min(JIGGLE_MAX, g.x || 0));
+  const ty = Math.max(-JIGGLE_MAX, Math.min(JIGGLE_MAX, -(g.y || 0)));
+  jiggleDX += (tx - jiggleDX) * JIGGLE_SMOOTH;
+  jiggleDY += (ty - jiggleDY) * JIGGLE_SMOOTH;
+}
+
+function jiggleTick() {
+  jiggleTargetGroup().attr("transform", `translate(${jiggleDX.toFixed(2)},${jiggleDY.toFixed(2)})`);
+  jiggleRAF = requestAnimationFrame(jiggleTick);
+}
+
+function setJiggle(on) {
+  state.jiggleEnabled = !!on;
+  document.body.classList.toggle("jiggle-on", state.jiggleEnabled);
+  jiggleToggleBtn.setAttribute("aria-pressed", String(state.jiggleEnabled));
+  if (state.jiggleEnabled) {
+    if (!jiggleRAF) jiggleTick();
+  } else {
+    if (jiggleRAF) { cancelAnimationFrame(jiggleRAF); jiggleRAF = null; }
+    // Snap both possible target groups back to identity so switching Organize
+    // mode mid-jiggle never leaves a stale offset on the one not in use.
+    gNotes.attr("transform", null);
+    gComps.attr("transform", null);
+    jiggleDX = 0; jiggleDY = 0;
+  }
+}
+
+const jiggleToggleBtn = document.getElementById("jiggle-toggle");
+// Most desktops have no accelerometer; only surface the button where the API
+// exists at all. (Presence doesn't guarantee a real sensor, but absence
+// reliably means no point offering it.) Jiggle is currently the gear's only
+// item, so the gear itself only appears where Jiggle does — no empty dropdown
+// on desktops without motion support.
+if ('ondevicemotion' in window) {
+  jiggleToggleBtn.hidden = false;
+  document.getElementById("settings-wrap").hidden = false;
+  jiggleToggleBtn.addEventListener("click", async () => {
+    if (state.jiggleEnabled) { setJiggle(false); return; }
+    if (!motionListenerAttached) {
+      // iOS 13+ gates motion behind an explicit permission prompt that must
+      // be triggered by a user gesture — this click is that gesture. Other
+      // platforms have no such API and start listening immediately.
+      if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+        try {
+          const result = await DeviceMotionEvent.requestPermission();
+          if (result !== "granted") return;
+        } catch { return; }
+      }
+      window.addEventListener("devicemotion", onDeviceMotion);
+      motionListenerAttached = true;
+    }
+    setJiggle(true);
+  });
+}
+
+// ---------- PERCEPTION COMPASS ----------
+// A small, draggable, resizable radar with three axis modes:
+//   - Notes / Compounds: the user's OWN top-10 active items by score, live —
+//     a personal-fingerprint shape. Axes themselves change as input changes,
+//     not just the data on them.
+//   - Class: a FIXED, NAMED set — every compound in ONE chemical class
+//     (dropdown-selectable; defaults to terpene, a nod to the predecessor
+//     prototype), same order for every session. Comparable across different
+//     people's sessions precisely because the axes never move; Notes/
+//     Compounds trade that away to show exactly what the person actually
+//     reported instead.
+// All three are driven by the exact same note→compound scoring as the rest
+// of the app — nothing new to translate, just scores read onto axes.
+const COMPASS_CX = 100, COMPASS_CY = 100, COMPASS_R = 65, COMPASS_LABEL_R = 78;
+const COMPASS_BASE_W = 200; // #compass-content's unscaled width; applyCompassScale() derives everything else from this
+
+const COMPASS_CAPTION = {
+  notes: "Your top flavor notes by intensity — exactly what you reported, not an estimate.",
+  compounds: "Your top compounds by current score, derived from your notes like the rest of the app.",
+  class: cls => `Every ${(CLASS_BY_ID[cls] || { label: cls }).label} compound in the library — an estimate of perception, not a lab measurement.`
+};
+
+// Shorten long compound names for this cramped widget (β-Caryophyllene,
+// 1,8-Cineole, 4-Vinylguaiacol, ...). Note labels rarely need it; harmless
+// to run them through too.
+function compassShortLabel(label) {
+  const s = label.replace(/^[αβγ]-/, "").replace(/^\d[\d,]*-/, "");
+  return s.length > 14 ? s.slice(0, 13) + "…" : s;
+}
+
+// Resolves the current axis set as [{ key, angle, label, t }], t already
+// clamped 0..1 for radius. Class mode shows every compound in the selected
+// class, regardless of activity — that completeness is what keeps it a
+// stable, comparable coordinate system (same axes for anyone who picks the
+// same class). Notes/Compounds only include active (score > 0) items,
+// capped to the strongest 10, evenly spaced in score-descending order.
+function compassAxisItems() {
+  const mode = state.compassMode;
+  if (mode === "class") {
+    const items = COMPOUNDS.filter(c => c.class === state.compassClass);
+    return items.map((c, i) => ({
+      key: c.id, angle: -Math.PI / 2 + i * (2 * Math.PI / items.length), label: compassShortLabel(c.label),
+      t: Math.max(0, Math.min(1, CPD_NODE_BY_ID[c.id].score || 0))
+    }));
+  }
+  const pool = mode === "compounds"
+    ? compoundNodes.filter(n => n.score > 0)
+        .map(n => ({ id: n.id, label: CPD_BY_ID[n.id].label, raw: n.score, t: Math.min(1, n.score) }))
+    : NOTES.filter(n => noteSignal(n.id) > 0)
+        // noteSignal() already divides by 10 (single-slider intensity -> 0..1);
+        // don't divide again here.
+        .map(n => ({ id: n.id, label: n.label, raw: noteSignal(n.id), t: Math.min(1, noteSignal(n.id)) }));
+  const top = pool.sort((a, b) => b.raw - a.raw).slice(0, 10);
+  return top.map((item, i) => ({
+    key: item.id, angle: -Math.PI / 2 + i * (2 * Math.PI / top.length),
+    label: compassShortLabel(item.label), t: item.t
+  }));
+}
+
+const compassEl = document.getElementById("aroma-compass");
+const compassContentEl = document.getElementById("compass-content");
+const compassSvg = d3.select("#compass-svg").attr("viewBox", "0 0 200 200");
+const compassToggleBtn = document.getElementById("compass-toggle");
+const compassCaptionEl = document.getElementById("compass-caption");
+const compassClassSelectEl = document.getElementById("compass-class-select");
+const CLASS_BY_ID = Object.fromEntries(CLASSES.map(c => [c.id, c]));
+
+// Populate the class dropdown once from the same CLASS_ORDER/CLASSES the
+// wheel's Chemistry-mode ring uses, so the option list and labels never
+// drift out of sync with the data.
+CLASSES.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = c.id;
+  opt.textContent = c.label;
+  if (c.id === state.compassClass) opt.selected = true;
+  compassClassSelectEl.appendChild(opt);
+});
+compassClassSelectEl.addEventListener("change", () => {
+  state.compassClass = compassClassSelectEl.value;
+  renderCompass();
+});
+
+// Rebuilds grid + labels + data polygon together every call. Cheap at <=10
+// axes, and Notes/Compounds need the axis SET itself to update live, not
+// just the data on it, so there's no real "static part" left to cache.
+function renderCompass() {
+  if (!state.compassVisible) return;
+  compassCaptionEl.textContent = typeof COMPASS_CAPTION[state.compassMode] === "function"
+    ? COMPASS_CAPTION[state.compassMode](state.compassClass)
+    : COMPASS_CAPTION[state.compassMode];
+  const items = compassAxisItems();
+  compassSvg.selectAll("*").remove();
+  if (items.length === 0) {
+    compassSvg.append("text").attr("class", "compass-empty")
+      .attr("x", COMPASS_CX).attr("y", COMPASS_CY).attr("text-anchor", "middle")
+      .text("No notes logged yet");
+  } else {
+    const gGrid = compassSvg.append("g").attr("class", "compass-grid-layer");
+    [0.33, 0.66, 1].forEach(t => {
+      const pts = items.map(it =>
+        `${COMPASS_CX + Math.cos(it.angle) * COMPASS_R * t},${COMPASS_CY + Math.sin(it.angle) * COMPASS_R * t}`);
+      gGrid.append("polygon").attr("class", "compass-grid").attr("points", pts.join(" "));
+    });
+    gGrid.selectAll("line.compass-spoke").data(items).join("line")
+      .attr("class", "compass-spoke")
+      .attr("x1", COMPASS_CX).attr("y1", COMPASS_CY)
+      .attr("x2", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R)
+      .attr("y2", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R);
+    compassSvg.selectAll("text.compass-axis-label").data(items).join("text")
+      .attr("class", "compass-axis-label")
+      .attr("x", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_LABEL_R)
+      .attr("y", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_LABEL_R)
+      .attr("text-anchor", it => Math.cos(it.angle) > 0.2 ? "start" : Math.cos(it.angle) < -0.2 ? "end" : "middle")
+      .attr("dominant-baseline", it => Math.sin(it.angle) > 0.2 ? "hanging" : Math.sin(it.angle) < -0.2 ? "baseline" : "middle")
+      .text(it => it.label);
+    const line = d3.line()
+      .x(it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R * it.t)
+      .y(it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R * it.t)
+      .curve(d3.curveLinearClosed);
+    compassSvg.append("path").attr("class", "compass-shape").attr("d", line(items));
+  }
+  // Mode/data changes can change #compass-content's natural height (e.g.
+  // the class dropdown adds a row); re-fit the outer box at the current scale.
+  applyCompassScale(state.compassWidth || COMPASS_BASE_W);
+}
+
+function setCompassVisible(visible) {
+  state.compassVisible = !!visible;
+  compassEl.hidden = !state.compassVisible;
+  document.body.classList.toggle("compass-on", state.compassVisible);
+  if (state.compassVisible) renderCompass();
+}
+compassToggleBtn.addEventListener("click", () => setCompassVisible(!state.compassVisible));
+document.getElementById("compass-close-btn").addEventListener("click", () => setCompassVisible(false));
+
+function setCompassMode(mode) {
+  if (mode === state.compassMode) return;
+  state.compassMode = mode;
+  document.querySelectorAll("#compass-mode-tabs button").forEach(x =>
+    x.classList.toggle("active", x.dataset.compassMode === mode));
+  compassClassSelectEl.hidden = mode !== "class";
+  renderCompass();
+}
+document.querySelectorAll("#compass-mode-tabs button").forEach(b => {
+  b.addEventListener("click", () => setCompassMode(b.dataset.compassMode));
+});
+
+// ---------- Drag (position) + resize (size) ----------
+// Both clamp against the wheel's current bounds, so neither can push the
+// widget off-screen or past the wheel's edge. Shared here so resizing can
+// re-clamp a position that's no longer valid once the box got bigger.
+function clampCompassPos(pos) {
+  const maxX = Math.max(0, wheelEl.clientWidth - compassEl.offsetWidth);
+  const maxY = Math.max(0, wheelEl.clientHeight - compassEl.offsetHeight);
+  return { x: Math.min(Math.max(0, pos.x), maxX), y: Math.min(Math.max(0, pos.y), maxY) };
+}
+function applyCompassPos(pos) {
+  compassEl.style.left = pos.x + "px";
+  compassEl.style.top = pos.y + "px";
+  compassEl.style.right = "auto";
+}
+
+// Scales #compass-content (header, tabs, svg, caption — everything) by a
+// single factor derived from the target width, so the whole widget grows or
+// shrinks as one proportional unit instead of just the SVG. The outer
+// #aroma-compass is resized to exactly match the scaled content's footprint
+// every time, so it never clips and never leaves a gap. Natural height is
+// re-measured on every call (not cached) since it can vary by mode (the
+// class dropdown row only exists in Class mode).
+function applyCompassScale(widthPx) {
+  const scale = widthPx / COMPASS_BASE_W;
+  compassContentEl.style.transform = "none";
+  const naturalH = compassContentEl.getBoundingClientRect().height;
+  compassContentEl.style.transform = `scale(${scale})`;
+  compassEl.style.width = widthPx + "px";
+  compassEl.style.height = (naturalH * scale) + "px";
+}
+
+(function setupCompassDragAndResize() {
+  const handle = document.getElementById("compass-drag-handle");
+  const resizeHandle = document.getElementById("compass-resize-handle");
+  const MIN_W = 140;
+  function maxWidth() { return Math.max(MIN_W, wheelEl.clientWidth * 0.85); }
+
+  if (state.compassPos) applyCompassPos(state.compassPos);
+  applyCompassScale(state.compassWidth || COMPASS_BASE_W);
+
+  let dragging = false, dragStartX, dragStartY, dragStartLeft, dragStartTop;
+  handle.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    handle.classList.add("dragging");
+    handle.setPointerCapture(e.pointerId);
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    const rect = compassEl.getBoundingClientRect();
+    const wheelRect = wheelEl.getBoundingClientRect();
+    dragStartLeft = rect.left - wheelRect.left; dragStartTop = rect.top - wheelRect.top;
+  });
+  handle.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const pos = clampCompassPos({ x: dragStartLeft + (e.clientX - dragStartX), y: dragStartTop + (e.clientY - dragStartY) });
+    applyCompassPos(pos);
+    state.compassPos = pos;
+  });
+  handle.addEventListener("pointerup", (e) => {
+    dragging = false;
+    handle.classList.remove("dragging");
+    handle.releasePointerCapture(e.pointerId);
+  });
+
+  let resizing = false, resizeStartX, resizeStartWidth;
+  resizeHandle.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    resizing = true;
+    resizeHandle.setPointerCapture(e.pointerId);
+    resizeStartX = e.clientX;
+    resizeStartWidth = compassEl.getBoundingClientRect().width;
+  });
+  resizeHandle.addEventListener("pointermove", (e) => {
+    if (!resizing) return;
+    const w = Math.min(maxWidth(), Math.max(MIN_W, resizeStartWidth + (e.clientX - resizeStartX)));
+    state.compassWidth = w;
+    applyCompassScale(w);
+    // Growing the box can push its bottom-right past the wheel's edge even
+    // if its top-left (the dragged position) never moved; re-clamp position.
+    if (state.compassPos) { state.compassPos = clampCompassPos(state.compassPos); applyCompassPos(state.compassPos); }
+  });
+  resizeHandle.addEventListener("pointerup", (e) => {
+    resizing = false;
+    resizeHandle.releasePointerCapture(e.pointerId);
+  });
+
+  window.addEventListener("resize", () => {
+    if (state.compassWidth) applyCompassScale(Math.min(maxWidth(), state.compassWidth));
+    if (state.compassPos) { state.compassPos = clampCompassPos(state.compassPos); applyCompassPos(state.compassPos); }
+  });
+})();
 
 // ---------- INFO ("i") TAB ----------
 // Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
@@ -4286,7 +4922,7 @@ function renderHowToUse() {
     <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
 
     <h3 id="use-views">Two views of the same thing</h3>
-    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
+    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail; click a note for its inverse — the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
     <p>The <strong>Compounds pane</strong> (grey panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
@@ -4300,13 +4936,15 @@ function renderHowToUse() {
     <ul>
       <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
+      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated. The wheel controls grey out on the map since they don't apply there.</li>
+      <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Both</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Compass (header).</strong> Pops up a small draggable, resizable radar (drag its corner handle to scale everything proportionally) — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class (pick which via the dropdown) — that last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
-      <li><strong>View tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Dashboard</em> = all three panes. <em>Compounds</em> = wheel + Compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it. Clicking a note flips the Compounds pane to its inverse view (the compounds that note maps to), and citations expand to their full bibliographic form.</p>
+    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it.</p>
 
     <h3 id="use-repeat">Repeat-tasting</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
@@ -5198,10 +5836,14 @@ function setOriginsMode(isOrigins) {
   document.getElementById("origins-detail-panel").hidden = true;
   document.getElementById("origins-search").value = "";
   applyOriginsSearch("");
+  // Keep the workspace switch's active highlight in sync with the actual mode.
+  document.querySelectorAll("#workspace-tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.workspace === (isOrigins ? "map" : "wheel")));
   if (isOrigins) loadOrigins();
 }
-document.getElementById("origins-toggle-btn").addEventListener("click", () => {
-  setOriginsMode(!document.body.classList.contains("origins-mode"));
+// Workspace switch (Wheel | Map) — the primary "which screen" control.
+document.querySelectorAll("#workspace-tabs button").forEach(b => {
+  b.addEventListener("click", () => setOriginsMode(b.dataset.workspace === "map"));
 });
 document.getElementById("origins-detail-close").addEventListener("click", () => {
   document.getElementById("origins-detail-panel").hidden = true;
