@@ -362,16 +362,22 @@
     transition: border-color 0.15s, color 0.15s; }
   .wheel-nudge .nudge-demo:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Perception Compass: small draggable radar widget, corner-anchored by
-     default (top/right) until dragged, at which point JS switches it to an
-     explicit left/top position. z-index 20: above wheel SVG content (no
-     z-index of its own) and the mobile callout-toggle (5), below pane-toggle
-     (100) and any modal overlay (200+). */
+  /* Perception Compass: small draggable, resizable radar widget, corner-
+     anchored by default (top/right) until dragged, at which point JS
+     switches it to an explicit left/top position. z-index 20: above wheel
+     SVG content (no z-index of its own) and the mobile callout-toggle (5),
+     below pane-toggle (100) and any modal overlay (200+).
+     #compass-content is a fixed-base-size (200px wide) box that JS scales
+     via transform — see applyCompassScale() — so every child (header text,
+     tabs, svg, caption) grows/shrinks together in proportion. #aroma-compass
+     itself is resized in lockstep (its width/height tracks the scaled
+     content's rendered footprint) so it never clips or leaves a gap. */
   .aroma-compass { position: absolute; top: 12px; right: 12px; z-index: 20;
-    width: 200px; background: var(--panel); border: 1px solid var(--line);
+    background: var(--panel); border: 1px solid var(--line);
     border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     overflow: hidden; }
   .aroma-compass[hidden] { display: none; }
+  .compass-content { width: 200px; transform-origin: top left; }
   .compass-header { display: flex; align-items: center; justify-content: space-between;
     padding: 6px 8px; background: var(--panel-2); cursor: grab;
     font-size: 11px; color: var(--ink-dim); text-transform: uppercase;
@@ -385,6 +391,11 @@
   .compass-mode-tabs { display: flex; width: 100%; border: none; border-radius: 0;
     border-bottom: 1px solid var(--line); }
   .compass-mode-tabs button { flex: 1; padding: 4px 2px; font-size: 9px; border-radius: 0; }
+  .compass-class-select { display: block; width: 100%; box-sizing: border-box;
+    background: var(--panel-2); color: var(--ink); border: none;
+    border-bottom: 1px solid var(--line); border-radius: 0;
+    font-size: 9px; padding: 3px 6px; font-family: inherit; }
+  .compass-class-select[hidden] { display: none; }
   #compass-svg { display: block; width: 100%; height: 200px; }
   .compass-grid { fill: none; stroke: var(--line); }
   .compass-spoke { stroke: var(--line); }
@@ -394,6 +405,18 @@
     stroke: var(--accent); stroke-width: 1.5; transition: d 0.2s; }
   .compass-caption { font-size: 9px; color: var(--ink-dim); line-height: 1.4;
     padding: 6px 8px 8px; font-style: italic; }
+
+  /* Resize handle: a sibling of .compass-content (not scaled with it), so it
+     stays a consistent, easily-grabbable size at any compass scale. Sits
+     just inside the corner so it's never clipped by the outer box's own
+     overflow:hidden. */
+  .compass-resize-handle { position: absolute; right: 2px; bottom: 2px;
+    width: 18px; height: 18px; padding: 0; display: flex; align-items: center;
+    justify-content: center; background: var(--panel-2); color: var(--ink-dim);
+    border: 1px solid var(--line); border-radius: 4px; cursor: nwse-resize;
+    touch-action: none; }
+  .compass-resize-handle svg { width: 12px; height: 12px; }
+  .compass-resize-handle:hover { color: var(--accent); border-color: var(--accent); }
 
   .group-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--ink-dim); padding: 12px 4px 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
@@ -851,6 +874,15 @@
        and the detail card on tap. Ring anchor labels (.note-label) stay. */
     g.compound text.node-label { display: none; }
 
+    /* Same 44px touch-target bump as the rest of the mobile tray, applied to
+       the compass's own controls. The resize handle especially needs this —
+       at 18px it's nearly impossible to grab precisely by touch. Desktop
+       (mouse-driven) sizing is untouched. */
+    .compass-resize-handle { width: 44px; height: 44px; }
+    .compass-resize-handle svg { width: 18px; height: 18px; }
+    #compass-close-btn { width: 44px; height: 44px; display: flex;
+      align-items: center; justify-content: center; }
+
     /* Chemistry mode only: the ring anchors are compounds, whose long names run
        off a phone-width wheel. Hide them too — the curved class-arc labels
        (TERPENE, ESTER, …) still give the ring its legend, and tapping a dot
@@ -1133,7 +1165,7 @@
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
-    <button id="compass-toggle" title="Perception Compass: a draggable radar of your strongest notes, compounds, or a fixed terpene profile — a shareable snapshot of your tasting.">
+    <button id="compass-toggle" title="Perception Compass: a draggable, resizable radar of your strongest notes, compounds, or a fixed chemical-class profile — a shareable snapshot of your tasting.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
       Compass
     </button>
@@ -1232,24 +1264,34 @@
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
-  <!-- Perception Compass: a small draggable radar, toggled from the settings
-       gear. Three axis modes (see #compass-mode-tabs): Notes / Compounds —
-       the user's own top-10 active items, live — and Terpenes, a fixed
-       10-axis set (a nod to the predecessor prototype) where every session
-       uses the same axes, so two different people's shapes are directly
-       comparable regardless of which notes they logged. -->
+  <!-- Perception Compass: a small draggable, resizable radar, toggled from
+       the settings gear. Three axis modes (see #compass-mode-tabs): Notes /
+       Compounds — the user's own top-10 active items, live — and Class, a
+       fixed axis set over one chemical class at a time (dropdown-selectable;
+       defaults to terpene, a nod to the predecessor prototype), where every
+       session uses the same axes for that class, so two different people's
+       shapes are directly comparable regardless of which notes they logged.
+       #compass-content is the part that visually scales on resize (see
+       applyCompassScale()); the resize handle itself stays a fixed, always-
+       grabbable size outside that scaling. -->
   <div id="aroma-compass" class="aroma-compass" hidden>
-    <div class="compass-header" id="compass-drag-handle">
-      <span>Perception Compass</span>
-      <button type="button" id="compass-close-btn" aria-label="Hide compass" title="Hide compass">×</button>
+    <div id="compass-content" class="compass-content">
+      <div class="compass-header" id="compass-drag-handle">
+        <span>Perception Compass</span>
+        <button type="button" id="compass-close-btn" aria-label="Hide compass" title="Hide compass">×</button>
+      </div>
+      <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Class: a fixed set over one chemical class, same axes for everyone.">
+        <button data-compass-mode="notes" class="active">Notes</button>
+        <button data-compass-mode="compounds">Compounds</button>
+        <button data-compass-mode="class">Class</button>
+      </div>
+      <select id="compass-class-select" class="compass-class-select" hidden title="Which chemical class to show as the fixed axis set"></select>
+      <svg id="compass-svg" viewBox="0 0 200 200"></svg>
+      <div class="compass-caption" id="compass-caption"></div>
     </div>
-    <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Terpenes: a fixed set, same for everyone.">
-      <button data-compass-mode="notes" class="active">Notes</button>
-      <button data-compass-mode="compounds">Compounds</button>
-      <button data-compass-mode="terpenes">Terpenes</button>
-    </div>
-    <svg id="compass-svg" viewBox="0 0 200 200"></svg>
-    <div class="compass-caption" id="compass-caption"></div>
+    <button type="button" id="compass-resize-handle" class="compass-resize-handle" aria-label="Resize compass" title="Drag to resize">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M13 6h5v5M11 18H6v-5"/></svg>
+    </button>
   </div>
 </main>
 <div id="origins-view" hidden>
@@ -2346,8 +2388,10 @@ const state = {
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
   compassVisible: false,    // Perception Compass widget shown/hidden
-  compassMode: "notes",      // "notes" | "compounds" | "terpenes" — which axis set the compass shows
+  compassMode: "notes",      // "notes" | "compounds" | "class" — which axis set the compass shows
+  compassClass: "terpene",  // chemical class shown in "class" mode (dropdown-selectable)
   compassPos: null,         // {x,y} once dragged; null = default corner position
+  compassWidth: null,       // px, once resized; null = default 200px width
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false        // mobile callout labels toggle
@@ -4446,25 +4490,25 @@ if ('ondevicemotion' in window) {
 }
 
 // ---------- PERCEPTION COMPASS ----------
-// A small, draggable radar with three axis modes:
+// A small, draggable, resizable radar with three axis modes:
 //   - Notes / Compounds: the user's OWN top-10 active items by score, live —
 //     a personal-fingerprint shape. Axes themselves change as input changes,
 //     not just the data on them.
-//   - Terpenes: a FIXED, NAMED set — every terpene compound in the library,
-//     same order for every session, a nod to the predecessor prototype.
-//     Comparable across different people's sessions precisely because the
-//     axes never move; Notes/Compounds trade that away to show exactly what
-//     the person actually reported instead.
+//   - Class: a FIXED, NAMED set — every compound in ONE chemical class
+//     (dropdown-selectable; defaults to terpene, a nod to the predecessor
+//     prototype), same order for every session. Comparable across different
+//     people's sessions precisely because the axes never move; Notes/
+//     Compounds trade that away to show exactly what the person actually
+//     reported instead.
 // All three are driven by the exact same note→compound scoring as the rest
 // of the app — nothing new to translate, just scores read onto axes.
-const COMPASS_TERPENES = COMPOUNDS.filter(c => c.class === "terpene");
 const COMPASS_CX = 100, COMPASS_CY = 100, COMPASS_R = 65, COMPASS_LABEL_R = 78;
-COMPASS_TERPENES.forEach((c, i) => { c._compassAngle = -Math.PI / 2 + i * (2 * Math.PI / COMPASS_TERPENES.length); });
+const COMPASS_BASE_W = 200; // #compass-content's unscaled width; applyCompassScale() derives everything else from this
 
 const COMPASS_CAPTION = {
   notes: "Your top flavor notes by intensity — exactly what you reported, not an estimate.",
   compounds: "Your top compounds by current score, derived from your notes like the rest of the app.",
-  terpenes: "Your closest terpene-profile match — an estimate of perception, not a lab measurement."
+  class: cls => `Every ${(CLASS_BY_ID[cls] || { label: cls }).label} compound in the library — an estimate of perception, not a lab measurement.`
 };
 
 // Shorten long compound names for this cramped widget (β-Caryophyllene,
@@ -4476,15 +4520,17 @@ function compassShortLabel(label) {
 }
 
 // Resolves the current axis set as [{ key, angle, label, t }], t already
-// clamped 0..1 for radius. Terpenes is always all 10, regardless of
-// activity — that completeness is what keeps it a stable, comparable
-// coordinate system. Notes/Compounds only include active (score > 0) items,
+// clamped 0..1 for radius. Class mode shows every compound in the selected
+// class, regardless of activity — that completeness is what keeps it a
+// stable, comparable coordinate system (same axes for anyone who picks the
+// same class). Notes/Compounds only include active (score > 0) items,
 // capped to the strongest 10, evenly spaced in score-descending order.
 function compassAxisItems() {
   const mode = state.compassMode;
-  if (mode === "terpenes") {
-    return COMPASS_TERPENES.map(c => ({
-      key: c.id, angle: c._compassAngle, label: compassShortLabel(c.label),
+  if (mode === "class") {
+    const items = COMPOUNDS.filter(c => c.class === state.compassClass);
+    return items.map((c, i) => ({
+      key: c.id, angle: -Math.PI / 2 + i * (2 * Math.PI / items.length), label: compassShortLabel(c.label),
       t: Math.max(0, Math.min(1, CPD_NODE_BY_ID[c.id].score || 0))
     }));
   }
@@ -4503,47 +4549,70 @@ function compassAxisItems() {
 }
 
 const compassEl = document.getElementById("aroma-compass");
+const compassContentEl = document.getElementById("compass-content");
 const compassSvg = d3.select("#compass-svg").attr("viewBox", "0 0 200 200");
 const compassToggleBtn = document.getElementById("compass-toggle");
 const compassCaptionEl = document.getElementById("compass-caption");
+const compassClassSelectEl = document.getElementById("compass-class-select");
+const CLASS_BY_ID = Object.fromEntries(CLASSES.map(c => [c.id, c]));
+
+// Populate the class dropdown once from the same CLASS_ORDER/CLASSES the
+// wheel's Chemistry-mode ring uses, so the option list and labels never
+// drift out of sync with the data.
+CLASSES.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = c.id;
+  opt.textContent = c.label;
+  if (c.id === state.compassClass) opt.selected = true;
+  compassClassSelectEl.appendChild(opt);
+});
+compassClassSelectEl.addEventListener("change", () => {
+  state.compassClass = compassClassSelectEl.value;
+  renderCompass();
+});
 
 // Rebuilds grid + labels + data polygon together every call. Cheap at <=10
 // axes, and Notes/Compounds need the axis SET itself to update live, not
 // just the data on it, so there's no real "static part" left to cache.
 function renderCompass() {
   if (!state.compassVisible) return;
-  compassCaptionEl.textContent = COMPASS_CAPTION[state.compassMode];
+  compassCaptionEl.textContent = typeof COMPASS_CAPTION[state.compassMode] === "function"
+    ? COMPASS_CAPTION[state.compassMode](state.compassClass)
+    : COMPASS_CAPTION[state.compassMode];
   const items = compassAxisItems();
   compassSvg.selectAll("*").remove();
   if (items.length === 0) {
     compassSvg.append("text").attr("class", "compass-empty")
       .attr("x", COMPASS_CX).attr("y", COMPASS_CY).attr("text-anchor", "middle")
       .text("No notes logged yet");
-    return;
+  } else {
+    const gGrid = compassSvg.append("g").attr("class", "compass-grid-layer");
+    [0.33, 0.66, 1].forEach(t => {
+      const pts = items.map(it =>
+        `${COMPASS_CX + Math.cos(it.angle) * COMPASS_R * t},${COMPASS_CY + Math.sin(it.angle) * COMPASS_R * t}`);
+      gGrid.append("polygon").attr("class", "compass-grid").attr("points", pts.join(" "));
+    });
+    gGrid.selectAll("line.compass-spoke").data(items).join("line")
+      .attr("class", "compass-spoke")
+      .attr("x1", COMPASS_CX).attr("y1", COMPASS_CY)
+      .attr("x2", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R)
+      .attr("y2", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R);
+    compassSvg.selectAll("text.compass-axis-label").data(items).join("text")
+      .attr("class", "compass-axis-label")
+      .attr("x", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_LABEL_R)
+      .attr("y", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_LABEL_R)
+      .attr("text-anchor", it => Math.cos(it.angle) > 0.2 ? "start" : Math.cos(it.angle) < -0.2 ? "end" : "middle")
+      .attr("dominant-baseline", it => Math.sin(it.angle) > 0.2 ? "hanging" : Math.sin(it.angle) < -0.2 ? "baseline" : "middle")
+      .text(it => it.label);
+    const line = d3.line()
+      .x(it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R * it.t)
+      .y(it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R * it.t)
+      .curve(d3.curveLinearClosed);
+    compassSvg.append("path").attr("class", "compass-shape").attr("d", line(items));
   }
-  const gGrid = compassSvg.append("g").attr("class", "compass-grid-layer");
-  [0.33, 0.66, 1].forEach(t => {
-    const pts = items.map(it =>
-      `${COMPASS_CX + Math.cos(it.angle) * COMPASS_R * t},${COMPASS_CY + Math.sin(it.angle) * COMPASS_R * t}`);
-    gGrid.append("polygon").attr("class", "compass-grid").attr("points", pts.join(" "));
-  });
-  gGrid.selectAll("line.compass-spoke").data(items).join("line")
-    .attr("class", "compass-spoke")
-    .attr("x1", COMPASS_CX).attr("y1", COMPASS_CY)
-    .attr("x2", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R)
-    .attr("y2", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R);
-  compassSvg.selectAll("text.compass-axis-label").data(items).join("text")
-    .attr("class", "compass-axis-label")
-    .attr("x", it => COMPASS_CX + Math.cos(it.angle) * COMPASS_LABEL_R)
-    .attr("y", it => COMPASS_CY + Math.sin(it.angle) * COMPASS_LABEL_R)
-    .attr("text-anchor", it => Math.cos(it.angle) > 0.2 ? "start" : Math.cos(it.angle) < -0.2 ? "end" : "middle")
-    .attr("dominant-baseline", it => Math.sin(it.angle) > 0.2 ? "hanging" : Math.sin(it.angle) < -0.2 ? "baseline" : "middle")
-    .text(it => it.label);
-  const line = d3.line()
-    .x(it => COMPASS_CX + Math.cos(it.angle) * COMPASS_R * it.t)
-    .y(it => COMPASS_CY + Math.sin(it.angle) * COMPASS_R * it.t)
-    .curve(d3.curveLinearClosed);
-  compassSvg.append("path").attr("class", "compass-shape").attr("d", line(items));
+  // Mode/data changes can change #compass-content's natural height (e.g.
+  // the class dropdown adds a row); re-fit the outer box at the current scale.
+  applyCompassScale(state.compassWidth || COMPASS_BASE_W);
 }
 
 function setCompassVisible(visible) {
@@ -4560,42 +4629,67 @@ function setCompassMode(mode) {
   state.compassMode = mode;
   document.querySelectorAll("#compass-mode-tabs button").forEach(x =>
     x.classList.toggle("active", x.dataset.compassMode === mode));
+  compassClassSelectEl.hidden = mode !== "class";
   renderCompass();
 }
 document.querySelectorAll("#compass-mode-tabs button").forEach(b => {
   b.addEventListener("click", () => setCompassMode(b.dataset.compassMode));
 });
 
-// Drag: header is the handle. Switches from the default top/right CSS anchor
-// to an explicit left/top once moved, then stays there (clamped to the
-// wheel's current bounds) until dragged again or the window resizes.
-(function setupCompassDrag() {
+// ---------- Drag (position) + resize (size) ----------
+// Both clamp against the wheel's current bounds, so neither can push the
+// widget off-screen or past the wheel's edge. Shared here so resizing can
+// re-clamp a position that's no longer valid once the box got bigger.
+function clampCompassPos(pos) {
+  const maxX = Math.max(0, wheelEl.clientWidth - compassEl.offsetWidth);
+  const maxY = Math.max(0, wheelEl.clientHeight - compassEl.offsetHeight);
+  return { x: Math.min(Math.max(0, pos.x), maxX), y: Math.min(Math.max(0, pos.y), maxY) };
+}
+function applyCompassPos(pos) {
+  compassEl.style.left = pos.x + "px";
+  compassEl.style.top = pos.y + "px";
+  compassEl.style.right = "auto";
+}
+
+// Scales #compass-content (header, tabs, svg, caption — everything) by a
+// single factor derived from the target width, so the whole widget grows or
+// shrinks as one proportional unit instead of just the SVG. The outer
+// #aroma-compass is resized to exactly match the scaled content's footprint
+// every time, so it never clips and never leaves a gap. Natural height is
+// re-measured on every call (not cached) since it can vary by mode (the
+// class dropdown row only exists in Class mode).
+function applyCompassScale(widthPx) {
+  const scale = widthPx / COMPASS_BASE_W;
+  compassContentEl.style.transform = "none";
+  const naturalH = compassContentEl.getBoundingClientRect().height;
+  compassContentEl.style.transform = `scale(${scale})`;
+  compassEl.style.width = widthPx + "px";
+  compassEl.style.height = (naturalH * scale) + "px";
+}
+
+(function setupCompassDragAndResize() {
   const handle = document.getElementById("compass-drag-handle");
-  let dragging = false, startX, startY, startLeft, startTop;
-  function clamp(pos) {
-    const maxX = Math.max(0, wheelEl.clientWidth - compassEl.offsetWidth);
-    const maxY = Math.max(0, wheelEl.clientHeight - compassEl.offsetHeight);
-    return { x: Math.min(Math.max(0, pos.x), maxX), y: Math.min(Math.max(0, pos.y), maxY) };
-  }
-  function applyPos(pos) {
-    compassEl.style.left = pos.x + "px";
-    compassEl.style.top = pos.y + "px";
-    compassEl.style.right = "auto";
-  }
-  if (state.compassPos) applyPos(state.compassPos);
+  const resizeHandle = document.getElementById("compass-resize-handle");
+  const MIN_W = 140;
+  function maxWidth() { return Math.max(MIN_W, wheelEl.clientWidth * 0.85); }
+
+  if (state.compassPos) applyCompassPos(state.compassPos);
+  applyCompassScale(state.compassWidth || COMPASS_BASE_W);
+
+  let dragging = false, dragStartX, dragStartY, dragStartLeft, dragStartTop;
   handle.addEventListener("pointerdown", (e) => {
     dragging = true;
     handle.classList.add("dragging");
     handle.setPointerCapture(e.pointerId);
-    startX = e.clientX; startY = e.clientY;
+    dragStartX = e.clientX; dragStartY = e.clientY;
     const rect = compassEl.getBoundingClientRect();
     const wheelRect = wheelEl.getBoundingClientRect();
-    startLeft = rect.left - wheelRect.left; startTop = rect.top - wheelRect.top;
+    dragStartLeft = rect.left - wheelRect.left; dragStartTop = rect.top - wheelRect.top;
   });
   handle.addEventListener("pointermove", (e) => {
     if (!dragging) return;
-    const pos = clamp({ x: startLeft + (e.clientX - startX), y: startTop + (e.clientY - startY) });
-    applyPos(pos);
+    const pos = clampCompassPos({ x: dragStartLeft + (e.clientX - dragStartX), y: dragStartTop + (e.clientY - dragStartY) });
+    applyCompassPos(pos);
     state.compassPos = pos;
   });
   handle.addEventListener("pointerup", (e) => {
@@ -4603,8 +4697,32 @@ document.querySelectorAll("#compass-mode-tabs button").forEach(b => {
     handle.classList.remove("dragging");
     handle.releasePointerCapture(e.pointerId);
   });
+
+  let resizing = false, resizeStartX, resizeStartWidth;
+  resizeHandle.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    resizing = true;
+    resizeHandle.setPointerCapture(e.pointerId);
+    resizeStartX = e.clientX;
+    resizeStartWidth = compassEl.getBoundingClientRect().width;
+  });
+  resizeHandle.addEventListener("pointermove", (e) => {
+    if (!resizing) return;
+    const w = Math.min(maxWidth(), Math.max(MIN_W, resizeStartWidth + (e.clientX - resizeStartX)));
+    state.compassWidth = w;
+    applyCompassScale(w);
+    // Growing the box can push its bottom-right past the wheel's edge even
+    // if its top-left (the dragged position) never moved; re-clamp position.
+    if (state.compassPos) { state.compassPos = clampCompassPos(state.compassPos); applyCompassPos(state.compassPos); }
+  });
+  resizeHandle.addEventListener("pointerup", (e) => {
+    resizing = false;
+    resizeHandle.releasePointerCapture(e.pointerId);
+  });
+
   window.addEventListener("resize", () => {
-    if (state.compassPos) { state.compassPos = clamp(state.compassPos); applyPos(state.compassPos); }
+    if (state.compassWidth) applyCompassScale(Math.min(maxWidth(), state.compassWidth));
+    if (state.compassPos) { state.compassPos = clampCompassPos(state.compassPos); applyCompassPos(state.compassPos); }
   });
 })();
 
@@ -4821,7 +4939,7 @@ function renderHowToUse() {
       <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated. The wheel controls grey out on the map since they don't apply there.</li>
       <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Both</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
-      <li><strong>Compass (header).</strong> Pops up a small draggable radar — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or a fixed terpene profile.</li>
+      <li><strong>Compass (header).</strong> Pops up a small draggable, resizable radar (drag its corner handle to scale everything proportionally) — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class (pick which via the dropdown) — that last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
 
