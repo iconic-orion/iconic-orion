@@ -1437,6 +1437,14 @@ const NOTES = [
   { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true  },
   { id: "pomelo",      label: "Pomelo / pummelo",   group: "fruity",   common: false, subOf: "grapefruit" },
   { id: "berry",       label: "Berry",              group: "fruity",   common: true  },
+  { id: "cranberry",   label: "Cranberry",          group: "fruity",   common: true,  subOf: "berry" },
+  // Red currant genuinely has no dedicated aroma-compound study found — unlike
+  // Blood orange's noStandoutNote (a sourced finding of "no standout exists"),
+  // this is an honest "not found," so it's left without the field entirely;
+  // varietalRows()'s generic fallback text renders for it instead.
+  { id: "redcurrant",  label: "Red currant",        group: "fruity",   common: false, subOf: "berry" },
+  { id: "cassis",      label: "Black currant / cassis", group: "fruity", common: false, subOf: "berry" },
+  { id: "pomegranate", label: "Pomegranate",        group: "fruity",   common: true,  subOf: "berry" },
   { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true  },
   { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true  },
   { id: "banana",      label: "Banana",             group: "fruity",   common: true  },
@@ -1555,7 +1563,7 @@ const COMPOUNDS = [
   { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
   { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
   { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
-  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; the beer and coffee staling marker. Also a high-impact aldehyde in raw millet, where the same waxy-cardboard edge is just part of the grain's native smell rather than a sign of age." },
+  { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; the beer and coffee staling marker. Also a high-impact aldehyde in raw millet and fresh cranberry, where the same waxy-cardboard edge is just part of the native smell rather than a sign of age." },
   { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
   { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
   // ketones / norisoprenoids
@@ -1566,7 +1574,7 @@ const COMPOUNDS = [
   { id: "vinguai",       label: "4-Vinylguaiacol",   class: "phenol",    threshold: "low",      specificity: "shared",    thresholdSrc: "~3 ppb (Czerny & Grosch 2000).", note: "Clove-spicy phenol; wheat beer, robusta." },
   { id: "eugenol",       label: "Eugenol",           class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "~6 ppb (Buttery 1981).", note: "Clove phenylpropene." },
   // Norisoprenoids
-  { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Ahmed, Dennison, Dougherty & Shibamoto 1978).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents." },
+  { id: "ionone",        label: "β-Ionone",          class: "norisoprenoid", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.007 ppb in water (Ahmed, Dennison, Dougherty & Shibamoto 1978); also a key aroma-active compound in cranberry (Zhu et al. 2016).", note: "Violet principal odorant; raspberry, blackberry, tomato, tea accents — and a genuine aroma-active contributor in cranberry, where it adds a faint violet/floral facet most people wouldn't expect from a tart red berry." },
   // Alcohols (non-terpene)
   { id: "octen3ol",      label: "1-Octen-3-ol",      class: "alcohol",   commonName: "mushroom alcohol", threshold: "low",      specificity: "signature", thresholdSrc: "~10 ppb (Combet et al. 2006).", note: "The 'mushroom alcohol.' Fresh-mushroom, forest-floor, blue-cheese accents." },
   // More furans (Maillard / fruit)
@@ -1603,7 +1611,9 @@ const COMPOUNDS = [
   { id: "yuzunone",      label: "Yuzunone",          class: "ketone",    commonName: "(6Z,8E)-undeca-6,8,10-trien-3-one", threshold: "low", specificity: "signature", thresholdSrc: "Identified for the first time in yuzu and not detected in other citrus species studied (Miyazawa et al. 2009).", note: "Found nowhere else in citrus when first characterized — about as close to a one-fruit signature compound as aroma chemistry gets." },
   { id: "nmeanthr",      label: "Methyl N-methylanthranilate", class: "ester", threshold: "low", specificity: "signature", thresholdSrc: "Key contributor to mandarin cold-pressed oil aroma, alongside thymol (Wilson & Shaw 1981).", note: "The N-methylated cousin of methyl anthranilate (grape's 'foxy' note) — a sharper, more pungent compound unique to mandarin/tangerine peel oil." },
   { id: "nootkatone",    label: "Nootkatone",        class: "ketone",    threshold: "low", specificity: "signature", thresholdSrc: "Detectable to ~1 ppm in water; identified as grapefruit's defining flavor constituent (MacLeod & Buigues 1964).", note: "The grapefruit compound — woody, bitter, unmistakably grapefruit even at trace levels. Forms naturally from the oxidation of valencene." },
-  { id: "sinensal",      label: "α/β-Sinensal",      class: "aldehyde",  threshold: "low", specificity: "signature", thresholdSrc: "Found specifically in white pomelo peel in GC-MS profiling (Gupta, Dhua, Sahu, Abate & Mastinu 2021).", note: "A sesquiterpene aldehyde pair distinguishing pomelo from its own descendant, grapefruit, even though the two share most of their other chemistry." }
+  { id: "sinensal",      label: "α/β-Sinensal",      class: "aldehyde",  threshold: "low", specificity: "signature", thresholdSrc: "Found specifically in white pomelo peel in GC-MS profiling (Gupta, Dhua, Sahu, Abate & Mastinu 2021).", note: "A sesquiterpene aldehyde pair distinguishing pomelo from its own descendant, grapefruit, even though the two share most of their other chemistry." },
+  // ---- Berry varietal expansion ----
+  { id: "acetoin",       label: "Acetoin",           class: "ketone",    commonName: "3-hydroxybutan-2-one", threshold: "medium", specificity: "shared", thresholdSrc: "Confirmed by aroma recombination/omission as a key pomegranate aroma compound, alongside β-myrcene and (Z)-3-hexen-1-ol (Zhang et al. 2025).", note: "A milder, sweeter cousin of diacetyl's buttery note. In pomegranate it contributes a soft creamy facet underneath the fruit's sharper green/floral top notes." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1634,6 +1644,14 @@ const EDGES = [
   // Berry
   { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Klesk & Qian 2003 (blackberry esters incl. ethyl hexanoate)." },
   { note: "berry",       cpd: "bdam",      w: 0.55, cite: "Sefton et al. 2011 (β-damascenone in wine/fruit)." },
+  // Berry varietals — cranberry, red currant, cassis, pomegranate
+  { note: "cranberry",   cpd: "ethex",     w: 0.50, cite: "Zhu et al. 2016 (ethyl-2-methylbutyrate/ester base, shared with berry)." },
+  { note: "cranberry",   cpd: "e2non",     w: 0.55, cite: "Zhu et al. 2016 ((E)-2-nonenal among cranberry's key aroma-active compounds, by GC-O/OAV)." },
+  { note: "redcurrant",  cpd: "ethex",     w: 0.55, cite: "Shared berry ester base; no dedicated red-currant aroma-compound study found." },
+  { note: "cassis",      cpd: "ethex",     w: 0.50, cite: "Shared berry ester base." },
+  { note: "cassis",      cpd: "mmp4",      w: 0.80, cite: "Tominaga et al. 1998 (4MMP, the signature blackcurrant-bud/cassis thiol)." },
+  { note: "pomegranate", cpd: "ethex",     w: 0.45, cite: "Zhang et al. 2025 (ester contribution, shared with berry)." },
+  { note: "pomegranate", cpd: "acetoin",   w: 0.55, cite: "Zhang et al. 2025 (acetoin confirmed via aroma recombination/omission tests)." },
   // Stonefruit / apple
   { note: "stonefruit",  cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
   { note: "stonefruit",  cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
@@ -1909,6 +1927,7 @@ const COMPOUND_ORIGINS = {
   benzald:       "Bitter almond, marzipan, cherry pits, apricot kernels, almond extract. All the kernels of the stone-fruit family share it; they're botanical cousins.",
   phenylacet:    "Honey (the principal floral-honey note), rose, hyacinth, buckwheat honey, cocoa. Made when the amino acid phenylalanine breaks down under heat or fermentation.",
   diacetyl:      "Butter (where it IS the butter smell), buttery popcorn, butterscotch, cultured dairy. Made by lactic acid bacteria, the same ones behind dairy cultures and the malolactic fermentation that softens many wines and sour beers.",
+  acetoin:       "A softer, sweeter relative of diacetyl found in cultured dairy, wine, and — less expectedly — pomegranate, where it contributes a creamy undertone beneath the fruit's sharper top notes.",
   bdam:          "Rose (the namesake: Rosa damascena, the Damask rose), cooked apple, honey, black tea, tomato, grape, raspberry, tobacco. Also a major contributor to aged beverages.",
   guaiacol:      "Smoke (the principal smoky-medicinal note), charred wood, roasted coffee, smoked foods, smoked teas like Lapsang Souchong. Also extracted from charred wood during barrel aging.",
   vinguai:       "Clove (a key part of clove's bite), smoke, wheat beer (where the yeast builds it from the wort), robusta coffee.",
@@ -1991,6 +2010,22 @@ const NOTE_ORIGINS = {
                   cultivationDate: "One of the small number of true wild Citrus species (alongside citron and mandarin) that all other cultivated citrus descend from as hybrids; cultivated in China for over two thousand years.",
                   modernNote: "Pomelo is grapefruit's own ancestor — roughly 63% of the grapefruit genome traces back to it — making this the rare case on the map where a 'varietal' actually predates the thing it's being compared against.",
                   citeKeys: ["wu2018citrus"] },
+  cranberry:    { region: "Northeastern North America", lat: 42, lon: -71, certainty: "known", country: "United States",
+                  cultivationDate: "Foraged by the Wampanoag and other Indigenous peoples for roughly 8000 years before European contact; first commercially cultivated in 1816 on Cape Cod.",
+                  modernNote: "Cranberry is one of the most recently domesticated fruits on this map — genomic analysis places its breeding history almost entirely within the last two centuries, a sharp contrast to crops with millennia of selection behind them.",
+                  citeKeys: ["diazgarcia2020cranberry"] },
+  redcurrant:   { region: "Northern France / Belgium", lat: 50, lon: 3, certainty: "approximate",
+                  cultivationDate: "Archaeobotanical and historical evidence places red currant's shift from wild-gathered to cultivated garden fruit in the late medieval and early modern period, roughly 500-600 years ago.",
+                  modernNote: "Red currant has no ancient domestication story — it's a comparatively recent European garden fruit, valued by medieval doctors before its systematic cultivation began in earnest around the 15th century.",
+                  citeKeys: ["wiethold2016currant"] },
+  cassis:       { region: "Northern / Northwestern Europe", lat: 52, lon: 8, certainty: "approximate",
+                  cultivationDate: "Shares red currant's late-medieval shift from wild to cultivated fruit, with the same northern/northwestern European center of diversity.",
+                  modernNote: "Black currant was prized in folk medicine specifically for its pronounced smell — already remarked on as 'most marked' in taste and odor among northern European garden fruits.",
+                  citeKeys: ["wiethold2016currant"] },
+  pomegranate:  { region: "Iranian Plateau / Transcaucasia", lat: 35, lon: 50, certainty: "known", country: "Iran",
+                  cultivationDate: "Genomic and archaeological evidence places domestication in the Iranian Plateau and Transcaucasia region, with carbonized remains from Bronze Age Jericho and Arad among the earliest finds.",
+                  modernNote: "Pomegranate is among the very first fruits ever domesticated, in the same early cohort as figs, dates, and olives — its cultivation predates most of the grains on this map.",
+                  citeKeys: ["slonimsky2025pomegranate"] },
   stonefruit:   { region: "Yangzi River valley, China", lat: 36, lon: 108, certainty: "known",
                   cultivationDate: "Selection for preferred peach stones dates to roughly 8000 years before present. Stones close to modern size and shape appear by about 5300 to 4300 years before present.",
                   modernNote: "Early peach stones are notably smaller than modern fruit. Size and shape changed gradually over thousands of years, not through one domestication event.",
@@ -2339,6 +2374,20 @@ const REFERENCES = {
     title: "Variation in phytochemical, antioxidant and volatile composition of pomelo fruit (Citrus grandis (L.) Osbeck) during seasonal growth and development.",
     journal: "Plants",
     volume: "10", issue: "9", pages: "1941"
+  },
+  "zhu2016cranberry": {
+    authors: "Zhu, J., Chen, F., Wang, L., Niu, Y., Chen, H., Wang, H., & Xiao, Z.",
+    year: 2016,
+    title: "Characterization of the key aroma volatile compounds in cranberry (Vaccinium macrocarpon Ait.) using gas chromatography-olfactometry (GC-O) and odor activity value (OAV).",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "64", issue: "24", pages: "4990–4999"
+  },
+  "zhang2025pomegranate": {
+    authors: "Zhang, Y., Guo, W., Qu, H., Zhang, L., Liu, L., Hu, X., & Liu, Y.",
+    year: 2025,
+    title: "Identification of key aroma substances in pomegranate from different geographical origins via integrated volatile profiling and multivariate statistical analysis.",
+    journal: "Foods",
+    volume: "14", issue: "20", pages: "3546"
   }
 };
 
@@ -2372,7 +2421,9 @@ const CITE_TO_REF = [
   ["MacLeod & Buigues 1964",      "macleod1964nootkatone"],
   ["Chisholm et al. 2003",        "chisholm2003lime"],
   ["Gupta, Dhua, Sahu, Abate & Mastinu 2021", "gupta2021pomelo"],
-  ["Gupta et al. 2021",           "gupta2021pomelo"]
+  ["Gupta et al. 2021",           "gupta2021pomelo"],
+  ["Zhu et al. 2016",             "zhu2016cranberry"],
+  ["Zhang et al. 2025",           "zhang2025pomegranate"]
 ];
 
 function refForCite(citeString) {
@@ -2431,6 +2482,9 @@ const ORIGIN_REFERENCES = {
   wang2018mandarin: { authors: "Wang, L., He, F., Huang, Y., et al.", year: 2018, title: "Genome of wild mandarin and domestication history of mandarin.", journal: "Molecular Plant", volume: "11", issue: "8", pages: "1024–1037" },
   fairchild1938meyer: { type: "book", authors: "Fairchild, D.", year: 1938, title: "The World Was My Garden: Travels of a Plant Explorer.", publisher: "Charles Scribner's Sons", note: "Memoir by Meyer's USDA supervisor documenting Frank N. Meyer's 1905-1918 plant-collecting expeditions through China, including the 1908 discovery of the dwarf lemon that bears his name." },
   ferrari1646orange: { type: "historical", authors: "Ferrari, G.B.", year: 1646, title: "Hesperides, sive de malorum aureorum cultura et usu libri quatuor", note: "Botanical treatise describing red-fleshed oranges observed via Mediterranean trade routes; the earliest known written reference to what would become the blood orange." },
+  diazgarcia2020cranberry: { authors: "Diaz-Garcia, L., Covarrubias-Pazaran, G., Johnson-Cicalese, J., Vorsa, N., & Zalapa, J.", year: 2020, title: "Genotyping-by-sequencing identifies historical breeding stages of the recently domesticated American cranberry.", journal: "Frontiers in Plant Science", volume: "11", pages: "607770" },
+  wiethold2016currant: { type: "book", authors: "Wiethold, J.", year: 2016, title: "Red currant and black current, new cultivated fruits in late medieval and early modern Europe: historic and archaeobotanical evidence.", publisher: "in Des fruits d'ici et d'ailleurs (ed. M.-P. Ruas), pp. 267-284" },
+  slonimsky2025pomegranate: { authors: "Slonimsky, A., Lovky, O., Harel-Beja, R., Bar-Ya'akov, I., Eshed, R., Sherman, A., Holland, D., & Ophir, R.", year: 2025, title: "The pomegranate (Punica granatum L. cv. 'Wonderful') genome and P. protopunica shed light on pomegranate domestication. Is Daru a wild stock?", journal: "BMC Genomics", volume: "26", issue: "1", pages: "928" },
 };
 
 function formatOriginRef(ref) {
@@ -2465,10 +2519,10 @@ const WAIS_DESCRIPTORS = [
     { word: "watermelon",        notes: ["melon"] },
     { word: "strawberry",        notes: ["strawberry", "berry"] },
     { word: "blackberry",        notes: ["blackberry", "berry", "violet"] },
-    { word: "cranberry",         notes: ["berry"] },
-    { word: "red currant",       notes: ["berry"] },
-    { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
-    { word: "pomegranate",       notes: ["berry", "winey"] },
+    { word: "cranberry",         notes: ["cranberry"] },
+    { word: "red currant",       notes: ["redcurrant"] },
+    { word: "black currant / cassis", notes: ["cassis", "passionfruit"] },
+    { word: "pomegranate",       notes: ["pomegranate", "winey"] },
     { word: "red cherry",        notes: ["cherry", "berry"] },
     { word: "black cherry",      notes: ["cherry", "winey"] },
     { word: "plum",              notes: ["stonefruit", "berry"] },
