@@ -1503,6 +1503,9 @@ const NOTES = [
   { id: "green",       label: "Green / grassy",     group: "earthy",   common: true  },
   { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true  },
   { id: "mint",        label: "Mint",               group: "earthy",   common: true  },
+  { id: "peppermint",  label: "Peppermint",         group: "earthy",   common: true,  subOf: "mint" },
+  { id: "spearmint",   label: "Spearmint",          group: "earthy",   common: true,  subOf: "mint" },
+  { id: "wintergreen", label: "Wintergreen",        group: "earthy",   common: true,  subOf: "mint" },
   { id: "tobacco",     label: "Tobacco",            group: "earthy",   common: false },
   // sweet
   { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true  },
@@ -1613,7 +1616,11 @@ const COMPOUNDS = [
   { id: "nootkatone",    label: "Nootkatone",        class: "ketone",    threshold: "low", specificity: "signature", thresholdSrc: "Detectable to ~1 ppm in water; identified as grapefruit's defining flavor constituent (MacLeod & Buigues 1964).", note: "The grapefruit compound — woody, bitter, unmistakably grapefruit even at trace levels. Forms naturally from the oxidation of valencene." },
   { id: "sinensal",      label: "α/β-Sinensal",      class: "aldehyde",  threshold: "low", specificity: "signature", thresholdSrc: "Found specifically in white pomelo peel in GC-MS profiling (Gupta, Dhua, Sahu, Abate & Mastinu 2021).", note: "A sesquiterpene aldehyde pair distinguishing pomelo from its own descendant, grapefruit, even though the two share most of their other chemistry." },
   // ---- Berry varietal expansion ----
-  { id: "acetoin",       label: "Acetoin",           class: "ketone",    commonName: "3-hydroxybutan-2-one", threshold: "medium", specificity: "shared", thresholdSrc: "Confirmed by aroma recombination/omission as a key pomegranate aroma compound, alongside β-myrcene and (Z)-3-hexen-1-ol (Zhang et al. 2025).", note: "A milder, sweeter cousin of diacetyl's buttery note. In pomegranate it contributes a soft creamy facet underneath the fruit's sharper green/floral top notes." }
+  { id: "acetoin",       label: "Acetoin",           class: "ketone",    commonName: "3-hydroxybutan-2-one", threshold: "medium", specificity: "shared", thresholdSrc: "Confirmed by aroma recombination/omission as a key pomegranate aroma compound, alongside β-myrcene and (Z)-3-hexen-1-ol (Zhang et al. 2025).", note: "A milder, sweeter cousin of diacetyl's buttery note. In pomegranate it contributes a soft creamy facet underneath the fruit's sharper green/floral top notes." },
+  // ---- Mint varietal expansion ----
+  { id: "menthone",      label: "Menthone",          class: "ketone",    threshold: "medium", specificity: "shared", thresholdSrc: "~26% of peppermint essential oil, second only to menthol (Buleandră et al. 2016).", note: "Peppermint's second-largest component after menthol — a sharper, more herbaceous ketone that rounds out the cooling menthol note rather than standing alone." },
+  { id: "carvone",       label: "L-Carvone",         class: "ketone",    threshold: "low",      specificity: "signature", thresholdSrc: "~52% of spearmint essential oil, its dominant component (Buleandră et al. 2016).", note: "Spearmint's defining compound — sweeter and less cooling than menthol. The same ketone's mirror-image isomer, D-carvone, smells like caraway/rye instead, one of chemistry's clearest examples of a molecule's 3D shape changing its smell." },
+  { id: "methylsalicylate", label: "Methyl salicylate", class: "ester",  commonName: "oil of wintergreen", threshold: "low", specificity: "signature", thresholdSrc: "The dominant constituent of wintergreen essential oil (Michel & Olszewska 2024).", note: "Medicinal, root-beer-adjacent, unmistakably 'wintergreen' — and chemically unrelated to menthol. Wintergreen (Gaultheria procumbens) isn't even in the mint family; it just got grouped in by flavor convention." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1779,6 +1786,11 @@ const EDGES = [
 
   { note: "mint",       cpd: "menthol",  w: 0.95, cite: "Lawrence 2007 (menthol, mint principal)." },
   { note: "mint",       cpd: "cineole",  w: 0.40, cite: "Lawrence 2007 (1,8-cineole, minor mint constituent)." },
+  // Mint varietals — peppermint, spearmint, wintergreen
+  { note: "peppermint", cpd: "menthol",  w: 0.90, cite: "Buleandră et al. 2016 (menthol, dominant peppermint component)." },
+  { note: "peppermint", cpd: "menthone", w: 0.55, cite: "Buleandră et al. 2016 (menthone, peppermint's second-largest component)." },
+  { note: "spearmint",  cpd: "carvone",  w: 0.85, cite: "Buleandră et al. 2016 (L-carvone, dominant spearmint component, ~52% of oil)." },
+  { note: "wintergreen", cpd: "methylsalicylate", w: 0.90, cite: "Michel & Olszewska 2024 (methyl salicylate, wintergreen's dominant constituent)." },
 
   // ---- New compounds' edges to existing notes ----
   { note: "violet",     cpd: "ionone",   w: 0.85, cite: "Ohloff 1994 (β-ionone, violet principal odorant)." },
@@ -1938,6 +1950,9 @@ const COMPOUND_ORIGINS = {
   cineole:       "Eucalyptus leaves (the principal odorant, koala food), rosemary, sage, bay, cardamom, mint family. Produces a cooling sensation in the nose along with the smell.",
   geosmin:       "Wet soil after rain, the source of the word 'petrichor.' Also beetroot, cooked spinach, freshwater fish, cork-tainted wine. Humans detect it at parts-per-trillion in water.",
   menthol:       "Peppermint (the principal aroma), spearmint, mint-family herbs. Activates the cold receptor in your nose and mouth, creating the chilly sensation even at room temperature.",
+  menthone:      "Peppermint oil, where it sits just behind menthol as the second-largest component — sharper and more herbaceous, filling out the cooling menthol note rather than reading as a separate smell.",
+  carvone:       "Spearmint oil, where it's the dominant component outright (not just a peppermint-style supporting compound). Its mirror-image isomer smells almost nothing like it — caraway and rye bread instead of mint.",
+  methylsalicylate: "Wintergreen oil (its dominant component, hence 'oil of wintergreen'), birch bark, and old-fashioned root beer and medicated balms. The plant it's named for, Gaultheria procumbens, isn't a mint at all.",
   methanthr:     "Concord and other 'slip-skin' American grapes (Vitis labrusca) — the grape-jelly, grape-soda, 'cotton-candy grape' smell. Also a trace in citrus blossom and some honeys. Largely absent from European wine grapes. In confectionery: paired with raspberry ketone it forms the core of artificial blue raspberry and cotton-candy flavors — the two compounds together are what most people are actually tasting when they recognize 'blue raspberry.'",
   raspketone:    "Raspberries, where it's the defining aroma; also smaller amounts in cranberry, blackberry, and rhubarb. In confectionery: combined with methyl anthranilate (the Concord grape compound) it drives artificial blue raspberry and cotton-candy flavors across candy, soda, and bubble gum — a case where two natural-source compounds are deployed together to build a flavor that doesn't correspond to any single fruit.",
   pearester:     "Ripe Bartlett (Williams) pears above all, where it defines the 'pear' smell; also apple, quince, and Concord grape in traces. One of the most pear-specific molecules known.",
@@ -2144,6 +2159,15 @@ const NOTE_ORIGINS = {
                   modernNote: "Wild and early domesticated Capsicum is pungent. The sweet, non-pungent bell pepper is a much more recent selection for a mutation that removes capsaicin, mostly bred in 19th and 20th century Europe.",
                   citeKeys: ["perry2007capsicum"] },
   mint:         { region: "Mediterranean / Europe",     lat: 42,  lon: 15,   certainty: "approximate" },
+  peppermint:   { region: "Essex, England", lat: 51.9, lon: 0.6, certainty: "known", country: "United Kingdom",
+                  cultivationDate: "First documented growing wild beside streams and millponds in rural Essex around 1690, noted by naturalist John Ray in 1682; Linnaeus formally named it Mentha piperita in 1753.",
+                  modernNote: "Peppermint is a natural hybrid of watermint and spearmint, not an ancient domesticate — every peppermint plant alive descends from that one chance 17th-century cross, propagated by cuttings ever since because the hybrid is sterile.",
+                  citeKeys: ["buleandra2016mint"] },
+  spearmint:    { region: "Mediterranean basin", lat: 38, lon: 15, certainty: "approximate",
+                  modernNote: "Spearmint is itself believed to be of hybrid origin (a cross of round-leaved and long-leaved wild mints), with no single confirmed point of origin — fitting, since its own offspring (peppermint) repeated the same hybrid-origin pattern a few thousand years later." },
+  wintergreen:  { region: "Northeastern North America", lat: 44, lon: -71, certainty: "known", country: "United States",
+                  modernNote: "Wintergreen isn't a mint at all — Gaultheria procumbens is in the heath family (Ericaceae), unrelated to Mentha. Eastern Woodlands peoples used it medicinally for muscle and joint pain long before it was grouped in with 'minty' flavors by modern flavor convention.",
+                  citeKeys: ["michel2024wintergreen"] },
   tobacco:      { region: "Caribbean / Mesoamerica", lat: 15.77, lon: -84.56, certainty: "known",
                   cultivationDate: "Domestication of the genus Nicotiana is estimated to have begun 6000 to 8000 years ago in the Andes of South America, with cultivated species like N. rustica developing separately further north.",
                   modernNote: "Domesticated tobacco has larger leaves and higher nicotine content than its wild relatives, the product of deliberate selection over thousands of years.",
@@ -2388,6 +2412,20 @@ const REFERENCES = {
     title: "Identification of key aroma substances in pomegranate from different geographical origins via integrated volatile profiling and multivariate statistical analysis.",
     journal: "Foods",
     volume: "14", issue: "20", pages: "3546"
+  },
+  "buleandra2016mint": {
+    authors: "Buleandră, M., Oprea, E., Popa, D.E., David, I.G., Moldovan, Z., Mihai, I., & Badea, I.A.",
+    year: 2016,
+    title: "Comparative chemical analysis of Mentha piperita and M. spicata and a fast assessment of commercial peppermint teas.",
+    journal: "Natural Product Communications",
+    volume: "11", issue: "4", pages: "433"
+  },
+  "michel2024wintergreen": {
+    authors: "Michel, P., & Olszewska, M.A.",
+    year: 2024,
+    title: "Phytochemistry and biological profile of Gaultheria procumbens L. and wintergreen essential oil: from traditional application to molecular mechanisms and therapeutic targets.",
+    journal: "International Journal of Molecular Sciences",
+    volume: "25", issue: "1", pages: "565"
   }
 };
 
@@ -2423,7 +2461,9 @@ const CITE_TO_REF = [
   ["Gupta, Dhua, Sahu, Abate & Mastinu 2021", "gupta2021pomelo"],
   ["Gupta et al. 2021",           "gupta2021pomelo"],
   ["Zhu et al. 2016",             "zhu2016cranberry"],
-  ["Zhang et al. 2025",           "zhang2025pomegranate"]
+  ["Zhang et al. 2025",           "zhang2025pomegranate"],
+  ["Buleandră et al. 2016",       "buleandra2016mint"],
+  ["Michel & Olszewska 2024",     "michel2024wintergreen"]
 ];
 
 function refForCite(citeString) {
@@ -2485,6 +2525,8 @@ const ORIGIN_REFERENCES = {
   diazgarcia2020cranberry: { authors: "Diaz-Garcia, L., Covarrubias-Pazaran, G., Johnson-Cicalese, J., Vorsa, N., & Zalapa, J.", year: 2020, title: "Genotyping-by-sequencing identifies historical breeding stages of the recently domesticated American cranberry.", journal: "Frontiers in Plant Science", volume: "11", pages: "607770" },
   wiethold2016currant: { type: "book", authors: "Wiethold, J.", year: 2016, title: "Red currant and black current, new cultivated fruits in late medieval and early modern Europe: historic and archaeobotanical evidence.", publisher: "in Des fruits d'ici et d'ailleurs (ed. M.-P. Ruas), pp. 267-284" },
   slonimsky2025pomegranate: { authors: "Slonimsky, A., Lovky, O., Harel-Beja, R., Bar-Ya'akov, I., Eshed, R., Sherman, A., Holland, D., & Ophir, R.", year: 2025, title: "The pomegranate (Punica granatum L. cv. 'Wonderful') genome and P. protopunica shed light on pomegranate domestication. Is Daru a wild stock?", journal: "BMC Genomics", volume: "26", issue: "1", pages: "928" },
+  buleandra2016mint: { authors: "Buleandră, M., Oprea, E., Popa, D.E., David, I.G., Moldovan, Z., Mihai, I., & Badea, I.A.", year: 2016, title: "Comparative chemical analysis of Mentha piperita and M. spicata and a fast assessment of commercial peppermint teas.", journal: "Natural Product Communications", volume: "11", issue: "4", pages: "433" },
+  michel2024wintergreen: { authors: "Michel, P., & Olszewska, M.A.", year: 2024, title: "Phytochemistry and biological profile of Gaultheria procumbens L. and wintergreen essential oil: from traditional application to molecular mechanisms and therapeutic targets.", journal: "International Journal of Molecular Sciences", volume: "25", issue: "1", pages: "565" },
 };
 
 function formatOriginRef(ref) {
@@ -2557,6 +2599,9 @@ const WAIS_DESCRIPTORS = [
     { word: "eucalyptus",        notes: ["pine", "mint"] },
     { word: "sage",              notes: ["pine", "mint", "chamomile", "lavender"] },
     { word: "thyme",             notes: ["pine", "anise", "mint"] },
+    { word: "peppermint",        notes: ["peppermint"] },
+    { word: "spearmint / chewing gum mint", notes: ["spearmint"] },
+    { word: "wintergreen / medicated balm", notes: ["wintergreen"] },
     { word: "beetroot",          notes: ["mushroom"] },
     { word: "olive",             notes: ["green", "bellpepper"] },
     { word: "green bean",        notes: ["green", "bellpepper"] },
@@ -4033,7 +4078,7 @@ function renderNoteDetail(noteId) {
             </tr>`).join("")}
         </tbody>
       </table>
-      <p class="cereal-table-caption">This is what's layered on top of ${n.label}'s own shared compounds (above), where the evidence actually shows something distinct — not where it'd be tidy to invent a difference for every variety.</p>
+      <p class="cereal-table-caption">Each row is on top of ${n.label}'s own compounds (above); some varieties have a literature-confirmed compound that sets them apart, some don't.</p>
     </div>
       `;
     })()}
