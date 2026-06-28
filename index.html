@@ -1461,7 +1461,11 @@ const NOTES = [
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true  },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
+  { id: "orangeblossom", label: "Orange blossom",  group: "floral",   common: true,  subOf: "jasmine" },
+  { id: "honeysuckle", label: "Honeysuckle",        group: "floral",   common: true,  subOf: "jasmine" },
   { id: "lavender",    label: "Lavender",           group: "floral",   common: true  },
+  { id: "sage",        label: "Sage",               group: "floral",   common: true,  subOf: "lavender" },
+  { id: "thyme",       label: "Thyme",              group: "floral",   common: true,  subOf: "lavender" },
   { id: "chamomile",   label: "Chamomile",          group: "floral",   common: true  },
   { id: "violet",      label: "Violet",             group: "floral",   common: false },
   // roasted
@@ -1499,6 +1503,7 @@ const NOTES = [
   // earthy
   { id: "woody",       label: "Woody / cedar",      group: "earthy",   common: true  },
   { id: "pine",        label: "Pine / resin",       group: "earthy",   common: true  },
+  { id: "eucalyptus",  label: "Eucalyptus",         group: "earthy",   common: true,  subOf: "pine" },
   { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false },
   { id: "green",       label: "Green / grassy",     group: "earthy",   common: true  },
   { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true  },
@@ -1620,7 +1625,12 @@ const COMPOUNDS = [
   // ---- Mint varietal expansion ----
   { id: "menthone",      label: "Menthone",          class: "ketone",    threshold: "medium", specificity: "shared", thresholdSrc: "~26% of peppermint essential oil, second only to menthol (Buleandră et al. 2016).", note: "Peppermint's second-largest component after menthol — a sharper, more herbaceous ketone that rounds out the cooling menthol note rather than standing alone." },
   { id: "carvone",       label: "L-Carvone",         class: "ketone",    threshold: "low",      specificity: "signature", thresholdSrc: "~52% of spearmint essential oil, its dominant component (Buleandră et al. 2016).", note: "Spearmint's defining compound — sweeter and less cooling than menthol. The same ketone's mirror-image isomer, D-carvone, smells like caraway/rye instead, one of chemistry's clearest examples of a molecule's 3D shape changing its smell." },
-  { id: "methylsalicylate", label: "Methyl salicylate", class: "ester",  commonName: "oil of wintergreen", threshold: "low", specificity: "signature", thresholdSrc: "The dominant constituent of wintergreen essential oil (Michel & Olszewska 2024).", note: "Medicinal, root-beer-adjacent, unmistakably 'wintergreen' — and chemically unrelated to menthol. Wintergreen (Gaultheria procumbens) isn't even in the mint family; it just got grouped in by flavor convention." }
+  { id: "methylsalicylate", label: "Methyl salicylate", class: "ester",  commonName: "oil of wintergreen", threshold: "low", specificity: "signature", thresholdSrc: "The dominant constituent of wintergreen essential oil (Michel & Olszewska 2024).", note: "Medicinal, root-beer-adjacent, unmistakably 'wintergreen' — and chemically unrelated to menthol. Wintergreen (Gaultheria procumbens) isn't even in the mint family; it just got grouped in by flavor convention." },
+  // ---- Herb/floral varietal expansion ----
+  { id: "aromadendrene", label: "Aromadendrene",     class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "Sesquiterpene found alongside 1,8-cineole in Eucalyptus globulus oil, dominant in the fruit oil and a secondary leaf-oil component (Mulyaningsih et al. 2010).", note: "The woody, slightly camphoraceous undertone beneath eucalyptus's dominant cineole — what separates eucalyptus's smell from plain mentholated cineole." },
+  { id: "thujone",       label: "α-Thujone",         class: "ketone",    threshold: "medium", specificity: "signature", thresholdSrc: "Up to 39–44% of total oil in high-thujone Dalmatian sage chemotypes (Perry et al. 1999).", note: "Sage's characteristic bitter, camphoraceous ketone — also the much-mythologized compound in absinthe and wormwood, though sage's everyday culinary dose is far below any psychoactive threshold." },
+  { id: "thymol",        label: "Thymol",            class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "Dominant constituent of common thyme oil, typically 20–60% depending on chemotype (Stahl-Biskup & Sáez, eds., 2002).", note: "Thyme's defining phenol — warm, herbal, medicinal-sharp. Also the active ingredient in many antiseptic mouthwashes, which is most of why thyme smells 'clinical' to a lot of people." },
+  { id: "farnesol",      label: "Farnesol",          class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "26–51% of Japanese honeysuckle (Lonicera japonica) flower essential oil, its largest component (Schlotzhauer, Pair & Horvat 1996).", note: "A soft, waxy, muguet-like sesquiterpene alcohol — honeysuckle's bulk note, underneath the lighter linalool top note it shares with jasmine." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -1680,8 +1690,16 @@ const EDGES = [
   { note: "rose",          cpd: "bdam",       w: 0.70, cite: "Sefton et al. 2011 (β-damascenone, named for Rosa damascena, the Damask rose)." },
   { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
   { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
+  { note: "orangeblossom", cpd: "linalool",   w: 0.60, cite: "Jabalpurwala, Smoot & Rouseff 2009 (linalool among citrus blossom volatiles' major components)." },
+  { note: "orangeblossom", cpd: "methanthr",  w: 0.55, cite: "Jabalpurwala, Smoot & Rouseff 2009 (methyl anthranilate identified across citrus blossom headspace volatiles)." },
+  { note: "honeysuckle",   cpd: "linalool",   w: 0.55, cite: "Schlotzhauer, Pair & Horvat 1996 (linalool among Japanese honeysuckle's floral volatiles)." },
+  { note: "honeysuckle",   cpd: "farnesol",   w: 0.85, cite: "Schlotzhauer, Pair & Horvat 1996 (farnesol, 26–51% of Japanese honeysuckle flower oil, its largest component)." },
   { note: "lavender",      cpd: "linalool",       w: 0.80, cite: "Lis-Balchin 2002 (linalool ~30% lavender oil)." },
   { note: "lavender",      cpd: "linalylacetate", w: 0.90, cite: "Lis-Balchin 2002 (linalyl acetate ~40% lavender oil)." },
+  { note: "sage",          cpd: "linalool",       w: 0.30, cite: "Lis-Balchin 2002 (minor sage constituent, shared with lavender)." },
+  { note: "sage",          cpd: "thujone",        w: 0.90, cite: "Perry et al. 1999 (α/β-thujone, up to 39–44% in high-thujone Dalmatian sage chemotypes)." },
+  { note: "thyme",         cpd: "linalool",       w: 0.25, cite: "Stahl-Biskup & Sáez, eds., 2002 (linalool, minor constituent in non-thymol thyme chemotypes)." },
+  { note: "thyme",         cpd: "thymol",         w: 0.90, cite: "Stahl-Biskup & Sáez, eds., 2002 (thymol, dominant constituent of common thyme oil, 20–60% depending on chemotype)." },
   { note: "chamomile",     cpd: "bisabolol",      w: 0.85, cite: "Mann & Staba 1986 (α-bisabolol, chamomile principal)." },
   { note: "chamomile",     cpd: "linalool",       w: 0.35, cite: "Mann & Staba 1986 (minor chamomile constituent)." },
   { note: "violet",        cpd: "bdam",       w: 0.65, cite: "Sefton et al. 2011 (damascones/ionones)." },
@@ -1745,6 +1763,8 @@ const EDGES = [
   { note: "woody",      cpd: "gnonal",   w: 0.45, cite: "Lee & Noble 2003 (oak lactones-adjacent)." },
   { note: "pine",       cpd: "apinene",  w: 0.95, cite: "Ohloff 1994." },
   { note: "pine",       cpd: "myrcene",  w: 0.45, cite: "Ohloff 1994." },
+  { note: "eucalyptus", cpd: "cineole",  w: 0.90, cite: "Mulyaningsih et al. 2010 (1,8-cineole, dominant Eucalyptus globulus leaf-oil component)." },
+  { note: "eucalyptus", cpd: "aromadendrene", w: 0.55, cite: "Mulyaningsih et al. 2010 (aromadendrene, secondary leaf-oil terpene, dominant in fruit oil)." },
   { note: "mushroom",   cpd: "hexanal",  w: 0.25, cite: "Combet et al. 2006 (C8 vs C6; partial overlap)." },
   { note: "green",      cpd: "hexanal",  w: 0.90, cite: "Hatanaka 1993 (green leaf volatiles, C6 aldehydes)." },
   { note: "bellpepper", cpd: "ibmp",     w: 0.95, cite: "Buttery, Seifert, Guadagni & Ling 1969 (IBMP in bell pepper; odor threshold ~2 ng/L)." },
@@ -1953,6 +1973,10 @@ const COMPOUND_ORIGINS = {
   menthone:      "Peppermint oil, where it sits just behind menthol as the second-largest component — sharper and more herbaceous, filling out the cooling menthol note rather than reading as a separate smell.",
   carvone:       "Spearmint oil, where it's the dominant component outright (not just a peppermint-style supporting compound). Its mirror-image isomer smells almost nothing like it — caraway and rye bread instead of mint.",
   methylsalicylate: "Wintergreen oil (its dominant component, hence 'oil of wintergreen'), birch bark, and old-fashioned root beer and medicated balms. The plant it's named for, Gaultheria procumbens, isn't a mint at all.",
+  aromadendrene: "Eucalyptus globulus oil, where it sits alongside 1,8-cineole — dominant in the fruit oil, a secondary woody-camphoraceous note in the more commonly distilled leaf oil.",
+  thujone:       "Sage (Salvia officinalis), where it's the principal bitter, camphoraceous component; also wormwood and absinthe, where it's the much-mythologized compound behind that liqueur's old reputation.",
+  thymol:        "Thyme (Thymus vulgaris), its dominant constituent in most chemotypes; also oregano, and many over-the-counter antiseptic mouthwashes and throat lozenges, which is much of why thyme smells 'clinical' to most people.",
+  farnesol:      "Japanese honeysuckle (Lonicera japonica) flowers, where it's the largest single component of the floral oil; also a minor constituent of many other florals, lending a soft, waxy, lily-of-the-valley undertone.",
   methanthr:     "Concord and other 'slip-skin' American grapes (Vitis labrusca) — the grape-jelly, grape-soda, 'cotton-candy grape' smell. Also a trace in citrus blossom and some honeys. Largely absent from European wine grapes. In confectionery: paired with raspberry ketone it forms the core of artificial blue raspberry and cotton-candy flavors — the two compounds together are what most people are actually tasting when they recognize 'blue raspberry.'",
   raspketone:    "Raspberries, where it's the defining aroma; also smaller amounts in cranberry, blackberry, and rhubarb. In confectionery: combined with methyl anthranilate (the Concord grape compound) it drives artificial blue raspberry and cotton-candy flavors across candy, soda, and bubble gum — a case where two natural-source compounds are deployed together to build a flavor that doesn't correspond to any single fruit.",
   pearester:     "Ripe Bartlett (Williams) pears above all, where it defines the 'pear' smell; also apple, quince, and Concord grape in traces. One of the most pear-specific molecules known.",
@@ -2069,7 +2093,14 @@ const NOTE_ORIGINS = {
   // floral
   rose:         { region: "Persia / Central Asia",      lat: 33,  lon: 54,   certainty: "approximate" },
   jasmine:      { region: "South Asia",                 lat: 23,  lon: 78,   certainty: "approximate" },
+  orangeblossom:{ region: "South-central China (Nanling mountains)", lat: 27, lon: 110, certainty: "approximate",
+                  modernNote: "The flower of the same tree as the orange note — sweet orange's native range, not a separate origin story." },
+  honeysuckle:  { region: "East Asia (Japan / Korea / China)", lat: 36, lon: 128, certainty: "approximate",
+                  modernNote: "Introduced to North America and Europe as an ornamental in the 19th century; in much of the eastern US it has since become an aggressive invasive, crowding out native woodland plants." },
   lavender:     { region: "Western Mediterranean",      lat: 44,  lon: 5,    certainty: "known"       },
+  sage:         { region: "Adriatic coast / Balkan Peninsula", lat: 43, lon: 17, certainty: "approximate",
+                  modernNote: "\"Dalmatian sage\" (the Adriatic coast of modern Croatia) is still the benchmark origin for high-thujone Salvia officinalis chemotypes." },
+  thyme:        { region: "Western Mediterranean",      lat: 41,  lon: 2,    certainty: "approximate" },
   chamomile:    { region: "Europe / Western Asia",      lat: 48,  lon: 18,   certainty: "approximate" },
   violet:       { region: "Mediterranean",              lat: 39,  lon: 20,   certainty: "approximate" },
   // roasted
@@ -2158,6 +2189,8 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Starch microfossils place Capsicum domestication and dispersal across the Americas by at least 6000 years before present.",
                   modernNote: "Wild and early domesticated Capsicum is pungent. The sweet, non-pungent bell pepper is a much more recent selection for a mutation that removes capsaicin, mostly bred in 19th and 20th century Europe.",
                   citeKeys: ["perry2007capsicum"] },
+  eucalyptus:   { region: "Tasmania / Southeastern Australia", lat: -42, lon: 147, certainty: "known", country: "Australia",
+                  modernNote: "Eucalyptus globulus was exported worldwide for plantation forestry starting in the 19th century, well outside the pre-Columbian-Exchange framing used for most other notes on this map — its spread is a much more recent, colonial-era story." },
   mint:         { region: "Mediterranean / Europe",     lat: 42,  lon: 15,   certainty: "approximate" },
   peppermint:   { region: "Essex, England", lat: 51.9, lon: 0.6, certainty: "known", country: "United Kingdom",
                   cultivationDate: "First documented growing wild beside streams and millponds in rural Essex around 1690, noted by naturalist John Ray in 1682; Linnaeus formally named it Mentha piperita in 1753.",
@@ -2426,6 +2459,41 @@ const REFERENCES = {
     title: "Phytochemistry and biological profile of Gaultheria procumbens L. and wintergreen essential oil: from traditional application to molecular mechanisms and therapeutic targets.",
     journal: "International Journal of Molecular Sciences",
     volume: "25", issue: "1", pages: "565"
+  },
+  "mulyaningsih2010eucalyptus": {
+    authors: "Mulyaningsih, S., Sporer, F., Zimmermann, S., Reichling, J., & Wink, M.",
+    year: 2010,
+    title: "Synergistic properties of the terpenoids aromadendrene and 1,8-cineole from the essential oil of Eucalyptus globulus against antibiotic-susceptible and antibiotic-resistant pathogens.",
+    journal: "Phytomedicine",
+    volume: "17", issue: "13", pages: "1061–1066"
+  },
+  "perry1999sage": {
+    authors: "Perry, N.B., Anderson, R.E., Brennan, N.J., Douglas, M.H., Heaney, A.J., McGimpsey, J.A., & Smallfield, B.M.",
+    year: 1999,
+    title: "Essential oils from Dalmatian sage (Salvia officinalis L.): variations among individuals, plant parts, seasons, and sites.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "47", issue: "5", pages: "2048–2054"
+  },
+  "stahlbiskup2002thyme": {
+    type: "book",
+    authors: "Stahl-Biskup, E., & Sáez, F. (Eds.)",
+    year: 2002,
+    title: "Thyme: The Genus Thymus.",
+    publisher: "Taylor & Francis"
+  },
+  "jabalpurwala2009citrusblossom": {
+    authors: "Jabalpurwala, F.A., Smoot, J.M., & Rouseff, R.L.",
+    year: 2009,
+    title: "A comparison of citrus blossom volatiles.",
+    journal: "Phytochemistry",
+    volume: "70", issue: "11", pages: "1428–1434"
+  },
+  "schlotzhauer1996honeysuckle": {
+    authors: "Schlotzhauer, W.S., Pair, S.D., & Horvat, R.J.",
+    year: 1996,
+    title: "Volatile constituents from the flowers of Japanese honeysuckle (Lonicera japonica).",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "44", issue: "1", pages: "206–209"
   }
 };
 
@@ -2463,7 +2531,12 @@ const CITE_TO_REF = [
   ["Zhu et al. 2016",             "zhu2016cranberry"],
   ["Zhang et al. 2025",           "zhang2025pomegranate"],
   ["Buleandră et al. 2016",       "buleandra2016mint"],
-  ["Michel & Olszewska 2024",     "michel2024wintergreen"]
+  ["Michel & Olszewska 2024",     "michel2024wintergreen"],
+  ["Mulyaningsih et al. 2010",    "mulyaningsih2010eucalyptus"],
+  ["Perry et al. 1999",           "perry1999sage"],
+  ["Stahl-Biskup & Sáez, eds., 2002", "stahlbiskup2002thyme"],
+  ["Jabalpurwala, Smoot & Rouseff 2009", "jabalpurwala2009citrusblossom"],
+  ["Schlotzhauer, Pair & Horvat 1996", "schlotzhauer1996honeysuckle"]
 ];
 
 function refForCite(citeString) {
@@ -2475,6 +2548,9 @@ function refForCite(citeString) {
 }
 
 function formatRefFull(ref) {
+  if (ref.type === "book") {
+    return `${ref.authors} (${ref.year}). <em>${ref.title}</em> ${ref.publisher}.`;
+  }
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
 }
@@ -2588,17 +2664,17 @@ const WAIS_DESCRIPTORS = [
   { category: "Floral", entries: [
     { word: "floral",            notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
     { word: "tea rose",          notes: ["rose", "jasmine"] },
-    { word: "orange blossom",    notes: ["jasmine", "lavender", "orange"] },
-    { word: "honeysuckle",       notes: ["jasmine", "rose", "honey"] }
+    { word: "orange blossom",    notes: ["orangeblossom"] },
+    { word: "honeysuckle",       notes: ["honeysuckle"] }
   ]},
   { category: "Herbal / Vegetal", entries: [
     { word: "herbal",            notes: ["lavender", "chamomile", "anise", "pine", "mint"] },
     { word: "green / vegetal",   notes: ["green", "bellpepper"] },
     { word: "fresh-cut grass",   notes: ["green"] },
     { word: "tomato leaf",       notes: ["green", "bellpepper"] },
-    { word: "eucalyptus",        notes: ["pine", "mint"] },
-    { word: "sage",              notes: ["pine", "mint", "chamomile", "lavender"] },
-    { word: "thyme",             notes: ["pine", "anise", "mint"] },
+    { word: "eucalyptus",        notes: ["eucalyptus"] },
+    { word: "sage",              notes: ["sage"] },
+    { word: "thyme",             notes: ["thyme"] },
     { word: "peppermint",        notes: ["peppermint"] },
     { word: "spearmint / chewing gum mint", notes: ["spearmint"] },
     { word: "wintergreen / medicated balm", notes: ["wintergreen"] },
