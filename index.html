@@ -1602,7 +1602,11 @@ const NOTES = [
   // hides any subOf note from the slider panel, legend, search, and wheel
   // floats; Go Deeper's note detail for "cereal" is the only place they surface,
   // as the distinguishing-compound table (see CEREAL_VARIETAL_TABLE).
-  { id: "cereal",      label: "Cereal / grain",     group: "roasted",  common: true,  family: "Poaceae", order: "Poales" },
+  // ghostRefs: Toast, Burnt sugar, and Popcorn are all genuinely Poaceae too
+  // (wheat, sugarcane, and corn respectively — see their own family/order
+  // above) but are iconic enough flavor notes to keep their own top-level
+  // sliders, same situation as Cherry under Stonefruit.
+  { id: "cereal",      label: "Cereal / grain",     group: "roasted",  common: true,  family: "Poaceae", order: "Poales", ghostRefs: ["toast", "burnt", "popcorn"] },
   { id: "rice",        label: "Rice",               group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
   { id: "wheat",       label: "Wheat",              group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
   { id: "barley",      label: "Barley / malt",      group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
