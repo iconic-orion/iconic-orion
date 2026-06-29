@@ -442,6 +442,12 @@
   .varietal-toggle:hover { color: var(--ink); }
   .varietal-toggle.expanded { transform: rotate(90deg); }
   .note-subrows { padding-left: 16px; border-left: 1px solid var(--line); margin-left: 4px; }
+  /* Ghost row: a read-only, low-opacity mirror of a note that keeps its own
+     top-level row elsewhere (e.g. Cherry inside the Stonefruit dropdown) —
+     informational only, not a second independently-scoreable entry. */
+  .note-row.ghost-row { opacity: 0.5; cursor: pointer; }
+  .note-row.ghost-row:hover { opacity: 0.8; }
+  .note-row.ghost-row input { pointer-events: none; }
 
   /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
      Each note can have up to two confirmed entries — one per phase —
@@ -1548,7 +1554,19 @@ const NOTES = [
   { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
   { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true,  subOf: "berry", genus: "Vaccinium", family: "Ericaceae", order: "Ericales" },
   { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
-  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
+  // ghostRefs: Cherry is genuinely the same genus (Prunus) as stonefruit, but
+  // it's iconic enough to keep its own full top-level slider rather than
+  // become a subOf child like Peach/Plum. ghostRefs surfaces that kinship
+  // anyway — a read-only, low-opacity mirror of Cherry's live value appears
+  // in this dropdown alongside Peach/Plum, without creating a second,
+  // independently-scoreable entry for the same note (see renderGhostRow()).
+  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales", ghostRefs: ["cherry"] },
+  // Peach has no standout compound of its own because the parent slider is
+  // already modeled directly on peach (see gdecal's own cite text below) —
+  // an honest "they're the same" rather than the usual distinguishing case.
+  { id: "peach",       label: "Peach",              group: "fruity",   common: true,  subOf: "stonefruit", genus: "Prunus", family: "Rosaceae", order: "Rosales",
+    noStandoutNote: "Peach IS the profile \"Peach / stonefruit\" is modeled on above — there's no separate compound to distinguish, since this is the default the umbrella slider already represents." },
+  { id: "plum",        label: "Plum",               group: "fruity",   common: true,  subOf: "stonefruit", genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "banana",      label: "Banana",             group: "fruity",   common: true,  genus: "Musa", family: "Musaceae", order: "Zingiberales" },
   { id: "pineapple",   label: "Pineapple",          group: "fruity",   common: true,  genus: "Ananas", family: "Bromeliaceae", order: "Poales" },
@@ -1679,6 +1697,7 @@ const COMPOUNDS = [
   { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     commonName: "banana oil", threshold: "low",      specificity: "signature", thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
   // lactones
   { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone; also mango." },
+  { id: "gddecal",       label: "γ-Dodecalactone",   class: "lactone",   threshold: "low",      specificity: "signature", thresholdSrc: "Identified as a key odor-active compound by OAV in plum (Pino & Quijano 2012).", note: "A longer-chain cousin of peach's γ-decalactone — same lactone family, but the bigger ring reads less coconutty and more specifically plum-like." },
   { id: "gnonal",        label: "γ-Nonalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~30 ppb (Schwab et al. 2008).", note: "Coconut-creamy lactone; aged spirits." },
   { id: "ddecal",        label: "δ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "signature", thresholdSrc: "Native virgin-coconut-oil headspace lactone (Dimzon, Tantengco, Oquendo & Dayrit 2021).", note: "The lactone raw coconut oil itself actually carries — distinct from γ-decalactone/γ-nonalactone, the louder 'coconut' compounds flavorists reach for instead." },
   { id: "sotolon",       label: "Sotolon",           class: "lactone",   threshold: "very-low", specificity: "signature", thresholdSrc: "~0.3 ppb (Pham et al. 1995).", note: "Maple/fenugreek/curry; aged sake, vin jaune." },
@@ -1787,6 +1806,13 @@ const EDGES = [
   // Stonefruit / apple
   { note: "stonefruit",  cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
   { note: "stonefruit",  cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
+  // Peach reuses the parent's own profile exactly (see noStandoutNote on its
+  // NOTES entry) rather than introducing a separate compound.
+  { note: "peach",       cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
+  { note: "peach",       cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
+  { note: "plum",        cpd: "gddecal",   w: 0.75, cite: "Pino & Quijano 2012 (γ-dodecalactone, key odor-active plum compound by OAV)." },
+  { note: "plum",        cpd: "e2mb",      w: 0.65, cite: "Pino & Quijano 2012 (ethyl 2-methylbutanoate, top character-impact plum ester)." },
+  { note: "plum",        cpd: "e2non",     w: 0.45, cite: "Pino & Quijano 2012 ((E)-2-nonenal among plum's key odor-active compounds)." },
   { note: "apple",       cpd: "etbut",     w: 0.75, cite: "Dimick & Hoskin 1983 (apple esters)." },
   { note: "apple",       cpd: "bdam",      w: 0.45, cite: "Sefton et al. 2011." },
   // Banana / mango / passionfruit (replacing generic "tropical")
@@ -2061,6 +2087,7 @@ const COMPOUND_ORIGINS = {
   ethex:         "Berry, apple, pineapple. A heavier fermentation ester, jammier than ethyl butanoate.",
   iaac:          "Banana (where it IS the banana smell), pear, banana-flavored candy. The signature ester of yeast fermentation.",
   gdecal:        "Peach, apricot, mango, ripe stonefruit, dairy. The soft fuzzy-peach quality on the back of your throat.",
+  gddecal:       "Plum, where it's one of the key odor-active compounds by odor activity value. The same lactone family as peach's γ-decalactone, just a longer carbon chain — less coconut-creamy, more specifically plum.",
   gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids, giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
   ddecal:        "Virgin coconut oil's own headspace — the lactone raw coconut actually carries. Milder and less 'coconut-flavor-extract' than γ-decalactone/γ-nonalactone, the louder lactones flavorists reach for instead.",
   sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources: the principal smell of maple syrup IS the principal smell of fenugreek seed.",
@@ -2196,6 +2223,10 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Archaeobotanical remains in South America date to roughly 3500 years ago, with genetic evidence pointing to domestication well before that.",
                   modernNote: "Commercial cultivars like Smooth Cayenne descend from a narrow set of clonal lines, much narrower than the genetic base indigenous breeders worked from.",
                   citeKeys: ["chen2019pineapple"] },
+  // Peach has no separate pin — its origin story is the same one already
+  // told under "stonefruit" above (the parent slider is modeled on peach).
+  plum:         { region: "Caucasus / Western Asia", lat: 42, lon: 44, certainty: "approximate",
+                  modernNote: "European plum (Prunus domestica) is itself believed to be a natural hybrid of two wild species, cherry plum and sloe — Japanese plum (Prunus salicina), a separate domestication in China, is a different species entirely despite the shared English name." },
   cherry:       { region: "Anatolia", lat: 41, lon: 36, certainty: "known", country: "Turkey",
                   cultivationDate: "Genetic research traces sweet cherry's center of origin to the Caucasus / Black Sea region including northern Turkey. The Roman writer Pliny the Elder credited the general Lucullus with bringing cherry trees to Rome from Cerasus (modern Giresun, Turkey) after 74 BCE.",
                   modernNote: "Modern sweet cherry cultivars worldwide carry much less genetic diversity than the wild and traditional populations still found in the Caucasus / Turkey region.",
@@ -2609,6 +2640,13 @@ const REFERENCES = {
     title: "Volatile constituents from the flowers of Japanese honeysuckle (Lonicera japonica).",
     journal: "Journal of Agricultural and Food Chemistry",
     volume: "44", issue: "1", pages: "206–209"
+  },
+  "pino2012plum": {
+    authors: "Pino, J.A., & Quijano, C.E.",
+    year: 2012,
+    title: "Study of the volatile compounds from plum (Prunus domestica L. cv. Horvin) and estimation of their contribution to the fruit aroma.",
+    journal: "Ciência e Tecnologia de Alimentos",
+    volume: "32", issue: "1", pages: "76–83"
   }
 };
 
@@ -2651,7 +2689,8 @@ const CITE_TO_REF = [
   ["Perry et al. 1999",           "perry1999sage"],
   ["Stahl-Biskup & Sáez, eds., 2002", "stahlbiskup2002thyme"],
   ["Jabalpurwala, Smoot & Rouseff 2009", "jabalpurwala2009citrusblossom"],
-  ["Schlotzhauer, Pair & Horvat 1996", "schlotzhauer1996honeysuckle"]
+  ["Schlotzhauer, Pair & Horvat 1996", "schlotzhauer1996honeysuckle"],
+  ["Pino & Quijano 2012", "pino2012plum"]
 ];
 
 function refForCite(citeString) {
@@ -3055,17 +3094,30 @@ function getVisibleNotes() {
 function varietalChildrenOf(parentId) {
   return NOTES.filter(n => n.subOf === parentId);
 }
+// A parent's "ghost" references: notes that are genuinely related (e.g.
+// Cherry is the same genus as stonefruit) but iconic enough to keep their
+// own independent top-level row rather than become a real subOf child. These
+// render as a read-only, low-opacity mirror of that note's live value inside
+// the dropdown — informational only, not a second independent score.
+function ghostChildrenOf(parentId) {
+  const n = NOTE_BY_ID[parentId];
+  return (n && n.ghostRefs || []).map(id => NOTE_BY_ID[id]).filter(Boolean);
+}
+function fillVarietalWrap(wrap, parentId) {
+  varietalChildrenOf(parentId).forEach(c => wrap.appendChild(renderNoteRow(c)));
+  ghostChildrenOf(parentId).forEach(g => wrap.appendChild(renderGhostRow(g, parentId)));
+}
 // Appends a note's row, and — if it's expanded — its varietal children's
 // rows right after it. Shared by buildNotesPanel() and the toggle handler so
 // the expanded set stays correct across a full panel rebuild.
 function appendNoteRowWithVarietals(container, n) {
   container.appendChild(renderNoteRow(n));
-  const children = varietalChildrenOf(n.id);
-  if (children.length > 0 && state.expandedVarietals.has(n.id)) {
+  const hasAny = varietalChildrenOf(n.id).length > 0 || ghostChildrenOf(n.id).length > 0;
+  if (hasAny && state.expandedVarietals.has(n.id)) {
     const wrap = document.createElement("div");
     wrap.className = "note-subrows";
     wrap.dataset.parent = n.id;
-    children.forEach(c => wrap.appendChild(renderNoteRow(c)));
+    fillVarietalWrap(wrap, n.id);
     container.appendChild(wrap);
   }
 }
@@ -3083,10 +3135,59 @@ function toggleVarietalExpansion(parentId, row) {
     const wrap = document.createElement("div");
     wrap.className = "note-subrows";
     wrap.dataset.parent = parentId;
-    varietalChildrenOf(parentId).forEach(c => wrap.appendChild(renderNoteRow(c)));
+    fillVarietalWrap(wrap, parentId);
     row.insertAdjacentElement("afterend", wrap);
     if (toggleBtn) toggleBtn.classList.add("expanded");
   }
+}
+// Read-only mirror row: shows a ghost-referenced note's live intensity
+// without its own slider — clicking scrolls/flashes to the note's real row.
+// Kept in sync by refreshGhostRows(), called at the end of recompute().
+function renderGhostRow(n, parentId) {
+  const row = document.createElement("div");
+  row.className = "note-row ghost-row" + (hasAnyEntry(n.id) ? " has-entries" : "");
+  row.dataset.ghostOf = n.id;
+  row.title = `${n.label} is botanically related to this group too, but keeps its own row above since it's iconic enough on its own. This is a live read-only copy — click to jump to the real one.`;
+
+  const lbl = document.createElement("label");
+  lbl.className = "note-label-text";
+  lbl.textContent = n.label;
+
+  const val = document.createElement("input");
+  val.type = "number"; val.className = "val"; val.disabled = true;
+  val.value = state.pendingIntensity[n.id] || 0;
+  val.tabIndex = -1;
+
+  const slider = document.createElement("input");
+  slider.type = "range"; slider.min = 0; slider.max = 10; slider.disabled = true;
+  slider.value = state.pendingIntensity[n.id] || 0;
+  slider.tabIndex = -1;
+
+  row.appendChild(lbl);
+  row.appendChild(val);
+  row.appendChild(slider);
+  row.addEventListener("click", () => {
+    const targetRow = document.querySelector(`.note-row:not(.ghost-row)[data-note="${n.id}"]`);
+    if (targetRow) {
+      targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+      targetRow.classList.add("flash");
+      setTimeout(() => targetRow.classList.remove("flash"), 600);
+    }
+  });
+  return row;
+}
+// Keeps any rendered ghost rows showing the note's current value — called
+// from recompute() so they stay live without per-row change instrumentation.
+function refreshGhostRows() {
+  document.querySelectorAll(".note-row.ghost-row").forEach(row => {
+    const id = row.dataset.ghostOf;
+    const v = state.pendingIntensity[id] || 0;
+    const val = row.querySelector(".val");
+    const slider = row.querySelector("input[type=range]");
+    if (val) val.value = v;
+    if (slider) slider.value = v;
+    row.classList.toggle("has-entries", hasAnyEntry(id));
+  });
 }
 
 // Plant taxonomy: an additive, non-exhaustive layer alongside the flavor-category
@@ -4051,6 +4152,7 @@ function recompute() {
   if (typeof renderCompass === "function") renderCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
+  refreshGhostRows();
 }
 
 // ---------- PANEL: notes ----------
@@ -4122,12 +4224,19 @@ function renderNoteRow(n) {
   // rows right below. Available in both default and Go Deeper mode — it's
   // just a standing feature of the row, not a separate mode.
   const varietalChildren = varietalChildrenOf(n.id);
-  if (varietalChildren.length > 0) {
+  const ghostChildren = ghostChildrenOf(n.id);
+  if (varietalChildren.length + ghostChildren.length > 0) {
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "varietal-toggle" + (state.expandedVarietals.has(n.id) ? " expanded" : "");
     toggle.setAttribute("aria-label", `Show ${varietalChildren.length} varietals of ${n.label} as separate sliders`);
-    toggle.title = `${varietalChildren.length} varietals: ${varietalChildren.map(c => c.label).join(", ")}. Click to score them independently.`;
+    let toggleTitle = varietalChildren.length > 0
+      ? `${varietalChildren.length} varietals: ${varietalChildren.map(c => c.label).join(", ")}. Click to score them independently.`
+      : "Click to show related notes.";
+    if (ghostChildren.length > 0) {
+      toggleTitle += ` Also shows a live read-only copy of: ${ghostChildren.map(c => c.label).join(", ")} (already has its own row).`;
+    }
+    toggle.title = toggleTitle;
     toggle.textContent = "▸";
     toggle.addEventListener("click", (e) => {
       e.preventDefault();
