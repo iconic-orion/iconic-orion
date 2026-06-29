@@ -3918,12 +3918,15 @@ const ANCHOR_LABEL_NUDGE = {
   linalylacetate: { dy: 10 }   // drop it below Ethyl butanoate's tail
 };
 
-// Compound anchors: the "periodic table" of class arcs. Unlike note anchors
-// (which render only when entered), ALL visible compounds show — faint by
-// default, brightening as evidence accrues — so the floating notes have stable
-// neighborhoods to drift toward and the chemical structure is always legible.
+// Compound anchors: like note anchors in Scent mode, only the ones a user has
+// actually activated (intensity_raw > 0, i.e. fed by a currently-entered note)
+// take up space on the ring. Previously ALL visible compounds rendered here as
+// a permanent "periodic table" reference, faint until evidence accrued — but
+// that crowds the ring badly, especially on mobile, with dozens of unused
+// anchors. Class arcs (the ring wedges themselves) still always show the full
+// chemical structure; only the individual compound dots are now active-only.
 function drawCompoundAnchors() {
-  const renderable = COMPOUNDS.filter(c => isCompoundVisible(c.id) && CPD_NODE_BY_ID[c.id]._x != null)
+  const renderable = COMPOUNDS.filter(c => isCompoundVisible(c.id) && CPD_NODE_BY_ID[c.id]._x != null && CPD_NODE_BY_ID[c.id].intensity_raw > 0)
     .map(c => CPD_NODE_BY_ID[c.id]);
   const sel = gNotes.selectAll("g.note").data(renderable, d => d.id);
   sel.exit().remove();
