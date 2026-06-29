@@ -437,11 +437,15 @@
   /* Varietal disclosure toggle: expands a parent note's subOf children
      (mint -> peppermint/spearmint/wintergreen) into their own rows, scoreable
      independently of the parent. Standing feature, not gated by Go Deeper. */
-  .varietal-toggle { cursor: pointer; background: none; border: none; padding: 0;
-    margin-right: 4px; font-size: 9px; color: var(--ink-dim); display: inline-block;
-    transform: rotate(0deg); transition: transform 0.15s; }
-  .varietal-toggle:hover { color: var(--ink); }
+  .varietal-toggle { cursor: pointer; background: none; border: none; padding: 2px;
+    margin: -2px 5px -2px -2px; font-size: 15px; line-height: 1; color: var(--ink-dim);
+    display: inline-block; transform: rotate(0deg); transition: transform 0.15s, color 0.15s; }
+  .varietal-toggle:hover { color: var(--accent); }
   .varietal-toggle.expanded { transform: rotate(90deg); }
+  /* The arrow glyph is still small on its own — the whole label (stretched by
+     CSS grid to fill the row up to where the score number sits) is the real
+     click target, so a reader doesn't need to land precisely on the glyph. */
+  label.has-varietal-toggle { cursor: pointer; }
   .note-subrows { padding-left: 16px; border-left: 1px solid var(--line); margin-left: 4px; }
   /* Ghost row: a read-only, low-opacity mirror of a note that keeps its own
      top-level row elsewhere (e.g. Cherry inside the Stonefruit dropdown) —
@@ -469,7 +473,12 @@
   .note-row .val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .note-row:hover .val { border-color: var(--line); }
   .note-row .val:focus { outline: none; border-color: var(--accent); color: var(--ink); background: var(--bg); }
-  .note-row input[type=range] { grid-column: 1 / span 2; width: 100%; accent-color: var(--accent);
+  /* Width stops short of the row's full extent on purpose — leaves a
+     thumb-width dead zone at the right edge so a touch-scroll gesture
+     starting near the pane's edge doesn't land on the slider thumb and drag
+     it instead. Matters on any touchscreen, not just narrow phones (a
+     touchscreen widescreen monitor has the same problem at 100% width). */
+  .note-row input[type=range] { grid-column: 1 / span 2; width: calc(100% - 44px); accent-color: var(--accent);
     margin: 2px 0; }
   .note-row.has-entries .note-label-text { color: var(--accent); }
   .note-row.flash { background: rgba(216, 166, 87, 0.18); transition: background 0.6s; }
@@ -4558,6 +4567,17 @@ function renderNoteRow(n) {
       toggleVarietalExpansion(n.id, row);
     });
     lbl.insertBefore(toggle, lbl.firstChild);
+    // The arrow glyph itself is tiny — rather than relying on a reader to
+    // land a click precisely on it, the whole label (a CSS grid item that
+    // already stretches across the row up to where the score number sits)
+    // becomes the toggle target too. preventDefault() stops the label's
+    // native "focus the slider" behavior so it doesn't fire alongside.
+    lbl.classList.add("has-varietal-toggle");
+    lbl.title = toggleTitle;
+    lbl.addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleVarietalExpansion(n.id, row);
+    });
   }
 
   // Cross-group taxonomy badge: only for notes whose plant family has no other
