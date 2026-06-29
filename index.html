@@ -423,6 +423,16 @@
     display: flex; align-items: center; gap: 8px; }
   .group-header .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
+  /* Taxonomy sub-header: additive layer inside a flavor-category section,
+     for notes that share a real, sourced plant family/genus. Smaller and
+     quieter than .group-header so the flavor category stays the primary cue. */
+  .taxon-header { font-size: 10px; font-style: italic; color: var(--ink-dim);
+    padding: 4px 4px 2px 14px; cursor: help; }
+  /* Cross-group taxonomy badge: small inline marker on a note row for ties
+     that cross flavor-category boundaries (e.g. mint <-> lavender). */
+  .taxon-badge { cursor: pointer; margin-left: 4px; font-size: 11px; opacity: 0.75; }
+  .taxon-badge:hover { opacity: 1; }
+
   /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
      Each note can have up to two confirmed entries — one per phase —
      each with its own intensity. Confirming requires intensity > 0.
@@ -725,6 +735,15 @@
   aside.detail li .view-cpd { cursor: pointer; color: var(--ink);
     border-bottom: 1px dotted var(--ink-dim); }
   aside.detail li .view-cpd:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  /* Plant-taxonomy section in the note detail panel */
+  .taxon-detail-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .taxon-common { font-weight: 400; color: var(--ink-dim); }
+  .taxon-sibling-list { list-style: none; padding: 0; margin: 0; }
+  .taxon-sibling-list li { padding: 2px 0; }
+  .taxon-sibling-list .view-note { cursor: pointer; color: var(--ink);
+    border-bottom: 1px dotted var(--ink-dim); }
+  .taxon-sibling-list .view-note:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .taxon-mismatch { font-style: italic; }
   /* Cereal Go-Deeper table: the six grains collapse to one "Cereal" slider
      (their raw aroma chemistry is genuinely too similar to justify six rows
      in the input panel — see CEREAL_VARIETAL_TABLE/cerealVarietalRows()), so
@@ -1425,16 +1444,16 @@ const NOTES = [
   // present in the data (own compound, citation, map origin) but no slider of
   // their own. Go Deeper on lemon/orange/grapefruit surfaces the comparison
   // table (varietalRows()) instead of six-to-seven near-duplicate sliders.
-  { id: "lemon",       label: "Lemon",              group: "fruity",   common: true  },
+  { id: "lemon",       label: "Lemon",              group: "fruity",   common: true,  genus: "Citrus", family: "Rutaceae" },
   { id: "lime",        label: "Lime",               group: "fruity",   common: true,  subOf: "lemon" },
   { id: "yuzu",        label: "Yuzu",                group: "fruity",   common: false, subOf: "lemon" },
   { id: "meyerlemon",  label: "Meyer lemon",        group: "fruity",   common: false, subOf: "lemon" },
-  { id: "orange",      label: "Orange",             group: "fruity",   common: true  },
+  { id: "orange",      label: "Orange",             group: "fruity",   common: true,  genus: "Citrus", family: "Rutaceae" },
   { id: "mandarin",    label: "Mandarin / tangerine", group: "fruity", common: true,  subOf: "orange" },
   { id: "bergamot",    label: "Bergamot",           group: "fruity",   common: false, subOf: "orange" },
   { id: "bloodorange", label: "Blood orange",       group: "fruity",   common: false, subOf: "orange",
     noStandoutNote: "Blood orange's defining trait is anthocyanin pigment in the flesh, not a distinct aroma compound — its volatile profile largely tracks regular sweet orange. The red color is a taste/visual identity, not a smell one." },
-  { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true  },
+  { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true,  genus: "Citrus", family: "Rutaceae" },
   { id: "pomelo",      label: "Pomelo / pummelo",   group: "fruity",   common: false, subOf: "grapefruit" },
   { id: "berry",       label: "Berry",              group: "fruity",   common: true  },
   { id: "cranberry",   label: "Cranberry",          group: "fruity",   common: true,  subOf: "berry" },
@@ -1445,34 +1464,34 @@ const NOTES = [
   { id: "redcurrant",  label: "Red currant",        group: "fruity",   common: false, subOf: "berry" },
   { id: "cassis",      label: "Black currant / cassis", group: "fruity", common: false, subOf: "berry" },
   { id: "pomegranate", label: "Pomegranate",        group: "fruity",   common: true,  subOf: "berry" },
-  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true  },
-  { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true  },
+  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae" },
+  { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true,  family: "Rosaceae" },
   { id: "banana",      label: "Banana",             group: "fruity",   common: true  },
   { id: "pineapple",   label: "Pineapple",          group: "fruity",   common: true  },
-  { id: "cherry",      label: "Cherry",             group: "fruity",   common: true  },
+  { id: "cherry",      label: "Cherry",             group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae" },
   { id: "mango",       label: "Mango",              group: "fruity",   common: false },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false },
   { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true  },
-  { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true  },
+  { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true,  family: "Rosaceae" },
   { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true  },
-  { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true  },
+  { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true,  family: "Rosaceae" },
   { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true  },
-  { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true  },
+  { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true,  family: "Rosaceae" },
   // floral
-  { id: "rose",        label: "Rose",               group: "floral",   common: true  },
-  { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true  },
+  { id: "rose",        label: "Rose",               group: "floral",   common: true,  family: "Rosaceae" },
+  { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true,  family: "Oleaceae" },
   { id: "orangeblossom", label: "Orange blossom",  group: "floral",   common: true,  subOf: "jasmine" },
   { id: "honeysuckle", label: "Honeysuckle",        group: "floral",   common: true,  subOf: "jasmine" },
-  { id: "lavender",    label: "Lavender",           group: "floral",   common: true  },
+  { id: "lavender",    label: "Lavender",           group: "floral",   common: true,  family: "Lamiaceae" },
   { id: "sage",        label: "Sage",               group: "floral",   common: true,  subOf: "lavender" },
   { id: "thyme",       label: "Thyme",              group: "floral",   common: true,  subOf: "lavender" },
   { id: "chamomile",   label: "Chamomile",          group: "floral",   common: true  },
   { id: "violet",      label: "Violet",             group: "floral",   common: false },
   // roasted
   { id: "coffee",      label: "Coffee / roast",     group: "roasted",  common: true  },
-  { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true  },
+  { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true,  family: "Poaceae" },
   { id: "smoky",       label: "Smoky",              group: "roasted",  common: true  },
-  { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true  },
+  { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true,  family: "Poaceae" },
   { id: "popcorn",     label: "Popcorn / fresh bread", group: "roasted", common: true },
   // Cereal is the quick-use default; rice/wheat/barley/oats/millet/quinoa below
   // are subOf "cereal" — present in the data (their own compounds, citations,
@@ -1480,13 +1499,13 @@ const NOTES = [
   // hides any subOf note from the slider panel, legend, search, and wheel
   // floats; Go Deeper's note detail for "cereal" is the only place they surface,
   // as the distinguishing-compound table (see CEREAL_VARIETAL_TABLE).
-  { id: "cereal",      label: "Cereal / grain",     group: "roasted",  common: true  },
-  { id: "rice",        label: "Rice",               group: "roasted",  common: true,  subOf: "cereal" },
-  { id: "wheat",       label: "Wheat",              group: "roasted",  common: true,  subOf: "cereal" },
-  { id: "barley",      label: "Barley / malt",      group: "roasted",  common: true,  subOf: "cereal" },
-  { id: "oats",        label: "Oats",               group: "roasted",  common: true,  subOf: "cereal" },
-  { id: "millet",      label: "Millet",             group: "roasted",  common: false, subOf: "cereal" },
-  { id: "quinoa",      label: "Quinoa",             group: "roasted",  common: false, subOf: "cereal" },
+  { id: "cereal",      label: "Cereal / grain",     group: "roasted",  common: true,  family: "Poaceae" },
+  { id: "rice",        label: "Rice",               group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae" },
+  { id: "wheat",       label: "Wheat",              group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae" },
+  { id: "barley",      label: "Barley / malt",      group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae" },
+  { id: "oats",        label: "Oats",               group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae" },
+  { id: "millet",      label: "Millet",             group: "roasted",  common: false, subOf: "cereal", family: "Poaceae" },
+  { id: "quinoa",      label: "Quinoa",             group: "roasted",  common: false, subOf: "cereal", family: "Amaranthaceae" },
   // spice
   { id: "clove",       label: "Clove",              group: "spice",    common: true  },
   { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true  },
@@ -1494,7 +1513,7 @@ const NOTES = [
   { id: "anise",       label: "Anise / licorice",   group: "spice",    common: true  },
   { id: "ginger",      label: "Ginger",             group: "spice",    common: true  },
   // nutty
-  { id: "almond",      label: "Almond",             group: "nutty",    common: true  },
+  { id: "almond",      label: "Almond",             group: "nutty",    common: true,  genus: "Prunus", family: "Rosaceae" },
   { id: "hazelnut",    label: "Hazelnut",           group: "nutty",    common: false },
   { id: "peanut",      label: "Peanut",             group: "nutty",    common: true  },
   { id: "coconut",     label: "Coconut",            group: "nutty",    common: true  },
@@ -1506,12 +1525,12 @@ const NOTES = [
   { id: "eucalyptus",  label: "Eucalyptus",         group: "earthy",   common: true,  subOf: "pine" },
   { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false },
   { id: "green",       label: "Green / grassy",     group: "earthy",   common: true  },
-  { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true  },
-  { id: "mint",        label: "Mint",               group: "earthy",   common: true  },
-  { id: "peppermint",  label: "Peppermint",         group: "earthy",   common: true,  subOf: "mint" },
-  { id: "spearmint",   label: "Spearmint",          group: "earthy",   common: true,  subOf: "mint" },
-  { id: "wintergreen", label: "Wintergreen",        group: "earthy",   common: true,  subOf: "mint" },
-  { id: "tobacco",     label: "Tobacco",            group: "earthy",   common: false },
+  { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true,  family: "Solanaceae" },
+  { id: "mint",        label: "Mint",               group: "earthy",   common: true,  family: "Lamiaceae" },
+  { id: "peppermint",  label: "Peppermint",         group: "earthy",   common: true,  subOf: "mint", family: "Lamiaceae" },
+  { id: "spearmint",   label: "Spearmint",          group: "earthy",   common: true,  subOf: "mint", family: "Lamiaceae" },
+  { id: "wintergreen", label: "Wintergreen",        group: "earthy",   common: true,  subOf: "mint", family: "Ericaceae" },
+  { id: "tobacco",     label: "Tobacco",            group: "earthy",   common: false, family: "Solanaceae" },
   // sweet
   { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true  },
   { id: "caramel",     label: "Caramel",            group: "sweet",    common: true  },
@@ -2916,6 +2935,35 @@ function isNoteVisible(noteId) {
 function getVisibleNotes() {
   return NOTES.filter(n => isNoteVisible(n.id));
 }
+
+// Plant taxonomy: an additive, non-exhaustive layer alongside the flavor-category
+// GROUPS above. Seeded only for notes with a real, well-documented family — not a
+// full sweep of every note. The cluster key is always `family` (the broadest unit
+// that keeps related notes together); `genus` is supplementary display detail,
+// shown in a cluster's label only when every member of that family shares it (e.g.
+// lemon/orange/grapefruit are all genus Citrus). Using genus as the cluster key
+// itself would fragment families that share fewer specific genera — Rosaceae
+// here spans apple/raspberry/blackberry/strawberry (no genus set) as well as
+// stonefruit/cherry/almond (genus Prunus); keying on genus would have split that
+// into two clusters instead of one.
+const TAXON_COMMON = {
+  Rosaceae: "Rose family", Rutaceae: "Citrus family", Citrus: "Citrus",
+  Lamiaceae: "Mint family", Solanaceae: "Nightshade family",
+  Poaceae: "Grass family", Prunus: "stone-fruit genus",
+  Amaranthaceae: "Goosefoot/amaranth family", Ericaceae: "Heath family",
+  Oleaceae: "Olive family"
+};
+function notesWithFamily(family, pool) {
+  return pool.filter(n => n.family === family);
+}
+// Label for a cluster of notes that share `family`. Shows the genus too, but
+// only when every member of the cluster carries that same genus.
+function taxonClusterLabel(members) {
+  const family = members[0].family;
+  const genus = members[0].genus;
+  const allSameGenus = !!genus && members.every(n => n.genus === genus);
+  return allSameGenus ? `${genus} (${family})` : family;
+}
 function isCompoundVisible(cpdId) {
   const c = CPD_BY_ID[cpdId];
   if (!c) return false;
@@ -3799,8 +3847,9 @@ const notesPanel = document.getElementById("notes-panel");
 
 function buildNotesPanel() {
   notesPanel.innerHTML = "";
+  const allVisible = getVisibleNotes();
   GROUPS.forEach(g => {
-    const visible = getVisibleNotes().filter(n => n.group === g.id);
+    const visible = allVisible.filter(n => n.group === g.id);
     if (visible.length === 0) return;
     const header = document.createElement("div");
     header.className = "group-header";
@@ -3809,7 +3858,36 @@ function buildNotesPanel() {
     header.appendChild(sw);
     header.appendChild(document.createTextNode(g.label));
     notesPanel.appendChild(header);
-    visible.forEach(n => notesPanel.appendChild(renderNoteRow(n)));
+
+    // Taxonomy sub-clusters: notes within this group that share a real plant
+    // family (>=2 of them) get pulled together under a small heading, at the
+    // position of the first member encountered — otherwise later members
+    // would render scattered among unrelated notes with no visual tie back
+    // to the header. Singletons render at their normal position, unaffected.
+    const rendered = new Set();
+    visible.forEach(n => {
+      if (rendered.has(n.id)) return;
+      const inGroup = n.family ? notesWithFamily(n.family, visible) : [];
+      if (inGroup.length >= 2) {
+        const crossGroup = notesWithFamily(n.family, allVisible).filter(m => m.group !== g.id);
+        const taxHeader = document.createElement("div");
+        taxHeader.className = "taxon-header";
+        const label = taxonClusterLabel(inGroup);
+        taxHeader.textContent = label;
+        const usesGenus = label !== n.family; // taxonClusterLabel only shows genus when every member shares it
+        const common = usesGenus ? TAXON_COMMON[inGroup[0].genus] : TAXON_COMMON[n.family];
+        let title = common ? `Notes that share this plant ${usesGenus ? "genus" : "family"} (${common}).` : "Notes that share this plant family.";
+        if (crossGroup.length > 0) {
+          title += ` Also in other categories: ${crossGroup.map(m => m.label).join(", ")}.`;
+        }
+        taxHeader.title = title;
+        notesPanel.appendChild(taxHeader);
+        inGroup.forEach(m => { notesPanel.appendChild(renderNoteRow(m)); rendered.add(m.id); });
+        return;
+      }
+      notesPanel.appendChild(renderNoteRow(n));
+      rendered.add(n.id);
+    });
   });
   // Re-apply any active search filter — the rebuild wiped search-hidden classes.
   if (typeof applyNotesSearchFilter === "function") applyNotesSearchFilter();
@@ -3826,6 +3904,35 @@ function renderNoteRow(n) {
   lbl.className = "note-label-text";
   lbl.setAttribute("for", "slider-" + n.id);
   lbl.textContent = n.label;
+
+  // Cross-group taxonomy badge: only for notes whose plant family has no other
+  // member in the SAME group (those get an in-group .taxon-header instead) but
+  // does have a member in a DIFFERENT group — e.g. mint (Earthy) <-> lavender
+  // (Floral), both Lamiaceae. Clicking jumps to the first such sibling's row.
+  if (n.family) {
+    const sameFamily = notesWithFamily(n.family, getVisibleNotes());
+    const inGroup = sameFamily.filter(m => m.group === n.group);
+    const crossGroup = sameFamily.filter(m => m.group !== n.group);
+    if (inGroup.length === 1 && crossGroup.length > 0) {
+      const badge = document.createElement("span");
+      badge.className = "taxon-badge";
+      badge.textContent = "\u{1F9EC}";
+      const common = TAXON_COMMON[n.family] || n.family;
+      badge.title = `${common} (${n.family}) — also: ${crossGroup.map(m => m.label).join(", ")}. Click to jump.`;
+      badge.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = crossGroup[0];
+        const targetRow = document.querySelector(`.note-row[data-note="${target.id}"]`);
+        if (targetRow) {
+          targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+          targetRow.classList.add("flash");
+          setTimeout(() => targetRow.classList.remove("flash"), 600);
+        }
+      });
+      lbl.appendChild(badge);
+    }
+  }
 
   // Typed alternative to the slider: same 0-10 range, kept in sync both ways.
   const val = document.createElement("input");
@@ -4106,10 +4213,30 @@ function renderNoteDetail(noteId) {
         ${entries.map(e => `<span class="entry-tag">${e.phase || "default"} · ${e.intensity}</span>`).join(" ")}
       </div>`;
 
+  // Plant taxonomy: additive cross-reference, not the flavor-category grouping
+  // above. Only renders for the curated, verified seed set of notes that have
+  // a `family` field — most notes don't have one yet, by design (see CLAUDE.md).
+  let taxonomyHtml = "";
+  if (n.family) {
+    const allMembers = notesWithFamily(n.family, getVisibleNotes());
+    const siblings = allMembers.filter(m => m.id !== n.id);
+    const label = taxonClusterLabel(allMembers);
+    const common = TAXON_COMMON[n.genus] || TAXON_COMMON[n.family] || "";
+    taxonomyHtml = `
+    <div class="section">
+      <div class="section-title">Plant taxonomy</div>
+      <div class="taxon-detail-label">${label}${common ? ` <span class="taxon-common">(${common})</span>` : ""}</div>
+      ${siblings.length > 0
+        ? `<ul class="taxon-sibling-list">${siblings.map(s => `<li><span class="note-name view-note" data-note="${s.id}" title="Switch to this note's detail">${s.label}</span> <span style="font-size:10px; color:var(--ink-dim);">· ${GROUP_BY_ID[s.group].label}</span></li>`).join("")}</ul>`
+        : `<div class="cite">No other note currently in the wheel shares this family.</div>`}
+    </div>`;
+  }
+
   detailPanel.innerHTML = `
     <button class="back-to-grid" type="button">← All compounds</button>
     <h2><span class="note-color-dot" style="background:${color}"></span>${n.label}</h2>
     <div class="compound-class">Note · ${g.label}</div>
+    ${taxonomyHtml}
 
     ${entriesHtml}
 
@@ -4150,6 +4277,9 @@ function renderNoteDetail(noteId) {
                 ? `<span class="note-name view-cpd${commonClass(r.cpd)}" data-cpd="${r.cpd.id}" title="Switch to this compound's detail">${r.cpd.label}</span>
                    <div class="cereal-table-blurb">${r.cpd.note}</div>`
                 : `<span class="cereal-table-none">${r.note.noStandoutNote || `Shares ${n.label}'s base profile above — no literature-confirmed standout compound yet.`}</span>`}
+                ${r.note.family && n.family && r.note.family !== n.family
+                  ? `<div class="cereal-table-blurb taxon-mismatch">Botanically a member of ${r.note.family}${TAXON_COMMON[r.note.family] ? ` (${TAXON_COMMON[r.note.family]})` : ""}, not ${n.family} like ${n.label}'s other varieties here.</div>`
+                  : ""}
               </td>
             </tr>`).join("")}
         </tbody>
@@ -4174,6 +4304,14 @@ function renderNoteDetail(noteId) {
       state.selectedNote = null;
       state.selectedCompound = el.dataset.cpd;
       gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+      renderDetail();
+    });
+  });
+  // Taxonomy sibling clicks → jump to that note's own detail
+  detailPanel.querySelectorAll(".view-note").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedNote = el.dataset.note;
+      state.selectedCompound = null;
       renderDetail();
     });
   });
