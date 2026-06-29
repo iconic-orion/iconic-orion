@@ -26,6 +26,7 @@
     --grp-earthy:  #7fc275;
     --grp-sweet:   #dfa850;
     --grp-fermented: #6ebdab;
+    --grp-vegetal: #5a9c4f;
 
     /* Pane widths — referenced both by the body grid and by the pane-toggle
        positions, so both stay in sync if these change. */
@@ -1505,7 +1506,8 @@ const GROUPS = [
   { id: "nutty",     label: "Nutty",     color: "var(--grp-nutty)",     cssVar: "--grp-nutty" },
   { id: "earthy",    label: "Earthy",    color: "var(--grp-earthy)",    cssVar: "--grp-earthy" },
   { id: "sweet",     label: "Sweet",     color: "var(--grp-sweet)",     cssVar: "--grp-sweet" },
-  { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" }
+  { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" },
+  { id: "vegetal",   label: "Vegetal",   color: "var(--grp-vegetal)",   cssVar: "--grp-vegetal" }
 ];
 
 // Sensory notes. The `common` field (true = widely recognizable, false = niche /
@@ -1647,10 +1649,11 @@ const NOTES = [
   // (Pinaceae) as Pine, different genus.
   { id: "woody",       label: "Woody / cedar",      group: "earthy",   common: true,  genus: "Cedrus", family: "Pinaceae", order: "Pinales" },
   { id: "pine",        label: "Pine / resin",       group: "earthy",   common: true,  genus: "Pinus", family: "Pinaceae", order: "Pinales" },
-  // Eucalyptus is Myrtaceae, not even close to pine's Pinaceae — its subOf:
-  // "pine" is a flavor-table grouping (shared cineole base), not a taxonomic
-  // claim. This is the same honest-mismatch pattern as quinoa vs. cereal.
-  { id: "eucalyptus",  label: "Eucalyptus",         group: "earthy",   common: true,  subOf: "pine", genus: "Eucalyptus", family: "Myrtaceae", order: "Myrtales" },
+  // Eucalyptus is Myrtaceae, not even close to pine's Pinaceae — promoted to
+  // its own standalone slider (it has its own real, sourced compounds and is
+  // iconic enough on its own); the taxonomy tree/cross-group badges still
+  // surface the honest "not actually related to pine" fact via family/order.
+  { id: "eucalyptus",  label: "Eucalyptus",         group: "earthy",   common: true,  genus: "Eucalyptus", family: "Myrtaceae", order: "Myrtales" },
   { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false, kingdom: "Fungi" },
   { id: "green",       label: "Green / grassy",     group: "earthy",   common: true,  taxonBucket: "umbrella" },
   { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true,  family: "Solanaceae", order: "Solanales" },
@@ -1677,7 +1680,56 @@ const NOTES = [
   { id: "cheesy",      label: "Cheesy",              group: "fermented",common: true,  taxonBucket: "process" },
   { id: "sweaty",      label: "Sweaty / funky",      group: "fermented",common: false, taxonBucket: "process" },
   { id: "musty",       label: "Musty / corked",     group: "fermented",common: false, taxonBucket: "process" },
-  { id: "skunky",      label: "Skunky",             group: "fermented",common: false, taxonBucket: "process" }
+  { id: "skunky",      label: "Skunky",             group: "fermented",common: false, taxonBucket: "process" },
+  // Miso and soy sauce are both fermented-soy products; their defining
+  // aroma compound (HEMF) is a yeast-metabolism product, not the soybean's
+  // own chemistry — same "process, not single organism" framing as
+  // buttery/winey above, hence taxonBucket rather than a plant lineage.
+  { id: "miso",        label: "Miso paste",         group: "fermented",common: true,  taxonBucket: "process" },
+  { id: "soysauce",     label: "Soy sauce",          group: "fermented",common: true,  taxonBucket: "process" },
+  // vegetal
+  { id: "onion",       label: "Onion",              group: "vegetal",  common: true,  genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
+  // Red/White onion: literature attributes cultivar differences mainly to
+  // anthocyanin pigment and pungency level, not a separate compound — same
+  // honest case as Blood orange.
+  { id: "redonion",    label: "Red onion",          group: "vegetal",  common: true,  subOf: "onion", genus: "Allium", family: "Amaryllidaceae", order: "Asparagales",
+    noStandoutNote: "Red onion's defining trait is anthocyanin pigment in the skin and flesh, not a distinct aroma compound — its volatile profile largely tracks regular onion. The red color is a visual identity, not a smell one." },
+  { id: "whiteonion",  label: "White onion",        group: "vegetal",  common: true,  subOf: "onion", genus: "Allium", family: "Amaryllidaceae", order: "Asparagales",
+    noStandoutNote: "White onion shares the same lachrymatory sulfur base as regular onion — the difference from yellow/red onion is mostly a milder pigment and slightly sharper bite, not a separate compound." },
+  { id: "sweetonion",  label: "Sweet onion",        group: "vegetal",  common: true,  subOf: "onion", genus: "Allium", family: "Amaryllidaceae", order: "Asparagales",
+    noStandoutNote: "Sweet onion (Vidalia-type) isn't a different compound — it's honestly just less of the same pungent sulfur compounds, plus more sugar than the wheel's compound model can represent. Low pungency and high sugar together are what make an onion taste \"sweet.\"" },
+  { id: "greenonion",  label: "Green onion / scallion", group: "vegetal", common: true, subOf: "onion", genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
+  { id: "garlic",      label: "Garlic",             group: "vegetal",  common: true,  genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
+  { id: "celery",      label: "Celery",             group: "vegetal",  common: true,  genus: "Apium", family: "Apiaceae", order: "Apiales" },
+  { id: "carrot",      label: "Carrot",             group: "vegetal",  common: true,  genus: "Daucus", family: "Apiaceae", order: "Apiales" },
+  { id: "tomato",      label: "Tomato",             group: "vegetal",  common: true,  genus: "Solanum", family: "Solanaceae", order: "Solanales" },
+  { id: "arugula",     label: "Arugula",            group: "vegetal",  common: true,  genus: "Eruca", family: "Brassicaceae", order: "Brassicales" },
+  { id: "lettuce",     label: "Lettuce",            group: "vegetal",  common: true,  genus: "Lactuca", family: "Asteraceae", order: "Asterales" },
+  { id: "romaine",     label: "Romaine lettuce",    group: "vegetal",  common: true,  subOf: "lettuce", genus: "Lactuca", family: "Asteraceae", order: "Asterales",
+    noStandoutNote: "Romaine is the exact same species as the umbrella default (Lactuca sativa) — no cultivar-specific aroma study was found distinguishing it from other lettuces by compound, only by texture and bitterness." },
+  { id: "iceberg",     label: "Iceberg lettuce",    group: "vegetal",  common: true,  subOf: "lettuce", genus: "Lactuca", family: "Asteraceae", order: "Asterales",
+    noStandoutNote: "Iceberg is also Lactuca sativa, like Romaine — its mild, watery reputation is about lower overall flavor-compound concentration in this crisphead cultivar, not a different compound." },
+  { id: "cabbage",     label: "Cabbage",            group: "vegetal",  common: true,  genus: "Brassica", family: "Brassicaceae", order: "Brassicales" },
+  { id: "whitecabbage",label: "White cabbage",      group: "vegetal",  common: true,  subOf: "cabbage", genus: "Brassica", family: "Brassicaceae", order: "Brassicales",
+    noStandoutNote: "White and green cabbage are the same species and the same allyl-isothiocyanate chemistry — the difference is mostly pigment (or its absence) and minor pungency, not a separate compound." },
+  { id: "greencabbage",label: "Green cabbage",      group: "vegetal",  common: true,  subOf: "cabbage", genus: "Brassica", family: "Brassicaceae", order: "Brassicales",
+    noStandoutNote: "Green cabbage is the same story as white cabbage above — same species, same defining compound, no separate one to call out." },
+  { id: "potato",      label: "Potato",             group: "vegetal",  common: true,  genus: "Solanum", family: "Solanaceae", order: "Solanales" },
+  // Brussels sprouts: genuinely the same species as Cabbage (Brassica
+  // oleracea, a different cultivar group) — the literature found this
+  // session didn't yield one clean compound distinguishing it from cabbage
+  // beyond proportion/intensity, an honest gap like Red currant.
+  { id: "brusselssprouts", label: "Brussels sprouts", group: "vegetal", common: true, genus: "Brassica", family: "Brassicaceae", order: "Brassicales",
+    noStandoutNote: "Brussels sprouts are literally the same species as Cabbage (Brassica oleracea), just a different cultivar group — both are driven by allyl isothiocyanate from the same glucosinolate chemistry. No study was found pinning down one separate compound that distinguishes them; the difference reads more as intensity and bitterness than a distinct smell." },
+  { id: "sweetpotato", label: "Sweet potato",       group: "vegetal",  common: true,  genus: "Ipomoea", family: "Convolvulaceae", order: "Solanales" },
+  // Ube is genuinely unrelated to sweet potato despite the common "purple
+  // yam ~ sweet potato" mix-up — Dioscoreaceae (true yams), not
+  // Convolvulaceae (morning glories). A real, honest taxonomic mismatch,
+  // same pattern as quinoa vs. cereal.
+  { id: "ube",         label: "Ube",                group: "vegetal",  common: true,  genus: "Dioscorea", family: "Dioscoreaceae", order: "Dioscoreales" },
+  { id: "taro",        label: "Taro",               group: "vegetal",  common: true,  genus: "Colocasia", family: "Araceae", order: "Alismatales" },
+  { id: "wasabi",      label: "Wasabi",             group: "vegetal",  common: true,  genus: "Eutrema", family: "Brassicaceae", order: "Brassicales" },
+  { id: "horseradish", label: "Horseradish",        group: "vegetal",  common: true,  genus: "Armoracia", family: "Brassicaceae", order: "Brassicales" }
 ];
 
 // Compounds with class, literature anchor, odor-threshold tier, and specificity.
@@ -1783,7 +1835,23 @@ const COMPOUNDS = [
   { id: "aromadendrene", label: "Aromadendrene",     class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "Sesquiterpene found alongside 1,8-cineole in Eucalyptus globulus oil, dominant in the fruit oil and a secondary leaf-oil component (Mulyaningsih et al. 2010).", note: "The woody, slightly camphoraceous undertone beneath eucalyptus's dominant cineole — what separates eucalyptus's smell from plain mentholated cineole." },
   { id: "thujone",       label: "α-Thujone",         class: "ketone",    threshold: "medium", specificity: "signature", thresholdSrc: "Up to 39–44% of total oil in high-thujone Dalmatian sage chemotypes (Perry et al. 1999).", note: "Sage's characteristic bitter, camphoraceous ketone — also the much-mythologized compound in absinthe and wormwood, though sage's everyday culinary dose is far below any psychoactive threshold." },
   { id: "thymol",        label: "Thymol",            class: "phenol",    threshold: "low",      specificity: "signature", thresholdSrc: "Dominant constituent of common thyme oil, typically 20–60% depending on chemotype (Stahl-Biskup & Sáez, eds., 2002).", note: "Thyme's defining phenol — warm, herbal, medicinal-sharp. Also the active ingredient in many antiseptic mouthwashes, which is most of why thyme smells 'clinical' to a lot of people." },
-  { id: "farnesol",      label: "Farnesol",          class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "26–51% of Japanese honeysuckle (Lonicera japonica) flower essential oil, its largest component (Schlotzhauer, Pair & Horvat 1996).", note: "A soft, waxy, muguet-like sesquiterpene alcohol — honeysuckle's bulk note, underneath the lighter linalool top note it shares with jasmine." }
+  { id: "farnesol",      label: "Farnesol",          class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "26–51% of Japanese honeysuckle (Lonicera japonica) flower essential oil, its largest component (Schlotzhauer, Pair & Horvat 1996).", note: "A soft, waxy, muguet-like sesquiterpene alcohol — honeysuckle's bulk note, underneath the lighter linalool top note it shares with jasmine." },
+  // ---- Vegetal expansion ----
+  { id: "lacrifac",      label: "syn-Propanethial S-oxide", class: "sulfide", commonName: "onion lachrymatory factor", threshold: "low", specificity: "signature", thresholdSrc: "Formed by lachrymatory-factor synthase upon cutting; discovery paper Imai et al. 2002.", note: "The compound that makes you cry when you cut an onion — formed in real time from sulfenic acids released the moment onion tissue is damaged." },
+  { id: "trideca2one",   label: "Tridecan-2-one",    class: "ketone",    threshold: "medium", specificity: "signature", thresholdSrc: "Reported abundant in Welsh onion/scallion oil, distinct from bulb onion's propyl-sulfide base (Kuo, Ho & Chien 1990).", note: "A long-chain methyl ketone specific to green onion/scallion (Allium fistulosum) — part of why scallions read greener and less harsh than a cut bulb onion." },
+  { id: "butylphthalide",label: "3-n-Butylphthalide", class: "lactone",  threshold: "very-low", specificity: "signature", thresholdSrc: "Present at just 1.5–11% of celery oil yet responsible for essentially the entire recognizable celery identity (Kurobayashi, Kouno, Fujita, Morimitsu & Kubota 2006).", note: "Celery's defining phthalide lactone — its odor threshold is so low that a tiny amount carries the whole \"celery\" identity." },
+  { id: "carotol",       label: "Carotol",           class: "terpene",   threshold: "medium", specificity: "signature", thresholdSrc: "Main constituent of carrot seed essential oil, ~19-33% (Sieniawska, Świątek, Rajtar, Kozioł, Polz-Dacewicz & Skalicka-Woźniak 2016).", note: "Carrot's namesake sesquiterpene alcohol — earthy, woody-sweet, the backbone of carrot seed oil's smell." },
+  { id: "isobutylthiazole", label: "2-Isobutylthiazole", class: "thiazole", threshold: "very-low", specificity: "signature", thresholdSrc: "Identified among the major contributors to fresh ripe tomato aroma (Petro-Turza 1987).", note: "A genuinely tomato-specific marker compound — green, tomato-leaf-like, not found broadly across other produce the way most \"green\" aldehydes are." },
+  { id: "erucin",        label: "Erucin",            class: "isothiocyanate", commonName: "4-methylthiobutyl isothiocyanate", threshold: "low", specificity: "signature", thresholdSrc: "The major isothiocyanate breakdown product in arugula leaf headspace (Jirovetz, Smith & Buchbauer 2002).", note: "Arugula's peppery bite — a glucosinolate breakdown product, the same general chemistry family as wasabi/horseradish's AITC but a different, sulfur-richer molecule." },
+  { id: "ipmp",          label: "3-Isopropyl-2-methoxypyrazine", class: "pyrazine", commonName: "IPMP", threshold: "very-low", specificity: "signature", thresholdSrc: "Identified as a key odor compound in lettuce; also the raw/peeled-potato methoxypyrazine.", note: "Shared by lettuce and raw/peeled potato — the same \"green, raw vegetable\" pyrazine family as bell pepper's IBMP, just a different alkyl group." },
+  { id: "aitc",          label: "Allyl isothiocyanate", class: "isothiocyanate", commonName: "mustard oil", threshold: "low", specificity: "shared", thresholdSrc: "The main isothiocyanate in both wasabi and horseradish, and the character compound of cabbage (Sultana, Savage, McNeil, Porter & Clark 2003).", note: "The classic pungent \"mustard oil\" compound — cabbage, wasabi, horseradish, and Brussels sprouts (the whole Brassicaceae family) all produce it from the same glucosinolate-breakdown chemistry." },
+  { id: "methional",     label: "Methional",         class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "Responsible for the particular aroma of baked/boiled potato.", note: "Boiled-potato, slightly sulfurous — a Strecker-degradation aldehyde, the smell of a potato actually cooking rather than raw." },
+  { id: "butanediol23",  label: "2,3-Butanediol",    class: "alcohol",   threshold: "medium", specificity: "shared", thresholdSrc: "The major aroma-active volatile identified in cooked Thai taro (Colocasia esculenta), aroma extract dilution analysis, Kasetsart University study.", note: "A mild, slightly sweet-earthy alcohol — part of why cooked taro reads soft and starchy rather than sharp." },
+  { id: "diallyldisulfide", label: "Diallyl disulfide", class: "sulfide", threshold: "low", specificity: "signature", thresholdSrc: "Garlic's characteristic organosulfur compound, formed from allicin; the allyl-chain counterpart to onion's propyl-chain disulfides.", note: "Garlic's signature — chemically the allyl (3-carbon, double-bonded) version of the same disulfide chemistry that gives onion its propyl version. Same idea, different chain, distinctly different smell." },
+  { id: "msitc",         label: "6-(Methylsulfinyl)hexyl isothiocyanate", class: "isothiocyanate", commonName: "hexaraphane", threshold: "low", specificity: "signature", thresholdSrc: "A distinctive compound that primarily characterizes wasabi, alongside AITC (Sultana, Savage, McNeil, Porter & Clark 2003).", note: "Wasabi's own addition on top of the AITC it shares with horseradish — part of why wasabi reads greener and more complex than horseradish's sharper, more one-note heat." },
+  { id: "peitc",         label: "Phenethyl isothiocyanate", class: "isothiocyanate", commonName: "PEITC", threshold: "low", specificity: "shared", thresholdSrc: "The relatively dominant isothiocyanate in horseradish powder, vs. wasabi's AITC-plus-PEITC mix (Sultana, Savage, McNeil, Porter & Clark 2003).", note: "Present in both wasabi and horseradish, but proportionally more dominant in horseradish — part of its more singular, sinus-clearing heat versus wasabi's greener complexity." },
+  { id: "hemf",          label: "HEMF",              class: "furanone", commonName: "4-hydroxy-2(or 5)-ethyl-5(or 2)-methyl-3(2H)-furanone", threshold: "very-low", specificity: "shared", thresholdSrc: "Character-impact compound of both miso and shoyu/soy sauce, formed by yeast during fermentation (Kumazawa, Kaneko & Nishimura 2013).", note: "A sweet, caramel-like furanone — the shared backbone of miso and soy sauce's aroma, both being fermented-soybean products made by related koji/yeast processes." },
+  { id: "methylfuranthiol", label: "2-Methyl-3-furanthiol", class: "thiol", threshold: "very-low", specificity: "signature", thresholdSrc: "Identified as contributing the cooked meat-like aroma of fermented soy sauce, on top of its shared HEMF base (Meng, Kitagawa, Imamura, Katayama, Obata & Sugawara 2017).", note: "Soy sauce's addition beyond the caramel HEMF it shares with miso — a meaty, savory thiol that's part of why soy sauce reads more umami-forward than miso's sweeter ferment." }
 ];
 
 // Edges: note -> compound, weight 0..1 (strength of association), with citation
@@ -2059,7 +2127,39 @@ const EDGES = [
   { note: "blackberry", cpd: "linalool",  w: 0.40, cite: "Klesk & Qian 2003 (linalool, blackberry)." },
   // Strengthen the green-apple ester on apple and generic berry
   { note: "apple",      cpd: "e2mb",      w: 0.55, cite: "Dimick & Hoskin 1983 (ethyl 2-methylbutanoate, green-apple ester)." },
-  { note: "berry",      cpd: "e2mb",      w: 0.40, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate across Rubus berries)." }
+  { note: "berry",      cpd: "e2mb",      w: 0.40, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate across Rubus berries)." },
+  // ---- Vegetal expansion ----
+  { note: "onion",      cpd: "lacrifac",  w: 0.90, cite: "Imai et al. 2002 (lachrymatory-factor synthase, the onion-tears compound)." },
+  { note: "redonion",   cpd: "lacrifac",  w: 0.90, cite: "Imai et al. 2002 (same compound as regular onion; pigment, not aroma, is the real difference)." },
+  { note: "whiteonion", cpd: "lacrifac",  w: 0.90, cite: "Imai et al. 2002 (same lachrymatory base as regular onion)." },
+  { note: "sweetonion", cpd: "lacrifac",  w: 0.55, cite: "Imai et al. 2002 (same compound, lower concentration — the basis of \"sweet\" onion cultivars)." },
+  { note: "greenonion", cpd: "lacrifac",  w: 0.50, cite: "Kuo, Ho & Chien 1990 (shared propyl-sulfide base with bulb onion)." },
+  { note: "greenonion", cpd: "trideca2one", w: 0.70, cite: "Kuo, Ho & Chien 1990 (tridecan-2-one, reported abundant in Welsh onion/scallion oil)." },
+  { note: "garlic",     cpd: "diallyldisulfide", w: 0.90, cite: "Block 1985-era organosulfur chemistry; allicin's primary breakdown product, garlic's character compound." },
+  { note: "celery",     cpd: "butylphthalide", w: 0.90, cite: "Kurobayashi, Kouno, Fujita, Morimitsu & Kubota 2006 (3-n-butylphthalide, celery's character-impact phthalide)." },
+  { note: "carrot",     cpd: "carotol",   w: 0.80, cite: "Sieniawska, Świątek, Rajtar, Kozioł, Polz-Dacewicz & Skalicka-Woźniak 2016 (carotol, main constituent of carrot seed oil)." },
+  { note: "tomato",     cpd: "isobutylthiazole", w: 0.80, cite: "Petro-Turza 1987 (2-isobutylthiazole, a tomato-specific marker compound)." },
+  { note: "tomato",     cpd: "bdam",      w: 0.45, cite: "Petro-Turza 1987 (β-damascenone among ripe-tomato's major volatiles)." },
+  { note: "arugula",    cpd: "erucin",    w: 0.85, cite: "Jirovetz, Smith & Buchbauer 2002 (erucin, arugula's major isothiocyanate)." },
+  { note: "lettuce",    cpd: "ipmp",      w: 0.75, cite: "Determination of odour active aroma compounds study (2-methoxy-3-isopropylpyrazine, key lettuce odorant)." },
+  { note: "romaine",    cpd: "ipmp",      w: 0.75, cite: "Same Lactuca sativa base as the umbrella default — no distinguishing compound found." },
+  { note: "iceberg",    cpd: "ipmp",      w: 0.60, cite: "Same Lactuca sativa base, lower overall concentration in this crisphead cultivar." },
+  { note: "cabbage",    cpd: "aitc",      w: 0.90, cite: "Cabbage Flavor literature review; allyl isothiocyanate, cabbage's character compound." },
+  { note: "whitecabbage", cpd: "aitc",    w: 0.90, cite: "Same species and chemistry as green cabbage; pigment is the real difference." },
+  { note: "greencabbage", cpd: "aitc",    w: 0.90, cite: "Same species and chemistry as white cabbage." },
+  { note: "brusselssprouts", cpd: "aitc", w: 0.75, cite: "Volatile Compounds of Selected Raw and Cooked Brassica Vegetables (allyl isothiocyanate, shared with cabbage, same species)." },
+  { note: "potato",     cpd: "methional", w: 0.80, cite: "Methional's documented role as the particular aroma of baked/boiled potato." },
+  { note: "potato",     cpd: "ipmp",      w: 0.40, cite: "3-isopropyl-2-methoxypyrazine, the raw/peeled-potato methoxypyrazine note." },
+  { note: "sweetpotato", cpd: "maltol",   w: 0.75, cite: "Effects of Roasting Sweet Potato (Ipomoea batatas) study (maltol, a main aroma compound of roasted sweet potato)." },
+  { note: "ube",        cpd: "vanillin",  w: 0.65, cite: "Ube's flavor profile genuinely includes real vanillin, distinct from sweet potato and taro." },
+  { note: "taro",       cpd: "butanediol23", w: 0.70, cite: "Aroma Active Compounds of Thai Taro study (2,3-butanediol, the major aroma-active volatile in cooked taro)." },
+  { note: "wasabi",     cpd: "aitc",      w: 0.85, cite: "Sultana, Savage, McNeil, Porter & Clark 2003 (AITC, the main isothiocyanate in both wasabi and horseradish)." },
+  { note: "wasabi",     cpd: "msitc",     w: 0.60, cite: "Sultana, Savage, McNeil, Porter & Clark 2003 (6-MSITC/hexaraphane, distinctly characterizes wasabi)." },
+  { note: "horseradish", cpd: "aitc",     w: 0.75, cite: "Sultana, Savage, McNeil, Porter & Clark 2003 (AITC, shared with wasabi)." },
+  { note: "horseradish", cpd: "peitc",    w: 0.65, cite: "Sultana, Savage, McNeil, Porter & Clark 2003 (PEITC relatively more dominant in horseradish than wasabi)." },
+  { note: "miso",       cpd: "hemf",      w: 0.80, cite: "Kumazawa, Kaneko & Nishimura 2013 (HEMF, character-impact compound of miso)." },
+  { note: "soysauce",   cpd: "hemf",      w: 0.80, cite: "Kumazawa, Kaneko & Nishimura 2013 (HEMF, shared character compound of miso and shoyu/soy sauce)." },
+  { note: "soysauce",   cpd: "methylfuranthiol", w: 0.55, cite: "Meng, Kitagawa, Imamura, Katayama, Obata & Sugawara 2017 (2-methyl-3-furanthiol, soy sauce's cooked-meat-like addition)." }
 ];
 
 // Per-class colors for compound nodes + legend. Distinct per class so the legend
@@ -2082,7 +2182,10 @@ const COMPOUND_CLASS_COLOR = {
   "pyrroline":         "#c2693f",  // roast brown — 2-acetyl-1-pyrroline
   "acid":              "#9aa63d",  // olive — short-chain fatty acids (cheese)
   "haloanisole":       "#7d8a99",  // slate — musty chloroanisole faults
-  "sulfide":           "#5e9e8f"   // teal-grey — distinct from thiol (R-S-R, not R-SH); malt/cooked-vegetable
+  "sulfide":           "#5e9e8f",  // teal-grey — distinct from thiol (R-S-R, not R-SH); malt/cooked-vegetable
+  "thiazole":          "#4a7a8c",  // steel-teal — tomato's 2-isobutylthiazole
+  "isothiocyanate":    "#9c4a4a",  // brick red — mustard-oil pungency (wasabi, horseradish, cabbage family)
+  "furanone":          "#b8860b"   // goldenrod — caramel-like furanone ring (HEMF), distinct from pyranone's maltol
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
@@ -2169,7 +2272,22 @@ const COMPOUND_ORIGINS = {
   mbt:           "Formed when light strikes hop compounds in beer (the 'lightstruck' or 'skunked' reaction), which is why beer is bottled in brown glass. Chemically kin to the thiols in skunk spray.",
   mesifurane:    "Strawberry above all, where with furaneol it sets the ripe-strawberry character; also arctic bramble, mango, and tomato. Caramel-sweet, faintly sherry-like.",
   e2mb:          "Green apples (Granny Smith), strawberry, blackberry, blueberry, and pineapple. One of the most potent fruity esters — a little goes a long way.",
-  hex2enal:      "Crushed leaves and unripe / green fruit; a lead note in blueberry, apple, and tomato. Released the moment leaf tissue is bruised."
+  hex2enal:      "Crushed leaves and unripe / green fruit; a lead note in blueberry, apple, and tomato. Released the moment leaf tissue is bruised.",
+  lacrifac:      "Onion, formed only at the moment of cutting — the precursor sulfenic acid is stable until lachrymatory-factor synthase converts it on tissue damage. The reason chopping onions makes you cry.",
+  trideca2one:   "Green onion / scallion (Allium fistulosum) oil specifically — distinguishes it from the propyl-sulfide-dominant smell of cut bulb onion.",
+  butylphthalide: "Celery, where a tiny amount carries the entire recognizable identity; also present in lovage, a close relative.",
+  carotol:       "Carrot seed essential oil, where it's the dominant constituent — the backbone of \"carrot seed oil\" as used in perfumery.",
+  isobutylthiazole: "Ripe tomato, fairly specifically — one of the few aroma compounds genuinely associated with tomato rather than shared broadly across produce.",
+  erucin:        "Arugula/rocket (Eruca sativa), its major isothiocyanate; structurally related to broccoli's sulforaphane.",
+  ipmp:          "Lettuce and raw/peeled potato — also peas and some Sauvignon Blanc-adjacent wines; the \"green, raw vegetable\" pyrazine family.",
+  aitc:          "Cabbage, wasabi, horseradish, Brussels sprouts, mustard, and the whole Brassicaceae family — the classic \"mustard oil\" pungency.",
+  methional:     "Boiled and baked potato; also a Strecker-degradation product in beer and some cheeses.",
+  butanediol23:  "Cooked taro, where it's the major aroma-active volatile; also found broadly in fermented foods as a minor note.",
+  diallyldisulfide: "Garlic, its character compound — the allyl-chain counterpart to onion's propyl-chain disulfides.",
+  msitc:         "Wasabi specifically, alongside AITC — the compound most responsible for telling wasabi and horseradish apart by smell.",
+  peitc:         "Horseradish, where it's relatively more dominant than in wasabi; also watercress and other Brassicaceae.",
+  hemf:          "Miso and soy sauce (shoyu) — both fermented-soybean products made by related koji/yeast processes that produce this same caramel-like furanone.",
+  methylfuranthiol: "Soy sauce specifically, contributing its cooked-meat-like note on top of the HEMF base it shares with miso."
 };
 
 // Origin regions for aroma notes. lat/lon mark the region centroid for map placement.
@@ -2427,6 +2545,35 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Tied to the same gradual wheat domestication process as the toast note. The non-shattering trait needed for reliable grain harvest took over 1000 years to fix, emerging around 9500 years before present.",
                   modernNote: "Leavened bread depends on both a domesticated grain and a separate, much less precisely dated history of yeast fermentation.",
                   citeKeys: ["tanno2006wheat"] },
+  // vegetal — minimal honest entries (region/lat/lon only) where a precise,
+  // citable domestication date wasn't verified this session; full
+  // cultivationDate/citeKeys left for a future pass rather than invented.
+  onion:        { region: "Central Asia", lat: 38, lon: 68, certainty: "approximate" },
+  garlic:       { region: "Central Asia", lat: 38, lon: 70, certainty: "approximate",
+                  modernNote: "Garlic's wild ancestor is debated — most commonly proposed is Allium longicuspis from Central Asia, the same broad region as onion's, but garlic has been cultivated so long and so clonally (propagated by cloves, not seed) that its truly wild form may no longer exist." },
+  celery:       { region: "Mediterranean basin", lat: 38, lon: 15, certainty: "approximate" },
+  carrot:       { region: "Afghanistan / Central Asia", lat: 34, lon: 67, certainty: "approximate",
+                  modernNote: "Wild carrot's primary center of diversity is in this region; the familiar orange carrot is a much later European selection — most wild and early domesticated carrots were purple or yellow." },
+  tomato:       { region: "Mesoamerica", lat: 19, lon: -99, certainty: "approximate", country: "Mexico",
+                  modernNote: "The tomato's wild ancestor is South American (Andean Peru/Ecuador), but most genomic evidence points to actual domestication into the large-fruited cultivated tomato happening later, in Mesoamerica." },
+  arugula:      { region: "Mediterranean basin", lat: 38, lon: 14, certainty: "approximate" },
+  lettuce:      { region: "Mediterranean / Middle East", lat: 32, lon: 35, certainty: "approximate" },
+  cabbage:      { region: "Western Europe / Mediterranean coast", lat: 47, lon: -2, certainty: "approximate",
+                  modernNote: "Wild Brassica oleracea grows along Atlantic and Mediterranean coastlines; cabbage, kale, broccoli, cauliflower, and Brussels sprouts are all the same species, separately selected cultivar groups of it." },
+  potato:       { region: "Lake Titicaca Basin", lat: -16, lon: -69, certainty: "known", country: "Bolivia / Peru",
+                  modernNote: "The same Andean highland region as quinoa's origin point on this map — two staple crops independently domesticated in the same harsh high-altitude basin." },
+  sweetpotato:  { region: "Central / South America", lat: 10, lon: -75, certainty: "approximate",
+                  modernNote: "The exact center of sweet potato domestication is still debated among competing regions in Central and northern South America." },
+  ube:          { region: "Southeast Asia / New Guinea", lat: 5, lon: 115, certainty: "approximate",
+                  modernNote: "A true yam (Dioscoreaceae), not related to sweet potato (Convolvulaceae) despite the common \"purple yam\" mix-up between the two in casual usage." },
+  taro:         { region: "Southeast Asia / New Guinea", lat: 0, lon: 130, certainty: "approximate" },
+  wasabi:       { region: "Japan", lat: 36, lon: 138, certainty: "known",
+                  modernNote: "Wasabia japonica naturally grows along cool, shaded mountain streams — a much narrower set of growing conditions than horseradish, which is why true wasabi is rare and expensive while most \"wasabi\" served outside Japan is colored horseradish." },
+  horseradish:  { region: "Southeastern Europe / Western Asia", lat: 45, lon: 30, certainty: "approximate" },
+  miso:         { region: "Japan / East Asia", lat: 36, lon: 138, certainty: "approximate",
+                  modernNote: "Built on a much older Chinese fermented-soybean-paste tradition (jiang), adapted in Japan over many centuries into the miso known today." },
+  soysauce:     { region: "China", lat: 32, lon: 112, certainty: "approximate",
+                  modernNote: "Soy sauce and miso share the same deep roots in Chinese fermented-soybean jiang traditions before diverging into the distinct products known today." },
 };
 
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
@@ -2710,6 +2857,69 @@ const REFERENCES = {
     title: "Gas chromatography–olfactometry and gas chromatography–tandem mass spectrometry analysis of fresh cantaloupe (Cucumis melo L. var. cantalupensis Naudin) aroma.",
     journal: "Flavour and Fragrance Journal",
     volume: "29", issue: "2", pages: "87–94"
+  },
+  "imai2002onion": {
+    authors: "Imai, S., Tsuge, N., Tomotake, M., Nagatome, Y., Sawada, H., Nagata, T., & Kumagai, H.",
+    year: 2002,
+    title: "An onion enzyme that makes the eyes water.",
+    journal: "Nature",
+    volume: "419", pages: "685"
+  },
+  "kuo1990welshonion": {
+    authors: "Kuo, M.C., Ho, C.T., & Chien, M.",
+    year: 1990,
+    title: "Volatile constituents of the solvent extracts of Welsh onions (Allium fistulosum L. variety maichuon) and scallions (A. fistulosum L. variety caespitosum).",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "38", issue: "6", pages: "1378–1381"
+  },
+  "kurobayashi2006celery": {
+    authors: "Kurobayashi, Y., Kouno, E., Fujita, A., Morimitsu, Y., & Kubota, K.",
+    year: 2006,
+    title: "Potent odorants characterize the aroma quality of leaves and stalks in raw and boiled celery.",
+    journal: "Bioscience, Biotechnology, and Biochemistry",
+    volume: "70", issue: "4", pages: "958–965"
+  },
+  "sieniawska2016carrot": {
+    authors: "Sieniawska, E., Świątek, Ł., Rajtar, B., Kozioł, E., Polz-Dacewicz, M., & Skalicka-Woźniak, K.",
+    year: 2016,
+    title: "Carrot seed essential oil—Source of carotol and cytotoxicity study.",
+    journal: "Industrial Crops and Products",
+    volume: "92", pages: "109–115"
+  },
+  "petroturza1987tomato": {
+    authors: "Petro-Turza, M.",
+    year: 1987,
+    title: "Flavor of tomato and tomato products.",
+    journal: "Food Reviews International",
+    volume: "2", issue: "3", pages: "309–351"
+  },
+  "jirovetz2002arugula": {
+    authors: "Jirovetz, L., Smith, D., & Buchbauer, G.",
+    year: 2002,
+    title: "Aroma compound analysis of Eruca sativa (Brassicaceae) SPME headspace leaf samples using GC, GC-MS, and olfactometry.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "50", issue: "16", pages: "4643–4646"
+  },
+  "sultana2003wasabi": {
+    authors: "Sultana, T., Savage, G.P., McNeil, D.L., Porter, N.G., & Clark, B.",
+    year: 2003,
+    title: "Comparison of flavour compounds in wasabi and horseradish.",
+    journal: "Journal of Food, Agriculture & Environment",
+    volume: "1", pages: "117–121"
+  },
+  "kumazawa2013miso": {
+    authors: "Kumazawa, K., Kaneko, S., & Nishimura, O.",
+    year: 2013,
+    title: "Identification and characterization of volatile components causing the characteristic flavor in miso (Japanese fermented soybean paste) and heat-processed miso products.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "61", issue: "49", pages: "11968–11973"
+  },
+  "meng2017soysauce": {
+    authors: "Meng, Q., Kitagawa, R., Imamura, M., Katayama, H., Obata, A., & Sugawara, E.",
+    year: 2017,
+    title: "Contribution of 2-methyl-3-furanthiol to the cooked meat-like aroma of fermented soy sauce.",
+    journal: "Bioscience, Biotechnology, and Biochemistry",
+    volume: "81", issue: "1", pages: "168–172"
   }
 };
 
@@ -2756,7 +2966,16 @@ const CITE_TO_REF = [
   ["Pino & Quijano 2012", "pino2012plum"],
   ["Genthner 2010", "genthner2010watermelon"],
   ["Perry, Wang & Lin 2009", "perry2009honeydew"],
-  ["Wang & Lin 2014", "wang2014cantaloupe"]
+  ["Wang & Lin 2014", "wang2014cantaloupe"],
+  ["Imai et al. 2002", "imai2002onion"],
+  ["Kuo, Ho & Chien 1990", "kuo1990welshonion"],
+  ["Kurobayashi, Kouno, Fujita, Morimitsu & Kubota 2006", "kurobayashi2006celery"],
+  ["Sieniawska, Świątek, Rajtar, Kozioł, Polz-Dacewicz & Skalicka-Woźniak 2016", "sieniawska2016carrot"],
+  ["Petro-Turza 1987", "petroturza1987tomato"],
+  ["Jirovetz, Smith & Buchbauer 2002", "jirovetz2002arugula"],
+  ["Sultana, Savage, McNeil, Porter & Clark 2003", "sultana2003wasabi"],
+  ["Kumazawa, Kaneko & Nishimura 2013", "kumazawa2013miso"],
+  ["Meng, Kitagawa, Imamura, Katayama, Obata & Sugawara 2017", "meng2017soysauce"]
 ];
 
 function refForCite(citeString) {
@@ -2894,7 +3113,7 @@ const WAIS_DESCRIPTORS = [
     { word: "green / vegetal",   notes: ["green", "bellpepper"] },
     { word: "fresh-cut grass",   notes: ["green"] },
     { word: "tomato leaf",       notes: ["green", "bellpepper"] },
-    { word: "eucalyptus",        notes: ["pine"] },
+    { word: "eucalyptus",        notes: ["eucalyptus"] },
     { word: "sage",              notes: ["lavender"] },
     { word: "thyme",             notes: ["lavender"] },
     { word: "peppermint",        notes: ["mint"] },
@@ -2974,6 +3193,30 @@ const WAIS_DESCRIPTORS = [
     { word: "corked / musty",    notes: ["musty"] },
     { word: "wet cardboard / basement", notes: ["musty", "cardboard"] },
     { word: "skunky / lightstruck", notes: ["skunky", "sulfury"] }
+  ]},
+  { category: "Vegetal / Savory", entries: [
+    { word: "onion",             notes: ["onion"] },
+    { word: "red onion",         notes: ["onion"] },
+    { word: "sweet onion",       notes: ["onion"] },
+    { word: "scallion / green onion", notes: ["onion"] },
+    { word: "garlic",            notes: ["garlic"] },
+    { word: "celery",            notes: ["celery"] },
+    { word: "carrot",            notes: ["carrot"] },
+    { word: "tomato vine / leaf", notes: ["tomato", "green"] },
+    { word: "arugula / peppery greens", notes: ["arugula"] },
+    { word: "lettuce",           notes: ["lettuce"] },
+    { word: "cabbage",           notes: ["cabbage"] },
+    { word: "cooked cauliflower / sulfurous veg", notes: ["cabbage"] },
+    { word: "Brussels sprouts",  notes: ["brusselssprouts"] },
+    { word: "boiled / baked potato", notes: ["potato"] },
+    { word: "raw potato peel",   notes: ["potato"] },
+    { word: "sweet potato / yam", notes: ["sweetpotato"] },
+    { word: "ube / purple yam",  notes: ["ube"] },
+    { word: "taro",              notes: ["taro"] },
+    { word: "wasabi",            notes: ["wasabi"] },
+    { word: "horseradish",       notes: ["horseradish"] },
+    { word: "miso",              notes: ["miso"] },
+    { word: "soy sauce / shoyu", notes: ["soysauce"] }
   ]}
 ];
 
