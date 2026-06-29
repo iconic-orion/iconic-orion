@@ -1017,6 +1017,8 @@
     border-bottom: 1px solid var(--line); flex-shrink: 0; }
   #taxonomy-search-wrap input[type=search] { flex: 1; max-width: 280px; }
   #taxonomy-search-wrap button { font-size: 11px; padding: 4px 8px; }
+  .tx-zoom { flex-direction: row !important; margin-left: auto; }
+  .tx-zoom button { width: 24px; height: 24px; padding: 0 !important; font-size: 14px !important; }
   #taxonomy-tree-scroll { flex: 1; overflow: auto; padding: 16px; }
   #taxonomy-legend-note { font-size: 11px; color: var(--ink-dim); padding: 8px 14px;
     border-top: 1px solid var(--line); margin: 0; flex-shrink: 0; }
@@ -1418,6 +1420,10 @@
     <span id="taxonomy-search-count"></span>
     <button type="button" id="taxonomy-expand-all">Expand all</button>
     <button type="button" id="taxonomy-collapse-all">Collapse to kingdoms</button>
+    <div class="omc-zoom tx-zoom">
+      <button type="button" id="taxonomy-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+      <button type="button" id="taxonomy-zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
+    </div>
   </div>
   <div id="taxonomy-tree-scroll">
     <svg id="taxonomy-svg"></svg>
@@ -6703,6 +6709,22 @@ function loadTaxonomyTree() {
   taxonomyTreeLoaded = true;
   renderTaxonomyTree();
 }
+// Zoom scales the SVG's rendered CSS box while the viewBox/coordinate system
+// stays fixed — unlike a CSS transform, this is real layout size, so the
+// scrolling container (#taxonomy-tree-scroll, overflow:auto) grows/shrinks
+// its scrollable area correctly as you zoom, same as zooming any image.
+let taxonomyZoom = 1;
+function setTaxonomyZoom(factor) {
+  taxonomyZoom = Math.max(0.4, Math.min(2.5, taxonomyZoom * factor));
+  const svg = document.getElementById("taxonomy-svg");
+  const w = parseFloat(svg.getAttribute("width")) || 0;
+  const h = parseFloat(svg.getAttribute("height")) || 0;
+  svg.style.width = (w * taxonomyZoom) + "px";
+  svg.style.height = (h * taxonomyZoom) + "px";
+}
+document.getElementById("taxonomy-zoom-in").addEventListener("click", () => setTaxonomyZoom(1.2));
+document.getElementById("taxonomy-zoom-out").addEventListener("click", () => setTaxonomyZoom(1 / 1.2));
+
 function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
   d3.tree().nodeSize([TAX_DX, TAX_DY])(taxTreeRoot);
@@ -6713,6 +6735,10 @@ function renderTaxonomyTree() {
   nodes.forEach(d => { if (d.x < minX) minX = d.x; if (d.x > maxX) maxX = d.x; if (d.y > maxY) maxY = d.y; });
   const width = maxY + 220, height = maxX - minX + 40;
   svg.attr("width", width).attr("height", height).attr("viewBox", `0 ${minX - 20} ${width} ${height}`);
+  // Re-apply the current zoom's CSS box size — the width/height attrs above
+  // just got reset to the natural (unzoomed) size for this render.
+  svg.node().style.width = (width * taxonomyZoom) + "px";
+  svg.node().style.height = (height * taxonomyZoom) + "px";
 
   const keyFor = d => d.data.noteId || (d.ancestors().map(a => a.data.name).join("/"));
 
