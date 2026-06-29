@@ -1538,6 +1538,16 @@ const NOTES = [
   { id: "redcurrant",  label: "Red currant",        group: "fruity",   common: false, subOf: "berry", genus: "Ribes", family: "Grossulariaceae", order: "Saxifragales" },
   { id: "cassis",      label: "Black currant / cassis", group: "fruity", common: false, subOf: "berry", genus: "Ribes", family: "Grossulariaceae", order: "Saxifragales" },
   { id: "pomegranate", label: "Pomegranate",        group: "fruity",   common: true,  subOf: "berry", genus: "Punica", family: "Lythraceae", order: "Myrtales" },
+  // Raspberry, strawberry, blueberry, blackberry moved here (were top-level
+  // sliders) on culinary-fit grounds: each is either named "berry" or is one
+  // of the everyday culinary berries, the same logic already used for
+  // cranberry/redcurrant/cassis/pomegranate above. Deliberately NOT grouped
+  // by true botanical-berry status (a much larger, less intuitive set that
+  // includes things like banana, grape, and citrus) — see CLAUDE.md.
+  { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
+  { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
+  { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true,  subOf: "berry", genus: "Vaccinium", family: "Ericaceae", order: "Ericales" },
+  { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
   { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "banana",      label: "Banana",             group: "fruity",   common: true,  genus: "Musa", family: "Musaceae", order: "Zingiberales" },
@@ -1546,11 +1556,7 @@ const NOTES = [
   { id: "mango",       label: "Mango",              group: "fruity",   common: false, genus: "Mangifera", family: "Anacardiaceae", order: "Sapindales" },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false, genus: "Passiflora", family: "Passifloraceae", order: "Malpighiales" },
   { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true,  genus: "Vitis", family: "Vitaceae", order: "Vitales" },
-  { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
-  { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true,  family: "Rosaceae", order: "Rosales" },
-  { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true,  genus: "Vaccinium", family: "Ericaceae", order: "Ericales" },
-  { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true,  family: "Rosaceae", order: "Rosales" },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true,  family: "Oleaceae", order: "Lamiales" },
@@ -2738,18 +2744,18 @@ const WAIS_DESCRIPTORS = [
     { word: "blood orange",      notes: ["orange"] },
     { word: "pomelo / pummelo",  notes: ["grapefruit"] },
     { word: "orange peel",       notes: ["orange"] },
-    { word: "blueberry",         notes: ["blueberry", "berry"] },
-    { word: "raspberry",         notes: ["raspberry", "berry", "violet"] },
+    { word: "blueberry",         notes: ["berry"] },
+    { word: "raspberry",         notes: ["berry", "violet"] },
     { word: "grape / concord",   notes: ["grape"] },
     { word: "melon",             notes: ["melon"] },
     { word: "cucumber",          notes: ["melon", "green"] },
     { word: "watermelon",        notes: ["melon"] },
-    { word: "strawberry",        notes: ["strawberry", "berry"] },
-    { word: "blackberry",        notes: ["blackberry", "berry", "violet"] },
+    { word: "strawberry",        notes: ["berry"] },
+    { word: "blackberry",        notes: ["berry", "violet"] },
     { word: "cranberry",         notes: ["berry"] },
     { word: "red currant",       notes: ["berry"] },
-    { word: "black currant / cassis", notes: ["cassis", "passionfruit"] },
-    { word: "pomegranate",       notes: ["pomegranate", "winey"] },
+    { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
+    { word: "pomegranate",       notes: ["berry", "winey"] },
     { word: "red cherry",        notes: ["cherry", "berry"] },
     { word: "black cherry",      notes: ["cherry", "winey"] },
     { word: "plum",              notes: ["stonefruit", "berry"] },
@@ -2814,8 +2820,8 @@ const WAIS_DESCRIPTORS = [
   { category: "Confectionery / Artificial", entries: [
     // Artificial flavors are made from real aroma compounds — these chips show
     // which natural volatiles manufacturers are actually deploying.
-    { word: "blue raspberry",    notes: ["raspberry", "berry", "grape"] },
-    { word: "bubble gum",        notes: ["banana", "strawberry", "vanilla", "berry"] },
+    { word: "blue raspberry",    notes: ["berry", "grape"] },
+    { word: "bubble gum",        notes: ["banana", "berry", "vanilla"] },
     { word: "tutti frutti",      notes: ["cherry", "pineapple", "banana", "orange", "berry"] }
   ]},
   { category: "Nutty / Cocoa", entries: [
