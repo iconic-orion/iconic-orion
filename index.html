@@ -3376,6 +3376,24 @@ function noteSignal(noteId) {
   }
   return sum / 10;
 }
+// A note's signal for the purposes of ONE specific compound edge, folding in
+// any subOf children's signal too — EXCEPT a child that has its own direct
+// edge to this same compound (e.g. Cranberry's own "ethex" edge), since that
+// child's contribution already gets counted via its own edge entry and
+// folding it in again here would double it. This is what lets scoring a
+// child alone (Cranberry, no entry on parent Berry) also activate the
+// parent's other shared-base compounds (bdam, ionone, furaneol, e2mb) that
+// the child has no edge of its own to, without requiring the user to
+// separately set the parent. One level deep — no note in this data has a
+// subOf child that itself has further children.
+function effectiveNoteSignal(noteId, cpdId) {
+  let total = noteSignal(noteId);
+  varietalChildrenOf(noteId).forEach(c => {
+    const childHasOwnEdge = (NOTE_EDGES[c.id] || []).some(e => e.cpd === cpdId);
+    if (!childHasOwnEdge) total += noteSignal(c.id);
+  });
+  return total;
+}
 
 // Count entries for a tagged phase (used by legend counts; default-phase
 // entries aren't shown in the phase filter UI so we don't count them here).
@@ -4045,7 +4063,7 @@ function targetForce(strength) {
         // note anchors (the original scent-mode behavior).
         CPD_EDGES[node.id].forEach(e => {
           if (!isNoteVisible(e.note)) return;
-          const noteW = noteSignal(e.note);
+          const noteW = effectiveNoteSignal(e.note, node.id);
           if (noteW <= 0) return;
           const contrib = noteW * e.w;
           const n = NOTE_BY_ID[e.note];
@@ -4363,15 +4381,34 @@ function applySpotlight() {
 }
 function setSpotlight(kind, id) { state.spotlight = (kind && id) ? { kind, id } : null; applySpotlight(); }
 
+// A subOf child has no wheel position of its own (isNoteVisible excludes it),
+// so a line from it has nowhere to start. In Scent mode, anchor it at its
+// parent's dot instead — the parent IS on the wheel, and visually that's the
+// only place this whole family appears. Returns the note object to anchor at
+// (still possibly unpositioned itself, e.g. a hidden legend group — caller
+// checks _x before using it).
+function noteAnchorFor(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  if (n._x != null || !n.subOf) return n;
+  return noteAnchorFor(n.subOf);
+}
+
 // ---------- EDGES rendering ----------
 function updateEdges() {
   // only draw edges where note has weight > 0 OR note is hovered OR compound is selected
   const chem = inChemistry();
   const drawn = [];
   EDGES.forEach(e => {
-    if (!isNoteVisible(e.note)) return;
+    // isNoteScoreable (not isNoteVisible): a subOf child's edges should still
+    // draw in Scent mode, anchored at its parent (see noteAnchorFor). Chemistry
+    // mode's floating endpoint is the note itself, which genuinely doesn't
+    // exist on screen unless entered, so it keeps requiring visibility.
+    if (!isNoteScoreable(e.note)) return;
+    if (chem && !isNoteVisible(e.note)) return;
     if (!isCompoundVisible(e.cpd)) return;
-    const sig = noteSignal(e.note);
+    const anchorN = chem ? NOTE_BY_ID[e.note] : noteAnchorFor(e.note);
+    if (!chem && anchorN._x == null) return; // parent itself unpositioned too (e.g. hidden group)
+    const sig = effectiveNoteSignal(e.note, e.cpd);
     const isHovered = state.hoveredNote === e.note || state.hoveredCompound === e.cpd || state.selectedCompound === e.cpd;
     const w = sig * e.w;
     // Scent: draw lit edges plus a hovered/selected node's full fan. Chemistry:
@@ -4380,7 +4417,7 @@ function updateEdges() {
     if (sig > 0 || (isHovered && !chem)) {
       drawn.push({
         ...e,
-        n: NOTE_BY_ID[e.note],
+        n: anchorN,
         c: CPD_NODE_BY_ID[e.cpd],
         nf: NOTE_NODE_BY_ID[e.note],   // note float node (chemistry endpoint)
         contrib: w,
@@ -4424,8 +4461,12 @@ function recompute() {
       // isNoteScoreable (not isNoteVisible): a subOf varietal child's own
       // score must count toward compound intensity even when collapsed under
       // its parent's row — only legend group-visibility should zero it out.
+      // effectiveNoteSignal (not noteSignal): scoring a child alone also
+      // activates the parent's own shared-base edges (e.g. Cranberry alone
+      // lights up Berry's general esters too, not just Cranberry's own
+      // distinguishing compound) — no need to separately set the parent.
       if (!isNoteScoreable(e.note)) return;
-      const nw = noteSignal(e.note);
+      const nw = effectiveNoteSignal(e.note, node.id);
       if (nw > 0) {
         s += nw * e.w;
         activeCount++;
@@ -5161,8 +5202,8 @@ function renderCompoundDetail(cpdId, banner) {
   const c = CPD_BY_ID[cpdId];
   const node = CPD_NODE_BY_ID[cpdId];
   const edges = CPD_EDGES[cpdId].slice().sort((a,b) => {
-    const wa = noteSignal(a.note) * a.w;
-    const wb = noteSignal(b.note) * b.w;
+    const wa = effectiveNoteSignal(a.note, cpdId) * a.w;
+    const wb = effectiveNoteSignal(b.note, cpdId) * b.w;
     if (wa !== wb) return wb - wa;
     return b.w - a.w;
   });
@@ -5198,7 +5239,7 @@ function renderCompoundDetail(cpdId, banner) {
       <div class="section-title">Contributing notes (literature)</div>
       <ul>
         ${edges.map(e => {
-          const sig = noteSignal(e.note);
+          const sig = effectiveNoteSignal(e.note, cpdId);
           const live = sig > 0;
           const contrib = (sig * e.w).toFixed(2);
           // Show which phases contributed (small hint after the note name).
