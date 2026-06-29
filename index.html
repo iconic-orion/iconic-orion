@@ -433,6 +433,16 @@
   .taxon-badge { cursor: pointer; margin-left: 4px; font-size: 11px; opacity: 0.75; }
   .taxon-badge:hover { opacity: 1; }
 
+  /* Varietal disclosure toggle: expands a parent note's subOf children
+     (mint -> peppermint/spearmint/wintergreen) into their own rows, scoreable
+     independently of the parent. Standing feature, not gated by Go Deeper. */
+  .varietal-toggle { cursor: pointer; background: none; border: none; padding: 0;
+    margin-right: 4px; font-size: 9px; color: var(--ink-dim); display: inline-block;
+    transform: rotate(0deg); transition: transform 0.15s; }
+  .varietal-toggle:hover { color: var(--ink); }
+  .varietal-toggle.expanded { transform: rotate(90deg); }
+  .note-subrows { padding-left: 16px; border-left: 1px solid var(--line); margin-left: 4px; }
+
   /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
      Each note can have up to two confirmed entries — one per phase —
      each with its own intensity. Confirming requires intensity > 0.
@@ -2957,7 +2967,12 @@ const state = {
   compassWidth: null,       // px, once resized; null = default 200px width
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
   spotlight: null,           // null | { kind: "group" | "class", id }
-  showCallouts: false        // mobile callout labels toggle
+  showCallouts: false,       // mobile callout labels toggle
+  // Parent note ids whose varietal children are expanded into their own
+  // sliders below it in the panel (e.g. expanding "Mint" reveals Peppermint/
+  // Spearmint/Wintergreen rows). Persists across panel rebuilds; available in
+  // both default and Go Deeper mode — it's just a standing feature of the row.
+  expandedVarietals: new Set()
 };
 
 // ---------- ENTRY HELPERS ----------
@@ -2983,7 +2998,7 @@ function hasAnyEntry(noteId) {
 // Divides by 10 to match the old `noteWeights[id]/10` shape. NOT capped at the math
 // layer — logging multiple phases at high intensity is genuinely more evidence.
 function noteSignal(noteId) {
-  if (!isNoteVisible(noteId)) return 0;
+  if (!isNoteScoreable(noteId)) return 0;
   let sum = 0;
   // Default (null-phase) entry: always counted if present
   const defaultV = state.entries.get(entryKey(noteId, null));
@@ -3012,8 +3027,60 @@ function isNoteVisible(noteId) {
   if (state.hiddenGroups.has(n.group)) return false;
   return true;
 }
+// Whether a note's entries should count toward the compound graph. Unlike
+// isNoteVisible(), this does NOT exclude subOf varietal children — a user can
+// expand e.g. Mint to score Peppermint and Spearmint independently, and those
+// scores need to flow into recompute() even though the child has no slider
+// of its own in the collapsed default view. Legend group-visibility still
+// applies (hiding a whole category should still zero out its contributions).
+function isNoteScoreable(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  if (!n) return false;
+  if (state.hiddenGroups.has(n.group)) return false;
+  return true;
+}
 function getVisibleNotes() {
   return NOTES.filter(n => isNoteVisible(n.id));
+}
+// A parent note's varietal children (e.g. mint -> peppermint/spearmint/wintergreen).
+// These are normally collapsed out of the panel (isNoteVisible() excludes subOf
+// notes) but can be expanded into their own independently-scoreable rows —
+// see state.expandedVarietals and renderNoteRow()'s disclosure toggle.
+function varietalChildrenOf(parentId) {
+  return NOTES.filter(n => n.subOf === parentId);
+}
+// Appends a note's row, and — if it's expanded — its varietal children's
+// rows right after it. Shared by buildNotesPanel() and the toggle handler so
+// the expanded set stays correct across a full panel rebuild.
+function appendNoteRowWithVarietals(container, n) {
+  container.appendChild(renderNoteRow(n));
+  const children = varietalChildrenOf(n.id);
+  if (children.length > 0 && state.expandedVarietals.has(n.id)) {
+    const wrap = document.createElement("div");
+    wrap.className = "note-subrows";
+    wrap.dataset.parent = n.id;
+    children.forEach(c => wrap.appendChild(renderNoteRow(c)));
+    container.appendChild(wrap);
+  }
+}
+// Toggles a parent's varietal children open/closed in place (no full panel
+// rebuild — snappier, and keeps scroll position stable).
+function toggleVarietalExpansion(parentId, row) {
+  const toggleBtn = row.querySelector(".varietal-toggle");
+  if (state.expandedVarietals.has(parentId)) {
+    state.expandedVarietals.delete(parentId);
+    const wrap = document.querySelector(`.note-subrows[data-parent="${parentId}"]`);
+    if (wrap) wrap.remove();
+    if (toggleBtn) toggleBtn.classList.remove("expanded");
+  } else {
+    state.expandedVarietals.add(parentId);
+    const wrap = document.createElement("div");
+    wrap.className = "note-subrows";
+    wrap.dataset.parent = parentId;
+    varietalChildrenOf(parentId).forEach(c => wrap.appendChild(renderNoteRow(c)));
+    row.insertAdjacentElement("afterend", wrap);
+    if (toggleBtn) toggleBtn.classList.add("expanded");
+  }
 }
 
 // Plant taxonomy: an additive, non-exhaustive layer alongside the flavor-category
@@ -3924,7 +3991,10 @@ function recompute() {
     let activeCount = 0;
     let peakActive = 0;
     edges.forEach(e => {
-      if (!isNoteVisible(e.note)) return;
+      // isNoteScoreable (not isNoteVisible): a subOf varietal child's own
+      // score must count toward compound intensity even when collapsed under
+      // its parent's row — only legend group-visibility should zero it out.
+      if (!isNoteScoreable(e.note)) return;
       const nw = noteSignal(e.note);
       if (nw > 0) {
         s += nw * e.w;
@@ -4017,10 +4087,10 @@ function buildNotesPanel() {
         }
         taxHeader.title = title;
         notesPanel.appendChild(taxHeader);
-        inGroup.forEach(m => { notesPanel.appendChild(renderNoteRow(m)); rendered.add(m.id); });
+        inGroup.forEach(m => { appendNoteRowWithVarietals(notesPanel, m); rendered.add(m.id); });
         return;
       }
-      notesPanel.appendChild(renderNoteRow(n));
+      appendNoteRowWithVarietals(notesPanel, n);
       rendered.add(n.id);
     });
   });
@@ -4039,6 +4109,27 @@ function renderNoteRow(n) {
   lbl.className = "note-label-text";
   lbl.setAttribute("for", "slider-" + n.id);
   lbl.textContent = n.label;
+
+  // Varietal disclosure: notes with subOf children (mint -> peppermint/
+  // spearmint/wintergreen, lemon -> lime/yuzu/meyerlemon, etc.) get a small
+  // toggle to expand those children into their own independently-scoreable
+  // rows right below. Available in both default and Go Deeper mode — it's
+  // just a standing feature of the row, not a separate mode.
+  const varietalChildren = varietalChildrenOf(n.id);
+  if (varietalChildren.length > 0) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "varietal-toggle" + (state.expandedVarietals.has(n.id) ? " expanded" : "");
+    toggle.setAttribute("aria-label", `Show ${varietalChildren.length} varietals of ${n.label} as separate sliders`);
+    toggle.title = `${varietalChildren.length} varietals: ${varietalChildren.map(c => c.label).join(", ")}. Click to score them independently.`;
+    toggle.textContent = "▸";
+    toggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleVarietalExpansion(n.id, row);
+    });
+    lbl.insertBefore(toggle, lbl.firstChild);
+  }
 
   // Cross-group taxonomy badge: only for notes whose plant family has no other
   // member in the SAME group (those get an in-group .taxon-header instead) but
@@ -4464,7 +4555,7 @@ function renderNoteDetail(noteId) {
 //      small intensity bar, sorted by intensity desc. The completeness layer.
 function renderAnalysisGrid() {
   const pct = v => Math.round(Math.min(1, v) * 100);
-  const activeNotes = NOTES.filter(n => hasAnyEntry(n.id) && isNoteVisible(n.id));
+  const activeNotes = NOTES.filter(n => hasAnyEntry(n.id) && isNoteScoreable(n.id));
   const allActive = compoundNodes
     .filter(n => isCompoundVisible(n.id) && n.intensity_raw > 0);
   const byConfidence = allActive.slice()
