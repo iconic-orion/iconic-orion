@@ -1575,6 +1575,18 @@ const NOTES = [
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false, genus: "Passiflora", family: "Passifloraceae", order: "Malpighiales" },
   { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true,  genus: "Vitis", family: "Vitaceae", order: "Vitales" },
   { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
+  // The umbrella default above is the green/watery cucumber-and-rind register
+  // (its own edges are literally nonadienal, "cucumber aldehyde") — not the
+  // sweet, ester-driven ripe-melon character. Cucumber and Melon rind are
+  // both honest "this IS the default" cases; Watermelon/Honeydew/Cantaloupe
+  // each get a real, sourced compound that the default genuinely lacks.
+  { id: "cucumber",    label: "Cucumber",           group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales",
+    noStandoutNote: "Cucumber IS the profile \"Melon / cucumber\" is modeled on above — (E,Z)-2,6-nonadienal is literally cucumber's defining compound, so there's no separate one to call out here." },
+  { id: "melonrind",   label: "Melon rind",         group: "fruity",   common: false, subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales",
+    noStandoutNote: "Melon rind shares the exact same green/watery base as Cucumber above — (E,Z)-2,6-nonadienal is described in the literature as a cucumber-AND-melon-rind compound, not a separate one." },
+  { id: "watermelon",  label: "Watermelon",         group: "fruity",   common: true,  subOf: "melon", genus: "Citrullus", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "honeydew",    label: "Honeydew",           group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "cantaloupe",  label: "Cantaloupe",         group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true,  family: "Oleaceae", order: "Lamiales" },
@@ -1734,6 +1746,9 @@ const COMPOUNDS = [
   { id: "raspketone",    label: "Raspberry ketone",  class: "ketone",    commonName: "4-(4-hydroxyphenyl)butan-2-one", threshold: "low", specificity: "signature", thresholdSrc: "~1–10 ppb (Larsen & Poll 1990).", note: "Character-impact compound of raspberry; sweet, jammy raspberry-preserve aroma. Combined with methyl anthranilate it drives the artificial blue raspberry and cotton-candy character used across confectionery." },
   { id: "pearester",     label: "Ethyl (E,Z)-2,4-decadienoate", class: "ester", commonName: "pear ester", threshold: "low", specificity: "signature", thresholdSrc: "Bartlett-pear character impact (Jennings & Sevenants 1964).", note: "The 'pear ester.' Defines ripe Bartlett/Williams pear; green-fruity." },
   { id: "nonadienal",    label: "(E,Z)-2,6-Nonadienal", class: "aldehyde", commonName: "cucumber / violet-leaf aldehyde", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.01 ppb in water (Schieberle 1990).", note: "Fresh cucumber and melon rind; watery-green. Also violet leaf." },
+  { id: "nonadienal36",  label: "(Z,Z)-3,6-Nonadienal", class: "aldehyde", threshold: "very-low", specificity: "signature", thresholdSrc: "Identified by GC-O as a potent odorant with an aroma reminiscent of fresh-cut watermelon on its own (Genthner 2010).", note: "A positional isomer of cucumber's 2,6-nonadienal, but distinctly watermelon rather than cucumber on its own — one of those cases where moving a double bond two carbons over changes the smell." },
+  { id: "nonadienylac",  label: "(E,Z)-2,6-Nonadienyl acetate", class: "ester", threshold: "low", specificity: "signature", thresholdSrc: "First identified in melon via GC-MS/MS, specifically associated with honeydew (Perry, Wang & Lin 2009).", note: "The acetate ester of cucumber's nonadienal — same carbon skeleton, but the ester softens and sweetens it, reading more honeydew than raw cucumber." },
+  { id: "e2mta",         label: "Ethyl 2-(methylthio)acetate", class: "ester", threshold: "low", specificity: "signature", thresholdSrc: "Top-ranked among six key cantaloupe aroma-impact compounds by GC-O (Wang & Lin 2014).", note: "A sulfur-containing ester — part of why cantaloupe reads muskier and less green than honeydew or watermelon, despite all three being the same genus." },
   { id: "acetylpyrroline", label: "2-Acetyl-1-pyrroline", class: "pyrroline", commonName: "2-AP", threshold: "very-low", specificity: "signature", thresholdSrc: "~0.1 ppb in water (Buttery et al. 1983).", note: "Popcorn, fresh bread crust, basmati & jasmine rice. One molecule, the whole 'warm baked' smell." },
   { id: "maltol",        label: "Maltol",            class: "pyranone",  commonName: "3-hydroxy-2-methyl-4H-pyranone", threshold: "high", specificity: "shared", thresholdSrc: "Caramel; relatively high threshold (Pittet, Rittersbacher & Muralidhara 1970).", note: "Warm caramel / cotton-candy / freshly-baked. A Maillard product in roasted malt, coffee, cocoa, and bread crust." },
   { id: "ethylmaltol",   label: "Ethyl maltol",      class: "pyranone",  threshold: "medium", specificity: "signature", thresholdSrc: "Synthetic; ~order of magnitude stronger than maltol (Pittet et al. 1970).", note: "Synthetic flavorant (does not occur in nature). The intense cotton-candy / candy-floss smell of spun sugar, sodas, and confectionery." },
@@ -1985,6 +2000,18 @@ const EDGES = [
   // Melon / cucumber
   { note: "melon",      cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, cucumber & muskmelon)." },
   { note: "melon",      cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
+  // Cucumber and Melon rind reuse the parent's exact profile (see their
+  // noStandoutNote fields) rather than introducing a separate compound.
+  { note: "cucumber",   cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, the determinant cucumber compound)." },
+  { note: "cucumber",   cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
+  { note: "melonrind",  cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, cucumber & muskmelon)." },
+  { note: "melonrind",  cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
+  { note: "watermelon", cpd: "nonadienal36", w: 0.80, cite: "Genthner 2010 ((Z,Z)-3,6-nonadienal, a potent odorant smelling specifically of fresh-cut watermelon on its own)." },
+  { note: "watermelon", cpd: "nonadienal",   w: 0.40, cite: "Schieberle 1990 (shared C9 aldehyde base with melon/cucumber)." },
+  { note: "honeydew",   cpd: "nonadienylac", w: 0.70, cite: "Perry, Wang & Lin 2009 ((E,Z)-2,6-nonadienyl acetate, first identified in melon, associated with honeydew)." },
+  { note: "honeydew",   cpd: "nonadienal",   w: 0.55, cite: "Perry, Wang & Lin 2009 ((E,Z)-2,6-nonadienal, the most impactful compound by AEDA in honeydew)." },
+  { note: "cantaloupe", cpd: "e2mta",       w: 0.75, cite: "Wang & Lin 2014 (ethyl 2-(methylthio)acetate, top-ranked cantaloupe aroma-impact compound by GC-O)." },
+  { note: "cantaloupe", cpd: "nonadienal",   w: 0.30, cite: "Schieberle 1990 (shared C9 aldehyde base across muskmelons)." },
   // Popcorn / fresh bread
   { note: "popcorn",    cpd: "acetylpyrroline", w: 0.95, cite: "Schieberle 1991 (2-acetyl-1-pyrroline, popcorn primary odorant)." },
   { note: "toast",      cpd: "acetylpyrroline", w: 0.55, cite: "Schieberle 1991 (2-AP in wheat-bread crust)." },
@@ -2127,6 +2154,9 @@ const COMPOUND_ORIGINS = {
   raspketone:    "Raspberries, where it's the defining aroma; also smaller amounts in cranberry, blackberry, and rhubarb. In confectionery: combined with methyl anthranilate (the Concord grape compound) it drives artificial blue raspberry and cotton-candy flavors across candy, soda, and bubble gum — a case where two natural-source compounds are deployed together to build a flavor that doesn't correspond to any single fruit.",
   pearester:     "Ripe Bartlett (Williams) pears above all, where it defines the 'pear' smell; also apple, quince, and Concord grape in traces. One of the most pear-specific molecules known.",
   nonadienal:    "Fresh cucumber and melon rind, where it's the lead aroma; violet leaves, and the 'green' top note of many vegetables. Forms instantly when cucumber tissue is cut.",
+  nonadienal36:  "Watermelon, specifically — identified as smelling like fresh-cut watermelon on its own, distinct from cucumber's closely related 2,6-isomer.",
+  nonadienylac:  "Honeydew melon, where it was first identified — the acetate-ester cousin of cucumber's nonadienal, softer and sweeter than the parent aldehyde.",
+  e2mta:         "Cantaloupe/muskmelon, where it's a top aroma-impact compound — a sulfur-containing ester that gives cantaloupe its muskier edge over honeydew or watermelon.",
   acetylpyrroline: "Popcorn, the crust of fresh bread, and cooked aromatic rice (basmati, jasmine). Also pandan leaves and a trace in some breads and beers. Forms from proline during baking and roasting.",
   maltol:        "Roasted malt, fresh bread crust, roasted coffee and cocoa, caramelized sugar, and toasted cereal. A natural product of sugar browning — the 'freshly baked' warmth.",
   ethylmaltol:   "Does not occur in nature — a synthetic flavorant. You meet it constantly anyway: cotton candy, candy, fruit sodas, and sweet bakery products, where it supplies the intense spun-sugar smell.",
@@ -2240,6 +2270,14 @@ const NOTE_ORIGINS = {
                   modernNote: "The simple \"one origin in India\" story does not hold up under genomic scrutiny. At least two distinct gene pools, Indian and Southeast Asian, contribute to cultivated mango today.",
                   citeKeys: ["warschefsky2019mango"] },
   passionfruit: { region: "Brazil / South America", lat: -22, lon: -47, certainty: "known" },
+  // Cucumber and Watermelon are real, distinct species (Cucumis sativus,
+  // Citrullus lanatus) with their own well-documented origin points, unlike
+  // Honeydew/Cantaloupe/Melon rind — those are all just Cucumis melo, the
+  // same species as the "melon" parent, which has no pin of its own here.
+  cucumber:     { region: "South Asia / India", lat: 23, lon: 80, certainty: "known",
+                  modernNote: "Domesticated from wild Cucumis sativus var. hardwickii, still found growing wild in the Himalayan foothills. Cultivated for at least 3000 years." },
+  watermelon:   { region: "Northeastern Africa", lat: 15, lon: 32, certainty: "approximate",
+                  modernNote: "Domesticated for its water and food value over 4000 years ago; the modern sweet dessert watermelon didn't emerge until cultivars spread to the Mediterranean roughly 2000 years ago. Its closest wild relative grows in West Africa, with early domesticated populations also found in Sudan." },
   // floral
   rose:         { region: "Persia / Central Asia",      lat: 33,  lon: 54,   certainty: "approximate" },
   jasmine:      { region: "South Asia",                 lat: 23,  lon: 78,   certainty: "approximate" },
@@ -2651,6 +2689,27 @@ const REFERENCES = {
     title: "Study of the volatile compounds from plum (Prunus domestica L. cv. Horvin) and estimation of their contribution to the fruit aroma.",
     journal: "Ciência e Tecnologia de Alimentos",
     volume: "32", issue: "1", pages: "76–83"
+  },
+  "genthner2010watermelon": {
+    type: "thesis",
+    authors: "Genthner, E.R.",
+    year: 2010,
+    title: "Identification of key odorants in fresh-cut watermelon aroma and structure-odor relationships of cis,cis-3,6-nonadienal and ester analogs with cis,cis-3,6-nonadiene, cis-3-nonene and cis-6-nonene backbone structures.",
+    publisher: "M.S. thesis, University of Illinois at Urbana-Champaign"
+  },
+  "perry2009honeydew": {
+    authors: "Perry, P.L., Wang, Y., & Lin, J.",
+    year: 2009,
+    title: "Analysis of honeydew melon (Cucumis melo var. inodorus) flavour and GC-MS/MS identification of (E,Z)-2,6-nonadienyl acetate.",
+    journal: "Flavour and Fragrance Journal",
+    volume: "24", issue: "6", pages: "341–347"
+  },
+  "wang2014cantaloupe": {
+    authors: "Wang, Y., & Lin, J.",
+    year: 2014,
+    title: "Gas chromatography–olfactometry and gas chromatography–tandem mass spectrometry analysis of fresh cantaloupe (Cucumis melo L. var. cantalupensis Naudin) aroma.",
+    journal: "Flavour and Fragrance Journal",
+    volume: "29", issue: "2", pages: "87–94"
   }
 };
 
@@ -2694,7 +2753,10 @@ const CITE_TO_REF = [
   ["Stahl-Biskup & Sáez, eds., 2002", "stahlbiskup2002thyme"],
   ["Jabalpurwala, Smoot & Rouseff 2009", "jabalpurwala2009citrusblossom"],
   ["Schlotzhauer, Pair & Horvat 1996", "schlotzhauer1996honeysuckle"],
-  ["Pino & Quijano 2012", "pino2012plum"]
+  ["Pino & Quijano 2012", "pino2012plum"],
+  ["Genthner 2010", "genthner2010watermelon"],
+  ["Perry, Wang & Lin 2009", "perry2009honeydew"],
+  ["Wang & Lin 2014", "wang2014cantaloupe"]
 ];
 
 function refForCite(citeString) {
@@ -2706,7 +2768,7 @@ function refForCite(citeString) {
 }
 
 function formatRefFull(ref) {
-  if (ref.type === "book") {
+  if (ref.type === "book" || ref.type === "thesis") {
     return `${ref.authors} (${ref.year}). <em>${ref.title}</em> ${ref.publisher}.`;
   }
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
@@ -2793,6 +2855,8 @@ const WAIS_DESCRIPTORS = [
     { word: "melon",             notes: ["melon"] },
     { word: "cucumber",          notes: ["melon", "green"] },
     { word: "watermelon",        notes: ["melon"] },
+    { word: "honeydew",          notes: ["melon"] },
+    { word: "cantaloupe / muskmelon", notes: ["melon"] },
     { word: "strawberry",        notes: ["berry"] },
     { word: "blackberry",        notes: ["berry", "violet"] },
     { word: "cranberry",         notes: ["berry"] },
