@@ -3430,7 +3430,7 @@ function getVisibleNotes() {
 // notes) but can be expanded into their own independently-scoreable rows —
 // see state.expandedVarietals and renderNoteRow()'s disclosure toggle.
 function varietalChildrenOf(parentId) {
-  return NOTES.filter(n => n.subOf === parentId);
+  return NOTES.filter(n => n.subOf === parentId).sort((a, b) => a.label.localeCompare(b.label));
 }
 // A parent's "ghost" references: notes that are genuinely related (e.g.
 // Cherry is the same genus as stonefruit) but iconic enough to keep their
@@ -4526,7 +4526,12 @@ function buildNotesPanel() {
   notesPanel.innerHTML = "";
   const allVisible = getVisibleNotes();
   GROUPS.forEach(g => {
-    const visible = allVisible.filter(n => n.group === g.id);
+    // Alphabetical within each category — taxonomy clusters below still pull
+    // same-family notes together, but a cluster's position and the order of
+    // its members both fall out of this same sort (Array#filter preserves
+    // order), so the whole panel reads A-Z except where a cluster header
+    // groups a few notes under their alphabetically-first member.
+    const visible = allVisible.filter(n => n.group === g.id).sort((a, b) => a.label.localeCompare(b.label));
     if (visible.length === 0) return;
     const header = document.createElement("div");
     header.className = "group-header";
@@ -4903,7 +4908,7 @@ function renderDetail() {
 // to its noStandoutNote if set, or a generic honest default.
 function varietalRows(parentId) {
   const parentCpdIds = new Set((NOTE_EDGES[parentId] || []).map(e => e.cpd));
-  return NOTES.filter(n => n.subOf === parentId).map(n => {
+  return varietalChildrenOf(parentId).map(n => {
     const edges = (NOTE_EDGES[n.id] || []).slice().sort((a, b) => b.w - a.w);
     const distinguishing = edges.find(e => !parentCpdIds.has(e.cpd));
     return { note: n, cpd: distinguishing ? CPD_BY_ID[distinguishing.cpd] : null };
