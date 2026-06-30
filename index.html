@@ -948,7 +948,7 @@
     font-weight: 600;
   }
 
-  .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; }
+  .edge { stroke: #fff; stroke-opacity: 0.06; fill: none; transition: stroke-opacity 0.18s ease; }
   .edge.lit { stroke-opacity: 0.55; }
 
   .compound { cursor: pointer; }
@@ -975,7 +975,7 @@
     fill-opacity 0.2s, stroke 0.15s; }
   g.note:hover .node-glyph, g.compound:hover .node-glyph { stroke-width: 1px; }
   @media (prefers-reduced-motion: reduce) {
-    .node-glyph, .note-halo, .cpd-token { transition: none; }
+    .node-glyph, .note-halo, .cpd-token, .edge { transition: none; }
   }
 
   /* Legend-hover spotlight: matched entities get a bright halo, the rest fade. */
@@ -4899,15 +4899,28 @@ function updateEdges() {
     update => update,
     exit => exit.remove()
   )
-  // Curve runs anchor -> center -> float. Scent: note anchor (_x/_y) to compound
-  // float (x/y). Chemistry: compound anchor (_x/_y) to note float (x/y).
-  .attr("d", d => chem
-    ? `M ${d.c._x} ${d.c._y} Q ${CX} ${CY} ${d.nf.x} ${d.nf.y}`
-    : `M ${d.n._x} ${d.n._y} Q ${CX} ${CY} ${d.c.x} ${d.c.y}`)
+  // Each edge bows GENTLY toward the center rather than passing through it.
+  // Routing every edge through the exact (CX,CY) used to knot them all at one
+  // point in the middle; a control point only ~60% of the way from the edge's
+  // own midpoint toward center keeps the inward bow but lets each curve keep
+  // its own lane, so the fan reads as arcs instead of a central tangle.
+  // Scent: note anchor (_x/_y) → compound float (x/y). Chemistry: compound
+  // anchor (_x/_y) → note float (x/y).
+  .attr("d", d => {
+    const x0 = chem ? d.c._x : d.n._x, y0 = chem ? d.c._y : d.n._y;
+    const x1 = chem ? d.nf.x : d.c.x, y1 = chem ? d.nf.y : d.c.y;
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const cxp = mx + (CX - mx) * 0.6, cyp = my + (CY - my) * 0.6;
+    return `M ${x0} ${y0} Q ${cxp} ${cyp} ${x1} ${y1}`;
+  })
   .attr("stroke", d => groupColor(d.n.group))
-  .attr("stroke-width", d => 0.6 + d.contrib * 4)
+  // Calmer at rest, assertive on focus: an unfocused fan sits as a faint
+  // tracery so the wheel isn't a permanent cross-hatch; hovering a note (or a
+  // compound) lifts that node's whole fan to full strength, which is exactly
+  // when the "one source → several compound classes" relationship is wanted.
+  .attr("stroke-width", d => d.focused ? (0.8 + d.contrib * 4) : (0.5 + d.contrib * 1.8))
   .classed("lit", d => d.lit || d.focused)
-  .attr("stroke-opacity", d => d.focused ? 0.75 : d.lit ? 0.15 + d.contrib * 0.6 : 0.08);
+  .attr("stroke-opacity", d => d.focused ? 0.8 : d.lit ? 0.05 + d.contrib * 0.14 : 0.06);
 }
 
 // ---------- SCORING ----------
