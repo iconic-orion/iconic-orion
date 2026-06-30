@@ -1012,6 +1012,27 @@
       grid-template-rows: auto 46vh 1fr;
       grid-template-areas: "head" "wheel" "panel";
     }
+    /* Wheel workspace on mobile: let the PAGE scroll rather than trap a tall
+       compound/slider list in the short bottom cell (measured 2026px of content
+       in a ~390px window). The wheel is a band at the top that scrolls away
+       under a sticky header; the active panel flows below at full content
+       height, so reading happens in the full screen width with natural scroll.
+       Scoped with :not() so Map / Tree keep their own full-screen grid layouts. */
+    body:not(.origins-mode):not(.taxonomy-mode) {
+      grid-template-rows: auto 50vh auto;
+      height: auto; min-height: 100vh; overflow: visible;
+    }
+    body:not(.origins-mode):not(.taxonomy-mode) header {
+      position: sticky; top: 0; z-index: 100; }
+    body:not(.origins-mode):not(.taxonomy-mode) aside.notes,
+    body:not(.origins-mode):not(.taxonomy-mode) aside.detail {
+      overflow: visible; padding-bottom: 64px; }
+    /* With the wheel scrolling away, pin the Tasting Tray to the bottom of the
+       VIEWPORT so the running record of what you've entered stays visible the
+       whole time — reading compounds, scrolling sliders, anywhere. The panel's
+       bottom padding above keeps its last rows clear of this fixed bar. */
+    body:not(.origins-mode):not(.taxonomy-mode) #tasting-tray {
+      position: fixed; bottom: 8px; z-index: 90; max-width: calc(100% - 16px); }
     /* ••• is pinned to the top-right corner so collapsed header is always
        exactly one line: [Aroma Wheel ···]. Everything else is in the tray. */
     header { flex-wrap: wrap; height: auto; min-height: 48px;
