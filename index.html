@@ -639,6 +639,44 @@
   #jiggle-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.jiggle-on #jiggle-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Reading-mode toggle: same look as the Jiggle item; always present (no
+     hardware gate), so the settings gear is now always worth showing. */
+  #reading-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; width: 100%; }
+  #reading-toggle svg { width: 14px; height: 14px; flex-shrink: 0; display: block; }
+  #reading-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  body.reading-mode #reading-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+
+  /* ── Reading / dyslexia mode ──────────────────────────────────────────
+     A legibility pass: Atkinson Hyperlegible (lazy-loaded; falls back to
+     Verdana/Tahoma offline, both wider-spaced than the default sans), plus
+     the evidence-backed dyslexia interventions — extra letter/word spacing
+     and looser line-height — on the text-heavy HTML surfaces. The wheel's
+     SVG labels are explicitly pinned back to the default fonts and get no
+     letter-spacing, since they're positioned pixel-by-pixel in JS and would
+     otherwise drift or re-truncate. */
+  body.reading-mode {
+    font-family: "Atkinson Hyperlegible", Verdana, Tahoma, system-ui, sans-serif;
+  }
+  body.reading-mode svg text {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body.reading-mode svg text.node-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  body.reading-mode aside.notes,
+  body.reading-mode aside.detail,
+  body.reading-mode .info-overlay-body,
+  body.reading-mode .wais-body,
+  body.reading-mode .tasting-tray,
+  body.reading-mode #origins-detail-panel,
+  body.reading-mode #taxonomy-legend-note {
+    letter-spacing: 0.035em; word-spacing: 0.07em; line-height: 1.6; }
+  /* Nudge the smallest, most-read UI text up a notch for low vision. */
+  body.reading-mode .note-row .note-label-text { font-size: 13px; }
+  body.reading-mode .note-row .val { font-size: 12px; }
+  body.reading-mode .info-overlay-body p,
+  body.reading-mode .info-entry-body { font-size: 14px; }
+
   /* Compass: a first-class header toggle (promoted out of the settings gear). */
   #compass-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
@@ -921,6 +959,11 @@
   .group-arc-label { font-size: 12px; fill: var(--ink); text-transform: uppercase;
     letter-spacing: 0.15em; opacity: 0.7; }
   .arc-label-path { fill: none; stroke: none; }
+  /* Compact glyph fallback for ring sections too thin to fit their name
+     (chemistry's single-compound classes). Cursor:help + a <title> child make
+     it hover-reveal its full name. */
+  .arc-glyph { font-size: 14px; cursor: help;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; }
 
   /* ---------- MOBILE (≤760px) ----------
      The desktop three-column grid (sliders | wheel | analysis) can't fit a phone,
@@ -1371,11 +1414,15 @@
     <!-- Desktop-only flexible gap: pushes the utilities cluster to the far right
          while workspace + wheel controls stay left. Hidden in the mobile grid. -->
     <span class="hud-spacer" aria-hidden="true"></span>
-    <div class="settings-wrap" id="settings-wrap" hidden>
+    <div class="settings-wrap" id="settings-wrap">
       <button type="button" id="settings-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M18 12h2.6M16.2 16.2l1.8 1.8M12 18v2.6M7.8 16.2l-1.8 1.8M6 12H3.4M7.8 7.8 5.9 5.9M12 6V3.4M16.2 7.8l1.8-1.8" stroke-linecap="round"/></svg>
       </button>
       <div class="settings-menu" id="settings-menu" hidden>
+        <button id="reading-toggle" type="button" aria-pressed="false" title="Reading mode: a dyslexia-friendly, high-legibility font with extra letter and line spacing, easier on the eyes for long reading.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="14" r="3.2"/><circle cx="18" cy="14" r="3.2"/><path d="M9.2 14c0-1.2 1.2-2 2.8-2s2.8 .8 2.8 2M3 11l1.5-4h3M21 11l-1.5-4h-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reading mode
+        </button>
         <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
           Jiggle
@@ -3520,6 +3567,7 @@ const state = {
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   jiggleEnabled: false,       // device-motion delight toggle (notes nudge with phone tilt/shake)
+  readingMode: false,         // dyslexia-friendly / high-legibility font + spacing toggle
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
@@ -3968,8 +4016,22 @@ function arcLabelPath(d, RL) {
   return `M ${x0} ${y0} A ${RL} ${RL} 0 0 ${bottom ? 0 : 1} ${x1} ${y1}`;
 }
 
+// One emoji per ring section, used as the compact fallback label: group icon
+// for scent groups, class icon for chemistry classes (distinguished by cssVar,
+// which only groups carry).
+function sectionGlyph(d) { return d.cssVar ? (GROUP_ICON[d.id] || "•") : classIcon(d.id); }
+
 // Shared curved-label renderer for both the scent group arcs and the chemistry
 // class arcs. Each label rides a per-item invisible arc path via <textPath>.
+//
+// Chemistry has ~21 classes, many of them single-compound slivers whose long
+// names ("isothiocyanate", "phenylpropene"…) can't fit their tiny wedge and
+// used to overrun into a jumble on the ring's crowded left side. So class
+// labels are fit-tested against their OWN arc span: a name that fits stays as
+// curved text; one that doesn't is replaced by the class's compact glyph at the
+// wedge midpoint (the same icon its floating molecule tokens use), with the
+// full name still available in the legend and the hover title. Scent's 9 roomy
+// groups always keep their text — the fit-test is skipped for them (d.cssVar).
 function drawArcLabels(items) {
   const RL = arcLabelRadius();
   gArcs.selectAll("path.arc-label-path").data(items, d => d.id)
@@ -3996,6 +4058,39 @@ function drawArcLabels(items) {
     .attr("href", d => `#arclbl-${d.id}`)
     .attr("xlink:href", d => `#arclbl-${d.id}`)
     .text(d => d.label.toUpperCase());
+
+  // Fit-test each chemistry-class label against its actual wedge; collect the
+  // ones that don't fit for glyph fallback. Measured while still visible.
+  const glyphData = [];
+  texts.each(function(d) {
+    if (d.cssVar) { this.style.display = ""; return; }   // groups: always text
+    const avail = Math.abs(d._arc.end - d._arc.start) * RL;   // arc length of the wedge
+    const tp = this.querySelector("textPath");
+    const w = tp ? tp.getComputedTextLength() : 0;
+    const fits = w <= avail - 6;
+    this.style.display = fits ? "" : "none";
+    if (!fits) glyphData.push(d);
+  });
+
+  gArcs.selectAll("text.arc-glyph").data(glyphData, d => d.id)
+    .join(
+      enter => {
+        const t = enter.append("text").attr("class", "arc-glyph")
+          .attr("text-anchor", "middle").attr("dominant-baseline", "central");
+        // glyph text node first, <title> second, so childNodes[0] is the glyph.
+        t.each(function() { this.appendChild(document.createTextNode("")); });
+        t.append("title");
+        return t;
+      },
+      update => update,
+      exit => exit.remove()
+    )
+    .attr("x", d => CX + RL * Math.cos((d._arc.start + d._arc.end) / 2))
+    .attr("y", d => CY + RL * Math.sin((d._arc.start + d._arc.end) / 2))
+    .each(function(d) {
+      this.childNodes[0].nodeValue = sectionGlyph(d);
+      this.querySelector("title").textContent = d.label.toUpperCase();
+    });
 }
 
 function drawGroupArcs() {
@@ -4157,6 +4252,11 @@ function applyArcEvidence() {
       .attr("fill", bloom > 0.05 ? vividColor(base) : (chem ? base : "var(--ink-dim)"))
       .attr("opacity", (0.45 + 0.5 * bloom).toFixed(3))
       .style("font-weight", bloom > 0.45 ? 600 : null);
+  });
+  // Thin-class glyph fallbacks dim/brighten with their wedge, same as the text.
+  gArcs.selectAll("text.arc-glyph").each(function(d) {
+    const bloom = bloomFactor(activity[d.id] || 0);
+    d3.select(this).attr("opacity", (0.5 + 0.45 * bloom).toFixed(3));
   });
 }
 
@@ -6228,6 +6328,29 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !settingsMenu.hidden) setSettingsMenu(false);
 });
+
+// ---------- READING / DYSLEXIA MODE ----------
+// Toggle a high-legibility, dyslexia-friendlier reading pass (see the
+// body.reading-mode CSS): Atkinson Hyperlegible + extra letter/word/line
+// spacing on the text-heavy surfaces. The web font is lazy-loaded the first
+// time the mode is switched on, so users who never touch it pay no network
+// cost; offline, the Verdana/Tahoma fallback still applies the spacing wins.
+const readingToggleBtn = document.getElementById("reading-toggle");
+function ensureReadingFont() {
+  if (document.getElementById("reading-font-link")) return;
+  const link = document.createElement("link");
+  link.id = "reading-font-link";
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap";
+  document.head.appendChild(link);
+}
+function setReadingMode(on) {
+  state.readingMode = !!on;
+  if (state.readingMode) ensureReadingFont();
+  document.body.classList.toggle("reading-mode", state.readingMode);
+  readingToggleBtn.setAttribute("aria-pressed", String(state.readingMode));
+}
+readingToggleBtn.addEventListener("click", () => setReadingMode(!state.readingMode));
 
 // ---------- JIGGLE (device motion) ----------
 // Mobile delight feature: tilt or shake the phone and the flavor notes nudge
