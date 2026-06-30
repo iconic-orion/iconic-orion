@@ -181,6 +181,35 @@
   .results-disclaimer { font-size: 11px; color: var(--ink-dim); line-height: 1.5;
     padding-top: 10px; border-top: 1px dotted var(--line); margin-top: 8px; }
 
+  /* ── Bouquet readout ("clouds") ───────────────────────────────────────
+     Soft, rounded, translucent cards that synthesize the whole input in
+     plain language. The "main class" cloud is tinted by that class's color
+     (--bq-accent, set inline) so it ties into the rest of the palette. */
+  .bouquet { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .bouquet-cloud { border: 1px solid var(--line); border-radius: 16px; padding: 12px 15px;
+    background: var(--panel-2); position: relative; }
+  .bouquet-main { --bq-accent: var(--accent);
+    border-color: color-mix(in srgb, var(--bq-accent) 45%, var(--line));
+    background:
+      radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--bq-accent) 16%, transparent), transparent 60%),
+      var(--panel-2); }
+  .bouquet-kicker { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--ink-dim); margin-bottom: 5px; }
+  .bouquet-headline { font-size: 17px; font-weight: 700; color: var(--ink);
+    display: flex; align-items: center; gap: 8px; line-height: 1.15; }
+  .bouquet-headline .bq-icon { font-size: 18px;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; }
+  .bouquet-sub { font-size: 12px; color: var(--ink-dim); line-height: 1.5; margin-top: 4px; }
+  .bouquet-span { font-size: 11px; color: var(--ink-dim); line-height: 1.45; margin-top: 8px;
+    padding-top: 8px; border-top: 1px dotted var(--line); font-style: italic; }
+  .bq-combo-list { display: flex; flex-direction: column; gap: 7px; margin-top: 2px; }
+  .bq-combo { display: flex; flex-direction: column; gap: 1px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 11px;
+    padding: 7px 11px; cursor: default; }
+  .bq-combo-name { font-size: 13px; font-weight: 600; color: var(--ink);
+    display: inline-flex; align-items: center; gap: 6px; }
+  .bq-combo-blurb { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
+
   /* Section 1 — Your inputs → arrows to key compounds */
   .input-arrows { list-style: none; padding: 0; margin: 0;
     display: flex; flex-direction: column; gap: 8px; }
@@ -5586,6 +5615,130 @@ function renderNoteDetail(noteId) {
 //      compounds, sorted by confidence (where the literature converges).
 //   3. All possible compounds — compact list of every active compound with a
 //      small intensity bar, sorted by intensity desc. The completeness layer.
+// ---------- BOUQUET READOUT ----------
+// Plain-language synthesis of the whole input, shown as soft "cloud" cards atop
+// the analysis pane. Two facts the raw note→compound arcs make you squint to
+// infer: (1) the dominant compound CLASS the bouquet leans on (and that a
+// "single" aroma is really several classes at once — the ginger = ester +
+// aldehyde point, generalized), and (2) whether your combination of notes adds
+// up to a familiar flavor gestalt (cola, mulled wine, mojito…).
+const CLASS_CHARACTER = {
+  terpene: "citrusy, piney, herbal", ester: "fruity, sweet, candy-like",
+  pyrazine: "roasty, nutty, earthy", furan: "caramel, coffee, bready",
+  thiol: "pungent, sulfury, savory", lactone: "creamy, coconut, stone-fruit",
+  "phenolic-aldehyde": "vanilla, sweet-balsamic", aldehyde: "green, citrus-peel, fatty",
+  ketone: "buttery, floral, berry", norisoprenoid: "stewed-fruit, violet, tobacco",
+  phenol: "smoky, clove, medicinal", alcohol: "green, earthy, mushroomy",
+  phenylpropene: "anise, clove, warm-spice", pyranone: "caramel, malty, sweet",
+  pyrroline: "popcorn, toasted-rice", acid: "sour, cheesy, funky",
+  haloanisole: "musty, corked", sulfide: "cooked-vegetable, savory",
+  thiazole: "green-tomato, roasty", isothiocyanate: "mustard, wasabi, pungent",
+  furanone: "caramel, strawberry, sweet"
+};
+// Semantic slot groups reused across combos (any one member satisfies the slot).
+const _CITRUS = ["lemon","lime","orange","grapefruit","mandarin","bergamot","yuzu","meyerlemon","bloodorange","pomelo"];
+// Each combo: slots are AND-ed (a slot is met if ANY of its notes is active);
+// it surfaces once `min` slots are met, so a partial match still fires but a
+// single stray note never does.
+const FLAVOR_COMBOS = [
+  { name: "Cola", icon: "🥤", min: 3, blurb: "citrus oils, vanilla, and warm spice — the classic soda accord.",
+    slots: [_CITRUS, ["vanilla"], ["cinnamon","clove","anise","ginger"]] },
+  { name: "Mulled wine", icon: "🍷", min: 3, blurb: "red wine warmed with citrus peel, cinnamon, and clove.",
+    slots: [["winey"], _CITRUS, ["cinnamon"], ["clove","anise"]] },
+  { name: "Gingerbread", icon: "🍪", min: 3, blurb: "ginger and baking spice over molasses-sweet warmth.",
+    slots: [["ginger"], ["cinnamon"], ["clove"], ["maple","honey","caramel"]] },
+  { name: "Pumpkin / chai spice", icon: "🎃", min: 3, blurb: "the cinnamon–clove–ginger warming trio.",
+    slots: [["cinnamon"], ["clove"], ["ginger"]] },
+  { name: "Root beer", icon: "🟤", min: 2, blurb: "anise and vanilla with a cool wintergreen lift.",
+    slots: [["anise"], ["vanilla"], ["wintergreen","mint","peppermint"]] },
+  { name: "Apple pie", icon: "🥧", min: 2, blurb: "baked apple, cinnamon, and a buttery caramel crust.",
+    slots: [["apple"], ["cinnamon"], ["caramel","buttery","maple"]] },
+  { name: "Piña colada", icon: "🍹", min: 2, blurb: "pineapple and coconut, tropical and creamy.",
+    slots: [["pineapple"], ["coconut"], ["banana","mango"]] },
+  { name: "Earl Grey", icon: "🫖", min: 2, blurb: "bergamot's bright citrus over a tannic base.",
+    slots: [["bergamot"], _CITRUS, ["lavender","orangeblossom"]] },
+  { name: "Mint chocolate", icon: "🍫", min: 2, blurb: "cool mint against dark cocoa.",
+    slots: [["mint","peppermint","spearmint"], ["chocolate"]] },
+  { name: "S'mores", icon: "🔥", min: 3, blurb: "toasted char with chocolate and vanilla.",
+    slots: [["chocolate"], ["smoky","toast","burnt"], ["vanilla","caramel"]] },
+  { name: "Mojito", icon: "🌿", min: 2, blurb: "lime and fresh mint.",
+    slots: [["lime","lemon"], ["mint","spearmint","peppermint"]] },
+  { name: "Mocha", icon: "☕", min: 2, blurb: "coffee and chocolate together.",
+    slots: [["coffee"], ["chocolate"]] },
+  { name: "Berries & cream", icon: "🍓", min: 2, blurb: "ripe berry softened by vanilla cream.",
+    slots: [["berry","strawberry","raspberry","blueberry","blackberry","cranberry","cassis"], ["vanilla","buttery"]] },
+  { name: "Forest floor", icon: "🍄", min: 2, blurb: "damp earth, pine, moss, and mushroom.",
+    slots: [["mushroom"], ["woody","pine"], ["green"]] },
+  { name: "Pho / warm broth spice", icon: "🍜", min: 2, blurb: "star anise and cinnamon over savory allium.",
+    slots: [["anise"], ["cinnamon","clove"], ["onion","garlic"]] },
+  { name: "Tropical fruit salad", icon: "🍍", min: 2, blurb: "pineapple, mango, and banana esters.",
+    slots: [["pineapple"], ["mango"], ["banana"]] },
+  { name: "Citrus cologne", icon: "🍊", min: 2, blurb: "bright citrus oils lifted by neroli and lavender.",
+    slots: [_CITRUS, ["lavender"], ["orangeblossom","jasmine","rose"]] },
+  { name: "Lavender honey", icon: "🪻", min: 2, blurb: "floral lavender melting into honey.",
+    slots: [["lavender"], ["honey"]] }
+];
+function detectFlavorCombos(activeSet) {
+  const matches = [];
+  FLAVOR_COMBOS.forEach(combo => {
+    let matched = 0; const hit = [];
+    combo.slots.forEach(slot => {
+      const found = slot.find(id => activeSet.has(id));
+      if (found) { matched++; hit.push((NOTE_BY_ID[found] && NOTE_BY_ID[found].label) || found); }
+    });
+    if (matched >= combo.min) matches.push({ combo, matched, total: combo.slots.length, hit });
+  });
+  // Best matches first: most slots beyond the minimum, then completeness.
+  matches.sort((a, b) =>
+    (b.matched - b.combo.min) - (a.matched - a.combo.min)
+    || (b.matched / b.total) - (a.matched / a.total)
+    || b.matched - a.matched);
+  return matches.slice(0, 3);
+}
+function renderBouquetHtml(activeNotes, allActive) {
+  if (!allActive || allActive.length === 0) return "";
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  // Dominant compound class by summed perceived intensity of active compounds.
+  const classTotals = {};
+  allActive.forEach(n => {
+    const cls = CPD_BY_ID[n.id].class;
+    classTotals[cls] = (classTotals[cls] || 0) + n.intensity;
+  });
+  const ranked = Object.entries(classTotals).sort((a, b) => b[1] - a[1]);
+  if (ranked.length === 0) return "";
+  const domCls = ranked[0][0];
+  const domColor = COMPOUND_CLASS_COLOR[domCls] || "var(--accent)";
+  const domChar = CLASS_CHARACTER[domCls] || "";
+  const support = ranked.slice(1, 3).map(([c]) => CLASS_SHORT[c] || c);
+  const subText = domChar + (support.length ? ` — with ${support.join(" and ")} in support` : "");
+  const spanLine = ranked.length > 1
+    ? `<div class="bouquet-span">Spans ${ranked.length} compound classes — a “single” aroma is rarely one molecule.</div>`
+    : "";
+  const mainCloud = `
+    <div class="bouquet-cloud bouquet-main" style="--bq-accent:${domColor}">
+      <div class="bouquet-kicker">Main aroma compound class</div>
+      <div class="bouquet-headline"><span class="bq-icon" aria-hidden="true">${classIcon(domCls)}</span> ${cap(CLASS_SHORT[domCls] || domCls)}</div>
+      <div class="bouquet-sub">${subText}.</div>
+      ${spanLine}
+    </div>`;
+
+  const activeSet = new Set(activeNotes.map(n => n.id));
+  const combos = detectFlavorCombos(activeSet);
+  const comboCloud = combos.length === 0 ? "" : `
+    <div class="bouquet-cloud bouquet-combos">
+      <div class="bouquet-kicker">You might also smell</div>
+      <div class="bq-combo-list">
+        ${combos.map(m => `
+          <div class="bq-combo" title="Triggered by: ${m.hit.join(", ")}">
+            <span class="bq-combo-name">${m.combo.icon} ${m.combo.name}</span>
+            <span class="bq-combo-blurb">${m.combo.blurb}</span>
+          </div>`).join("")}
+      </div>
+    </div>`;
+
+  return `<div class="bouquet">${mainCloud}${comboCloud}</div>`;
+}
+
 function renderAnalysisGrid() {
   const pct = v => Math.round(Math.min(1, v) * 100);
   const activeNotes = NOTES.filter(n => hasAnyEntry(n.id) && isNoteScoreable(n.id));
@@ -5708,6 +5861,8 @@ function renderAnalysisGrid() {
       </ul>`;
 
   detailPanel.innerHTML = `
+    ${renderBouquetHtml(activeNotes, allActive)}
+
     <div class="results-section">
       <h3 class="results-h">Your inputs</h3>
       <div class="results-section-help">The compounds most often associated with each note you've reported, from the literature.</div>
