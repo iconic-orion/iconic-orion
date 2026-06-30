@@ -363,6 +363,46 @@
     transition: border-color 0.15s, color 0.15s; }
   .wheel-nudge .nudge-demo:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* ── Tasting Tray (persistent input HUD) ─────────────────────────────
+     A pill bar pinned to the bottom of the wheel. Each chip is one entered
+     note: emoji + name + intensity, in its flavor-group color. Horizontally
+     scrollable so a long tasting never pushes the wheel around. z-index 8:
+     above wheel content, below the compass (20) and any modal (200+). */
+  .tasting-tray { position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: 12px; z-index: 8; max-width: calc(100% - 24px);
+    display: flex; align-items: center; gap: 9px;
+    background: rgba(23, 22, 27, 0.82); border: 1px solid var(--line);
+    border-radius: 999px; padding: 5px 7px 5px 13px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.42); backdrop-filter: blur(6px); }
+  .tasting-tray[hidden] { display: none; }
+  .tray-head { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .tray-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-dim); white-space: nowrap; }
+  .tray-count { font-size: 11px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; line-height: 17px; }
+  .tray-chips { display: flex; gap: 5px; overflow-x: auto; padding: 1px 1px 3px;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .tray-chips::-webkit-scrollbar { height: 5px; }
+  .tray-chips::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  .tray-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
+    background: color-mix(in srgb, var(--chip-accent) 16%, var(--panel-2));
+    border: 1px solid var(--chip-accent); border-radius: 999px;
+    padding: 3px 4px 3px 9px; font-size: 11px; color: var(--ink); cursor: pointer;
+    white-space: nowrap; transition: background 0.12s; }
+  .tray-chip:hover { background: color-mix(in srgb, var(--chip-accent) 32%, var(--panel-2)); }
+  .tray-chip .chip-ic { font-size: 12px; line-height: 1;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; }
+  .tray-chip .chip-val { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--chip-accent); }
+  .tray-chip .chip-x { border: none; background: transparent; color: var(--ink-dim);
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 0 3px; border-radius: 50%;
+    flex-shrink: 0; }
+  .tray-chip .chip-x:hover { color: var(--warn); }
+  .tray-clear { flex-shrink: 0; background: transparent; border: 1px solid var(--line);
+    color: var(--ink-dim); border-radius: 999px; padding: 4px 11px; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; }
+  .tray-clear:hover { border-color: var(--warn); color: var(--warn); }
+
   /* Perception Compass: small draggable, resizable radar widget, corner-
      anchored by default (top/right) until dragged, at which point JS
      switches it to an explicit left/top position. z-index 20: above wheel
@@ -458,10 +498,36 @@
      Each note can have up to two confirmed entries — one per phase —
      each with its own intensity. Confirming requires intensity > 0.
      Confirmed buttons show "Added"; clicking one opens edit/delete callout. */
+  /* --row-accent (the note's flavor-group color) and --fill (0–100%, the
+     committed intensity) are set per-row in JS. They drive the whole active
+     treatment below, so "selected" reads at a glance and never blends into the
+     rows you merely scrolled past. */
   .note-row { display: grid; grid-template-columns: 1fr 28px; gap: 4px 8px; align-items: center;
-    padding: 6px 4px; border-radius: 4px; position: relative; }
+    padding: 6px 4px 6px 7px; border-radius: 4px; position: relative;
+    border-left: 3px solid transparent;
+    --row-accent: var(--accent); --fill: 0%;
+    transition: background 0.15s, border-color 0.15s; }
   .note-row:hover { background: var(--panel-2); }
-  .note-row .note-label-text { font-size: 12px; cursor: pointer; grid-column: 1; }
+  /* Active row: group-tinted wash + a solid group-colored spine on the left,
+     a bold group-colored label, and a thin intensity meter along the bottom
+     edge whose width tracks the committed value. Four redundant cues (color,
+     weight, a bar, and a number) so the state survives low vision, color-vision
+     differences, and fast scanning alike. */
+  .note-row.has-entries { background: color-mix(in srgb, var(--row-accent) 13%, transparent);
+    border-left-color: var(--row-accent); }
+  .note-row.has-entries:hover { background: color-mix(in srgb, var(--row-accent) 20%, transparent); }
+  .note-row.has-entries::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+    height: 2.5px; border-radius: 0 0 4px 4px; pointer-events: none;
+    background: linear-gradient(to right, var(--row-accent) var(--fill), transparent var(--fill)); }
+  .note-row .note-label-text { font-size: 12px; cursor: pointer; grid-column: 1;
+    display: inline-flex; align-items: center; gap: 1px; }
+  /* Per-note emoji: a literacy / quick-recognition anchor. Dimmed slightly at
+     rest, full-strength once the note is active, so it pulls toward the eye
+     exactly when it carries meaning. */
+  .note-icon { font-size: 13px; line-height: 1; margin-right: 4px; flex-shrink: 0;
+    opacity: 0.72; transition: opacity 0.15s;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif; }
+  .note-row.has-entries .note-icon { opacity: 1; }
   /* .val is an <input type=number>: same right-aligned readout look as the
      old static span at rest, but borders on row-hover/focus to hint it's
      typeable — an alternate to the slider for setting 0-10 directly. */
@@ -472,15 +538,16 @@
   .note-row .val::-webkit-inner-spin-button,
   .note-row .val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .note-row:hover .val { border-color: var(--line); }
+  .note-row.has-entries .val { color: var(--row-accent); font-weight: 700; }
   .note-row .val:focus { outline: none; border-color: var(--accent); color: var(--ink); background: var(--bg); }
   /* Width stops short of the row's full extent on purpose — leaves a
      thumb-width dead zone at the right edge so a touch-scroll gesture
      starting near the pane's edge doesn't land on the slider thumb and drag
      it instead. Matters on any touchscreen, not just narrow phones (a
      touchscreen widescreen monitor has the same problem at 100% width). */
-  .note-row input[type=range] { grid-column: 1 / span 2; width: calc(100% - 44px); accent-color: var(--accent);
+  .note-row input[type=range] { grid-column: 1 / span 2; width: calc(100% - 44px); accent-color: var(--row-accent);
     margin: 2px 0; }
-  .note-row.has-entries .note-label-text { color: var(--accent); }
+  .note-row.has-entries .note-label-text { color: var(--row-accent); font-weight: 600; }
   .note-row.flash { background: rgba(216, 166, 87, 0.18); transition: background 0.6s; }
 
   /* Default mode: NO buttons. The slider directly commits / updates / deletes
@@ -825,6 +892,24 @@
   .note circle { stroke: var(--line); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
   .note:hover circle { stroke: var(--ink); }
   .note.active circle { stroke: var(--ink); stroke-width: 2; }
+
+  /* Emoji note-markers. The ingredient's icon is the wheel mark itself; its
+     font-size is set inline per node from the note's score, and the bouncy
+     easing makes it visibly swell when you taste it more and ease back when it
+     fades — the "slightly perceptible bounce" applied where it matters most.
+     note-halo is the soft same-color disc behind it (group cue + selection
+     ring); its stroke/fill are driven inline so they win over the generic
+     .note/.compound circle rules above without a specificity fight. */
+  .node-glyph { pointer-events: none; text-anchor: middle; dominant-baseline: central;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 0.5px; stroke-linejoin: round;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+    transition: font-size 0.34s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .note-halo, .cpd-token { transition: r 0.34s cubic-bezier(0.34, 1.56, 0.64, 1),
+    fill-opacity 0.2s, stroke 0.15s; }
+  g.note:hover .node-glyph, g.compound:hover .node-glyph { stroke-width: 1px; }
+  @media (prefers-reduced-motion: reduce) {
+    .node-glyph, .note-halo, .cpd-token { transition: none; }
+  }
 
   /* Legend-hover spotlight: matched entities get a bright halo, the rest fade. */
   .compound, .note { transition: opacity 0.15s; }
@@ -1402,6 +1487,21 @@
     <button type="button" id="compass-resize-handle" class="compass-resize-handle" aria-label="Resize compass" title="Drag to resize">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M13 6h5v5M11 18H6v-5"/></svg>
     </button>
+  </div>
+  <!-- Tasting Tray: the always-on record of everything you've entered, pinned to
+       the wheel so it's present no matter which side panes are open or hidden,
+       and on mobile where the analysis pane isn't visible at all. A short-term-
+       memory aid first (you never have to remember what you already logged), and
+       a literacy aid second (each input shows its emoji). Each chip jumps to its
+       slider on click and removes the input via ×. Populated by renderTastingTray();
+       hidden whenever there are no inputs. -->
+  <div id="tasting-tray" class="tasting-tray" hidden aria-label="Your current tasting inputs">
+    <div class="tray-head">
+      <span class="tray-title">Your tasting</span>
+      <span class="tray-count" id="tray-count">0</span>
+    </div>
+    <div class="tray-chips" id="tray-chips"></div>
+    <button type="button" id="tray-clear" class="tray-clear" title="Remove all inputs and start fresh">Clear</button>
   </div>
 </main>
 <div id="origins-view" hidden>
@@ -3255,6 +3355,118 @@ const NOTE_BY_ID = Object.fromEntries(NOTES.map(n => [n.id, n]));
 const CPD_BY_ID  = Object.fromEntries(COMPOUNDS.map(c => [c.id, c]));
 const GROUP_BY_ID= Object.fromEntries(GROUPS.map(g => [g.id, g]));
 
+// ---------- ICONS ----------
+// One emoji per note. This is an accessibility aid, not decoration: it lets the
+// note panel, the Tasting Tray HUD, and the detail card be scanned and
+// recognized visually — meaningfully easier for anyone reading slowly, holding
+// the list in short-term memory, or for whom dense text is the barrier. Where
+// no single produce emoji honestly fits an abstract note (caramel, sulfury,
+// cardboard…) we fall back to the note's flavor-GROUP emoji via noteIcon(),
+// which reads as "a sweet thing" / "a funky-fermented thing" rather than
+// guessing at a misleading specific. Kept as a side map (not new fields on
+// NOTES) so the carefully-curated data definitions above stay untouched.
+const NOTE_ICONS = {
+  // Fruity — citrus, berries, stone/orchard, melon
+  lemon:"🍋", lime:"🍋", yuzu:"🍋", meyerlemon:"🍋",
+  orange:"🍊", mandarin:"🍊", bergamot:"🍊", bloodorange:"🍊", grapefruit:"🍊", pomelo:"🍊",
+  berry:"🫐", cranberry:"🫐", redcurrant:"🫐", cassis:"🫐", pomegranate:"🫐",
+  raspberry:"🫐", strawberry:"🍓", blueberry:"🫐", blackberry:"🫐",
+  stonefruit:"🍑", peach:"🍑", plum:"🍑", apple:"🍎", banana:"🍌", pineapple:"🍍",
+  cherry:"🍒", mango:"🥭", grape:"🍇",
+  melon:"🍈", cucumber:"🥒", melonrind:"🍈", watermelon:"🍉", honeydew:"🍈", cantaloupe:"🍈",
+  // Floral
+  rose:"🌹", jasmine:"🌼", orangeblossom:"🌼", honeysuckle:"🌼",
+  lavender:"🪻", sage:"🌿", thyme:"🌿", chamomile:"🌼", violet:"🌸",
+  // Roasted — coffee, breads, grains
+  coffee:"☕", toast:"🍞", smoky:"💨", burnt:"🔥", popcorn:"🍿",
+  cereal:"🌾", rice:"🍚", wheat:"🌾", barley:"🌾", oats:"🌾", millet:"🌾", quinoa:"🌾",
+  // Spice
+  clove:"🧂", cinnamon:"🧂", pepper:"🌶️", anise:"🧂", ginger:"🫚",
+  // Nutty
+  almond:"🌰", hazelnut:"🌰", peanut:"🥜", coconut:"🥥", pistachio:"🥜", pecan:"🌰",
+  // Earthy — wood, fungus, green, mint, tobacco
+  woody:"🪵", pine:"🌲", eucalyptus:"🌿", mushroom:"🍄", green:"🍃", bellpepper:"🫑",
+  mint:"🌿", peppermint:"🌿", spearmint:"🌿", wintergreen:"🌿", tobacco:"🍂",
+  // Sweet
+  vanilla:"🍦", caramel:"🍮", honey:"🍯", chocolate:"🍫", maple:"🍁", cottoncandy:"🍬",
+  // Fermented / off-notes
+  winey:"🍷", buttery:"🧈", yeasty:"🍞", sulfury:"🥚", cardboard:"📦", cheesy:"🧀",
+  sweaty:"🧦", musty:"🍂", skunky:"🦨", miso:"🍜", soysauce:"🍶",
+  // Vegetal
+  onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
+  garlic:"🧄", celery:"🥬", carrot:"🥕", tomato:"🍅", arugula:"🥬",
+  lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
+  brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
+};
+const GROUP_ICON = { fruity:"🍑", floral:"🌸", roasted:"☕", spice:"🧂", nutty:"🥜",
+  earthy:"🍄", sweet:"🍬", fermented:"🫧", vegetal:"🥬" };
+function noteIcon(n) {
+  const note = typeof n === "string" ? NOTE_BY_ID[n] : n;
+  if (!note) return "";
+  return NOTE_ICONS[note.id] || GROUP_ICON[note.group] || "•";
+}
+// Compounds are molecules, so they get a per-CLASS glyph hinting at that class's
+// dominant scent character (terpene→pine, ester→fruit, pyrroline→popcorn…)
+// rather than a per-compound picture. On the wheel they're drawn as a class-
+// colored ring "token" with this glyph inside — deliberately unlike the notes'
+// soft filled food-halo, so an ingredient is never mistaken for a molecule even
+// when the two emoji rhyme (furanone 🍓 vs the strawberry note 🍓).
+const CLASS_ICON = {
+  "terpene":"🌲", "pyrazine":"🔥", "furan":"☕", "thiol":"🧄", "ester":"🍐",
+  "lactone":"🥥", "phenolic-aldehyde":"🍦", "aldehyde":"🍃", "ketone":"🧈",
+  "norisoprenoid":"🌹", "phenol":"💨", "alcohol":"🍄", "phenylpropene":"⭐",
+  "pyranone":"🍯", "pyrroline":"🍿", "acid":"🧀", "haloanisole":"📦",
+  "sulfide":"🧅", "thiazole":"🍅", "isothiocyanate":"🌶️", "furanone":"🍓"
+};
+function classIcon(cls) { return CLASS_ICON[cls] || "🧪"; }
+
+// ---------- "SATURATION IS EVIDENCE" PALETTE ----------
+// The wheel's resting state is a quiet, desaturated map of what's *possible*; a
+// flavor family only blooms to full spectrum saturation once you've actually
+// fed it. This is the app's whole thesis ("faint until evidence accrues") made
+// literally visible — color becomes a heat-map of where your own attention
+// went, not fixed decoration. mutedColor()/vividColor() derive both ends from
+// each group's single base color (via d3.hsl), so the 9 groups stay defined in
+// exactly one place (:root) and the two extremes are always in family.
+const _evidenceCache = new Map();
+function mutedColor(base) {
+  const k = "m:" + base; if (_evidenceCache.has(k)) return _evidenceCache.get(k);
+  const c = d3.hsl(base); c.s = Math.max(0, c.s * 0.30); c.l = Math.min(0.78, c.l * 0.74 + 0.06);
+  const out = c.formatHex(); _evidenceCache.set(k, out); return out;
+}
+function vividColor(base) {
+  const k = "v:" + base; if (_evidenceCache.has(k)) return _evidenceCache.get(k);
+  const c = d3.hsl(base); c.s = Math.min(1, c.s * 1.22 + 0.20); c.l = Math.min(0.64, c.l * 1.03);
+  const out = c.formatHex(); _evidenceCache.set(k, out); return out;
+}
+// t in [0,1]: 0 = dormant/pastel, 1 = fully bloomed/saturated.
+function evidenceColor(base, t) {
+  t = Math.max(0, Math.min(1, t));
+  return d3.interpolateHsl(mutedColor(base), vividColor(base))(t);
+}
+// Diminishing-returns bloom: one solid note already lifts a family clearly off
+// the resting floor; more (or stronger) signal deepens it toward full.
+function bloomFactor(signalSum) { return 1 - Math.exp(-1.7 * Math.max(0, signalSum)); }
+// Emoji-marker size (px) for a note on the wheel, scaled by its signal. The
+// ingredient's icon IS the marker now, so this is what literally swells as you
+// taste a note more strongly and shrinks as it fades. Floored at a legible,
+// tappable size; the bouncy CSS transition on font-size does the animating.
+function noteGlyphSize(signal) { return 17 + Math.min(31, Math.max(0, signal) * 31); }
+// Compound marker size. Compound scores run smaller than note signals, so this
+// curve is steeper; floored a touch below notes so molecules read as the
+// secondary layer beneath the ingredients you actually entered.
+function compoundGlyphSize(score) { return 14 + Math.min(24, Math.max(0, score) * 24); }
+// Per-group summed note signal — "how much evidence sits in this flavor family."
+function groupActivity() {
+  const act = {};
+  GROUPS.forEach(g => act[g.id] = 0);
+  NOTES.forEach(n => {
+    const s = noteSignal(n.id);
+    if (s > 0 && act[n.group] !== undefined) act[n.group] += s;
+  });
+  return act;
+}
+
 // note -> [{cpd, w, cite}]
 const NOTE_EDGES = {};
 const CPD_EDGES  = {};
@@ -3804,6 +4016,7 @@ function drawGroupArcs() {
   .attr("stroke", d => getComputedStyle(document.documentElement).getPropertyValue(d.cssVar).trim());
 
   drawArcLabels(visibleGroups);   // curved section names on the outer circle
+  applyArcEvidence();             // bloom fed families, mute the rest
 
   // center decorative ring
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
@@ -3847,21 +4060,40 @@ function drawNotes() {
       gComps.selectAll("g.compound").classed("selected", false);
       renderDetail();
     });
-  enter.append("circle").attr("r", 5);
+  enter.append("circle").attr("class", "note-halo");
+  enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "note-label");
 
-  const merged = sel.merge(enter);
+  const merged = sel.merge(enter).classed("selected", d => d.id === state.selectedNote);
   merged.attr("transform", d => `translate(${d._x},${d._y})`);
-  merged.select("circle")
-    .attr("fill", d => groupColor(d.group));
-  merged.select("text")
-    .attr("class", "note-label")
-    .attr("x", d => Math.cos(d._angle) * 10)
-    .attr("y", d => Math.sin(d._angle) * 10)
-    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
-    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
-    .attr("fill", d => groupColor(d.group))
-    .text(d => wheelNoteLabel(d));
+  // The ingredient's emoji IS the ring marker now: it swells with how strongly
+  // you've scored the note and shrinks as it fades, so the wheel literally
+  // takes the shape of your perception. A soft same-color halo sits behind it
+  // (the flavor-family cue + the selection ring); the name rides just outside,
+  // pushed out far enough to clear the glyph at any size.
+  merged.each(function(d) {
+    const sig = noteSignal(d.id);
+    const sz = noteGlyphSize(sig);
+    const half = sz * 0.5;
+    const ox = Math.cos(d._angle), oy = Math.sin(d._angle);
+    const g = d3.select(this);
+    g.select("circle.note-halo")
+      .attr("r", sz * 0.62)
+      .style("fill", groupColor(d.group))
+      .style("fill-opacity", 0.16 + 0.16 * Math.min(1, sig))
+      .style("stroke", d.id === state.selectedNote ? "var(--accent)" : "none")
+      .style("stroke-width", 2);
+    g.select("text.node-glyph")
+      .style("font-size", sz + "px")
+      .text(noteIcon(d));
+    g.select("text.note-label")
+      .attr("x", ox * (half + 7))
+      .attr("y", oy * (half + 7))
+      .attr("text-anchor", ox > 0.2 ? "start" : ox < -0.2 ? "end" : "middle")
+      .attr("dominant-baseline", oy > 0.2 ? "hanging" : oy < -0.2 ? "baseline" : "middle")
+      .attr("fill", groupColor(d.group))
+      .text(wheelNoteLabel(d));
+  });
   applySpotlight();
 }
 
@@ -3876,6 +4108,56 @@ function wheelNoteLabel(d) {
 function groupColor(gid) {
   const g = GROUP_BY_ID[gid];
   return getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
+}
+
+// Recolor the ring's section arcs (and their curved labels) by how much
+// evidence sits behind each one — the visible payoff of the "saturation is
+// evidence" palette. Dormant sections sit washed-out and thin; a fed section
+// blooms to full saturation, gains weight, and grows a soft same-color glow,
+// all scaled smoothly by bloomFactor(). Works for both wheel modes: in Scent
+// mode the sections are flavor groups (bloom = summed note signal); in
+// Chemistry mode they're chemical classes (bloom = summed perceived intensity
+// of that class's active compounds), since drawClassArcs() reuses the very
+// same path.group-arc elements. Called on every recompute() and after each
+// (re)draw of the arcs, so it always reflects the current inputs. Cheap: a
+// handful of arcs, pure attribute writes, no layout.
+function applyArcEvidence() {
+  const chem = inChemistry();
+  let activity, baseFor;
+  if (chem) {
+    activity = {};
+    CLASSES.forEach(cl => activity[cl.id] = 0);
+    compoundNodes.forEach(node => {
+      if (node.intensity_raw > 0) {
+        const cls = CPD_BY_ID[node.id].class;
+        // 0.5 floor per active compound guarantees a class visibly lifts the
+        // moment any of its compounds light up, then deepens with intensity.
+        if (activity[cls] !== undefined) activity[cls] += 0.5 + Math.min(1, node.intensity);
+      }
+    });
+    baseFor = d => d.color;
+  } else {
+    activity = groupActivity();
+    baseFor = d => groupColor(d.id);
+  }
+  gArcs.selectAll("path.group-arc").each(function(d) {
+    const base = baseFor(d);
+    const bloom = bloomFactor(activity[d.id] || 0);
+    const col = evidenceColor(base, bloom);
+    d3.select(this)
+      .attr("stroke", col)
+      .style("opacity", (0.30 + 0.62 * bloom).toFixed(3))
+      .style("stroke-width", (13 + 11 * bloom).toFixed(1))
+      .style("filter", bloom > 0.05 ? `drop-shadow(0 0 ${(2 + 6 * bloom).toFixed(1)}px ${col})` : null);
+  });
+  gArcs.selectAll("text.group-arc-label").each(function(d) {
+    const base = baseFor(d);
+    const bloom = bloomFactor(activity[d.id] || 0);
+    d3.select(this)
+      .attr("fill", bloom > 0.05 ? vividColor(base) : (chem ? base : "var(--ink-dim)"))
+      .attr("opacity", (0.45 + 0.5 * bloom).toFixed(3))
+      .style("font-weight", bloom > 0.45 ? 600 : null);
+  });
 }
 
 // ---------- CHEMISTRY-MODE LAYOUT (the dual of the note functions above) ----------
@@ -3933,6 +4215,7 @@ function drawClassArcs() {
     .attr("stroke", d => d.color);
 
   drawArcLabels(visibleClasses);   // curved class names on the outer circle
+  applyArcEvidence();              // bloom active chemical classes, mute the rest
 
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
     .attr("class", "center-ring")
@@ -3971,24 +4254,42 @@ function drawCompoundAnchors() {
       renderDetail();
       gNotes.selectAll("g.note").classed("selected", x => x.id === state.selectedCompound);
     });
-  enter.append("circle").attr("r", 5);
+  enter.append("circle").attr("class", "cpd-token");
+  enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "note-label");
 
   const merged = sel.merge(enter)
     .classed("selected", d => d.id === state.selectedCompound);
   merged.attr("transform", d => `translate(${d._x},${d._y})`);
-  merged.select("circle")
-    .attr("fill", d => COMPOUND_CLASS_COLOR[d.class] || "#aaa")
-    .attr("fill-opacity", d => 0.3 + 0.6 * Math.min(1, d.score || 0));
-  merged.select("text")
-    .attr("class", "note-label")
-    .attr("x", d => Math.cos(d._angle) * 10 + ((ANCHOR_LABEL_NUDGE[d.id] || {}).dx || 0))
-    .attr("y", d => Math.sin(d._angle) * 10 + ((ANCHOR_LABEL_NUDGE[d.id] || {}).dy || 0))
-    .attr("text-anchor", d => Math.cos(d._angle) > 0.2 ? "start" : Math.cos(d._angle) < -0.2 ? "end" : "middle")
-    .attr("dominant-baseline", d => Math.sin(d._angle) > 0.2 ? "hanging" : Math.sin(d._angle) < -0.2 ? "baseline" : "middle")
-    .attr("fill", d => COMPOUND_CLASS_COLOR[d.class] || "#aaa")
-    .attr("fill-opacity", d => (d.score > 0.05 || d.id === state.selectedCompound || d.id === state.hoveredCompound) ? 0.95 : 0.4)
-    .text(d => d.label);
+  // Same class-glyph token as the Scent-mode floats, here anchored on the ring
+  // and scaled by score so a stronger compound reads larger in its class wedge.
+  merged.each(function(d) {
+    const sz = compoundGlyphSize(d.score || 0);
+    const half = sz * 0.5;
+    const col = COMPOUND_CLASS_COLOR[d.class] || "#aaa";
+    const seld = d.id === state.selectedCompound;
+    const ox = Math.cos(d._angle), oy = Math.sin(d._angle);
+    const nudge = ANCHOR_LABEL_NUDGE[d.id] || {};
+    const g = d3.select(this);
+    g.select("circle.cpd-token")
+      .attr("r", sz * 0.62)
+      .style("fill", col)
+      .style("fill-opacity", 0.12 + 0.13 * Math.min(1, d.score || 0))
+      .style("stroke", seld ? "var(--accent)" : col)
+      .style("stroke-opacity", seld ? 1 : 0.75)
+      .style("stroke-width", seld ? 2 : 1.3);
+    g.select("text.node-glyph")
+      .style("font-size", sz + "px")
+      .text(classIcon(d.class));
+    g.select("text.note-label")
+      .attr("x", ox * (half + 6) + (nudge.dx || 0))
+      .attr("y", oy * (half + 6) + (nudge.dy || 0))
+      .attr("text-anchor", ox > 0.2 ? "start" : ox < -0.2 ? "end" : "middle")
+      .attr("dominant-baseline", oy > 0.2 ? "hanging" : oy < -0.2 ? "baseline" : "middle")
+      .attr("fill", col)
+      .attr("fill-opacity", (d.score > 0.05 || seld || d.id === state.hoveredCompound) ? 0.95 : 0.4)
+      .text(d.label);
+  });
   applySpotlight();
 }
 
@@ -4122,8 +4423,17 @@ function renderCompoundFloats() {
   // recedes to a faint label so the center doesn't become an unreadable knot;
   // hovering any dot raises it and brings its label fully back. Threshold is
   // relative to the strongest compound on the wheel so it adapts to any input.
-  const maxScore = renderable.reduce((m, n) => Math.max(m, n.score || 0), 0) || 1;
-  const labelThresh = maxScore * 0.33;
+  // Center de-clutter: with a compound-dense input (e.g. coffee) a dozen-plus
+  // molecule labels pile into the middle and knot up. So only the strongest few
+  // carry a *resting* name; every other token shows its glyph alone and reveals
+  // its name on hover/tap (the .compound:hover/.selected CSS forces it back to
+  // full opacity regardless of the resting value set here). The glyphs always
+  // stay — it's only the text that's thinned.
+  const LABELED_MAX = 6;
+  const labeledIds = new Set(
+    renderable.slice().sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, LABELED_MAX).filter(n => (n.score || 0) > 0).map(n => n.id)
+  );
   const sel = gComps.selectAll("g.compound").data(renderable, d => d.id);
   sel.exit().remove();
   const enter = sel.enter().append("g").attr("class", "compound")
@@ -4144,26 +4454,42 @@ function renderCompoundFloats() {
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
       .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
       .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
-  enter.append("circle");
+  enter.append("circle").attr("class", "cpd-token");
+  enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
 
   const merged = sel.merge(enter)
     .attr("transform", d => `translate(${d.x},${d.y})`)
     .classed("selected", d => d.id === state.selectedCompound);
 
-  merged.select("circle")
-    .attr("r", d => d.radius)
-    .attr("fill", d => compoundColor(d))
-    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
-
-  merged.select("text")
-    .attr("x", d => d.radius + 4)
-    .attr("y", 3)
-    .attr("fill-opacity", d =>
-      (d.id === state.selectedCompound || d.id === hoveredCompound()) ? 1
-      : d.score >= labelThresh ? 0.92
-      : 0.16)
-    .text(d => d.label);
+  // Class-glyph molecule token: a class-colored ring (sized by score) with the
+  // chemical-class emoji inside. Shape (the glyph) reads the class; the ring's
+  // color carries the scent-home tint, exactly as the old orb did.
+  merged.each(function(d) {
+    const sz = compoundGlyphSize(d.score);
+    const half = sz * 0.5;
+    const col = compoundColor(d);
+    const seld = d.id === state.selectedCompound;
+    const g = d3.select(this);
+    g.select("circle.cpd-token")
+      .attr("r", sz * 0.62)
+      .style("fill", col)
+      .style("fill-opacity", 0.12 + 0.13 * Math.min(1, d.score))
+      .style("stroke", seld ? "var(--accent)" : col)
+      .style("stroke-opacity", seld ? 1 : 0.75)
+      .style("stroke-width", seld ? 2 : 1.3);
+    g.select("text.node-glyph")
+      .style("font-size", sz + "px")
+      .text(classIcon(d.class));
+    g.select("text.node-label")
+      .attr("x", half + 5)
+      .attr("y", 3)
+      .attr("fill-opacity",
+        (seld || d.id === hoveredCompound()) ? 1
+        : labeledIds.has(d.id) ? 0.95
+        : 0)
+      .text(d.label);
+  });
 
   applySpotlight();
 }
@@ -4199,23 +4525,35 @@ function renderNoteFloats() {
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
       .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
       .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
-  enter.append("circle");
+  enter.append("circle").attr("class", "note-halo");
+  enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
 
   const merged = sel.merge(enter)
     .attr("transform", d => `translate(${d.x},${d.y})`)
     .classed("selected", d => d.id === state.selectedNote);
 
-  merged.select("circle")
-    .attr("r", d => d.radius)
-    .attr("fill", d => groupColor(d.group))
-    .attr("fill-opacity", d => 0.35 + 0.6 * Math.min(1, d.score));
-
-  merged.select("text")
-    .attr("x", d => d.radius + 4)
-    .attr("y", 3)
-    .attr("fill-opacity", d => d.score > 0.05 || d.id === state.selectedNote || d.id === state.hoveredNote ? 0.95 : 0.4)
-    .text(d => d.label);
+  // Same scaling-emoji marker as the Scent-mode ring anchors, here drifting
+  // through the center toward the chemical neighborhoods each note evokes.
+  merged.each(function(d) {
+    const sz = noteGlyphSize(d.score);
+    const half = sz * 0.5;
+    const g = d3.select(this);
+    g.select("circle.note-halo")
+      .attr("r", sz * 0.62)
+      .style("fill", groupColor(d.group))
+      .style("fill-opacity", 0.16 + 0.18 * Math.min(1, d.score))
+      .style("stroke", d.id === state.selectedNote ? "var(--accent)" : "none")
+      .style("stroke-width", 2);
+    g.select("text.node-glyph")
+      .style("font-size", sz + "px")
+      .text(noteIcon(d));
+    g.select("text.node-label")
+      .attr("x", half + 5)
+      .attr("y", 3)
+      .attr("fill-opacity", (d.score > 0.05 || d.id === state.selectedNote || d.id === state.hoveredNote) ? 0.95 : 0.4)
+      .text(d.label);
+  });
 
   applySpotlight();
 }
@@ -4487,13 +4825,16 @@ function recompute() {
     }
 
     node.score = node.intensity;
-    node.radius = 5 + Math.min(12, node.score * 8);
+    // radius now feeds only the collide force (the visible mark is the glyph
+    // token, not a circle of this radius), so track the glyph's actual footprint
+    // — otherwise the bigger emoji tokens overlap their neighbors.
+    node.radius = compoundGlyphSize(node.score) * 0.55;
   });
   // Score the note float-nodes too (used as their size/opacity when they're the
   // floating set in chemistry mode). Cheap; harmless in scent mode.
   noteNodes.forEach(nn => {
     nn.score = noteSignal(nn.id);
-    nn.radius = 5 + Math.min(12, nn.score * 8);
+    nn.radius = noteGlyphSize(nn.score) * 0.55;   // collide spacing tracks the emoji size
   });
   // Clear stale selections: if the selected compound or note has lost all evidence
   // it's no longer on the wheel, and keeping it selected leaves ghost edges drawn
@@ -4508,6 +4849,8 @@ function recompute() {
   // Redraw the anchor set — it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
+  applyArcEvidence();              // re-bloom the ring for the new evidence picture
+  renderTastingTray();            // keep the always-on input HUD in sync
 
   if (sim) sim.alpha(0.5).restart();
   renderDetail();
@@ -4580,12 +4923,27 @@ function renderNoteRow(n) {
   const row = document.createElement("div");
   row.className = "note-row";
   row.dataset.note = n.id;
+  // The flavor-group color (vivid end of the evidence palette) drives this
+  // row's whole active treatment; --fill is the committed/slider intensity as
+  // a percentage for the bottom meter. Both are read by the CSS above.
+  row.style.setProperty("--row-accent", vividColor(groupColor(n.group)));
+  row.style.setProperty("--fill", ((state.pendingIntensity[n.id] || 0) / 10 * 100) + "%");
   if (hasAnyEntry(n.id)) row.classList.add("has-entries");
 
   const lbl = document.createElement("label");
   lbl.className = "note-label-text";
   lbl.setAttribute("for", "slider-" + n.id);
-  lbl.textContent = n.label;
+  // Emoji first (accessibility anchor), then the words. Built as separate
+  // spans so the later varietal toggle (inserted before firstChild) and the
+  // cross-group taxonomy badge (appended) still slot in at the right ends.
+  const icon = document.createElement("span");
+  icon.className = "note-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = noteIcon(n);
+  const words = document.createElement("span");
+  words.textContent = n.label;
+  lbl.appendChild(icon);
+  lbl.appendChild(words);
 
   // Varietal disclosure: notes with subOf children (mint -> peppermint/
   // spearmint/wintergreen, lemon -> lime/yuzu/meyerlemon, etc.) get a small
@@ -4675,6 +5033,7 @@ function renderNoteRow(n) {
     state.pendingIntensity[n.id] = v;
     slider.value = v;
     val.value = v;
+    row.style.setProperty("--fill", (v / 10 * 100) + "%");   // keep the bottom meter in step
     if (state.goDeeper) {
       // Go Deeper: slider/typed value sets pending intensity; user clicks a
       // phase button to commit. Existing entries untouched until they act.
@@ -4778,6 +5137,85 @@ function renderNoteRowPanel(noteId) {
 
 // Called after bulk entry changes (demos, reset) — full rebuild is simplest + safe.
 function syncSliders() { buildNotesPanel(); }
+
+// ---------- TASTING TRAY (persistent input HUD) ----------
+// Rebuilt on every recompute(): one chip per entered note, group-colored,
+// scannable by emoji, with its total intensity. The running memory of what
+// you've put in — independent of which panes are open — so nothing relies on
+// the user holding their own inputs in their head.
+const tastingTrayEl   = document.getElementById("tasting-tray");
+const trayChipsEl      = document.getElementById("tray-chips");
+const trayCountEl      = document.getElementById("tray-count");
+function renderTastingTray() {
+  if (!tastingTrayEl) return;
+  // Faithful record of every entry the user made, in stable group→label order.
+  // Not gated on isNoteScoreable: a chip for a note whose group is hidden via
+  // the legend should still appear — it's an input they made, and the chip is
+  // how they'd find and undo it.
+  const active = NOTES.filter(n => hasAnyEntry(n.id)).sort((a, b) => {
+    const ga = GROUPS.findIndex(g => g.id === a.group);
+    const gb = GROUPS.findIndex(g => g.id === b.group);
+    if (ga !== gb) return ga - gb;
+    return a.label.localeCompare(b.label);
+  });
+  tastingTrayEl.hidden = active.length === 0;
+  trayCountEl.textContent = active.length;
+  trayChipsEl.innerHTML = "";
+  active.forEach(n => {
+    const total = INPUT_PHASES.reduce((s, p) => s + (getEntry(n.id, p) || 0), 0);
+    const chip = document.createElement("div");
+    chip.className = "tray-chip";
+    chip.dataset.note = n.id;
+    chip.style.setProperty("--chip-accent", vividColor(groupColor(n.group)));
+    chip.title = `${n.label} · intensity ${total}. Click to locate it; × to remove.`;
+    const ic = document.createElement("span");
+    ic.className = "chip-ic"; ic.setAttribute("aria-hidden", "true"); ic.textContent = noteIcon(n);
+    const nm = document.createElement("span");
+    nm.className = "chip-nm"; nm.textContent = n.label.split(" / ")[0];
+    const v = document.createElement("span");
+    v.className = "chip-val"; v.textContent = total;
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "chip-x"; x.textContent = "×";
+    x.setAttribute("aria-label", `Remove ${n.label}`);
+    x.addEventListener("click", (e) => { e.stopPropagation(); removeNoteFromTray(n.id); });
+    chip.append(ic, nm, v, x);
+    chip.addEventListener("click", () => jumpToNoteRow(n.id));
+    trayChipsEl.appendChild(chip);
+  });
+}
+
+// Delete every entry for a note (all phases) and zero its slider. Targeted row
+// refresh when the row is on screen; full rebuild otherwise (e.g. a collapsed
+// varietal child whose row isn't currently rendered).
+function removeNoteFromTray(noteId) {
+  INPUT_PHASES.forEach(p => deleteEntry(noteId, p));
+  state.pendingIntensity[noteId] = 0;
+  closeAllCallouts();
+  if (document.querySelector(`.note-row[data-note="${noteId}"]`)) renderNoteRowPanel(noteId);
+  else buildNotesPanel();
+  recompute();
+}
+
+// Locate a note's slider from a tray chip (or anywhere): expand its parent's
+// varietals first if it's a collapsed subOf child, scroll + flash the row, and
+// surface the note's detail view — same destination a wheel-dot click reaches.
+function jumpToNoteRow(noteId) {
+  const n = NOTE_BY_ID[noteId];
+  if (n && n.subOf && !document.querySelector(`.note-row[data-note="${noteId}"]`)) {
+    state.expandedVarietals.add(n.subOf);
+    buildNotesPanel();
+  }
+  const row = document.querySelector(`.note-row[data-note="${noteId}"]`);
+  if (row) {
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.classList.add("flash");
+    setTimeout(() => row.classList.remove("flash"), 600);
+  }
+  state.selectedNote = noteId;
+  state.selectedCompound = null;
+  if (typeof gComps !== "undefined") gComps.selectAll("g.compound").classed("selected", false);
+  renderDetail();
+}
 
 // Callout anchored above a clicked "Added" button: Edit? / Delete? / Nevermind.
 // "Edit" restores the entry's intensity into the slider and removes the entry,
@@ -4958,7 +5396,7 @@ function renderNoteDetail(noteId) {
 
   detailPanel.innerHTML = `
     <button class="back-to-grid" type="button">← All compounds</button>
-    <h2><span class="note-color-dot" style="background:${color}"></span>${n.label}</h2>
+    <h2><span class="note-color-dot" style="background:${color}"></span><span class="detail-icon" aria-hidden="true">${noteIcon(n)}</span> ${n.label}</h2>
     <div class="compound-class">Note · ${g.label}</div>
     ${taxonomyHtml}
 
@@ -5113,7 +5551,7 @@ function renderAnalysisGrid() {
             return `<button type="button" class="arrow-target view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="${cpd.class} · base weight ${e.w.toFixed(2)}">${cpd.label}${commonTag(cpd)}</button>`;
           }).join('<span class="arrow-sep"> · </span>');
           return `<li class="input-arrow-row">
-            <span class="input-name"><span class="input-dot" style="background:${color}"></span>${n.label}</span>
+            <span class="input-name"><span class="input-dot" style="background:${color}"></span><span class="input-icon" aria-hidden="true">${noteIcon(n)}</span> ${n.label}</span>
             <span class="arrow">→</span>
             <span class="arrow-targets">${arrows}</span>
           </li>`;
@@ -5588,6 +6026,15 @@ function setNotes(entries) {
   entries.forEach(e => {
     if (NOTE_BY_ID[e.note]) commitEntry(e.note, e.phase ?? null, e.intensity);
   });
+  // Reflect committed intensities back into the sliders. The slider holds
+  // "pending intensity" (the value you'd commit next), but a bulk load commits
+  // entries directly — so without this the thumbs, the typed value, and the
+  // row's fill meter would all sit at 0 after loading a demo even though the
+  // note is clearly active. Use the strongest committed phase as the shown value.
+  NOTES.forEach(n => {
+    const vals = INPUT_PHASES.map(p => getEntry(n.id, p)).filter(v => v != null);
+    if (vals.length) state.pendingIntensity[n.id] = Math.max(...vals);
+  });
   // If any entry is phase-tagged, reveal Go Deeper so the UI buttons match the data.
   const usesPhase = entries.some(e => e.phase === "ortho" || e.phase === "retro");
   setGoDeeper(usesPhase || state.goDeeper);
@@ -5597,6 +6044,9 @@ function setNotes(entries) {
 }
 
 document.getElementById("reset").addEventListener("click", () => setNotes([]));
+// Tasting Tray "Clear" — same effect as Start Over for inputs (leaves view
+// state, legend, and mode alone; just empties what you've entered).
+document.getElementById("tray-clear").addEventListener("click", () => setNotes([]));
 
 // Ethiopian coffee — light-roast, fruit-forward, floral.
 const DEMO_ETHIOPIAN = [
