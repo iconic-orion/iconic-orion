@@ -410,8 +410,18 @@
   .tray-count { font-size: 11px; font-weight: 700; color: var(--accent);
     font-variant-numeric: tabular-nums; background: var(--bg);
     border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; line-height: 17px; }
+  /* min-width:0 is essential: as a flex item the chip strip otherwise grows to
+     fit ALL chips (default min-width:auto), so overflow-x never engages and you
+     can't reach chips past the first. Zeroing it lets the strip shrink to the
+     available width and scroll. flex:1 claims the space between head and Clear;
+     touch-action pan-x + overscroll-contain keep horizontal drags from fighting
+     the page's vertical scroll. Drag-to-scroll for mouse is wired in JS. */
   .tray-chips { display: flex; gap: 5px; overflow-x: auto; padding: 1px 1px 3px;
+    flex: 1 1 0; min-width: 0; scroll-behavior: smooth;
+    touch-action: pan-x; overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .tray-chips.dragging { scroll-behavior: auto; cursor: grabbing; }
   .tray-chips::-webkit-scrollbar { height: 5px; }
   .tray-chips::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   .tray-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
@@ -4499,11 +4509,18 @@ function floatNodes()  { return inChemistry() ? noteNodes : compoundNodes; }
 let sim;
 function startSim() {
   sim = d3.forceSimulation(compoundNodes)
-    .alphaDecay(0.02)
-    .velocityDecay(0.3)
+    // High velocityDecay is the key calming lever: at the old 0.3 (little
+    // friction) nodes kept their momentum and overshot/oscillated — "bopping
+    // around wildly" before settling, especially on the smaller mobile wheel.
+    // 0.62 removes most of that momentum each tick so they glide into place.
+    // A slightly faster alphaDecay + gentler collide further shorten and soften
+    // the settle.
+    .alphaDecay(0.03)
+    .alphaMin(0.02)
+    .velocityDecay(0.62)
     .force("center", d3.forceX(CX).strength(0.04))
     .force("centerY", d3.forceY(CY).strength(0.04))
-    .force("collide", d3.forceCollide().radius(d => d.radius + 13).strength(0.9))
+    .force("collide", d3.forceCollide().radius(d => d.radius + 13).strength(0.72))
     .force("target", targetForce(0.08))
     .on("tick", tick);
 }
@@ -4511,7 +4528,7 @@ function updateSimulationCenter() {
   if (!sim) return;
   sim.force("center", d3.forceX(CX).strength(0.04));
   sim.force("centerY", d3.forceY(CY).strength(0.04));
-  sim.alpha(0.6).restart();
+  sim.alpha(0.4).restart();
 }
 
 // targetForce: each compound is pulled toward the centroid of its (weighted) note contributors,
@@ -5039,7 +5056,7 @@ function recompute() {
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
 
-  if (sim) sim.alpha(0.5).restart();
+  if (sim) sim.alpha(0.32).restart();   // gentle nudge per input change, not a big kick
   renderDetail();
   // Perception Compass draws synchronously here rather than via the sim's
   // tick — its axes are a pure function of scores, no physics involved.
@@ -5333,6 +5350,49 @@ function syncSliders() { buildNotesPanel(); }
 const tastingTrayEl   = document.getElementById("tasting-tray");
 const trayChipsEl      = document.getElementById("tray-chips");
 const trayCountEl      = document.getElementById("tray-count");
+
+// Drag-to-scroll the chip strip so you can move through your selections
+// side-to-side with a mouse (touch/trackpad already pan the native overflow).
+// A click that ends a real drag is swallowed so it doesn't also fire the chip's
+// locate action; the vertical wheel is remapped to horizontal, releasing to the
+// page at the strip's ends so it never traps the page scroll.
+(function setupTrayDragScroll() {
+  const el = trayChipsEl;
+  if (!el) return;
+  let down = false, moved = false, startX = 0, startScroll = 0, pid = null;
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button != null && e.button > 0) return;   // left / touch / pen only
+    down = true; moved = false; startX = e.clientX; startScroll = el.scrollLeft; pid = e.pointerId;
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    if (!moved && Math.abs(dx) > 4) {
+      moved = true; el.classList.add("dragging");
+      try { el.setPointerCapture(pid); } catch (_) {}
+    }
+    if (moved) { el.scrollLeft = startScroll - dx; e.preventDefault(); }
+  });
+  const end = () => {
+    if (!down) return;
+    down = false; el.classList.remove("dragging");
+    if (moved) setTimeout(() => { moved = false; }, 0);   // keep the trailing click swallowed
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+  el.addEventListener("click", (e) => {
+    if (moved) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+  el.addEventListener("wheel", (e) => {
+    if (el.scrollWidth <= el.clientWidth) return;       // nothing to scroll
+    const delta = e.deltaY || e.deltaX;
+    const atStart = el.scrollLeft <= 0 && delta < 0;
+    const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 1 && delta > 0;
+    if (atStart || atEnd) return;                        // release to page scroll at the edges
+    el.scrollLeft += delta; e.preventDefault();
+  }, { passive: false });
+})();
+
 function renderTastingTray() {
   if (!tastingTrayEl) return;
   // Faithful record of every entry the user made, in stable group→label order.
