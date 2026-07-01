@@ -574,8 +574,32 @@
      starting near the pane's edge doesn't land on the slider thumb and drag
      it instead. Matters on any touchscreen, not just narrow phones (a
      touchscreen widescreen monitor has the same problem at 100% width). */
-  .note-row input[type=range] { grid-column: 1 / span 2; width: calc(100% - 44px); accent-color: var(--row-accent);
-    margin: 2px 0; }
+  .note-row input[type=range] { grid-column: 1 / span 2; width: calc(100% - 44px);
+    margin: 2px 0; height: 16px; cursor: pointer;
+    -webkit-appearance: none; appearance: none; background: transparent; }
+  /* Fully custom track + thumb. Relying on native accent-color left the
+     UNFILLED track a browser-derived light color — a stark near-white bar for
+     the roasted oranges especially — which read as a bug against the dark
+     theme and differed hue-to-hue between groups. So paint it ourselves: a
+     quiet dark groove (the row's bottom fill-meter already carries the value)
+     with a group-colored thumb. Chromium and Firefox need separate pseudo-
+     elements; both are covered. */
+  .note-row input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px; background: var(--line); }
+  .note-row input[type=range]::-moz-range-track {
+    height: 4px; border-radius: 2px; background: var(--line); }
+  .note-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; margin-top: -5px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--row-accent); border: 2px solid var(--panel); cursor: pointer; }
+  .note-row input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--row-accent); border: 2px solid var(--panel); cursor: pointer; }
+  .note-row input[type=range]:focus { outline: none; }
+  .note-row input[type=range]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--row-accent) 40%, transparent); }
+  .note-row input[type=range]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--row-accent) 40%, transparent); }
   .note-row.has-entries .note-label-text { color: var(--row-accent); font-weight: 600; }
   .note-row.flash { background: rgba(216, 166, 87, 0.18); transition: background 0.6s; }
 
