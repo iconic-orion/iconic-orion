@@ -1064,8 +1064,23 @@
       grid-template-rows: auto 50vh auto;
       height: auto; min-height: 100vh; overflow: visible;
     }
+    /* Frosted, not opaque: the wheel and panels visibly slide UNDER the sticky
+       header as the page scrolls, so the chrome reads as a thin layer floating
+       over the experience rather than a solid wall that content vanishes
+       behind. The solid --panel stays as the fallback paint for engines
+       without backdrop-filter. */
     body:not(.origins-mode):not(.taxonomy-mode) header {
       position: sticky; top: 0; z-index: 100; }
+    /* :not(.hud-open) matters: backdrop-filter turns the header into a
+       backdrop root, so the open tray's own backdrop-filter (below) would
+       sample only the header's contents instead of the wheel behind it —
+       silently un-frosting the tray. While the tray is open it covers the
+       header line anyway, so the header cedes the blur to it. */
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+      body:not(.origins-mode):not(.taxonomy-mode) header:not(.hud-open) {
+        background: rgba(23, 22, 27, 0.78);
+        -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+    }
     body:not(.origins-mode):not(.taxonomy-mode) aside.notes,
     body:not(.origins-mode):not(.taxonomy-mode) aside.detail {
       overflow: visible; padding-bottom: 64px; }
@@ -1077,8 +1092,12 @@
       position: fixed; bottom: 8px; z-index: 90; max-width: calc(100% - 16px); }
     /* ••• is pinned to the top-right corner so collapsed header is always
        exactly one line: [Aroma Wheel ···]. Everything else is in the tray. */
+    /* z-index so the absolutely-positioned tray overlay (see .hud-extra below)
+       paints above the Map/Tree workspaces too, where the header isn't sticky
+       and would otherwise share their stacking context. */
     header { flex-wrap: wrap; height: auto; min-height: 48px;
-      padding: 8px 48px 8px 12px; row-gap: 0; position: relative; gap: 8px; }
+      padding: 8px 48px 8px 12px; row-gap: 0; position: relative; gap: 8px;
+      z-index: 100; }
     header .spacer { display: block; flex: 1; }
     header h1 { width: auto; font-size: 13px; }
     #hud-toggle { display: inline-flex; align-items: center; justify-content: center;
@@ -1098,8 +1117,24 @@
     header.hud-open .hud-extra {
       display: grid; grid-template-columns: 1fr auto;
       gap: 10px 12px; align-items: center;
-      order: 10; flex-basis: 100%; width: 100%;
-      margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+      /* An OVERLAY dropping over the wheel, not an in-flow block: the old
+         in-flow tray grew the sticky header, shoving the whole wheel band down
+         and off-rhythm every time it opened. Absolutely positioned under the
+         header's title row, the wheel never moves — the controls float over it
+         on the same frosted glass as the header, and closing (tap ✕, tap
+         outside, or pick a tab) reveals the wheel exactly where it was. */
+      position: absolute; top: 100%; left: 0; right: 0;
+      padding: 12px 12px 14px;
+      background: rgba(23, 22, 27, 0.88);
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      border-radius: 0 0 14px 14px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+      max-height: calc(100vh - 64px); overflow-y: auto; }
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+      header.hud-open .hud-extra {
+        background: rgba(23, 22, 27, 0.8);
+        -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+    }
     header.hud-open .hud-vdivider,
     header.hud-open .hud-spacer     { display: none; }
     /* Full-width sliders ate the whole row, so a vertical scroll gesture
@@ -6345,18 +6380,33 @@ document.querySelectorAll("#view-tabs button").forEach(b => {
 });
 
 // Mobile HUD toggle: drop / hide the secondary control cluster (view modes,
-// organize, Go Deeper) as a second header row. Collapsed by default so the title
-// row stays compact and the always-on actions (info / Start Over) never get
-// pushed off-screen. Relayout after toggling since the header's height changes,
-// which resizes the wheel band below it.
+// organize, Go Deeper) as a frosted overlay floating over the wheel (see the
+// mobile .hud-extra CSS). Collapsed by default so the title row stays compact
+// and the always-on actions (info / Start Over) never get pushed off-screen.
+// Because the tray is an overlay now, opening it no longer changes the header's
+// height or the wheel band — no relayout needed on toggle.
 const hudToggleBtn = document.getElementById("hud-toggle");
-hudToggleBtn.addEventListener("click", () => {
-  const header = document.querySelector("header");
-  const open = header.classList.toggle("hud-open");
+const headerEl = document.querySelector("header");
+function setHudOpen(open) {
+  headerEl.classList.toggle("hud-open", open);
   hudToggleBtn.setAttribute("aria-expanded", String(open));
   hudToggleBtn.textContent = open ? "✕" : "☰";
-  layout();
-  if (sim) sim.alpha(0.4).restart();
+}
+hudToggleBtn.addEventListener("click", () => {
+  setHudOpen(!headerEl.classList.contains("hud-open"));
+});
+// The overlay tray dismisses like a menu, not a mode: a tap anywhere outside
+// the header closes it (the wheel underneath is right there — tapping it means
+// "back to the wheel"), and picking any control that changes what's on screen
+// (workspace / panel / organize tab, Start Over) closes it too so the change
+// is immediately visible rather than hidden behind the tray. The settings gear
+// and Go Deeper stay open — their effect happens inside the tray itself.
+document.addEventListener("click", (e) => {
+  if (!headerEl.classList.contains("hud-open")) return;
+  if (!headerEl.contains(e.target)) { setHudOpen(false); return; }
+  if (e.target.closest("#workspace-tabs button, #view-tabs button, #organize-tabs button, #reset, #compass-toggle, #info-open-btn")) {
+    setHudOpen(false);
+  }
 });
 
 // "Organize by" toggle: flip the wheel between scent and chemistry projections.
