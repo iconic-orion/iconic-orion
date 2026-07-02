@@ -711,6 +711,14 @@
   #reading-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.reading-mode #reading-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Freeze-aroma-bubbles: same row look as the button-style toggles above,
+     but a real checkbox (this one's a binary on/off setting, not an action). */
+  .settings-check-row { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; width: 100%; box-sizing: border-box; }
+  .settings-check-row:hover { border-color: var(--accent); }
+  .settings-check-row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; margin: 0; flex-shrink: 0; }
+
   /* ── Reading / dyslexia mode ──────────────────────────────────────────
      A legibility pass: Atkinson Hyperlegible (lazy-loaded; falls back to
      Verdana/Tahoma offline, both wider-spaced than the default sans), plus
@@ -1100,6 +1108,11 @@
        multiple users. Left-justify each slider to a third of the row width;
        the other two-thirds is dead space a touch-scroll can safely cross. */
     .note-row input[type=range] { width: 33%; }
+    /* The per-note emoji reads fine at desktop's 13px, but stacked in a dense
+       single-column list on a phone (86+ notes, several taxon sub-headers) the
+       full-size color-emoji glyphs dominate the row and the list feels noisy.
+       Shrink just the icon on mobile; label/slider/value sizing is untouched. */
+    .note-icon { font-size: 11px; margin-right: 3px; }
     header.hud-open #workspace-tabs  { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
     header.hud-open #view-tabs       { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
@@ -1111,6 +1124,11 @@
     header.hud-open #settings-wrap   { grid-row: 6; grid-column: 1; justify-self: start; margin-top: 6px; }
     header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: end; margin-top: 6px; }
     header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
+    /* The gear sits at the tray's left edge on mobile (see #settings-wrap
+       above); the desktop dropdown's right:0 anchor pushed most of its width
+       off the left of the viewport here. Anchor left instead so it opens
+       fully on-screen. */
+    header.hud-open .settings-menu { left: 0; right: auto; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -1511,6 +1529,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
           Jiggle
         </button>
+        <label class="settings-check-row" id="freeze-toggle-wrap" title="Off (default): the floating aroma compounds/notes never fully stop — they settle to a faint perpetual drift, like a suspension in a petri dish. On: they settle and hold still.">
+          <input type="checkbox" id="freeze-toggle">
+          Freeze aroma bubbles
+        </label>
       </div>
     </div>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
@@ -3582,11 +3604,25 @@ function bloomFactor(signalSum) { return 1 - Math.exp(-1.7 * Math.max(0, signalS
 // ingredient's icon IS the marker now, so this is what literally swells as you
 // taste a note more strongly and shrinks as it fades. Floored at a legible,
 // tappable size; the bouncy CSS transition on font-size does the animating.
-function noteGlyphSize(signal) { return 17 + Math.min(31, Math.max(0, signal) * 31); }
+// Sized relative to R_COMPOUND_MAX (the float zone's own radius), not a fixed
+// pixel count — tuned and verified on a ~375px-wide phone preview this
+// session, but the ratios below reproduce that exact look there while scaling
+// proportionally on a widescreen desktop's much larger wheel. A fixed-px
+// glyph would read as a legible marker on a phone and a nearly-invisible
+// speck lost in a huge desktop float zone, or vice versa.
+function noteGlyphSize(signal) {
+  const base = Math.max(12, R_COMPOUND_MAX * 0.21);
+  const range = Math.max(18, R_COMPOUND_MAX * 0.38);
+  return base + Math.min(range, Math.max(0, signal) * range);
+}
 // Compound marker size. Compound scores run smaller than note signals, so this
 // curve is steeper; floored a touch below notes so molecules read as the
 // secondary layer beneath the ingredients you actually entered.
-function compoundGlyphSize(score) { return 14 + Math.min(24, Math.max(0, score) * 24); }
+function compoundGlyphSize(score) {
+  const base = Math.max(10, R_COMPOUND_MAX * 0.174);
+  const range = Math.max(14, R_COMPOUND_MAX * 0.298);
+  return base + Math.min(range, Math.max(0, score) * range);
+}
 // Per-group summed note signal — "how much evidence sits in this flavor family."
 function groupActivity() {
   const act = {};
@@ -3652,6 +3688,8 @@ const state = {
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   jiggleEnabled: false,       // device-motion delight toggle (notes nudge with phone tilt/shake)
   readingMode: false,         // dyslexia-friendly / high-legibility font + spacing toggle
+  freezeBubbles: false,       // off (default): the float sim never fully settles-and-stops,
+                              // it eases to a low perpetual simmer instead. On: settles and holds still.
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   hoveredNote: null,
@@ -4005,7 +4043,7 @@ let W = wheelEl.clientWidth, H = wheelEl.clientHeight;
 let CX = W / 2, CY = H / 2;
 let R_NOTE = Math.min(W, H) * 0.38;  // ring sized to leave room for the curved outer labels
 let R_RING = R_NOTE - 18; // group-arc ring radius
-let R_COMPOUND_MAX = R_NOTE * 0.55;
+let R_COMPOUND_MAX = R_NOTE * 0.6;
 
 const root = svg.append("g");
 const gArcs   = root.append("g").attr("class", "group-arcs");
@@ -4506,23 +4544,124 @@ const NOTE_NODE_BY_ID = Object.fromEntries(noteNodes.map(n => [n.id, n]));
 function inChemistry() { return state.organizeBy === "chemistry"; }
 function floatNodes()  { return inChemistry() ? noteNodes : compoundNodes; }
 
-let sim;
+// Off by default, the float sim never fully settles-and-stops: instead of
+// alphaTarget easing back to 0 (which lets d3 stop its internal timer once
+// alpha crosses alphaMin — an abrupt full-halt the instant that threshold is
+// crossed), it eases to a small permanent simmer, IDLE_ALPHA, so the timer —
+// and a faint driftForce jiggle — never actually turn off. The transition
+// from "settling" to "ground state" becomes an asymptotic curve rather than a
+// cliff. Checking "Freeze aroma bubbles" restores the old behavior (settle to
+// a real stop) for anyone who wants the dots to hold perfectly still.
+const IDLE_ALPHA = 0.045;
+// A fixed px/tick jiggle amplitude tuned on a ~375px-wide phone preview would
+// be imperceptible on a widescreen desktop's much larger float zone (and vice
+// versa a desktop-tuned value would look frantic on mobile) — scale with
+// R_COMPOUND_MAX like the glyph sizes and collide padding just above/below.
+// The multiplier is deliberately much bigger than a naive "scale it like the
+// others" guess: the sim damps a per-tick velocity impulse geometrically
+// (velocityDecay), so the actual steady-state wander it produces is much
+// smaller than the raw impulse — measured empirically at roughly 0.08px of
+// visible motion per frame on a spacious desktop wheel with this force alone,
+// which reads as inert. This value was re-tuned upward (about 8x) to land
+// noticeably alive without tipping back into "rave mode" territory.
+function driftStrength() { return Math.max(0.4, R_COMPOUND_MAX * 0.0179); }
+// Same reasoning as driftStrength(): the separation gap between two floating
+// glyphs needs to read the same relative to the wheel regardless of whether
+// that wheel is a phone's 150px float zone or a desktop's 600px one.
+function collidePadding() { return Math.max(8, R_COMPOUND_MAX * 0.186); }
+function hasAnyActiveFloat() { return floatNodes().some(n => (n.score || 0) > 0); }
+function applyFreezeMode() {
+  if (!sim) return;
+  // No point idling forever (perpetual ticking + a small perpetual quadtree/
+  // collide cost) on an empty wheel with nothing to drift — only keep the
+  // simmer alive once there's actual evidence to show.
+  if (state.freezeBubbles || !hasAnyActiveFloat()) sim.alphaTarget(0);
+  else sim.alphaTarget(IDLE_ALPHA).restart();
+}
+// Tiny perpetual random-walk nudge — the "fluid in a petri dish" ground
+// state. Without this, a nonzero alphaTarget alone would still let the sim
+// relax to a static equilibrium (alphaTarget only changes how "warm" the sim
+// idles at, not whether it keeps moving); an explicit small stochastic
+// impulse each tick is what keeps it visibly, gently alive. Skipped for
+// pinned (dragged) nodes — a manual placement should hold exactly, freeze
+// setting or not — and altogether when frozen.
+//
+// A fresh independent random impulse EVERY tick (60/sec) reads as a
+// high-frequency vibration/buzz — with the sim's velocityDecay retaining
+// only a small fraction of velocity per tick (fast decay, tuned elsewhere to
+// keep settling snappy), position tracks each new random kick almost
+// immediately, so the direction effectively reverses ~60 times a second.
+// Throttling how OFTEN a new impulse fires doesn't fix this on its own
+// either — with decay that fast, velocity between infrequent kicks would
+// just decay to zero and the motion would stutter rather than sway. Instead,
+// keep a per-node drift velocity that's low-pass filtered on its OWN slow
+// time constant (DRIFT_SMOOTH), decoupled from the sim's fast velocityDecay,
+// and feed that already-slow-changing value in every tick. The heading then
+// wanders over roughly a second or more — a lazy sway — instead of buzzing.
+const DRIFT_SMOOTH = 0.02;
+function driftForce() {
+  if (state.freezeBubbles) return;
+  const drift = driftStrength();
+  floatNodes().forEach(n => {
+    if (n.fx != null || n.fy != null) return;
+    if (n._driftVX == null) { n._driftVX = 0; n._driftVY = 0; }
+    n._driftVX += ((Math.random() - 0.5) * drift - n._driftVX) * DRIFT_SMOOTH;
+    n._driftVY += ((Math.random() - 0.5) * drift - n._driftVY) * DRIFT_SMOOTH;
+    n.vx += n._driftVX;
+    n.vy += n._driftVY;
+  });
+}
+// A per-tick speed limit, scaled to the wheel, applied after every other
+// force. A single driftStrength scalar tuned against a spacious desktop wheel
+// turned out to be too strong once carried over to a crowded mobile wheel:
+// mobile's collide/bound forces are ALREADY working constantly there (not
+// enough room for every icon to be simultaneously non-overlapping), and
+// piling a bigger drift signal on top of that ongoing contest reignited
+// "rave mode" — while the same drift amplitude on a roomy desktop wheel (no
+// contest at all, collide/bound sit idle) was exactly what fixed "desktop is
+// dead." Rather than chase a single scalar that can't satisfy both at once,
+// cap how far ANY float may move in one tick regardless of which force(s)
+// pushed it there — this keeps per-frame motion visually calm everywhere
+// while still letting drift alone be strong enough to read as alive.
+function speedCapForce() {
+  const maxSpeed = R_COMPOUND_MAX * 0.05;
+  floatNodes().forEach(n => {
+    if (n.fx != null) return;
+    const s = Math.hypot(n.vx, n.vy);
+    if (s > maxSpeed) { const k = maxSpeed / s; n.vx *= k; n.vy *= k; }
+  });
+}
+
+let sim, collideForce;
 function startSim() {
+  collideForce = d3.forceCollide().radius(d => d.radius + collidePadding()).strength(0.95).iterations(2);
   sim = d3.forceSimulation(compoundNodes)
     // High velocityDecay is the key calming lever: at the old 0.3 (little
     // friction) nodes kept their momentum and overshot/oscillated — "bopping
     // around wildly" before settling, especially on the smaller mobile wheel.
     // 0.62 removes most of that momentum each tick so they glide into place.
     // A slightly faster alphaDecay + gentler collide further shorten and soften
-    // the settle.
+    // the settle. alphaMin is kept low so that, in Freeze mode, the tail end of
+    // the settle fades out gradually instead of hitting a hard stop while
+    // velocity is still visibly nonzero.
     .alphaDecay(0.03)
-    .alphaMin(0.02)
+    .alphaMin(0.006)
     .velocityDecay(0.62)
     .force("center", d3.forceX(CX).strength(0.04))
     .force("centerY", d3.forceY(CY).strength(0.04))
-    .force("collide", d3.forceCollide().radius(d => d.radius + 13).strength(0.72))
+    // Collide was soft (0.72 strength, 1 pass) — with the target force actively
+    // pulling nearby compounds toward the same shared-note centroid, that left
+    // icons visibly overlapping instead of settling apart like beads jostling
+    // in a jar. Near-full strength + a second resolution pass per tick actually
+    // separates them (with breathing room via the padding); still damped by
+    // the sim's high velocityDecay above so it settles calmly, not bouncily.
+    .force("collide", collideForce)
     .force("target", targetForce(0.08))
+    .force("drift", driftForce)
+    .force("bound", boundForce)
+    .force("speedCap", speedCapForce)
     .on("tick", tick);
+  applyFreezeMode();
 }
 function updateSimulationCenter() {
   if (!sim) return;
@@ -4589,16 +4728,59 @@ function targetForce(strength) {
 }
 function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h*31 + s.charCodeAt(i))|0; return Math.abs(h); }
 
-function tick() {
-  // clamp floats (compounds in scent mode, notes in chemistry mode) to bounds
+// Soft boundary containment, a normal velocity-nudging force like collide or
+// target — NOT a hard per-tick position clamp. An earlier version of this
+// hard-clamped floats back onto the R_COMPOUND_MAX circle every tick, which
+// fought collide (multiple compounds pushed past the edge at a similar angle
+// all got projected onto nearly the SAME point, erasing their separation). A
+// version after that "fixed" it by manually re-running collide + a full,
+// undamped position bake 8x per tick, forever — but once the sim was changed
+// to idle forever instead of freezing (see applyFreezeMode()), that turned
+// into "rave mode": in any crowded/infeasible packing (not enough room for
+// every icon to be simultaneously non-overlapping — common on a small mobile
+// wheel), those 8 full-strength reshuffles never converge, so every single
+// frame relitigates the layout from scratch and the dots visibly teleport.
+// The fix is to go back to a plain velocity-based force and let the sim's own
+// per-tick velocityDecay damp it, exactly like every other force here. It
+// converges more slowly than an aggressive manual bake, but the sim now runs
+// indefinitely when unfrozen, so it has all the time it needs — and "gently
+// keeps working on it" is a calm, correct low-energy failure mode where
+// "reshuffle at full force every frame forever" is not.
+function boundForce() {
   floatNodes().forEach(n => {
+    if (n.fx != null) return;
     const dx = n.x - CX, dy = n.y - CY;
-    const r = Math.sqrt(dx*dx + dy*dy);
+    const r = Math.sqrt(dx*dx + dy*dy) || 1;
     if (r > R_COMPOUND_MAX) {
-      n.x = CX + dx/r * R_COMPOUND_MAX;
-      n.y = CY + dy/r * R_COMPOUND_MAX;
+      const k = (r - R_COMPOUND_MAX) / r * 0.5;
+      n.vx -= dx * k;
+      n.vy -= dy * k;
     }
   });
+}
+
+// velocityDecay is the sim-wide "friction" fraction removed from velocity
+// every tick. At the settling value (0.62) velocity decorrelates almost
+// completely within a SINGLE tick — great for a snappy, non-bopping settle
+// right after new evidence arrives, but it also means the constant low-level
+// contest for space in a crowded mobile wheel (collide nudging things that
+// don't quite fit) reads as fresh, memoryless noise every frame — a
+// vibration — rather than a slow sway, and smoothing just the drift term
+// upstream (driftForce's _driftVX/_driftVY) can't fix that, since collide's
+// own per-tick corrections dominate the same shared vx/vy. So: relax
+// friction (more inertia, longer memory) as alpha eases down toward the idle
+// floor, and restore the snappy value whenever a fresh kick (new input,
+// drag) pushes alpha back up. One knob, context-appropriate either way.
+const SETTLE_VELOCITY_DECAY = 0.62;
+const IDLE_VELOCITY_DECAY = 0.9;
+function updateVelocityDecayForAlpha() {
+  const a = sim.alpha();
+  const t = Math.max(0, Math.min(1, (a - IDLE_ALPHA) / (0.35 - IDLE_ALPHA)));
+  sim.velocityDecay(IDLE_VELOCITY_DECAY + (SETTLE_VELOCITY_DECAY - IDLE_VELOCITY_DECAY) * t);
+}
+
+function tick() {
+  updateVelocityDecayForAlpha();
   if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
   updateEdges();
   updateCallouts();
@@ -4641,10 +4823,15 @@ function renderCompoundFloats() {
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
     })
+    // Dragging pins the dot in place (fx/fy stay set after release) so a
+    // manually-organized layout survives later sim restarts instead of the
+    // collide/target forces sweeping it back into the pack. Double-click/tap
+    // releases the pin and lets it rejoin the float.
+    .on("dblclick", (e, d) => { d.fx = null; d.fy = null; sim.alpha(0.3).restart(); })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
       .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
-      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+      .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
   enter.append("circle").attr("class", "cpd-token");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
@@ -4712,10 +4899,13 @@ function renderNoteFloats() {
       state.selectedCompound = null;
       renderDetail();
     })
+    // Same pin-on-drop / release-on-double-click behavior as the compound
+    // floats in scent mode — see renderCompoundFloats().
+    .on("dblclick", (e, d) => { d.fx = null; d.fy = null; sim.alpha(0.3).restart(); })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
       .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
-      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+      .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
   enter.append("circle").attr("class", "note-halo");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
@@ -5056,7 +5246,8 @@ function recompute() {
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
 
-  if (sim) sim.alpha(0.32).restart();   // gentle nudge per input change, not a big kick
+  if (sim) { sim.alpha(0.32).restart(); applyFreezeMode(); }   // gentle nudge per input change, not a big kick;
+                                                                // also re-evaluates whether the idle simmer should be on
   renderDetail();
   // Perception Compass draws synchronously here rather than via the sim's
   // tick — its axes are a pure function of scores, no physics involved.
@@ -6624,6 +6815,18 @@ function setReadingMode(on) {
   readingToggleBtn.setAttribute("aria-pressed", String(state.readingMode));
 }
 readingToggleBtn.addEventListener("click", () => setReadingMode(!state.readingMode));
+
+// ---------- FREEZE AROMA BUBBLES ----------
+// See applyFreezeMode()/driftForce() near the sim setup: off (default) keeps
+// the float sim at a perpetual gentle simmer instead of settling to a dead
+// stop; on restores a real settle-and-hold-still.
+const freezeToggleCheck = document.getElementById("freeze-toggle");
+function setFreezeBubbles(on) {
+  state.freezeBubbles = !!on;
+  freezeToggleCheck.checked = state.freezeBubbles;
+  applyFreezeMode();
+}
+freezeToggleCheck.addEventListener("change", (e) => setFreezeBubbles(e.target.checked));
 
 // ---------- JIGGLE (device motion) ----------
 // Mobile delight feature: tilt or shake the phone and the flavor notes nudge
