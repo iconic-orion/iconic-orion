@@ -5014,57 +5014,80 @@ function updateSimulationCenter() {
   sim.alpha(0.4).restart();
 }
 
-// targetForce: each compound is pulled toward the centroid of its (weighted) note contributors,
-// scaled inward by total score (more evidence -> closer to center? no — keep at mid-ring).
+// computeFloatHomes: each float's "home" — the weighted centroid of its edge
+// contributors, pulled inward toward center — cached as _homeX/_homeY. This
+// used to live inside targetForce and re-derive itself EVERY TICK for every
+// float (walking all edges and calling effectiveNoteSignal per edge, 60x a
+// second), but a home is a pure function of the current entries, visibility,
+// and layout — none of which change mid-tick. So it's computed here exactly
+// once per input change (recompute() calls this) and the per-tick force
+// below becomes a cheap spring toward the cached point.
+function computeFloatHomes() {
+  const chem = inChemistry();
+  floatNodes().forEach(node => {
+    let wx = 0, wy = 0, wsum = 0;
+    if (chem) {
+      // node is a NOTE; home is among its compounds' fixed class-arc anchors,
+      // weighted purely by edge strength so the placement is stable (a note
+      // always drifts to the same chemical neighborhood). Only place notes the
+      // user has actually entered; the rest stay parked near center.
+      if (noteSignal(node.id) > 0) NOTE_EDGES[node.id].forEach(e => {
+        if (!isCompoundVisible(e.cpd)) return;
+        const cn = CPD_NODE_BY_ID[e.cpd];
+        if (cn._x == null) return;       // anchor not positioned (hidden class)
+        wx += cn._x * e.w; wy += cn._y * e.w; wsum += e.w;
+      });
+    } else {
+      // node is a COMPOUND; home is the weighted centroid of its active
+      // note anchors (the original scent-mode behavior).
+      CPD_EDGES[node.id].forEach(e => {
+        if (!isNoteVisible(e.note)) return;
+        const noteW = effectiveNoteSignal(e.note, node.id);
+        if (noteW <= 0) return;
+        const contrib = noteW * e.w;
+        const n = NOTE_BY_ID[e.note];
+        wx += n._x * contrib;
+        wy += n._y * contrib;
+        wsum += contrib;
+      });
+    }
+    if (wsum > 0) {
+      // weighted centroid of contributors, pulled inward toward center
+      const cx = wx / wsum, cy = wy / wsum;
+      const dx = cx - CX, dy = cy - CY;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      const inward = Math.min(R_COMPOUND_MAX, dist * 0.6);
+      node._homeX = CX + (dx / dist) * inward;
+      node._homeY = CY + (dy / dist) * inward;
+    } else {
+      // park near center but jittered by id so they don't pile up
+      const hash = hashStr(node.id);
+      const a = (hash % 360) / 360 * Math.PI * 2;
+      node._homeX = CX + Math.cos(a) * 30;
+      node._homeY = CY + Math.sin(a) * 30;
+    }
+  });
+}
+
+// targetForce: a spring toward the cached home. The Math.max floor is the
+// "palm tree" behavior: alpha-scaling alone means the spring goes nearly
+// limp at the idle simmer (alpha ~0.045), so a dot smushed aside by a
+// neighbor's collide just stayed wherever it was pushed. The floor keeps a
+// gentle constant restoring pull under the alpha term — displaced dots sway
+// back to their home over a second or two (damped by the high idle
+// velocityDecay) instead of snapping, while settle-time behavior (alpha
+// high, alpha term above the floor) is unchanged. Dragged/pinned nodes
+// (fx set) are integrated by the sim as fixed, so the spring never fights
+// a manual placement.
+const HOME_SPRING_FLOOR = 0.9;
 function targetForce(strength) {
   let s = strength;
   function force(alpha) {
-    const chem = inChemistry();
+    const k = s * Math.max(alpha * 6, HOME_SPRING_FLOOR);
     floatNodes().forEach(node => {
-      let wx = 0, wy = 0, wsum = 0;
-      if (chem) {
-        // node is a NOTE; pull toward its compounds' fixed class-arc anchors,
-        // weighted purely by edge strength so the placement is stable (a note
-        // always drifts to the same chemical neighborhood). Only place notes the
-        // user has actually entered; the rest stay parked near center.
-        if (noteSignal(node.id) > 0) NOTE_EDGES[node.id].forEach(e => {
-          if (!isCompoundVisible(e.cpd)) return;
-          const cn = CPD_NODE_BY_ID[e.cpd];
-          if (cn._x == null) return;       // anchor not positioned (hidden class)
-          wx += cn._x * e.w; wy += cn._y * e.w; wsum += e.w;
-        });
-      } else {
-        // node is a COMPOUND; pull toward the weighted centroid of its active
-        // note anchors (the original scent-mode behavior).
-        CPD_EDGES[node.id].forEach(e => {
-          if (!isNoteVisible(e.note)) return;
-          const noteW = effectiveNoteSignal(e.note, node.id);
-          if (noteW <= 0) return;
-          const contrib = noteW * e.w;
-          const n = NOTE_BY_ID[e.note];
-          wx += n._x * contrib;
-          wy += n._y * contrib;
-          wsum += contrib;
-        });
-      }
-      let tx, ty;
-      if (wsum > 0) {
-        // weighted centroid of contributors, pulled inward toward center
-        const cx = wx / wsum, cy = wy / wsum;
-        const dx = cx - CX, dy = cy - CY;
-        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-        const inward = Math.min(R_COMPOUND_MAX, dist * 0.6);
-        tx = CX + (dx / dist) * inward;
-        ty = CY + (dy / dist) * inward;
-      } else {
-        // park near center but jittered by compound class so they don't pile up
-        const hash = hashStr(node.id);
-        const a = (hash % 360) / 360 * Math.PI * 2;
-        tx = CX + Math.cos(a) * 30;
-        ty = CY + Math.sin(a) * 30;
-      }
-      node.vx += (tx - node.x) * s * alpha * 6;
-      node.vy += (ty - node.y) * s * alpha * 6;
+      if (node._homeX == null) return;
+      node.vx += (node._homeX - node.x) * k;
+      node.vy += (node._homeY - node.y) * k;
     });
   }
   force.strength = function(v) { if (!arguments.length) return s; s = v; return force; };
@@ -5123,11 +5146,26 @@ function updateVelocityDecayForAlpha() {
   sim.velocityDecay(IDLE_VELOCITY_DECAY + (SETTLE_VELOCITY_DECAY - IDLE_VELOCITY_DECAY) * t);
 }
 
+// The tick is the hottest path in the app (60x/sec while the sim simmers),
+// so it only MOVES things: float transforms and edge path geometry. The
+// full data-join + restyle (which floats exist, their glyph sizes, label
+// opacities, edge stroke styling) is a pure function of the entries /
+// visibility / hover state, none of which change mid-tick — that work lives
+// in syncFloats()/updateEdges(), called from recompute() and the hover/
+// select handlers. This is what made dragging trail the cursor: every tick
+// was rebuilding and restyling the whole wheel just to move some dots.
 function tick() {
   updateVelocityDecayForAlpha();
-  if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
-  updateEdges();
+  updateFloatPositions();
+  updateEdgeGeometry();
   updateCallouts();
+}
+function updateFloatPositions() {
+  gComps.selectAll("g.compound").attr("transform", d => `translate(${d.x},${d.y})`);
+}
+// Full float rebuild for the active mode — data join, styles, labels.
+function syncFloats() {
+  if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
 }
 
 // Scent mode: compounds float toward their active notes. Render those with
@@ -5252,6 +5290,9 @@ function renderNoteFloats() {
       state.selectedNote = d.id;
       state.selectedCompound = null;
       renderDetail();
+      // Applied directly (like the compound handler above) — the tick no
+      // longer re-runs the full join, so classes don't refresh on their own.
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedNote);
     })
     // Same pin-on-drop / release-on-double-click behavior as the compound
     // floats in scent mode — see renderCompoundFloats(), including the
@@ -5472,6 +5513,30 @@ function noteAnchorFor(noteId) {
 }
 
 // ---------- EDGES rendering ----------
+// Each edge bows GENTLY toward the center rather than passing through it.
+// Routing every edge through the exact (CX,CY) used to knot them all at one
+// point in the middle; a control point only ~60% of the way from the edge's
+// own midpoint toward center keeps the inward bow but lets each curve keep
+// its own lane, so the fan reads as arcs instead of a central tangle.
+// Scent: note anchor (_x/_y) → compound float (x/y). Chemistry: compound
+// anchor (_x/_y) → note float (x/y).
+function edgePath(d, chem) {
+  const x0 = chem ? d.c._x : d.n._x, y0 = chem ? d.c._y : d.n._y;
+  const x1 = chem ? d.nf.x : d.c.x, y1 = chem ? d.nf.y : d.c.y;
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  const cxp = mx + (CX - mx) * 0.6, cyp = my + (CY - my) * 0.6;
+  return `M ${x0} ${y0} Q ${cxp} ${cyp} ${x1} ${y1}`;
+}
+
+// Per-tick edge update: re-path the already-drawn set to follow the moving
+// float endpoints. Which edges exist, and their stroke styling, only change
+// with entries/hover/select — that's updateEdges() below, called from
+// recompute() and the hover/select handlers, not from the tick.
+function updateEdgeGeometry() {
+  const chem = inChemistry();
+  gEdges.selectAll("path.edge").attr("d", d => edgePath(d, chem));
+}
+
 function updateEdges() {
   // only draw edges where note has weight > 0 OR note is hovered OR compound is selected
   const chem = inChemistry();
@@ -5510,20 +5575,7 @@ function updateEdges() {
     update => update,
     exit => exit.remove()
   )
-  // Each edge bows GENTLY toward the center rather than passing through it.
-  // Routing every edge through the exact (CX,CY) used to knot them all at one
-  // point in the middle; a control point only ~60% of the way from the edge's
-  // own midpoint toward center keeps the inward bow but lets each curve keep
-  // its own lane, so the fan reads as arcs instead of a central tangle.
-  // Scent: note anchor (_x/_y) → compound float (x/y). Chemistry: compound
-  // anchor (_x/_y) → note float (x/y).
-  .attr("d", d => {
-    const x0 = chem ? d.c._x : d.n._x, y0 = chem ? d.c._y : d.n._y;
-    const x1 = chem ? d.nf.x : d.c.x, y1 = chem ? d.nf.y : d.c.y;
-    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-    const cxp = mx + (CX - mx) * 0.6, cyp = my + (CY - my) * 0.6;
-    return `M ${x0} ${y0} Q ${cxp} ${cyp} ${x1} ${y1}`;
-  })
+  .attr("d", d => edgePath(d, chem))
   .attr("stroke", d => groupColor(d.n.group))
   // Calmer at rest, assertive on focus: an unfocused fan sits as a faint
   // tracery so the wheel isn't a permanent cross-hatch; hovering a note (or a
@@ -5604,6 +5656,13 @@ function recompute() {
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
+
+  // One-time-per-input-change work the tick used to redo every frame:
+  // re-derive each float's home, rebuild the float set + styles, and
+  // rebuild the edge set + stroke styling. The tick then only moves them.
+  computeFloatHomes();
+  syncFloats();
+  updateEdges();
 
   if (sim) { sim.alpha(0.32).restart(); applyFreezeMode(); }   // gentle nudge per input change, not a big kick;
                                                                 // also re-evaluates whether the idle simmer should be on
@@ -8329,6 +8388,10 @@ autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
 
 window.addEventListener("resize", () => {
   layout();
+  // Homes are derived from the note/compound anchor positions, which layout()
+  // just moved — without this the spring would pull every float toward its
+  // pre-resize home.
+  computeFloatHomes();
   if (sim) sim.alpha(0.5).restart();
   if (originsLoaded) refreshOriginMarkers();
 });
