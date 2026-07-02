@@ -9290,8 +9290,30 @@ function renderTaxonomyTree() {
   const links = taxTreeRoot.links();
   let minX = 0, maxX = 0, maxY = 0;
   nodes.forEach(d => { if (d.x < minX) minX = d.x; if (d.x > maxX) maxX = d.x; if (d.y > maxY) maxY = d.y; });
-  const width = maxY + 220, height = maxX - minX + 40;
-  svg.attr("width", width).attr("height", height).attr("viewBox", `0 ${minX - 20} ${width} ${height}`);
+  // Vertical orientation: Kingdom (depth 0, d.y=0) at the BOTTOM, flavor
+  // notes (the deepest leaves) at the TOP. d.x (sibling spread, from
+  // nodeSize's first argument) maps to the horizontal screen axis, same
+  // role it always had. d.y (depth, from nodeSize's second argument) maps
+  // to the vertical screen axis INVERTED — screenY = maxY - d.y — so depth
+  // grows upward instead of the original growing-rightward. Node labels
+  // stay exactly the same x-offset/anchor logic as the old horizontal
+  // layout (leaves get local x=9/start, internal nodes get x=-9/end); the
+  // rotate(-90) on the <text> below is what turns that "left/right of
+  // node" logic into "above/below node" — a positive local x rotates to
+  // negative screen y (up), so leaf labels correctly end up above their
+  // node, reading bottom-to-top, while internal labels land below theirs.
+  // Two different margins, not one: the topmost (currently deepest) row's
+  // labels extend further UP with nothing beyond them to borrow space from,
+  // same for the bottommost row's (root's, always "All notes") label
+  // extending DOWN — every other row's label overruns into a neighboring
+  // row's own TAX_DY=170 gap, which is generous enough not to need a
+  // dedicated margin. TOP_MARGIN is bigger because leaf labels ("Black
+  // currant / cassis") run longer than the root's fixed short one.
+  const TOP_MARGIN = 200, BOTTOM_MARGIN = 60;
+  const screenX = d => d.x - minX;
+  const screenY = d => (maxY - d.y) + TOP_MARGIN;
+  const width = maxX - minX + 40, height = maxY + TOP_MARGIN + BOTTOM_MARGIN;
+  svg.attr("width", width).attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
   // Re-apply the current zoom's CSS box size — the width/height attrs above
   // just got reset to the natural (unzoomed) size for this render.
   svg.node().style.width = (width * taxonomyZoom) + "px";
@@ -9299,10 +9321,11 @@ function renderTaxonomyTree() {
 
   const keyFor = d => d.data.noteId || (d.ancestors().map(a => a.data.name).join("/"));
 
+  const link = d3.linkVertical().x(screenX).y(screenY);
   svg.selectAll("path.tx-link").data(links, d => keyFor(d.target))
     .join("path")
     .attr("class", "tx-link")
-    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+    .attr("d", link);
 
   const onNodeClick = (e, d) => {
     if (d.data.noteId) {
@@ -9320,15 +9343,16 @@ function renderTaxonomyTree() {
   const node = svg.selectAll("g.tx-node").data(nodes, keyFor);
   const enter = node.enter().append("g")
     .attr("class", d => "tx-node " + (d.data.noteId ? "tx-leaf" : "tx-internal"))
-    .attr("transform", d => `translate(${d.y},${d.x})`)
+    .attr("transform", d => `translate(${screenX(d)},${screenY(d)})`)
     .on("click", onNodeClick);
   enter.append("circle").attr("r", 5);
   enter.append("text").attr("dy", "0.32em");
 
   const merged = node.merge(enter);
-  merged.attr("transform", d => `translate(${d.y},${d.x})`);
+  merged.attr("transform", d => `translate(${screenX(d)},${screenY(d)})`);
   merged.select("circle").attr("fill", d => d._children ? "var(--accent)" : (d.children ? "var(--panel-2)" : "var(--ink-dim)"));
   merged.select("text")
+    .attr("transform", "rotate(-90)")
     .attr("x", d => (d.children || d._children) ? -9 : 9)
     .attr("text-anchor", d => (d.children || d._children) ? "end" : "start")
     .text(labelFor);
