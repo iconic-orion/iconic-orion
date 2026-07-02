@@ -4976,9 +4976,50 @@ function speedCapForce() {
   });
 }
 
+// With enough active compounds, their combined glyph+padding footprint can
+// simply be too big to fit inside the containment zone at full size — no
+// amount of force-tuning fixes that; collide fights an infeasible packing
+// forever and spills past whatever boundary is drawn. updateCollideScale()
+// shrinks collide's spacing (not the rendered glyph size) just enough that
+// the total footprint area fits the zone's area, so crowding reads as
+// "cozier" rather than "overflowing." Recomputed once per input change
+// (called from computeFloatHomes(), same cadence as homes) — collideForce's
+// radius accessor below reads this live on every application, no need to
+// recreate the force.
+let _collideScale = 1;
+function updateCollideScale() {
+  const zone = inChemistry() ? R_COMPOUND_MAX : FLOAT_ZONE_R();
+  const active = floatNodes().filter(n => (n.score || 0) > 0);
+  const prevScale = _collideScale;
+  if (active.length === 0) { _collideScale = 1; }
+  else {
+    const pad = collidePadding();
+    let neededArea = 0;
+    active.forEach(n => { const r = (n.radius || 10) + pad; neededArea += Math.PI * r * r; });
+    // 0.55, not a tight-tiling ~0.9: collide's job here isn't to tile the
+    // disc efficiently, it's to leave enough slack that the home spring can
+    // still place a float near ITS intended radius rather than every float
+    // getting shoved toward the rim (the only place with enough spare
+    // circumference to avoid overlap once collide gets greedy). Under truly
+    // heavy crowding (a dozen+ compounds sharing one note) radial ordering
+    // by strength can still compress — accepted tradeoff, since the one
+    // guarantee that actually matters (never crossing into the note-ring
+    // band) is enforced separately by boundForce below regardless of how
+    // this settles.
+    const availableArea = Math.PI * zone * zone * 0.55;
+    _collideScale = Math.max(0.3, Math.min(1, Math.sqrt(availableArea / neededArea)));
+  }
+  // d3-force's forceCollide bakes its .radius() accessor into a static array
+  // exactly once, at initialize() — it is NOT re-evaluated per tick like
+  // forceX/forceY. Mutating _collideScale alone is invisible to collide
+  // until something re-triggers that bake; re-assigning the same accessor
+  // is what forces d3 to call initialize() again and pick up the new value.
+  if (collideForce && _collideScale !== prevScale) collideForce.radius(collideForce.radius());
+}
+
 let sim, collideForce;
 function startSim() {
-  collideForce = d3.forceCollide().radius(d => d.radius + collidePadding()).strength(0.95).iterations(2);
+  collideForce = d3.forceCollide().radius(d => (d.radius + collidePadding()) * _collideScale).strength(0.95).iterations(2);
   sim = d3.forceSimulation(compoundNodes)
     // High velocityDecay is the key calming lever: at the old 0.3 (little
     // friction) nodes kept their momentum and overshot/oscillated — "bopping
@@ -5025,21 +5066,27 @@ function updateSimulationCenter() {
 // Scent-mode placement is POLAR, and both coordinates carry meaning:
 //   angle  — the weighted centroid direction of the compound's contributing
 //            note anchors, so a compound always blooms in its source note's
-//            sector and the note→compound edge fan stays short and readable.
-//   radius — how SHARED the compound is. A single-note compound sits near
-//            the float zone's outer rim, right inside its note; a compound
-//            fed by several notes sits proportionally deeper toward center
-//            (its centroid shortens as its contributors spread apart), so
-//            "shared chemistry" literally reads as depth — confluence in
-//            the middle, provenance at the rim. The float zone's rim itself
-//            (R_COMPOUND_MAX = 0.55 × R_NOTE) leaves a clear moat below the
-//            note ring, so the picked notes stay readable on the wheel edge.
-// Same-source siblings (identical centroid → identical angle+radius, e.g.
-// coffee alone activating a dozen compounds) are fanned into concentric
-// arc rows flowing inward from the shared home, ordered by chemical class
-// so class-mates sit adjacent — without this they'd all stack on one point
-// and collide would shove them apart arbitrarily every time.
+//            sector and the note→compound edge fan stays short and readable
+//            (this is what shows a molecule's relationship to the flavor
+//            note(s) feeding it, even when several notes share it).
+//   radius — how STRONG the compound's evidence is. The strongest compounds
+//            sink toward the center; the weakest sit near the outer edge of
+//            the float zone (and render dimmer — see FLOAT_DIM_FLOOR below),
+//            so intensity reads as depth: confident, well-supported
+//            chemistry pools in the middle, faint/marginal evidence stays
+//            near the rim. FLOAT_ZONE_R is deliberately well inside the
+//            dotted center-ring (itself inside the note ring) — see
+//            boundForce()'s matching ceiling — so floats never crowd into
+//            the band between the dotted line and the note ring even under
+//            heavy collide pressure.
+// Same-strength siblings sharing a note (identical centroid + score, e.g.
+// two compounds both scoring exactly 0 before any real evidence) are fanned
+// into a small spiral around the shared point, ordered by chemical class so
+// class-mates sit adjacent — without this they'd stack on one point and
+// collide would shove them apart arbitrarily every time.
+const FLOAT_ZONE_R = () => R_COMPOUND_MAX * 0.82;
 function computeFloatHomes() {
+  updateCollideScale();
   if (inChemistry()) {
     // node is a NOTE; home is among its compounds' fixed class-arc anchors,
     // weighted purely by edge strength so the placement is stable (a note
@@ -5083,13 +5130,25 @@ function computeFloatHomes() {
     });
     if (wsum <= 0) { parkHome(node); return; }
     const dx = wx / wsum - CX, dy = wy / wsum - CY;
-    const dist = Math.hypot(dx, dy) || 1;
-    // norm: 1 = all contributors at one anchor (centroid on the note ring),
-    // → 0 as contributors spread around the wheel and the centroid collapses
-    // toward center. Mapped to a radius band so nothing sits ON the rim or
-    // AT the exact center.
-    const norm = Math.min(1, dist / R_NOTE);
-    placed.push({ node, theta: Math.atan2(dy, dx), r: R_COMPOUND_MAX * (0.35 + 0.6 * norm) });
+    // Radius is driven by STRENGTH, not the contributors' spread: stronger
+    // evidence sinks toward center, weak/marginal evidence stays out near
+    // the float zone's rim. min(1, score) matches the same normalization
+    // compoundGlyphSize()/the token's fill-opacity already use elsewhere.
+    const strength = Math.min(1, node.score || 0);
+    const zone = FLOAT_ZONE_R();
+    const r = zone * 0.15 + zone * 0.7 * (1 - strength);
+    // A single shared contributor gives every one of its compounds the
+    // EXACT same centroid direction — a real coffee-alone bloom starts a
+    // dozen compounds perfectly colinear on one ray from center. Collide
+    // then "resolves" that degenerate pile-up by shoving nodes radially
+    // outward (there's no tangential gap to push into), which is what was
+    // blowing compounds straight through the zone/dotted-line/note-ring
+    // regardless of how tightly the target radius was capped. A small
+    // deterministic per-id angular offset (stable across ticks, so it reads
+    // as a fixed fan rather than jitter) keeps same-note siblings out of
+    // that degenerate case from the start.
+    const jitter = ((hashStr(node.id) % 1000) / 1000 - 0.5) * 1.6;
+    placed.push({ node, theta: Math.atan2(dy, dx) + jitter, r });
   });
 
   // Fan same-home siblings into inward-flowing concentric arc rows.
@@ -5118,13 +5177,12 @@ function computeFloatHomes() {
     // wheels (rows clamp at the inner floor and stack every leftover member
     // on one point). Points that spill past the zone band get projected
     // back onto it, which walks them ALONG the rim (their angles differ)
-    // rather than piling them up, so a big single-note bloom reads as a
-    // cluster hugging its note's sector and flowing inward — provenance at
-    // the rim, spillover toward the center.
+    // rather than piling them up.
     const GOLDEN = 2.399963229728653;
     const { theta, r: baseR } = members[0];
     const baseX = CX + Math.cos(theta) * baseR, baseY = CY + Math.sin(theta) * baseR;
-    const maxR = R_COMPOUND_MAX * 0.97, minR = R_COMPOUND_MAX * 0.15;
+    const zone = FLOAT_ZONE_R();
+    const maxR = zone, minR = zone * 0.15;
     members.forEach((m, i) => {
       const spread = sp * 0.6 * Math.sqrt(i);
       const aa = theta + i * GOLDEN;
@@ -5154,7 +5212,7 @@ function parkHome(node) {
 // high, alpha term above the floor) is unchanged. Dragged/pinned nodes
 // (fx set) are integrated by the sim as fixed, so the spring never fights
 // a manual placement.
-const HOME_SPRING_FLOOR = 0.9;
+const HOME_SPRING_FLOOR = 1.3;
 function targetForce(strength) {
   let s = strength;
   function force(alpha) {
@@ -5189,12 +5247,25 @@ function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h*31 + 
 // keeps working on it" is a calm, correct low-energy failure mode where
 // "reshuffle at full force every frame forever" is not.
 function boundForce() {
+  // Ceiling matches FLOAT_ZONE_R (computeFloatHomes' home radii), not the
+  // wider R_COMPOUND_MAX — homes already sit inside that zone, but without
+  // tightening the physical containment to match, collide crowding could
+  // still push a jostled float out past R_COMPOUND_MAX and into the band
+  // between the dotted center-ring and the note ring.
+  const zone = inChemistry() ? R_COMPOUND_MAX : FLOAT_ZONE_R();
   floatNodes().forEach(n => {
     if (n.fx != null) return;
     const dx = n.x - CX, dy = n.y - CY;
     const r = Math.sqrt(dx*dx + dy*dy) || 1;
-    if (r > R_COMPOUND_MAX) {
-      const k = (r - R_COMPOUND_MAX) / r * 0.5;
+    if (r > zone) {
+      // Escalating pull: firm near the line, considerably firmer further
+      // past it — collide can still win a small tug-of-war right at the
+      // edge (that's fine, it's what keeps neighbors from overlapping), but
+      // a float that's actually crossed toward the note ring gets hauled
+      // back hard. Still a velocity nudge, not a position clamp, so the
+      // sim's own velocityDecay keeps it from overshooting into oscillation.
+      const excess = (r - zone) / zone;
+      const k = Math.min(1.4, 0.7 + excess * 2.2);
       n.vx -= dx * k;
       n.vy -= dy * k;
     }
@@ -5316,6 +5387,12 @@ function renderCompoundFloats() {
     const col = compoundColor(d);
     const seld = d.id === state.selectedCompound;
     const g = d3.select(this);
+    // Whole-token dimming for weak evidence, matching the outward radius
+    // placement above (weak = near the rim, weak = faint) — a hover/select
+    // still snaps a dim one to full strength so it's never hard to inspect.
+    g.style("opacity",
+      (seld || d.id === hoveredCompound()) ? 1
+      : 0.4 + 0.6 * Math.min(1, d.score));
     g.select("circle.cpd-token")
       .attr("r", sz * 0.62)
       .style("fill", col)
