@@ -957,6 +957,17 @@
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
   aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
+  /* Citation verification status tag (see citeReviewBadge()). One sits next to
+     every rendered citation across the note, compound, and map detail panels.
+     Pending = amber (drafted, not yet human-checked); verified = green. */
+  .cite-review { display: inline-block; margin-left: 6px; margin-top: 3px;
+    font-size: 9px; padding: 1px 5px; border-radius: 3px; font-style: normal;
+    letter-spacing: 0.03em; text-transform: uppercase; vertical-align: middle;
+    white-space: nowrap; }
+  .cite-review.pending  { color: #dfa850; border: 1px solid rgba(223,168,80,0.5);
+    background: rgba(223,168,80,0.10); }
+  .cite-review.verified { color: #7fc275; border: 1px solid rgba(127,194,117,0.5);
+    background: rgba(127,194,117,0.10); }
   /* Note-detail view (inverse mode: a note selected on the wheel) */
   aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
     border-radius: 50%; margin-right: 8px; vertical-align: middle; }
@@ -3363,6 +3374,56 @@ function formatRefFull(ref) {
   }
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
+}
+
+// ── Citation honesty policy ──────────────────────────────────────────────
+// Every reference in this tool was drafted with AI assistance, and language
+// models can fabricate plausible-looking citations. So NOTHING is trusted by
+// default: a citation is treated as "under human review" until a human has
+// personally opened the original source and confirmed it exists and supports
+// the claim, at which point its key is added to VERIFIED_REFS below and the UI
+// flips its badge to "human-verified."
+//
+// HOW TO VERIFY: open the source, confirm the authors/year/title/venue are real
+// and that it actually supports the note→compound link (or the origin claim)
+// it's attached to, then add its key here. Keys are the REFERENCES keys (edge
+// citations) and ORIGIN_REFERENCES keys (map citations); both share this one
+// registry, so verifying a paper cited in both places marks it everywhere.
+// Keep this list alphabetized. Start empty — no exceptions, including sources
+// that "look obviously real"; the whole point is that a human eye, not a
+// confident-sounding model, is what promotes a citation.
+const VERIFIED_REFS = new Set([
+  // (none yet — awaiting human review)
+]);
+function isCiteVerified(refId) { return !!refId && VERIFIED_REFS.has(refId); }
+
+// The REFERENCES key a cite string resolves to (parallel to refForCite, which
+// returns the ref object). Returns null for short cite strings with no
+// structured REFERENCES entry — those can never be verified, which is honest:
+// they're the least-pinned-down citations in the data.
+function refIdForCite(citeString) {
+  if (!citeString) return null;
+  for (const [needle, refId] of CITE_TO_REF) {
+    if (citeString.includes(needle)) return refId;
+  }
+  return null;
+}
+
+// The small status tag rendered next to every citation. refId of null (an
+// unmatched short cite) always reads as under-review.
+function citeReviewBadge(refId) {
+  return isCiteVerified(refId)
+    ? `<span class="cite-review verified" title="A human has personally checked this reference against its original source.">✓ human-verified</span>`
+    : `<span class="cite-review pending" title="Not yet personally verified against the original source by a human. Drafted with AI assistance — treat as provisional until reviewed. This is not a claim the source is wrong, only that it hasn't been checked yet.">⏳ under human review</span>`;
+}
+
+// Live tally for the methodology page: how many distinct references have been
+// human-verified out of the total across both citation registries.
+function citationReviewCounts() {
+  const allKeys = new Set([...Object.keys(REFERENCES), ...Object.keys(ORIGIN_REFERENCES)]);
+  let verified = 0;
+  allKeys.forEach(k => { if (VERIFIED_REFS.has(k)) verified++; });
+  return { verified, total: allKeys.size };
 }
 
 // Real, verified sources behind the Origins map's cultivation-date and
@@ -5961,10 +6022,11 @@ function renderNoteDetail(noteId) {
           ? `<li><span class="cite">No compounds linked to this note in the current data.</span></li>`
           : edges.map(e => {
               const cpd = CPD_BY_ID[e.cpd];
-              const ref = refForCite(e.cite);
+              const refId = refIdForCite(e.cite);
+              const ref = refId ? REFERENCES[refId] : null;
               const citeHtml = ref
-                ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
-                : `<span class="cite">${e.cite}</span>`;
+                ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
+                : `<span class="cite">${e.cite}${citeReviewBadge(null)}</span>`;
               return `<li>
                 <span class="note-name view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}${commonTag(cpd)}</span>
                 <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
@@ -6370,10 +6432,11 @@ function renderCompoundDetail(cpdId, banner) {
             .join(" ");
           // Render the full bibliographic citation if we have one in
           // REFERENCES; otherwise fall back to the short cite string.
-          const ref = refForCite(e.cite);
+          const refId = refIdForCite(e.cite);
+          const ref = refId ? REFERENCES[refId] : null;
           const citeHtml = ref
-            ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
-            : `<span class="cite">${e.cite}</span>`;
+            ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
+            : `<span class="cite">${e.cite}${citeReviewBadge(null)}</span>`;
           return `<li>
             <span class="note-name">${NOTE_BY_ID[e.note].label}</span> ${phaseHints}
             <span class="weight" style="float:right">${live ? contrib : "—"} <span style="color:var(--ink-dim)">(base ${e.w.toFixed(2)})</span></span>
@@ -7453,6 +7516,7 @@ function renderMethodology() {
     ${tocNav([
       ["meth-data", "Data model"],
       ["meth-sources", "On the sources"],
+      ["meth-review", "Citation honesty policy"],
       ["meth-score", "Slider → score"],
       ["meth-multiplier", "Perception multiplier"],
       ["meth-confidence", "Confidence"],
@@ -7476,7 +7540,11 @@ function renderMethodology() {
     <h3 id="meth-sources">A note on the sources</h3>
     <p>Some citations here are old. Buttery's threshold work is from 1981, Shaw's citrus analysis from 1979, and that's worth being upfront about rather than hiding. For <strong>odor thresholds</strong> especially, the old paper is usually the <em>primary</em> measurement: the original careful determination of how little of a compound a person can detect. Later studies cite those values rather than re-measuring them, so a 1981 reference is often the canonical source, not a stale one. Where a threshold <em>has</em> been revisited, the modern numbers tend to land close: Grosch's 1992 figure for furfurylthiol (~0.005 ppb) still matches what recent work reports.</p>
     <p>The standard <em>modern</em> compilation that gathers these together is van Gemert's <em>Compilation of Odour Threshold Values in Air and Water</em> (2nd ed., Oliemans Punter &amp; Partners, 2011), which gathers roughly 10,750 threshold values drawn from ~1,780 sources and is the reference work this tool's threshold tiers are sanity-checked against.</p>
-    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, every reference in here is a real paper. This tool would rather show an old-but-real source than a fresh-looking invented one.</p>
+    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. Because the citations were drafted with AI assistance, though, that intent isn't taken on trust: each one carries a human-verification status, explained next.</p>
+
+    <h3 id="meth-review">Citation honesty policy</h3>
+    <p>${(() => { const c = citationReviewCounts(); return `Every citation here was drafted with an AI assistant, and language models can produce plausible-looking references that don't actually exist or don't say what they're quoted as saying. So none of them are trusted by default. Each citation across the note, compound, and map panels carries a status tag: <span class="cite-review pending">⏳ under human review</span> until a person has personally opened the original source and confirmed it is real and supports the claim it's attached to — only then does it become <span class="cite-review verified">✓ human-verified</span>.`; })()}</p>
+    <p>${(() => { const c = citationReviewCounts(); return `So far <strong>${c.verified} of ${c.total}</strong> references have been human-verified. An "under human review" tag is <em>not</em> a claim that a source is wrong — only that a human hasn't personally checked it yet, and it should be treated as provisional until they have. This policy is deliberately strict: nothing is exempted for looking obviously real, because "looks real" is exactly what a fabricated citation is good at.`; })()}</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
@@ -8341,7 +8409,7 @@ function openOriginDetail(note, origin) {
       const ref = ORIGIN_REFERENCES[key];
       if (!ref) return;
       const li = document.createElement("li");
-      li.innerHTML = formatOriginRef(ref);
+      li.innerHTML = formatOriginRef(ref) + citeReviewBadge(key);
       sourcesList.appendChild(li);
     });
     content.append(sourcesList);
