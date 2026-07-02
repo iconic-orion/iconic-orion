@@ -1263,6 +1263,14 @@
     /* Taxonomy mode has no notes pane to toggle from — its detail panel always
        shows in the bottom band when a leaf is tapped, same area as the tree. */
     body.taxonomy-mode aside.detail { display: block; }
+    /* grid-template-columns is deliberately NOT set here — the unconditional
+       (non-media-query) body.taxonomy-mode rule further down the sheet sets
+       it too, and being later in source order at equal specificity, it would
+       win over anything set in THIS block regardless. The real mobile
+       override lives in the later @media block below (next to origins-mode's
+       matching fix), which comes after that unconditional rule in source
+       order and so actually sticks. See the comment there for why this
+       needs overriding at all. */
     body.taxonomy-mode { grid-template-rows: auto 46vh 1fr; grid-template-areas: "head" "wheel" "panel"; }
 
     /* The edge pane-toggle arrows assume side-by-side panes; meaningless stacked. */
@@ -1593,6 +1601,19 @@
     #origins-map-wrap { flex: 1 1 50%; min-height: 0; }
     #origins-detail-panel { width: auto; flex: 1 1 50%; min-height: 0;
       border-left: none; border-top: 1px solid var(--line); }
+
+    /* Taxonomy tree needs the equivalent of the origins-mode fix just above:
+       the unconditional body.taxonomy-mode rule (no media query) sets a
+       3-column desktop grid-template-columns, and being later in source
+       order than the earlier mobile block that sets this mode's single-
+       column grid-template-areas, it wins the cascade there. This block is
+       AFTER that unconditional rule, so it actually sticks. Without it the
+       tree's "wheel" area resolves to the leftover first column — 0px wide
+       on desktop sizing — and the whole tree renders scrunched into a
+       sliver in the corner. */
+    body.taxonomy-mode { grid-template-columns: 1fr; }
+    body.taxonomy-mode #taxonomy-view,
+    body.taxonomy-mode aside.detail { grid-column: 1; }
   }
 </style>
 </head>
