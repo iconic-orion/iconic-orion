@@ -5014,59 +5014,134 @@ function updateSimulationCenter() {
   sim.alpha(0.4).restart();
 }
 
-// computeFloatHomes: each float's "home" — the weighted centroid of its edge
-// contributors, pulled inward toward center — cached as _homeX/_homeY. This
+// computeFloatHomes: each float's "home" — cached as _homeX/_homeY. This
 // used to live inside targetForce and re-derive itself EVERY TICK for every
 // float (walking all edges and calling effectiveNoteSignal per edge, 60x a
 // second), but a home is a pure function of the current entries, visibility,
 // and layout — none of which change mid-tick. So it's computed here exactly
 // once per input change (recompute() calls this) and the per-tick force
 // below becomes a cheap spring toward the cached point.
+//
+// Scent-mode placement is POLAR, and both coordinates carry meaning:
+//   angle  — the weighted centroid direction of the compound's contributing
+//            note anchors, so a compound always blooms in its source note's
+//            sector and the note→compound edge fan stays short and readable.
+//   radius — how SHARED the compound is. A single-note compound sits near
+//            the float zone's outer rim, right inside its note; a compound
+//            fed by several notes sits proportionally deeper toward center
+//            (its centroid shortens as its contributors spread apart), so
+//            "shared chemistry" literally reads as depth — confluence in
+//            the middle, provenance at the rim. The float zone's rim itself
+//            (R_COMPOUND_MAX = 0.55 × R_NOTE) leaves a clear moat below the
+//            note ring, so the picked notes stay readable on the wheel edge.
+// Same-source siblings (identical centroid → identical angle+radius, e.g.
+// coffee alone activating a dozen compounds) are fanned into concentric
+// arc rows flowing inward from the shared home, ordered by chemical class
+// so class-mates sit adjacent — without this they'd all stack on one point
+// and collide would shove them apart arbitrarily every time.
 function computeFloatHomes() {
-  const chem = inChemistry();
-  floatNodes().forEach(node => {
-    let wx = 0, wy = 0, wsum = 0;
-    if (chem) {
-      // node is a NOTE; home is among its compounds' fixed class-arc anchors,
-      // weighted purely by edge strength so the placement is stable (a note
-      // always drifts to the same chemical neighborhood). Only place notes the
-      // user has actually entered; the rest stay parked near center.
+  if (inChemistry()) {
+    // node is a NOTE; home is among its compounds' fixed class-arc anchors,
+    // weighted purely by edge strength so the placement is stable (a note
+    // always drifts to the same chemical neighborhood). Only place notes the
+    // user has actually entered; the rest stay parked near center.
+    floatNodes().forEach(node => {
+      let wx = 0, wy = 0, wsum = 0;
       if (noteSignal(node.id) > 0) NOTE_EDGES[node.id].forEach(e => {
         if (!isCompoundVisible(e.cpd)) return;
         const cn = CPD_NODE_BY_ID[e.cpd];
         if (cn._x == null) return;       // anchor not positioned (hidden class)
         wx += cn._x * e.w; wy += cn._y * e.w; wsum += e.w;
       });
-    } else {
-      // node is a COMPOUND; home is the weighted centroid of its active
-      // note anchors (the original scent-mode behavior).
-      CPD_EDGES[node.id].forEach(e => {
-        if (!isNoteVisible(e.note)) return;
-        const noteW = effectiveNoteSignal(e.note, node.id);
-        if (noteW <= 0) return;
-        const contrib = noteW * e.w;
-        const n = NOTE_BY_ID[e.note];
-        wx += n._x * contrib;
-        wy += n._y * contrib;
-        wsum += contrib;
-      });
-    }
-    if (wsum > 0) {
-      // weighted centroid of contributors, pulled inward toward center
-      const cx = wx / wsum, cy = wy / wsum;
-      const dx = cx - CX, dy = cy - CY;
-      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-      const inward = Math.min(R_COMPOUND_MAX, dist * 0.6);
-      node._homeX = CX + (dx / dist) * inward;
-      node._homeY = CY + (dy / dist) * inward;
-    } else {
-      // park near center but jittered by id so they don't pile up
-      const hash = hashStr(node.id);
-      const a = (hash % 360) / 360 * Math.PI * 2;
-      node._homeX = CX + Math.cos(a) * 30;
-      node._homeY = CY + Math.sin(a) * 30;
-    }
+      if (wsum > 0) {
+        const cx = wx / wsum, cy = wy / wsum;
+        const dx = cx - CX, dy = cy - CY;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const inward = Math.min(R_COMPOUND_MAX, dist * 0.6);
+        node._homeX = CX + (dx / dist) * inward;
+        node._homeY = CY + (dy / dist) * inward;
+      } else {
+        parkHome(node);
+      }
+    });
+    return;
+  }
+
+  // Scent mode: polar homes (see the block comment above).
+  const placed = [];
+  floatNodes().forEach(node => {
+    let wx = 0, wy = 0, wsum = 0;
+    CPD_EDGES[node.id].forEach(e => {
+      if (!isNoteVisible(e.note)) return;
+      const noteW = effectiveNoteSignal(e.note, node.id);
+      if (noteW <= 0) return;
+      const contrib = noteW * e.w;
+      const n = NOTE_BY_ID[e.note];
+      wx += n._x * contrib;
+      wy += n._y * contrib;
+      wsum += contrib;
+    });
+    if (wsum <= 0) { parkHome(node); return; }
+    const dx = wx / wsum - CX, dy = wy / wsum - CY;
+    const dist = Math.hypot(dx, dy) || 1;
+    // norm: 1 = all contributors at one anchor (centroid on the note ring),
+    // → 0 as contributors spread around the wheel and the centroid collapses
+    // toward center. Mapped to a radius band so nothing sits ON the rim or
+    // AT the exact center.
+    const norm = Math.min(1, dist / R_NOTE);
+    placed.push({ node, theta: Math.atan2(dy, dx), r: R_COMPOUND_MAX * (0.35 + 0.6 * norm) });
   });
+
+  // Fan same-home siblings into inward-flowing concentric arc rows.
+  const cells = new Map();
+  placed.forEach(p => {
+    const key = Math.round(p.theta * 100) + "|" + Math.round(p.r);
+    if (!cells.has(key)) cells.set(key, []);
+    cells.get(key).push(p);
+  });
+  cells.forEach(members => {
+    if (members.length === 1) {
+      const p = members[0];
+      p.node._homeX = CX + Math.cos(p.theta) * p.r;
+      p.node._homeY = CY + Math.sin(p.theta) * p.r;
+      return;
+    }
+    members.sort((a, b) =>
+      (a.node.class || "").localeCompare(b.node.class || "") ||
+      a.node.id.localeCompare(b.node.id));
+    // Slot pitch from the members' actual collide footprint, so the seeded
+    // spread is already close to a non-overlapping packing.
+    const sp = 2 * Math.max(...members.map(m => m.node.radius || 10)) + collidePadding() * 0.6;
+    // Phyllotaxis (sunflower) spiral around the shared home: golden-angle
+    // steps with sqrt-radial growth pack any member count evenly with no
+    // stacking — an arc-row layout tried first here collapsed on small
+    // wheels (rows clamp at the inner floor and stack every leftover member
+    // on one point). Points that spill past the zone band get projected
+    // back onto it, which walks them ALONG the rim (their angles differ)
+    // rather than piling them up, so a big single-note bloom reads as a
+    // cluster hugging its note's sector and flowing inward — provenance at
+    // the rim, spillover toward the center.
+    const GOLDEN = 2.399963229728653;
+    const { theta, r: baseR } = members[0];
+    const baseX = CX + Math.cos(theta) * baseR, baseY = CY + Math.sin(theta) * baseR;
+    const maxR = R_COMPOUND_MAX * 0.97, minR = R_COMPOUND_MAX * 0.15;
+    members.forEach((m, i) => {
+      const spread = sp * 0.6 * Math.sqrt(i);
+      const aa = theta + i * GOLDEN;
+      let hx = baseX + Math.cos(aa) * spread, hy = baseY + Math.sin(aa) * spread;
+      const ddx = hx - CX, ddy = hy - CY;
+      const rr = Math.hypot(ddx, ddy) || 1;
+      const rc = Math.max(minR, Math.min(maxR, rr));
+      if (rc !== rr) { hx = CX + ddx / rr * rc; hy = CY + ddy / rr * rc; }
+      m.node._homeX = hx; m.node._homeY = hy;
+    });
+  });
+}
+// Park a no-evidence float near center, jittered by id so they don't pile up.
+function parkHome(node) {
+  const a = (hashStr(node.id) % 360) / 360 * Math.PI * 2;
+  node._homeX = CX + Math.cos(a) * 30;
+  node._homeY = CY + Math.sin(a) * 30;
 }
 
 // targetForce: a spring toward the cached home. The Math.max floor is the
