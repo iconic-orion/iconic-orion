@@ -1731,7 +1731,7 @@
        #compass-content is the part that visually scales on resize (see
        applyCompassScale()); the resize handle itself stays a fixed, always-
        grabbable size outside that scaling. -->
-  <div id="aroma-compass" class="aroma-compass" hidden>
+  <div id="aroma-compass" class="aroma-compass">
     <div id="compass-content" class="compass-content">
       <div class="compass-header" id="compass-drag-handle">
         <span>Perception Compass</span>
@@ -3882,7 +3882,7 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
-  compassVisible: false,    // Perception Compass widget shown/hidden
+  compassVisible: true,    // Perception Compass widget shown/hidden
   compassMode: "notes",      // "notes" | "compounds" | "class" — which axis set the compass shows
   compassClass: "terpene",  // chemical class shown in "class" mode (dropdown-selectable)
   compassPos: null,         // {x,y} once dragged; null = default corner position
@@ -7416,6 +7416,7 @@ function applyCompassScale(widthPx) {
     if (state.compassPos) { state.compassPos = clampCompassPos(state.compassPos); applyCompassPos(state.compassPos); }
   });
 })();
+setCompassVisible(state.compassVisible); // sync initial DOM/body-class to the default above; must run after COMPASS_MIN_W etc. are declared
 
 // ---------- INFO ("i") TAB ----------
 // Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
