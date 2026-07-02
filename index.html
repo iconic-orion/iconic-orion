@@ -5174,7 +5174,17 @@ function renderCompoundFloats() {
     .on("dblclick", (e, d) => { d.fx = null; d.fy = null; sim.alpha(0.3).restart(); })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      // Write the dragged dot's position + transform synchronously in the
+      // pointer event rather than only setting fx/fy and waiting for the
+      // next sim tick — the tick re-joins and restyles every float, edge,
+      // and callout, so on a busy wheel it runs below pointer rate and the
+      // dot visibly trails the cursor. Direct transform keeps it glued;
+      // edges/neighbors still catch up on the tick, which reads as natural
+      // rubber-banding rather than input lag.
+      .on("drag",  function(e, d) {
+        d.fx = d.x = e.x; d.fy = d.y = e.y;
+        d3.select(this).attr("transform", `translate(${e.x},${e.y})`);
+      })
       .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
   enter.append("circle").attr("class", "cpd-token");
   enter.append("text").attr("class", "node-glyph");
@@ -5244,11 +5254,16 @@ function renderNoteFloats() {
       renderDetail();
     })
     // Same pin-on-drop / release-on-double-click behavior as the compound
-    // floats in scent mode — see renderCompoundFloats().
+    // floats in scent mode — see renderCompoundFloats(), including the
+    // synchronous-transform drag so the dot tracks the pointer directly
+    // instead of waiting on the (expensive) sim tick.
     .on("dblclick", (e, d) => { d.fx = null; d.fy = null; sim.alpha(0.3).restart(); })
     .call(d3.drag()
       .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on("drag",  function(e, d) {
+        d.fx = d.x = e.x; d.fy = d.y = e.y;
+        d3.select(this).attr("transform", `translate(${e.x},${e.y})`);
+      })
       .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
   enter.append("circle").attr("class", "note-halo");
   enter.append("text").attr("class", "node-glyph");
