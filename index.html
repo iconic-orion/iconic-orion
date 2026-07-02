@@ -336,7 +336,7 @@
      isn't obvious from everyday perception (e.g. why is Buttery in Fermented).
      Cursor:help signals "hover for explanation"; tooltip carries the answer. */
   .rationale-info { background: transparent; border: none; padding: 0 0 0 4px;
-    color: var(--ink-dim); cursor: help; font-size: 11px; font-family: inherit; }
+    color: var(--ink-dim); cursor: pointer; font-size: 11px; font-family: inherit; }
   .rationale-info:hover { color: var(--accent); }
   .wais-suggestion-item { grid-template-columns: 10px 1fr auto auto !important; }
   .wais-suggestion-count { font-size: 10px; color: var(--accent); font-weight: 600;
@@ -391,6 +391,39 @@
     cursor: pointer; font-family: inherit;
     transition: border-color 0.15s, color 0.15s; }
   .wheel-nudge .nudge-demo:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Wheel context hint — a persistent, tap-to-expand caption pinned to the top
+     of the wheel that always says what you're looking at and updates with the
+     Organize mode (Scent vs Chemistry). This is the touch-reachable equivalent
+     of the hover tooltips on the header controls: mobile users never get those
+     titles, and the Map/Tree workspaces already carry always-visible explainer
+     notes, so the Wheel gets a matching one. Collapsed shows a single line;
+     tapping expands the fuller description. Scoped to the wheel automatically —
+     it lives inside main.wheel, which is display:none in Map/Tree modes. */
+  .wheel-hint { position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+    z-index: 6; max-width: min(460px, 90%); box-sizing: border-box;
+    display: flex; align-items: flex-start; gap: 6px; text-align: left;
+    background: rgba(29, 27, 23, 0.72); border: 1px solid var(--line);
+    border-radius: 13px; padding: 5px 11px;
+    font-size: 11px; color: var(--ink-dim); line-height: 1.45;
+    cursor: pointer; font-family: inherit;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: border-color 0.15s, color 0.15s, background 0.15s; }
+  .wheel-hint:hover { border-color: var(--accent); color: var(--ink); }
+  .wheel-hint[hidden] { display: none; }
+  .wheel-hint .wheel-hint-icon { color: var(--accent); flex-shrink: 0;
+    font-size: 12px; line-height: 1.35; }
+  .wheel-hint .wheel-hint-more { color: var(--accent); white-space: nowrap; }
+  .wheel-hint .wheel-hint-long { display: none; }
+  .wheel-hint.open .wheel-hint-short { display: none; }
+  .wheel-hint.open .wheel-hint-long  { display: inline; }
+
+  /* Tap-revealed rationale text under a Note Suggester row (mobile-reachable
+     twin of the ⓘ hover tooltip). Spans the whole grid row below the item. */
+  .wais-rationale { grid-column: 1 / -1; margin-top: 4px; padding: 6px 8px;
+    font-size: 10px; line-height: 1.45; color: var(--ink-dim);
+    background: var(--bg); border-radius: 5px; }
+  .wais-rationale[hidden] { display: none; }
 
   /* ── Tasting Tray (persistent input HUD) ─────────────────────────────
      A pill bar pinned to the bottom of the wheel. Each chip is one entered
@@ -1202,6 +1235,10 @@
        the colored arcs so text never overlaps them. */
     .wheel-nudge { width: min(200px, 52vw); padding: 12px 10px; }
 
+    /* Drop the context hint below the top-left "Show compound labels" toggle
+       (which is mobile-only) so the two never overlap; widen it to the wheel. */
+    .wheel-hint { top: 44px; max-width: calc(100% - 20px); }
+
     /* The floating dots' labels (compound names in scent mode, note names in
        chemistry mode) are too long for a phone-width wheel and pile up
        illegibly in the center. Drop them to a clean dot map; the dots stay
@@ -1634,6 +1671,19 @@
       <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
   </div>
+  <!-- Persistent, tap-expandable context caption (see .wheel-hint CSS). Always
+       says what the wheel is showing and updates with the Organize mode, so the
+       Scent/Chemistry distinction and the "tap a molecule" affordance are
+       reachable without the hover tooltips desktop users get. Text filled in and
+       toggled by updateWheelHint() / the click handler below. -->
+  <button type="button" id="wheel-hint" class="wheel-hint" aria-expanded="false"
+          aria-label="What am I looking at?">
+    <span class="wheel-hint-icon" aria-hidden="true">ⓘ</span>
+    <span class="wheel-hint-body">
+      <span class="wheel-hint-short" id="wheel-hint-short"></span>
+      <span class="wheel-hint-long" id="wheel-hint-long"></span>
+    </span>
+  </button>
   <!-- Mobile-only "Show compound labels" toggle. On phones the floating dot
        labels are hidden for a clean dot map; this lets the user opt into
        leader-line callouts that name each visible compound dot. Hidden on
@@ -6438,10 +6488,46 @@ function setOrganizeBy(mode) {
   if (sim) sim.nodes(floatNodes());
   layout();      // draws the new ring arcs + anchors for the active mode
   recompute();   // scores + draws floats/anchors and restarts the sim
+  updateWheelHint();  // keep the persistent caption in sync with the mode
 }
 document.querySelectorAll("#organize-tabs button").forEach(b => {
   b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
 });
+
+// ---------- WHEEL CONTEXT HINT ----------
+// The always-visible, tap-to-expand caption on the wheel (see the .wheel-hint
+// element + CSS). Its whole job is to make the Scent/Chemistry distinction and
+// the "tap a molecule for its citations" affordance reachable without the hover
+// tooltips only desktop users get — the Map and Tree workspaces already carry
+// equivalent always-on explainer notes.
+const WHEEL_HINTS = {
+  scent: {
+    short: "Wheel · by scent family — molecules bloom from the notes you add.",
+    long: "Wheel, organized by scent family. Slide a flavor note and the aroma molecules it contains bloom onto the ring, each sized by how much evidence supports it. Tap any molecule to see the notes and citations behind it. Use the Organize control to switch the ring to Chemistry — grouped by molecule class — instead."
+  },
+  chemistry: {
+    short: "Wheel · by chemistry — molecules float toward their chemical class.",
+    long: "Wheel, organized by chemistry. The ring is chemical classes now; slide flavor notes and each molecule they contain floats out toward the class it belongs to. Tap any molecule to see the notes and citations behind it. Use the Organize control to switch the ring back to Scent — grouped by flavor family — instead."
+  }
+};
+const wheelHintEl = document.getElementById("wheel-hint");
+const wheelHintShortEl = document.getElementById("wheel-hint-short");
+const wheelHintLongEl = document.getElementById("wheel-hint-long");
+function updateWheelHint() {
+  const h = WHEEL_HINTS[state.organizeBy] || WHEEL_HINTS.scent;
+  wheelHintShortEl.innerHTML = h.short + ' <span class="wheel-hint-more">More ›</span>';
+  wheelHintLongEl.innerHTML = h.long + ' <span class="wheel-hint-more">Less ‹</span>';
+  // Hold the hint back while the empty-state nudge is up — the nudge already
+  // explains the wheel, and stacking both just clutters. The hint takes over
+  // once the first note is logged (nudge gone) and the mode caption becomes
+  // the thing that's actually still useful.
+  wheelHintEl.hidden = state.entries.size === 0;
+}
+wheelHintEl.addEventListener("click", () => {
+  const open = wheelHintEl.classList.toggle("open");
+  wheelHintEl.setAttribute("aria-expanded", String(open));
+});
+updateWheelHint();
 
 // Per-pane toggle handlers — independent of the view presets.
 document.getElementById("toggle-notes").addEventListener("click", () => {
@@ -6760,7 +6846,7 @@ function loadDemo(name) { setNotes(DEMOS[name] || DEMOS.ethiopian); }
 // Visible only while the wheel is empty; updateNudge() runs from recompute()
 // (which fires on every entry change) and once at init.
 const wheelNudgeEl = document.getElementById("wheel-nudge");
-function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0; }
+function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0; updateWheelHint(); }
 wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
   b.addEventListener("click", () => loadDemo(b.dataset.demo)));
 
@@ -7719,23 +7805,37 @@ function renderWaisSuggestionsMulti() {
         const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
         const rationale = NOTE_GROUP_RATIONALE[note.id];
         const rationaleIcon = rationale
-          ? `<button type="button" class="rationale-info" title="${rationale.replace(/"/g, '&quot;')}" aria-label="Why is ${note.label} in ${g.label}?">ⓘ</button>`
+          ? `<button type="button" class="rationale-info" aria-expanded="false" title="${rationale.replace(/"/g, '&quot;')}" aria-label="Why is ${note.label} in ${g.label}?">ⓘ</button>`
+          : '';
+        // Tap-revealed twin of the ⓘ tooltip: a full-width row under the item,
+        // toggled by the icon's click handler below, so the rationale reaches
+        // touch users who never get the hover title.
+        const rationaleRow = rationale
+          ? `<div class="wais-rationale" hidden>${rationale}</div>`
           : '';
         return `<li class="wais-suggestion-item" data-note="${note.id}" title="${count} of your selected descriptors suggest this. Starting intensity if you add: ${intensity}.">
           <span class="dot" style="background:${color}"></span>
           <span class="name">${note.label}</span>
           <span class="group">${g.label}${rationaleIcon}</span>
           <span class="wais-suggestion-count">×${count} → ${intensity}</span>
+          ${rationaleRow}
         </li>`;
       }).join('')}
     </ul>
     <button type="button" id="wais-add-all-btn" class="wais-add-all-btn">Add suggested flavor notes →</button>
   `;
 
-  // Stop info-icon clicks from bubbling to the row (which would scroll to
-  // the slider). Tooltip shows on hover regardless.
+  // Info-icon tap toggles the inline rationale row (and stops the click from
+  // bubbling to the item, which would scroll to the slider). The hover title
+  // still works for mouse users; this makes the same text reachable on touch.
   waisSuggestionsEl.querySelectorAll(".rationale-info").forEach(btn => {
-    btn.addEventListener("click", (e) => e.stopPropagation());
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const row = btn.closest("li")?.querySelector(".wais-rationale");
+      if (!row) return;
+      row.hidden = !row.hidden;
+      btn.setAttribute("aria-expanded", String(!row.hidden));
+    });
   });
   // Clicking an individual suggestion still scrolls + focuses that slider
   // (doesn't auto-set intensity — the explicit "Add suggested flavor notes"
