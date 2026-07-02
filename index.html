@@ -512,7 +512,11 @@
   .aroma-compass[hidden] { display: none; }
   .compass-content { width: 200px; transform-origin: top left; }
   .compass-header { display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 8px; background: var(--panel-2); cursor: grab;
+    /* Left padding reserves room for the resize handle, which sits on top
+       of this header (see .compass-resize-handle). 26px is just the
+       pre-JS fallback for an instant before applyCompassScale() computes
+       the real, scale-aware value — see that function. */
+    padding: 6px 8px 6px 26px; background: var(--panel-2); cursor: grab;
     font-size: 11px; color: var(--ink-dim); text-transform: uppercase;
     letter-spacing: 0.04em; user-select: none; touch-action: none; }
   .compass-header.dragging { cursor: grabbing; }
@@ -540,10 +544,16 @@
     padding: 6px 8px 8px; font-style: italic; }
 
   /* Resize handle: a sibling of .compass-content (not scaled with it), so it
-     stays a consistent, easily-grabbable size at any compass scale. Sits
-     just inside the corner so it's never clipped by the outer box's own
-     overflow:hidden. */
-  .compass-resize-handle { position: absolute; right: 2px; bottom: 2px;
+     stays a consistent, easily-grabbable size at any compass scale. Top-left,
+     mirroring the conventional OS window-control corner (traffic lights /
+     minimize-maximize cluster) rather than a bottom-right resize grip — the
+     × close button anchors the opposite (top-right) corner. Growing the
+     compass doesn't move this corner (compassEl's own top/left position is
+     untouched by applyCompassScale — only width/height change), so the
+     handle stays exactly where it was grabbed as the box grows out from
+     under it. Sits just inside the corner so it's never clipped by the
+     outer box's own overflow:hidden. */
+  .compass-resize-handle { position: absolute; left: 2px; top: 2px;
     width: 18px; height: 18px; padding: 0; display: flex; align-items: center;
     justify-content: center; background: var(--panel-2); color: var(--ink-dim);
     border: 1px solid var(--line); border-radius: 4px; cursor: nwse-resize;
@@ -1283,6 +1293,10 @@
        (mouse-driven) sizing is untouched. */
     .compass-resize-handle { width: 44px; height: 44px; }
     .compass-resize-handle svg { width: 18px; height: 18px; }
+    /* .compass-header's reserved left padding is computed in JS
+       (applyCompassScale) from the handle's actual rendered size, so it
+       automatically picks up this bigger mobile touch target — no override
+       needed here. */
     #compass-close-btn { width: 44px; height: 44px; display: flex;
       align-items: center; justify-content: center; }
 
@@ -1754,7 +1768,7 @@
   <div id="aroma-compass" class="aroma-compass">
     <div id="compass-content" class="compass-content">
       <div class="compass-header" id="compass-drag-handle">
-        <span>Perception Compass</span>
+        <span title="Perception Compass">Compass</span>
         <button type="button" id="compass-close-btn" aria-label="Hide compass" title="Hide compass">×</button>
       </div>
       <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Class: a fixed set over one chemical class, same axes for everyone.">
@@ -7751,6 +7765,16 @@ function applyCompassScale(widthPx) {
   compassContentEl.style.transform = `scale(${scale})`;
   compassEl.style.width = widthPx + "px";
   compassEl.style.height = (naturalH * scale) + "px";
+  // The resize handle is a sibling of compass-content (deliberately NOT
+  // scaled, so it stays a constant grabbable size on screen — see its own
+  // comment). That means its footprint, measured in compass-content's own
+  // (shrinking) coordinate space, GROWS as scale drops — a static CSS
+  // padding-left on .compass-header can't track a moving target like that.
+  // Compute it here instead: reserve (the icon's real on-screen px / the
+  // current scale) so the title text never starts underneath the icon,
+  // at the 18px desktop size or the 44px mobile touch-target size alike.
+  const iconPx = document.getElementById("compass-resize-handle").getBoundingClientRect().width || 18;
+  compassContentEl.querySelector(".compass-header").style.paddingLeft = (iconPx / scale + 6) + "px";
 }
 
 (function setupCompassDragAndResize() {
@@ -7764,6 +7788,15 @@ function applyCompassScale(widthPx) {
 
   let dragging = false, dragStartX, dragStartY, dragStartLeft, dragStartTop;
   handle.addEventListener("pointerdown", (e) => {
+    // The × button lives inside this header for layout reasons, but
+    // setPointerCapture below retargets the compatibility click event to
+    // the CAPTURING element (this header) rather than wherever the mouse
+    // actually released — per the Pointer Events spec, capture applies to
+    // "dependent mouse events" too, not just pointer events. Without this
+    // guard the button's own click listener silently never fires and the
+    // × becomes unclickable. Any future interactive control added to the
+    // header (e.g. a resize/expand button) needs the same exclusion.
+    if (e.target.closest("#compass-close-btn")) return;
     dragging = true;
     handle.classList.add("dragging");
     handle.setPointerCapture(e.pointerId);
