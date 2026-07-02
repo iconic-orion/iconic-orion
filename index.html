@@ -1517,6 +1517,19 @@
     flex-shrink: 0;
   }
   .ol-item { display: flex; align-items: center; gap: 6px; color: var(--ink-dim); white-space: nowrap; }
+  /* Visibility filters in the map legend: real checkboxes (this is a
+     visibility checklist, same mental model as the wheel's Legend &
+     visibility panel) but map-local state — they only filter what the MAP
+     draws, never the wheel's scoring or its own legend. */
+  .ol-filter { display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    color: var(--ink-dim); white-space: nowrap; line-height: 1.3; }
+  .ol-filter:hover { color: var(--ink); }
+  .ol-filter input[type=checkbox] { accent-color: var(--accent); cursor: pointer;
+    margin: 0; width: 12px; height: 12px; flex-shrink: 0; }
+  .ol-filter .ol-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  #origins-group-filters { display: inline-flex; align-items: center; gap: 10px;
+    flex-wrap: wrap; row-gap: 6px; }
+  #origins-filter-empty { color: var(--accent); }
   /* The global `svg { width:100%; height:100% }` rule (for the main wheel SVG)
      would otherwise stretch these tiny inline icons to fill the row; pin
      their intrinsic size back so the dot/line lines up with its label. */
@@ -1774,6 +1787,17 @@
   <div id="origins-legend">
     <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Known origin</span>
     <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Approximate</span>
+    <span class="ol-sep">·</span>
+    <!-- Map-local visibility filters (see buildOriginsLegendFilters()): the
+         master "only my tasting" declutter switch plus one checkbox per flavor
+         group. Display filters only — no effect on the wheel or scoring. -->
+    <label class="ol-filter" id="origins-only-tasting-wrap">
+      <input type="checkbox" id="origins-only-tasting">
+      Only notes in my tasting
+    </label>
+    <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
+    <span class="ol-sep">·</span>
+    <span id="origins-group-filters"></span>
     <span class="ol-sep">·</span>
     <span class="ol-note">Pre-Columbian Exchange framing. Click markers to select notes.</span>
   </div>
@@ -3786,6 +3810,11 @@ const state = {
   detailHidden: false,   // is the right analysis pane hidden via toggle / view preset
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
+  // Origins-map display filters (the map legend's checkboxes). Deliberately
+  // separate from hiddenGroups above: hiding a group on the WHEEL legend also
+  // zeroes its scoring contribution, but these only filter what the map draws.
+  originsOnlyTasting: false,        // true: only markers for notes you've entered
+  originsHiddenGroups: new Set(),   // group ids unchecked in the map legend
   hiddenClasses: new Set(),  // compound-class names hidden via legend
   openCalloutKey: null,      // currently-open edit/delete callout's entry key, if any
   // Wheel organizing principle. "scent": note-group arcs on the ring, compounds
@@ -8062,7 +8091,10 @@ function wireOriginsSearch() {
 wireOriginsSearch();
 
 function loadOrigins() {
-  if (originsLoaded) { refreshOriginMarkers(); return; }
+  // Already loaded: full rebuild, not just a refresh — the tasting may have
+  // changed on the Wheel since the last visit, and under the "only my
+  // tasting" filter that changes which markers exist at all.
+  if (originsLoaded) { rebuildOriginMarkers(); return; }
   const tpl = document.getElementById("world-svg-tpl");
   if (!tpl) {
     document.getElementById("map-svg-container").innerHTML =
@@ -8082,7 +8114,56 @@ function loadOrigins() {
   }
   originsLoaded = true;
   buildOriginMarkers();
+  updateOriginsFilterEmpty();
 }
+
+// Rebuild the marker layer under the current legend filters, then re-apply
+// whatever search query is live so its hit-highlighting survives the rebuild.
+function rebuildOriginMarkers() {
+  if (!originsLoaded) return;
+  buildOriginMarkers();
+  applyOriginsSearch(document.getElementById("origins-search").value);
+  updateOriginsFilterEmpty();
+}
+
+// "— nothing in your tasting yet" note next to the only-my-tasting checkbox:
+// shown only when that filter is on AND it filtered the map down to nothing,
+// so an empty map is explained rather than looking broken.
+function updateOriginsFilterEmpty() {
+  document.getElementById("origins-filter-empty").hidden =
+    !(state.originsOnlyTasting && !NOTES.some(n => hasAnyEntry(n.id)));
+}
+
+// The map legend's visibility checkboxes: one per flavor group (colored dot +
+// name, all checked by default) plus the "only my tasting" master filter.
+// These write the map-local state.origins* fields — never state.hiddenGroups,
+// which belongs to the wheel legend and affects scoring.
+function buildOriginsLegendFilters() {
+  const wrap = document.getElementById("origins-group-filters");
+  GROUPS.forEach(g => {
+    const label = document.createElement("label");
+    label.className = "ol-filter";
+    label.title = `Show / hide ${g.label} notes on the map`;
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = true;
+    cb.addEventListener("change", () => {
+      if (cb.checked) state.originsHiddenGroups.delete(g.id);
+      else state.originsHiddenGroups.add(g.id);
+      rebuildOriginMarkers();
+    });
+    const dot = document.createElement("span");
+    dot.className = "ol-dot";
+    dot.style.background = groupColor(g.id);
+    label.append(cb, dot, document.createTextNode(g.label));
+    wrap.appendChild(label);
+  });
+  document.getElementById("origins-only-tasting").addEventListener("change", (e) => {
+    state.originsOnlyTasting = e.target.checked;
+    rebuildOriginMarkers();
+  });
+}
+buildOriginsLegendFilters();
 
 // Label placement: each leader line is assigned one of 8 compass directions
 // rather than always pointing up-and-toward-center. Markers with nearby
@@ -8297,6 +8378,11 @@ function buildOriginMarkers() {
     .map(note => {
       const origin = NOTE_ORIGINS[note.id];
       if (!origin) return null;
+      // Legend display filters. Filtering here (before clustering) rather than
+      // hiding markers after the fact means the survivors re-cluster and their
+      // labels re-spread into the freed space — no holes in cluster boxes.
+      if (state.originsHiddenGroups.has(note.group)) return null;
+      if (state.originsOnlyTasting && !hasAnyEntry(note.id)) return null;
       const [x, y] = latLonToXY(origin.lat, origin.lon);
       return { id: note.id, note, origin, x, y };
     })
@@ -8375,6 +8461,10 @@ function buildOriginMarkers() {
         syncSliders();
         recompute();
         openOriginDetail(note, origin);
+        // Under "only my tasting", toggling an entry changes which markers
+        // qualify — rebuild so a just-removed note's marker disappears (and
+        // the survivors re-cluster). Safe mid-handler; we're done with `g`.
+        if (state.originsOnlyTasting) rebuildOriginMarkers();
       });
 
       svg.appendChild(g);
