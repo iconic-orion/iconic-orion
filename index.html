@@ -9261,9 +9261,11 @@ let taxTreeRoot = null;
 // TAX_DX widened from the original 22px now that labels render horizontally
 // instead of rotated — rotated text only needed sibling clearance for its
 // STROKE width (a few px), horizontal text needs clearance for its full
-// rendered WIDTH (a leaf label like "Black currant / cassis" runs well over
-// 100px). Staggering (see renderTaxonomyTree) absorbs the rest.
-const TAX_DX = 70, TAX_DY = 170;
+// rendered WIDTH. With the zig-zag layout (see renderTaxonomyTree) adjacent
+// leaves alternate up/down so they never collide; the binding constraint is
+// SAME-side leaves, two apart (2*TAX_DX), which must clear the widest label
+// (~162px for "Green onion / scallion"). 88 → 176px, clears it.
+const TAX_DX = 88, TAX_DY = 170;
 
 function countTaxonomyLeaves(d) {
   const kids = d.children || d._children;
@@ -9285,16 +9287,86 @@ function loadTaxonomyTree() {
 // scrolling container (#taxonomy-tree-scroll, overflow:auto) grows/shrinks
 // its scrollable area correctly as you zoom, same as zooming any image.
 let taxonomyZoom = 1;
-function setTaxonomyZoom(factor) {
-  taxonomyZoom = Math.max(0.4, Math.min(2.5, taxonomyZoom * factor));
+const TAX_ZOOM_MIN = 0.15, TAX_ZOOM_MAX = 3;
+// Push the SVG's current natural size (set by renderTaxonomyTree in the width/
+// height ATTRS) out to its rendered CSS box at the current zoom.
+function applyTaxonomyZoomSize() {
   const svg = document.getElementById("taxonomy-svg");
   const w = parseFloat(svg.getAttribute("width")) || 0;
   const h = parseFloat(svg.getAttribute("height")) || 0;
   svg.style.width = (w * taxonomyZoom) + "px";
   svg.style.height = (h * taxonomyZoom) + "px";
 }
-document.getElementById("taxonomy-zoom-in").addEventListener("click", () => setTaxonomyZoom(1.2));
-document.getElementById("taxonomy-zoom-out").addEventListener("click", () => setTaxonomyZoom(1 / 1.2));
+// Focal zoom: multiply the zoom by `factor` while keeping the content point
+// currently under (clientX, clientY) pinned there — so wheel/pinch zoom
+// toward the cursor / finger midpoint instead of jumping to a corner.
+function zoomTaxonomyAround(factor, clientX, clientY) {
+  const scroll = document.getElementById("taxonomy-tree-scroll");
+  const prev = taxonomyZoom;
+  taxonomyZoom = Math.max(TAX_ZOOM_MIN, Math.min(TAX_ZOOM_MAX, prev * factor));
+  const ratio = taxonomyZoom / prev;
+  if (ratio === 1) return;
+  const rect = scroll.getBoundingClientRect();
+  const offX = clientX - rect.left, offY = clientY - rect.top;
+  applyTaxonomyZoomSize();
+  scroll.scrollLeft = (scroll.scrollLeft + offX) * ratio - offX;
+  scroll.scrollTop = (scroll.scrollTop + offY) * ratio - offY;
+}
+function zoomTaxonomyCentered(factor) {
+  const scroll = document.getElementById("taxonomy-tree-scroll");
+  const rect = scroll.getBoundingClientRect();
+  zoomTaxonomyAround(factor, rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+document.getElementById("taxonomy-zoom-in").addEventListener("click", () => zoomTaxonomyCentered(1.2));
+document.getElementById("taxonomy-zoom-out").addEventListener("click", () => zoomTaxonomyCentered(1 / 1.2));
+
+// Wheel-zoom (mouse & trackpad), two-finger pinch-zoom (touch), and drag-pan.
+(function setupTaxonomyPanZoom() {
+  const scroll = document.getElementById("taxonomy-tree-scroll");
+  const touchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const touchMid  = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+
+  // Plain wheel zooms toward the cursor (the "scroll to zoom" the user asked
+  // for); Shift+wheel pans horizontally, handy on this very wide tree. The
+  // exp() keeps zoom multiplicative so each notch feels the same at any level.
+  scroll.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    if (e.shiftKey) { scroll.scrollLeft += e.deltaY; return; }
+    zoomTaxonomyAround(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+  }, { passive: false });
+
+  // Mouse drag-to-pan on empty tree area only — pointerdowns on a node fall
+  // through so clicks (open detail / collapse) still work. Touch is excluded
+  // here: single-finger touch uses the container's native overflow scroll,
+  // two-finger uses the pinch handler below.
+  let panning = false, panX = 0, panY = 0, startL = 0, startT = 0;
+  scroll.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.target.closest("g.tx-node")) return;
+    panning = true; panX = e.clientX; panY = e.clientY;
+    startL = scroll.scrollLeft; startT = scroll.scrollTop;
+    scroll.setPointerCapture(e.pointerId); scroll.style.cursor = "grabbing";
+  });
+  scroll.addEventListener("pointermove", (e) => {
+    if (!panning) return;
+    scroll.scrollLeft = startL - (e.clientX - panX);
+    scroll.scrollTop  = startT - (e.clientY - panY);
+  });
+  const endPan = (e) => { if (!panning) return; panning = false; scroll.style.cursor = ""; try { scroll.releasePointerCapture(e.pointerId); } catch (_) {} };
+  scroll.addEventListener("pointerup", endPan);
+  scroll.addEventListener("pointercancel", endPan);
+
+  let pinchDist = 0;
+  scroll.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) pinchDist = touchDist(e.touches);
+  }, { passive: true });
+  scroll.addEventListener("touchmove", (e) => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();   // suppress native pinch-page-zoom; we zoom the tree
+    const d = touchDist(e.touches);
+    if (pinchDist > 0) { const m = touchMid(e.touches); zoomTaxonomyAround(d / pinchDist, m.x, m.y); }
+    pinchDist = d;
+  }, { passive: false });
+})();
 
 function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
@@ -9311,46 +9383,42 @@ function renderTaxonomyTree() {
   // to the vertical screen axis INVERTED — screenY = maxY - d.y — so depth
   // grows upward instead of the original growing-rightward.
   //
-  // Labels render HORIZONTALLY (no rotation) at their node's own
-  // orientation, per request — internal-node labels sit below their node
-  // (in the gap toward the root, away from the children fanning out
-  // above), leaf labels sit above (in the gap toward the canvas edge).
-  // Since default is now fully expanded, a single row can hold dozens of
-  // siblings only TAX_DX=60px apart while a label can easily run 100px+
-  // wide — immediate neighbors WOULD overlap solid at one common height.
-  // Fixed with the standard "staggered axis labels" trick: within each
-  // depth row, sort siblings left-to-right and cycle them across
-  // STAGGER_TIERS vertical steps, so any two ADJACENT labels always sit at
-  // different heights. It's a heuristic, not full collision detection —
-  // labels several positions apart in x can still share a tier — but
-  // combined with the widened TAX_DX it keeps the common case (immediate
-  // neighbors) clean.
-  // TIER_STEP must clear a full line of 12px text (~16px tall including
-  // ascenders/descenders) — 13px measured as still producing real 2D
-  // overlaps between adjacent-tier neighbors sitting close together in x
-  // (verified directly against rendered getBoundingClientRect()s, not just
-  // eyeballed). 4 tiers (not 3) also reduces how many leaves within any one
-  // dense family cluster share a tier at all.
-  const STAGGER_TIERS = 4, TIER_STEP = 18, LABEL_BASE = 9;
-  const tierOf = new Map();
+  // Labels render HORIZONTALLY (no rotation). Layout is a ZIG-ZAG: within
+  // each depth row, sorted left-to-right, LEAF labels alternate above / below
+  // their dot (up, down, up, down…) so any two adjacent leaves land on
+  // opposite sides and never collide, while each label stays just ONE line
+  // off its dot — visually much tighter than the old multi-tier stagger,
+  // which pushed some labels far from their node. Same-SIDE leaf neighbours
+  // (two apart, 2*TAX_DX) are the binding spacing constraint; TAX_DX is sized
+  // to clear the widest label. Internal (taxon) nodes always sit just below
+  // their dot toward the root; their rows are sparse enough not to alternate.
+  // Every node (leaf AND internal) alternates up/down by its sorted position
+  // in its own depth row — internal rows (e.g. 45 families) can also pack
+  // tightly enough for two labels to touch, so they zig-zag too. A node's
+  // dir=-1 puts its label above the dot (toward its children), +1 below
+  // (toward the root). Internal-up sits ~140px clear of the leaf row above
+  // and internal-down ~140px clear of the row below, so cross-row collisions
+  // can't happen; only within-row neighbours matter, and alternation splits
+  // those onto opposite sides.
+  const LEAF_OFFSET = 16, INTERNAL_OFFSET = 15;
+  const dirOf = new Map();
   const byDepth = new Map();
   nodes.forEach(d => { if (!byDepth.has(d.depth)) byDepth.set(d.depth, []); byDepth.get(d.depth).push(d); });
   byDepth.forEach(row => {
     row.sort((a, b) => a.x - b.x);
-    row.forEach((d, i) => tierOf.set(d, i % STAGGER_TIERS));
+    row.forEach((d, i) => dirOf.set(d, i % 2 === 0 ? -1 : 1));
   });
-  const labelOffsetFor = d => {
-    const reach = LABEL_BASE + tierOf.get(d) * TIER_STEP;
-    return (d.children || d._children) ? reach : -reach;   // internal down, leaf up
-  };
-  // Margins shrink a lot versus the old rotated-text layout: a label now
-  // only needs room for its short vertical stagger offset (up to
-  // LABEL_BASE + (STAGGER_TIERS-1)*TIER_STEP px) plus its own text height,
-  // not its full horizontal length.
-  const TOP_MARGIN = 90, BOTTOM_MARGIN = 70;
-  const screenX = d => d.x - minX;
+  const labelYFor = d => (d.data.noteId ? LEAF_OFFSET : INTERNAL_OFFSET) * dirOf.get(d);
+  const labelBaselineFor = d => dirOf.get(d) < 0 ? "alphabetic" : "hanging";
+
+  // Horizontal SIDE margins so the leftmost / rightmost leaf labels — centred
+  // on their node, so each extends ~half a label-width past it — aren't
+  // clipped at the canvas edges (the "notes on the far edges get cut off"
+  // fix). Vertical margins only need to clear one line's offset now.
+  const SIDE_MARGIN = 95, TOP_MARGIN = 44, BOTTOM_MARGIN = 44;
+  const screenX = d => d.x - minX + SIDE_MARGIN;
   const screenY = d => (maxY - d.y) + TOP_MARGIN;
-  const width = maxX - minX + 40, height = maxY + TOP_MARGIN + BOTTOM_MARGIN;
+  const width = maxX - minX + 2 * SIDE_MARGIN, height = maxY + TOP_MARGIN + BOTTOM_MARGIN;
   svg.attr("width", width).attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
   // Re-apply the current zoom's CSS box size — the width/height attrs above
   // just got reset to the natural (unzoomed) size for this render.
@@ -9398,9 +9466,9 @@ function renderTaxonomyTree() {
   merged.select("circle").attr("fill", d => d._children ? "var(--accent)" : (d.children ? "var(--panel-2)" : "var(--ink-dim)"));
   merged.select("text")
     .attr("x", 0)
-    .attr("y", labelOffsetFor)
+    .attr("y", labelYFor)
     .attr("text-anchor", "middle")
-    .attr("dominant-baseline", d => (d.children || d._children) ? "hanging" : "alphabetic")
+    .attr("dominant-baseline", labelBaselineFor)
     .text(labelFor);
 
   node.exit().remove();
