@@ -9494,7 +9494,34 @@ document.getElementById("taxonomy-zoom-out").addEventListener("click", () => zoo
 
 function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
-  d3.tree().nodeSize([TAX_DX, TAX_DY])(taxTreeRoot);
+  const scrollEl = document.getElementById("taxonomy-tree-scroll");
+  // Vertical margins (declared up here because the depth-spacing calc below
+  // needs them); SIDE_MARGIN stays near its use further down.
+  const TOP_MARGIN = 44, BOTTOM_MARGIN = 44;
+
+  // Stretch the per-depth vertical spacing so the whole tree FILLS the
+  // container height instead of sitting in the top slice with dead space
+  // below (the dendrogram only has a handful of depth levels, so at a fixed
+  // spacing it never reached the bottom of a tall desktop workspace). Depth
+  // is known from the hierarchy before layout, so measure the deepest
+  // currently-visible node, then divide the available height across that many
+  // gaps — clamped to a sane min so a shallow (collapsed) tree doesn't stretch
+  // absurdly. Zoom still multiplies on top of this natural fill.
+  const maxDepth = Math.max(1, ...taxTreeRoot.descendants().map(d => d.depth));
+  // Subtract the scroll container's own 16px padding (top+bottom), the tree's
+  // TOP/BOTTOM margins, and an allowance for the horizontal scrollbar (this
+  // tree is always wider than the viewport, so that bar is always present and
+  // eats ~16px of height once it appears). Net: the SVG's natural height lands
+  // just inside the content box — filling it with no leftover gap and without
+  // triggering a needless vertical scrollbar of its own.
+  const SCROLL_PAD = 16, HSCROLL_ALLOW = 18;
+  const availH = (scrollEl.clientHeight || 600) - 2 * SCROLL_PAD - HSCROLL_ALLOW - (TOP_MARGIN + BOTTOM_MARGIN);
+  // Cap at 500 (not tighter) so shallower trees — e.g. Collapse-to-kingdoms,
+  // depth 2–3 — still stretch most of the way down instead of clustering up
+  // top; the deep default (depth 4) lands well under the cap and fills
+  // exactly. Min 120 keeps a dense tree from cramping.
+  const dynDY = Math.max(120, Math.min(500, availH / maxDepth));
+  d3.tree().nodeSize([TAX_DX, dynDY])(taxTreeRoot);
 
   const nodes = taxTreeRoot.descendants();
   const links = taxTreeRoot.links();
@@ -9538,8 +9565,9 @@ function renderTaxonomyTree() {
   // Horizontal SIDE margins so the leftmost / rightmost leaf labels — centred
   // on their node, so each extends ~half a label-width past it — aren't
   // clipped at the canvas edges (the "notes on the far edges get cut off"
-  // fix). Vertical margins only need to clear one line's offset now.
-  const SIDE_MARGIN = 95, TOP_MARGIN = 44, BOTTOM_MARGIN = 44;
+  // fix). Vertical TOP/BOTTOM margins were declared at the top of this
+  // function (the depth-spacing calc needs them).
+  const SIDE_MARGIN = 95;
   const screenX = d => d.x - minX + SIDE_MARGIN;
   const screenY = d => (maxY - d.y) + TOP_MARGIN;
   const width = maxX - minX + 2 * SIDE_MARGIN, height = maxY + TOP_MARGIN + BOTTOM_MARGIN;
@@ -9613,7 +9641,14 @@ function renderTaxonomyTree() {
   node.exit().remove();
 }
 function expandAllTaxonomy() {
-  taxTreeRoot.descendants().forEach(d => { if (d._children) { d.children = d._children; d._children = null; } });
+  // Recurse over ALL descendants, including nodes hidden under a collapsed
+  // ancestor — .descendants() only walks currently-visible .children, so a
+  // single flat pass expanded just one level (Collapse-to-kingdoms → Expand
+  // all previously stopped at Orders). This walk uncollapses every node.
+  (function expand(d) {
+    if (d._children) { d.children = d._children; d._children = null; }
+    (d.children || []).forEach(expand);
+  })(taxTreeRoot);
   renderTaxonomyTree();
 }
 function collapseTaxonomyToKingdoms() {
