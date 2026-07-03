@@ -22,7 +22,11 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-- **`claude/mobile-ui-pass-3`** — branched off `prototype` on 2026-06-27 (right after PR #14 merged). Tracking PR **[#15](https://github.com/iconic-orion/iconic-orion/pull/15)** opened 2026-06-28, marked **ready for review** 2026-06-29 — Nolan's go-ahead received, clean/mergeable against `prototype` (21 commits, no rebase needed). Scope grew far beyond mobile UI into a full taxonomy/varietal system (see slices below); kept on this branch per explicit call rather than splitting it out. Once merged: delete this branch, and start the next long-running branch (Slice 2 — meats/eggs/stocks — is queued, not started) fresh off `prototype`.
+_None active._ `claude/mobile-ui-pass-3` merged into `prototype` on 2026-07-03 (PR #15) and was deleted — see below. The next long-running branch (Slice 2 — meats/eggs/stocks, queued, not started) should be created fresh off `prototype`.
+
+### Historical: mobile-ui-pass-3 (merged 2026-07-03)
+
+- **`claude/mobile-ui-pass-3`** — **MERGED into `prototype` via PR [#15](https://github.com/iconic-orion/iconic-orion/pull/15) on 2026-07-03** (merge commit `931a10d`, 50 commits, clean/0-behind). Branch deleted (local + remote). Branched off `prototype` on 2026-06-27 (right after PR #14 merged); tracking PR opened 2026-06-28, ready-for-review 2026-06-29. Scope grew far beyond mobile UI into a full taxonomy/varietal system (see slices below); kept on this branch per explicit call rather than splitting it out. Also shipped a whole-app faint diagonal PROTOTYPE watermark (`.prototype-watermark`) — remove when the prototype framing is dropped. Slice 2 (meats/eggs/stocks) remains queued, not started — start it on a fresh branch off `prototype`.
   - **Committed** (`7222ecc`): Compass widget mobile sizing + label-clipping fix; note-row slider scroll-conflict fix (33% width, left-justified); first new-notes slice — Coconut, Pistachio, Pecan (Nutty), Ginger (Spice), and the six grains collapsed into one "Cereal / grain" quick-use slider (Rice/Wheat/Barley/Oats/Millet/Quinoa kept as data-only `subOf: "cereal"` children — own compound/citation/map pin, but no slider of their own, surfaced only via a live-computed Go Deeper comparison table). New `sulfide` compound class (barley's dimethyl sulfide).
   - **Committed** (`155bc39`): citrus sub-categorization, generalizing the same `subOf`/Go-Deeper-table mechanism (renamed `varietalRows(parentId)`, no longer cereal-specific) to lemon/orange/grapefruit. Added Lime, Yuzu, Meyer lemon (subOf lemon); Mandarin/tangerine, Bergamot, Blood orange (subOf orange); Pomelo/pummelo (subOf grapefruit) — each with a sourced distinguishing compound except Blood orange, which honestly has none (its identity is anthocyanin pigment, not aroma — surfaced via a new `noStandoutNote` override field rather than invented chemistry). Grapefruit's own edges gained nootkatone, its actual textbook signature compound.
   - **Committed** (`aa2b4cd`): berry sub-categorization — Cranberry, Red currant, Black currant/cassis, Pomegranate (all subOf berry). Cassis reuses 4MMP (already in the data, tied to passionfruit) as its textbook signature thiol. Pomegranate gets a new compound, acetoin. Red currant is the honest "no confirmed standout" case here (no dedicated study found, left without a `noStandoutNote` so the generic fallback renders rather than a fabricated explanation). Cranberry's first-choice compound (β-ionone) turned out to already be one of berry's own parent-level edges from an earlier differentiation pass, so it wouldn't have shown as "distinguishing" — swapped to (E)-2-nonenal, also confirmed in the same source study and not already on berry's edge list.
@@ -58,7 +62,7 @@ Recently merged into `prototype`:
 - **`feature/compound-lens`** — PR **#7** (merged 2026-06-06, merge commit `bdb8039`). Branch deleted.
 - **`claude/header-cleanup`** — PR **#6** (merged 2026-06-06, merge commit `d96ebaa`). Branch safe to delete.
 
-`prototype` is now ahead of `main` by PRs #6, #7, #8, #9, #13, and #14. `claude/mobile-ui-pass-3` is the only branch active off `prototype`.
+`prototype` is now ahead of `main` by PRs #6, #7, #8, #9, #13, #14, and #15. No feature branches are currently active off `prototype`.
 
 ### Historical: V2 (shipped 2026-05-26)
 
