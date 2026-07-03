@@ -9258,16 +9258,13 @@ document.getElementById("origins-detail-close").addEventListener("click", () => 
 // container scrolls instead; expand/collapse is the "zoom level" control.
 let taxonomyTreeLoaded = false;
 let taxTreeRoot = null;
-const TAX_DX = 22, TAX_DY = 170;
+// TAX_DX widened from the original 22px now that labels render horizontally
+// instead of rotated — rotated text only needed sibling clearance for its
+// STROKE width (a few px), horizontal text needs clearance for its full
+// rendered WIDTH (a leaf label like "Black currant / cassis" runs well over
+// 100px). Staggering (see renderTaxonomyTree) absorbs the rest.
+const TAX_DX = 70, TAX_DY = 170;
 
-// Family level (depth 3: Kingdom=1, Order=2, Family=3) and below start
-// collapsed, so the first view is a manageable kingdom/order overview.
-function collapseTaxonomyDeep(d) {
-  if (d.children) {
-    if (d.depth >= 3) { d._children = d.children; d.children = null; d._children.forEach(collapseTaxonomyDeep); }
-    else { d.children.forEach(collapseTaxonomyDeep); }
-  }
-}
 function countTaxonomyLeaves(d) {
   const kids = d.children || d._children;
   if (!kids) return 1;
@@ -9275,8 +9272,11 @@ function countTaxonomyLeaves(d) {
 }
 function loadTaxonomyTree() {
   if (taxonomyTreeLoaded) { renderTaxonomyTree(); return; }
+  // Starts fully expanded (d3.hierarchy already populates every .children by
+  // default — no collapse pass needed) so every flavor note is visible and
+  // reachable without an expand-all click first; Collapse to kingdoms is
+  // still there for anyone who wants the compact overview instead.
   taxTreeRoot = d3.hierarchy(buildTaxonomyTreeData());
-  collapseTaxonomyDeep(taxTreeRoot);
   taxonomyTreeLoaded = true;
   renderTaxonomyTree();
 }
@@ -9309,21 +9309,45 @@ function renderTaxonomyTree() {
   // nodeSize's first argument) maps to the horizontal screen axis, same
   // role it always had. d.y (depth, from nodeSize's second argument) maps
   // to the vertical screen axis INVERTED — screenY = maxY - d.y — so depth
-  // grows upward instead of the original growing-rightward. Node labels
-  // stay exactly the same x-offset/anchor logic as the old horizontal
-  // layout (leaves get local x=9/start, internal nodes get x=-9/end); the
-  // rotate(-90) on the <text> below is what turns that "left/right of
-  // node" logic into "above/below node" — a positive local x rotates to
-  // negative screen y (up), so leaf labels correctly end up above their
-  // node, reading bottom-to-top, while internal labels land below theirs.
-  // Two different margins, not one: the topmost (currently deepest) row's
-  // labels extend further UP with nothing beyond them to borrow space from,
-  // same for the bottommost row's (root's, always "All notes") label
-  // extending DOWN — every other row's label overruns into a neighboring
-  // row's own TAX_DY=170 gap, which is generous enough not to need a
-  // dedicated margin. TOP_MARGIN is bigger because leaf labels ("Black
-  // currant / cassis") run longer than the root's fixed short one.
-  const TOP_MARGIN = 200, BOTTOM_MARGIN = 60;
+  // grows upward instead of the original growing-rightward.
+  //
+  // Labels render HORIZONTALLY (no rotation) at their node's own
+  // orientation, per request — internal-node labels sit below their node
+  // (in the gap toward the root, away from the children fanning out
+  // above), leaf labels sit above (in the gap toward the canvas edge).
+  // Since default is now fully expanded, a single row can hold dozens of
+  // siblings only TAX_DX=60px apart while a label can easily run 100px+
+  // wide — immediate neighbors WOULD overlap solid at one common height.
+  // Fixed with the standard "staggered axis labels" trick: within each
+  // depth row, sort siblings left-to-right and cycle them across
+  // STAGGER_TIERS vertical steps, so any two ADJACENT labels always sit at
+  // different heights. It's a heuristic, not full collision detection —
+  // labels several positions apart in x can still share a tier — but
+  // combined with the widened TAX_DX it keeps the common case (immediate
+  // neighbors) clean.
+  // TIER_STEP must clear a full line of 12px text (~16px tall including
+  // ascenders/descenders) — 13px measured as still producing real 2D
+  // overlaps between adjacent-tier neighbors sitting close together in x
+  // (verified directly against rendered getBoundingClientRect()s, not just
+  // eyeballed). 4 tiers (not 3) also reduces how many leaves within any one
+  // dense family cluster share a tier at all.
+  const STAGGER_TIERS = 4, TIER_STEP = 18, LABEL_BASE = 9;
+  const tierOf = new Map();
+  const byDepth = new Map();
+  nodes.forEach(d => { if (!byDepth.has(d.depth)) byDepth.set(d.depth, []); byDepth.get(d.depth).push(d); });
+  byDepth.forEach(row => {
+    row.sort((a, b) => a.x - b.x);
+    row.forEach((d, i) => tierOf.set(d, i % STAGGER_TIERS));
+  });
+  const labelOffsetFor = d => {
+    const reach = LABEL_BASE + tierOf.get(d) * TIER_STEP;
+    return (d.children || d._children) ? reach : -reach;   // internal down, leaf up
+  };
+  // Margins shrink a lot versus the old rotated-text layout: a label now
+  // only needs room for its short vertical stagger offset (up to
+  // LABEL_BASE + (STAGGER_TIERS-1)*TIER_STEP px) plus its own text height,
+  // not its full horizontal length.
+  const TOP_MARGIN = 90, BOTTOM_MARGIN = 70;
   const screenX = d => d.x - minX;
   const screenY = d => (maxY - d.y) + TOP_MARGIN;
   const width = maxX - minX + 40, height = maxY + TOP_MARGIN + BOTTOM_MARGIN;
@@ -9352,7 +9376,14 @@ function renderTaxonomyTree() {
     else { d.children = d._children; d._children = null; }
     renderTaxonomyTree();
   };
-  const labelFor = d => d.data.noteId ? d.data.name : `${d.data.name} (${countTaxonomyLeaves(d)})`;
+  // Leaf labels get the note's own wheel icon (noteIcon(), the same lookup
+  // the notes panel/tasting tray/detail card use) prefixed on — visual
+  // continuity between the tree and the rest of the app, per request.
+  // Internal (Kingdom/Order/Family/bucket) nodes aren't real notes, so no
+  // icon lookup applies to them.
+  const labelFor = d => d.data.noteId
+    ? `${noteIcon(d.data.noteId)} ${d.data.name}`
+    : `${d.data.name} (${countTaxonomyLeaves(d)})`;
 
   const node = svg.selectAll("g.tx-node").data(nodes, keyFor);
   const enter = node.enter().append("g")
@@ -9360,15 +9391,16 @@ function renderTaxonomyTree() {
     .attr("transform", d => `translate(${screenX(d)},${screenY(d)})`)
     .on("click", onNodeClick);
   enter.append("circle").attr("r", 5);
-  enter.append("text").attr("dy", "0.32em");
+  enter.append("text");
 
   const merged = node.merge(enter);
   merged.attr("transform", d => `translate(${screenX(d)},${screenY(d)})`);
   merged.select("circle").attr("fill", d => d._children ? "var(--accent)" : (d.children ? "var(--panel-2)" : "var(--ink-dim)"));
   merged.select("text")
-    .attr("transform", "rotate(-90)")
-    .attr("x", d => (d.children || d._children) ? -9 : 9)
-    .attr("text-anchor", d => (d.children || d._children) ? "end" : "start")
+    .attr("x", 0)
+    .attr("y", labelOffsetFor)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", d => (d.children || d._children) ? "hanging" : "alphabetic")
     .text(labelFor);
 
   node.exit().remove();
