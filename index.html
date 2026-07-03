@@ -1409,8 +1409,16 @@
   .tx-node.tx-leaf circle { cursor: pointer; }
   .tx-node text { font-size: 12px; cursor: pointer; fill: var(--ink); }
   .tx-node.tx-internal text { font-size: 11px; font-style: italic; fill: var(--ink-dim); }
+  /* Family nodes open a detail page on click (not collapse) — a faint accent
+     ring hints they're a different kind of target than the plain expand/
+     collapse taxa above them. */
+  .tx-node.tx-family circle { stroke: var(--accent); stroke-width: 1.5; }
+  .tx-node.tx-family text { fill: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 2px; }
+  .tx-node.tx-family:hover text { text-decoration-color: var(--accent); }
   .tx-node.tx-dim text, .tx-node.tx-dim circle { opacity: 0.2; }
   .tx-node.tx-search-hit circle { stroke: var(--accent); stroke-width: 2; }
+  /* Family detail page (taxonomy tree): the diagnostic sentence. */
+  .family-trait { font-size: 12px; line-height: 1.55; color: var(--ink); margin: 4px 0 0; }
 
   #origins-body {
     display: flex;
@@ -1882,7 +1890,7 @@
   <div id="taxonomy-tree-scroll">
     <svg id="taxonomy-svg"></svg>
   </div>
-  <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. "Process / not a single organism" and "(multiple families)" are honest non-phylogenetic buckets, not invented taxa — click a leaf to open its detail. Click a node to expand or collapse it.</p>
+  <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. "Process / not a single organism" and "(multiple families)" are honest non-phylogenetic buckets, not invented taxa — click a leaf for its note detail, an underlined family for its family page, or any other node to expand/collapse. Scroll or pinch to zoom; drag empty space to pan.</p>
 </div>
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
@@ -4080,6 +4088,7 @@ const state = {
                               // it eases to a low perpetual simmer instead. On: settles and holds still.
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
+  selectedFamily: null,     // when set (via a taxonomy-tree family node), the detail pane shows that plant family's page
   hoveredNote: null,
   hoveredCompound: null,
   infoOpen: false,        // is the "i" info overlay shown
@@ -4328,8 +4337,63 @@ const TAXON_COMMON = {
   Betulaceae: "Birch family", Fabaceae: "Legume family", Arecaceae: "Palm family",
   Juglandaceae: "Walnut family", Orchidaceae: "Orchid family", Malvaceae: "Mallow family",
   Lythraceae: "Loosestrife family", Zingiberaceae: "Ginger family",
-  Apidae: "Bee family", Saccharomycetaceae: "Brewer's-yeast family"
+  Apidae: "Bee family", Saccharomycetaceae: "Brewer's-yeast family",
+  Convolvulaceae: "Morning-glory family", Amaryllidaceae: "Amaryllis / onion family",
+  Apiaceae: "Carrot / parsley family", Brassicaceae: "Cabbage / mustard family",
+  Dioscoreaceae: "Yam family", Araceae: "Arum family"
 };
+
+// One-sentence diagnostic ("what identifies this family") shown on a family's
+// detail page in the taxonomy tree. General, well-established botanical
+// characters — the morphology/chemistry a botanist keys a plant to this family
+// by — not compound citations. Common names live in TAXON_COMMON above; the
+// notes-in-family list is computed live from NOTES, so it never drifts.
+const FAMILY_INFO = {
+  Rutaceae: "Aromatic trees and shrubs whose leaves are dotted with translucent oil glands — hold a leaf to the light and you see them — releasing citrus and resin scents when crushed; flowers are typically 4–5 parted around a prominent nectar disk.",
+  Anacardiaceae: "Trees and shrubs with resin canals in the bark, many producing skin-irritating phenolic sap (poison ivy, mango skin, cashew shell); small flowers give a usually single-seeded drupe.",
+  Sapindaceae: "Woody plants, often with compound leaves and saponin-rich tissues that lather in water; includes the maples (paired winged samaras) and lychee.",
+  Ericaceae: "Shrubs of acidic, nutrient-poor soils that partner with mycorrhizal fungi; urn- or bell-shaped flowers and often leathery evergreen leaves.",
+  Grossulariaceae: "Shrubs of the single genus Ribes, frequently spiny, with palmately lobed leaves and small berries that keep the dried flower remnant at the tip.",
+  Lythraceae: "Herbs to trees, often with 4-angled stems and flower petals that are crumpled in bud; includes pomegranate and crape myrtle.",
+  Myrtaceae: "Aromatic evergreens with oil-gland-dotted leaves (eucalyptus, clove, guava) and flowers built from a showy brush of many stamens.",
+  Rosaceae: "The temperate orchard family — 5-petalled flowers with many stamens set on a floral cup (hypanthium); includes apple, cherry, almond, strawberry, and rose.",
+  Musaceae: "Giant herbs, not true trees: the 'trunk' is a pseudostem of tightly rolled leaf bases, topped by huge leaves and a pendant flower spike that becomes seedless bananas.",
+  Zingiberaceae: "Aromatic rhizomatous herbs with two-ranked leaves and a single fertile stamen; the pungent, spicy scent (ginger, turmeric, cardamom) lives in the rhizome.",
+  Bromeliaceae: "Mostly rosette-forming monocots, many of them epiphytes, with water-trapping leaf cups and absorptive surface scales; pineapple is the notable terrestrial, fleshy-fruited member.",
+  Poaceae: "The grasses — hollow jointed stems (culms), narrow parallel-veined leaves, and wind-pollinated flowers packed in spikelets; includes every cereal grain plus sugarcane.",
+  Passifloraceae: "Climbing vines that grip by tendrils, with intricate flowers ringed by a fringed corona; the fruit is a many-seeded berry (passionfruit).",
+  Violaceae: "Herbs with frequently heart-shaped leaves and bilaterally symmetric 5-petalled flowers whose lowest petal is drawn back into a spur.",
+  Vitaceae: "Climbing vines with tendrils borne opposite the leaves and swollen stem nodes; small flowers give the familiar clustered berries (grapes).",
+  Cucurbitaceae: "Sprawling or climbing vines with coiled tendrils and palmately lobed leaves, usually bearing separate male and female flowers; the fruit is a hard-rinded pepo (melon, cucumber, squash).",
+  Oleaceae: "Woody plants with usually opposite leaves and 4-lobed fused flowers, very often fragrant — jasmine, lilac, and olive.",
+  Lamiaceae: "Square stems, opposite leaves, and two-lipped flowers; the aromatic oils sit in glandular leaf hairs (mint, basil, lavender, sage).",
+  Caprifoliaceae: "Often twining shrubs and vines with opposite leaves and tubular, frequently fragrant, nectar-rich flowers.",
+  Asteraceae: "The composites — what reads as one flower is a head of many tiny florets on a shared disk; one of the largest plant families (chamomile, sunflower, lettuce).",
+  Rubiaceae: "Woody or herbaceous plants with opposite leaves joined by stipules between them and tubular 4–5 lobed flowers; includes coffee and gardenia.",
+  Amaranthaceae: "Often weedy herbs of salty or disturbed ground, with small dry wind-pollinated flowers; includes beet, spinach, and quinoa.",
+  Lauraceae: "Aromatic evergreen trees and shrubs with oil cells throughout the tissue (crush a leaf) and flower parts in threes; includes bay laurel, cinnamon, and avocado.",
+  Piperaceae: "Aromatic plants with swollen stem nodes and tiny flowers packed on a fleshy spike; black pepper's pungency is in the dried fruit.",
+  Betulaceae: "Wind-pollinated trees and shrubs that bear catkins; includes birch, alder, and the hazelnut.",
+  Juglandaceae: "Aromatic trees with pinnately compound leaves and catkins; the nut sits inside a husk (walnut, pecan).",
+  Fabaceae: "Nitrogen-fixing plants (root nodules), usually with compound leaves and a pod (legume) as the fruit; flowers are often pea-shaped. Includes peanut and licorice.",
+  Arecaceae: "Monocot 'trees' with an unbranched trunk crowned by large fan- or feather-shaped fronds; includes the coconut palm.",
+  Pinaceae: "Resinous conifers with needle leaves and woody seed cones; the pine/resin scent is their terpene-rich sap.",
+  Solanaceae: "Herbs to shrubs, many carrying alkaloids, with 5-parted fused-petal flowers and a berry or capsule fruit; includes tomato, potato, pepper, and tobacco.",
+  Convolvulaceae: "Twining vines with milky sap and funnel-shaped flowers; the sweet potato is the starchy-rooted member here.",
+  Orchidaceae: "Highly specialized monocots — bilaterally symmetric flowers with a modified lip petal, a fused reproductive column, and dust-fine seeds; vanilla is the flavor-bearing pod.",
+  Amaryllidaceae: "Bulb-forming monocots with strap-shaped leaves and flowers gathered in an umbel; the onion subfamily makes the pungent sulfur compounds of onion and garlic.",
+  Malvaceae: "Often mucilaginous plants with palmately veined leaves and stamens fused into a tube around the style; includes cacao and cotton.",
+  Apiaceae: "Aromatic herbs with hollow stems and sheathing leaf bases, their tiny flowers held in flat-topped umbels; includes carrot, celery, anise, and fennel.",
+  Brassicaceae: "Pungent herbs defended by mustard-oil glucosinolates, with 4 petals in a cross and 6 stamens (4 long, 2 short); includes cabbage, arugula, wasabi, and horseradish.",
+  Dioscoreaceae: "Twining monocot vines growing from starchy underground tubers, with net-veined heart-shaped leaves; the true yam (ube).",
+  Araceae: "Plants whose tiny flowers pack a fleshy spike (spadix) wrapped in a leaf-like hood (spathe); many, including taro, carry needle-like calcium-oxalate crystals.",
+  Saccharomycetaceae: "Not a plant — single-celled ascomycete fungi (Saccharomyces) that ferment sugars into alcohol and CO₂, reproducing by budding.",
+  Apidae: "Not a plant — the bees. Honey is floral nectar the bee concentrates and stores, so its aroma is really many flowers' aromas gathered through the hive."
+};
+// Family-level tree nodes are the ones that open a detail page (vs. Kingdom/
+// Order/bucket nodes, which just expand/collapse). Derived from the notes so
+// it can never name a family the tree doesn't actually contain.
+const TAXON_FAMILY_NAMES = new Set(NOTES.filter(n => n.family).map(n => n.family));
 function notesWithFamily(family, pool) {
   return pool.filter(n => n.family === family);
 }
@@ -6382,11 +6446,69 @@ const commonTag = c => c && c.commonName ? ` <span class="common-name">(${c.comm
 })();
 
 function renderDetail() {
-  // Three modes: inverse note-view (when a note is selected),
-  // compound detail (when a compound is selected), or the default grid.
+  // Four modes: inverse note-view (a note is selected), compound detail (a
+  // compound is selected), plant-family page (a taxonomy-tree family node is
+  // selected), or the default grid. Note/compound take priority — they
+  // self-clear selectedFamily on entry (see their bodies) so a stale family
+  // can't linger under them; family is only reached when neither is set.
   if (state.selectedNote) renderNoteDetail(state.selectedNote);
   else if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
+  else if (state.selectedFamily) renderFamilyDetail(state.selectedFamily);
   else renderAnalysisGrid();
+}
+
+// Plant-family page for the taxonomy tree: common name, where it sits in the
+// Kingdom→Order→Family chain, the one-line diagnostic that keys a plant to the
+// family, and every note we currently support in it (computed live from NOTES
+// so it never drifts). Clicking a note jumps to that note's own detail.
+function renderFamilyDetail(familyName) {
+  state.selectedNote = null;
+  state.selectedCompound = null;
+  const members = NOTES.filter(n => n.family === familyName);
+  const common = TAXON_COMMON[familyName] || "";
+  const trait = FAMILY_INFO[familyName] || "";
+  const sample = members[0] || {};
+  const kingdom = sample.kingdom || "Plantae";
+  const rankLine = [kingdom, sample.order, familyName].filter(Boolean).join(" → ");
+  const genera = [...new Set(members.map(m => m.genus).filter(Boolean))];
+  // "Plant family" for the common (Plantae) case; kingdom-accurate for the two
+  // honest non-plant families we carry (Apidae → Animalia, Saccharomycetaceae
+  // → Fungi) so the label never miscalls a bee or a yeast a plant.
+  const kindLabel = kingdom === "Animalia" ? "Animal family"
+    : kingdom === "Fungi" ? "Fungal family" : "Plant family";
+  detailPanel.innerHTML = `
+    <button class="back-to-grid" type="button">← Back</button>
+    <h2><span class="detail-icon" aria-hidden="true">🧬</span> ${familyName}</h2>
+    <div class="compound-class">${kindLabel}${common ? ` · ${common}` : ""}</div>
+    <div class="section">
+      <div class="section-title">Where it sits</div>
+      <div class="taxon-detail-label">${rankLine}</div>
+      ${genera.length ? `<div class="cite">Genera we cover: <em>${genera.join("</em>, <em>")}</em></div>` : ""}
+    </div>
+    ${trait ? `<div class="section">
+      <div class="section-title">What identifies this family</div>
+      <p class="family-trait">${trait}</p>
+    </div>` : ""}
+    <div class="section">
+      <div class="section-title">Notes we support here (${members.length})</div>
+      <ul class="taxon-sibling-list">
+        ${members.map(m => `<li><span class="detail-icon" aria-hidden="true">${noteIcon(m)}</span> <span class="note-name view-note" data-note="${m.id}" title="Open this note's detail">${m.label}</span> <span style="font-size:10px; color:var(--ink-dim);">· ${GROUP_BY_ID[m.group].label}</span></li>`).join("")}
+      </ul>
+    </div>
+  `;
+  const backBtn = detailPanel.querySelector(".back-to-grid");
+  if (backBtn) backBtn.addEventListener("click", () => {
+    state.selectedFamily = null;
+    renderDetail();
+  });
+  detailPanel.querySelectorAll(".view-note").forEach(el => {
+    el.addEventListener("click", () => {
+      state.selectedFamily = null;
+      state.selectedNote = el.dataset.note;
+      state.selectedCompound = null;
+      renderDetail();
+    });
+  });
 }
 
 // Inverse view: show which compounds a given note maps to,
@@ -6411,6 +6533,7 @@ function varietalRows(parentId) {
 }
 
 function renderNoteDetail(noteId) {
+  state.selectedFamily = null;   // note view supersedes any family page
   const n = NOTE_BY_ID[noteId];
   const g = GROUP_BY_ID[n.group];
   const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
@@ -6826,6 +6949,7 @@ function renderAnalysisGrid() {
 }
 
 function renderCompoundDetail(cpdId, banner) {
+  state.selectedFamily = null;   // compound view supersedes any family page
   const c = CPD_BY_ID[cpdId];
   const node = CPD_NODE_BY_ID[cpdId];
   const edges = CPD_EDGES[cpdId].slice().sort((a,b) => {
@@ -9440,6 +9564,19 @@ function renderTaxonomyTree() {
       renderDetail();
       return;
     }
+    // Family nodes open their own detail page (common name, where it sits,
+    // the diagnostic that keys a plant to the family, and the notes we
+    // support in it) rather than collapsing. Kingdom / Order / bucket nodes
+    // still toggle expand/collapse — families reach the same leaves via the
+    // Expand all / Collapse to kingdoms controls, so they don't need a
+    // per-node collapse.
+    if (TAXON_FAMILY_NAMES.has(d.data.name)) {
+      state.selectedFamily = d.data.name;
+      state.selectedNote = null;
+      state.selectedCompound = null;
+      renderDetail();
+      return;
+    }
     if (d.children) { d._children = d.children; d.children = null; }
     else { d.children = d._children; d._children = null; }
     renderTaxonomyTree();
@@ -9453,9 +9590,11 @@ function renderTaxonomyTree() {
     ? `${noteIcon(d.data.noteId)} ${d.data.name}`
     : `${d.data.name} (${countTaxonomyLeaves(d)})`;
 
+  const nodeClass = d => d.data.noteId ? "tx-node tx-leaf"
+    : (TAXON_FAMILY_NAMES.has(d.data.name) ? "tx-node tx-internal tx-family" : "tx-node tx-internal");
   const node = svg.selectAll("g.tx-node").data(nodes, keyFor);
   const enter = node.enter().append("g")
-    .attr("class", d => "tx-node " + (d.data.noteId ? "tx-leaf" : "tx-internal"))
+    .attr("class", nodeClass)
     .attr("transform", d => `translate(${screenX(d)},${screenY(d)})`)
     .on("click", onNodeClick);
   enter.append("circle").attr("r", 5);
