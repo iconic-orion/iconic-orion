@@ -2083,10 +2083,21 @@ const NOTES = [
   { id: "clove",       label: "Clove",              group: "spice",    common: true,  genus: "Syzygium", family: "Myrtaceae", order: "Myrtales" },
   { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true,  genus: "Cinnamomum", family: "Lauraceae", order: "Laurales" },
   { id: "pepper",      label: "Black pepper",       group: "spice",    common: true,  genus: "Piper", family: "Piperaceae", order: "Piperales" },
-  // True anise/star anise (Illicium, Schisandraceae) and licorice (Glycyrrhiza,
-  // Fabaceae) are unrelated plants that converge on the same aroma compound
-  // (anethole) — this combined note can't honestly point to one family.
-  { id: "anise",       label: "Anise / licorice",   group: "spice",    common: true,  taxonBucket: "umbrella" },
+  // Was one combined "Anise / licorice" note under an honest "multiple
+  // families" umbrella, since true anise (Pimpinella anisum, Apiaceae) and
+  // licorice (Glycyrrhiza glabra, Fabaceae) are unrelated plants. Split into
+  // two real notes instead — Anise now points to one real, single family
+  // (matching its existing Eastern Mediterranean origin pin, seed anise's
+  // native range) rather than staying deliberately ambiguous.
+  { id: "anise",       label: "Anise",              group: "spice",    common: true,  genus: "Pimpinella", family: "Apiaceae", order: "Apiales" },
+  // Licorice has no standout compound of its own: Glycyrrhiza root's
+  // signature (glycyrrhizin) is a sweet TASTE compound, not a volatile —
+  // the recognizable "black licorice" smell people mean here is
+  // conventionally anise-derived anethole (the same shared aroma the old
+  // combined note was built on), same honest pattern as Peach under
+  // Stonefruit above.
+  { id: "licorice",    label: "Licorice",           group: "spice",    common: true,  subOf: "anise", genus: "Glycyrrhiza", family: "Fabaceae", order: "Fabales",
+    noStandoutNote: "Licorice root's own signature compound, glycyrrhizin, is a sweet TASTE compound (a saponin), not an aroma one. The smell people associate with black licorice is conventionally anise oil's anethole — the same compound Anise is built on — added as flavoring rather than something inherent to Glycyrrhiza itself." },
   { id: "ginger",      label: "Ginger",             group: "spice",    common: true,  genus: "Zingiber", family: "Zingiberaceae", order: "Zingiberales" },
   // nutty
   { id: "almond",      label: "Almond",             group: "nutty",    common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
@@ -2545,8 +2556,11 @@ const EDGES = [
   // Rose / honey (2-phenylethanol)
   { note: "rose",       cpd: "phenethanol", w: 0.70, cite: "Ohloff 1994 (2-phenylethanol, rose alcohol)." },
   { note: "honey",      cpd: "phenethanol", w: 0.50, cite: "Serra Bonvehí & Ventura Coll 2003 (2-phenylethanol, honey marker)." },
-  // Anise / licorice (anethole — the principal, replacing the eugenol stretch)
+  // Anise (anethole — the principal, replacing the eugenol stretch)
   { note: "anise",      cpd: "anethole",  w: 0.95, cite: "Ohloff 1994 (anethole, anise/fennel principal)." },
+  // Licorice reuses Anise's own compound exactly — see noStandoutNote on its
+  // NOTES entry for why there's no separate one to introduce.
+  { note: "licorice",   cpd: "anethole",  w: 0.95, cite: "Ohloff 1994 (anethole, anise/fennel principal)." },
   // Cheesy (parmesan/tang) — butyric acid primary; isovaleric secondary (aged rind)
   { note: "cheesy",     cpd: "butyricacid",    w: 0.85, cite: "Curioni & Bosset 2002 (butyric acid, cheese FFA)." },
   { note: "cheesy",     cpd: "isovalericacid", w: 0.50, cite: "Curioni & Bosset 2002 (isovaleric acid, aged-cheese rind)." },
@@ -3679,7 +3693,7 @@ const WAIS_DESCRIPTORS = [
     { word: "oats / oatmeal",    notes: ["cereal"] },
     { word: "millet",            notes: ["cereal"] },
     { word: "quinoa",            notes: ["cereal"] },
-    { word: "licorice / fennel", notes: ["anise"] }
+    { word: "licorice / fennel", notes: ["anise", "licorice"] }
   ]},
   { category: "Fermented / Funky", entries: [
     { word: "fermented",         notes: ["winey", "yeasty", "buttery"] },
@@ -3810,7 +3824,7 @@ const GUIDE_NARROW = {
   spice: { question: "Which spice register?", options: [
     { key: "baking",   label: "Warm baking spice",          notes: ["cinnamon", "clove"] },
     { key: "pungent",  label: "Sharp / pungent",            notes: ["pepper", "ginger"] },
-    { key: "licorice", label: "Licorice / fennel",          notes: ["anise"] }
+    { key: "licorice", label: "Licorice / fennel",          notes: ["anise", "licorice"] }
   ]},
   nutty: { question: "Closest nut?", options: [
     { key: "marzipan", label: "Marzipan / almond extract",  notes: ["almond"] },
