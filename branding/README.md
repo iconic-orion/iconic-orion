@@ -19,9 +19,9 @@ recording taste & smell experiences). Brand: **iconic-orion**.
 | `favicon-32.png` | 32×32 | Small raster of the site favicon |
 | `../favicon.svg` | vector | The live site favicon (8-wedge ring) |
 
-The ring mark currently has **8 wedges** (matching `favicon.svg`). The app has
-since added a 9th family (Vegetal `#5a9c4f`); the mark has not been updated to
-9 wedges yet.
+The ring mark has **9 wedges** (40° each), matching the app's flavor groups
+and `favicon.svg`: fruity, floral, roasted, spice, nutty, earthy, sweet,
+fermented, vegetal.
 
 ## Palette (matches the live app CSS variables)
 
