@@ -17,11 +17,30 @@ recording taste & smell experiences). Brand: **iconic-orion**.
 | `mark.svg` | vector | Editable source for the square mark |
 | `favicon-512.png` | 512×512 | Large raster of the site favicon |
 | `favicon-32.png` | 32×32 | Small raster of the site favicon |
-| `../favicon.svg` | vector | The live site favicon (8-wedge ring) |
+| `../favicon.svg` | vector | The live site favicon (thin glowing ring — see below) |
 
-The ring mark has **9 wedges** (40° each), matching the app's flavor groups
-and `favicon.svg`: fruity, floral, roasted, spice, nutty, earthy, sweet,
-fermented, vegetal.
+### Two different marks, on purpose (for now)
+
+`banner.svg` / `mark.svg` still use the **solid 9-wedge pie** (40° each,
+fruity → vegetal). `../favicon.svg` was changed to a **thin ring of 9 stroked
+arcs** — dim/muted by default, two lit brighter with a soft glow — because a
+solid, fully-saturated pie-wedge disc is the specific visual signature of the
+generic wine/flavor "aroma wheel" genre (a design already claimed elsewhere as
+"wine aroma wheel"). The real app never fills a solid wedge: `drawGroupArcs()`
+draws a thin ring that sits dim at rest and blooms (brighter + CSS
+`drop-shadow`) as evidence accumulates — the favicon is a static snapshot of
+that actual visual language instead of the generic genre look.
+
+This was verified to hold up at true rendered size, not just as a big preview:
+at the real 32×32 and 16×16 favicon sizes the ring keeps a proportionate dark
+hole (~65% of the radius) and each of the 9 segments stays a distinguishable
+color, confirmed via direct pixel sampling (not just eyeballing a screenshot,
+which can mislead due to recompression at preview size).
+
+**Known inconsistency, not yet resolved:** the bigger surfaces (`banner.svg`,
+`mark.svg`, and their PNGs) still use the solid-wedge look. Whether to bring
+the ring/glow treatment to those too is an open decision — the favicon change
+was scoped narrowly on purpose.
 
 ## Palette (matches the live app CSS variables)
 
@@ -48,5 +67,21 @@ chrome --headless=new --disable-gpu --hide-scrollbars --force-device-scale-facto
   --screenshot=banner.png "file:///<abs-path>/banner.svg"
 ```
 
-Match `--window-size` to the SVG's width/height. For the favicon PNGs, point at
-`favicon.svg` and set the window size to 512,512 or 32,32.
+Match `--window-size` to the SVG's width/height. `banner.svg`/`mark.svg` can be
+rendered this way directly.
+
+For `favicon.svg` specifically, render it as a **decoded image resource**
+(matching how `<link rel="icon">` actually loads it) rather than navigating to
+the raw file as a top-level document — wrap it in a tiny HTML page, draw it to
+a same-size `<canvas>` via `new Image()`, then screenshot that page:
+
+```html
+<canvas id="c" width="32" height="32"></canvas>
+<script>
+  const img = new Image();
+  img.onload = () => document.getElementById("c").getContext("2d").drawImage(img, 0, 0, 32, 32);
+  img.src = "file:///<abs-path>/favicon.svg";
+</script>
+```
+
+then `--screenshot` that wrapper page at the matching `--window-size`.
