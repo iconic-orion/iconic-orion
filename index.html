@@ -1283,6 +1283,10 @@
       min-height: 44px; padding: 10px 14px;
     }
     header.hud-open #info-open-btn { width: 44px; height: 44px; }
+    /* Feedback is an <a> (not a <button>), so the touch-target rules above skip
+       it — place it as a full-width, 44px-tall CTA at the foot of the tray. */
+    header.hud-open #hud-feedback { grid-row: 7; grid-column: 1 / -1; justify-self: stretch;
+      justify-content: center; min-height: 44px; margin-top: 6px; }
     /* Dashboard is redundant on mobile (single-column layout shows same as Notes).
        Hide the tab; setView() redirects its state to note-input. */
     #view-tabs button[data-view="dashboard"] { display: none; }
@@ -1311,6 +1315,11 @@
 
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
+
+    /* The compass defaults to the top-right and overlaps the nudge's top-right ×
+       on narrow screens, making it un-tappable. The arrow above is hidden here,
+       so move the × to the (now-clear) top-left where the compass never sits. */
+    .wheel-nudge .helper-dismiss { left: 3px; right: auto; }
 
     /* On mobile the ring's inner diameter is ~260px on a 375px screen (R_NOTE =
        min(W,H) * 0.36, inner diam ≈ 2 * R_NOTE). Nudge width stays well inside
