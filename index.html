@@ -1316,15 +1316,22 @@
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
 
-    /* The compass defaults to the top-right and overlaps the nudge's top-right ×
-       on narrow screens, making it un-tappable. The arrow above is hidden here,
-       so move the × to the (now-clear) top-left where the compass never sits. */
-    .wheel-nudge .helper-dismiss { left: 3px; right: auto; }
+    /* On mobile the wheel is a fixed band with overflow:hidden. Centering the
+       (tall) nudge pushed its top — and its × — above the band, clipped and
+       impossible to close. Anchor it to the TOP of the band so the header row
+       and × are always visible; keep it narrow enough to stay inside the ring. */
+    .wheel-nudge { width: min(200px, 52vw); padding: 12px 10px;
+      top: 12px; transform: translateX(-50%); }
+    /* Bigger, unmistakable top-right close target for touch. */
+    .wheel-nudge .helper-dismiss { top: 2px; right: 2px; left: auto;
+      font-size: 20px; padding: 6px 10px; }
 
-    /* On mobile the ring's inner diameter is ~260px on a 375px screen (R_NOTE =
-       min(W,H) * 0.36, inner diam ≈ 2 * R_NOTE). Nudge width stays well inside
-       the colored arcs so text never overlaps them. */
-    .wheel-nudge { width: min(200px, 52vw); padding: 12px 10px; }
+    /* While the empty-state nudge owns the band, get the other top-of-wheel
+       controls out of its way — both are useless with nothing logged yet and
+       otherwise overlap the nudge (and its ×) on a narrow screen. They return
+       the moment a note is logged (nudge-active is cleared in updateNudge). */
+    body.nudge-active #callout-toggle,
+    body.nudge-active #aroma-compass { display: none; }
 
     /* Drop the context hint below the top-left "Show compound labels" toggle
        (which is mobile-only) so the two never overlap; widen it to the wheel. */
@@ -7602,7 +7609,13 @@ function loadDemo(name) { setNotes(DEMOS[name] || DEMOS.ethiopian); }
 // Visible only while the wheel is empty; updateNudge() runs from recompute()
 // (which fires on every entry change) and once at init.
 const wheelNudgeEl = document.getElementById("wheel-nudge");
-function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0 || state.dismissedHelpers.has("nudge"); updateWheelHint(); }
+function updateNudge() {
+  wheelNudgeEl.hidden = state.entries.size > 0 || state.dismissedHelpers.has("nudge");
+  // Mobile CSS uses this to clear the wheel band for the nudge (hide the compass
+  // and compound-labels toggle) and to know the empty state is active.
+  document.body.classList.toggle("nudge-active", !wheelNudgeEl.hidden);
+  updateWheelHint();
+}
 wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
   b.addEventListener("click", () => loadDemo(b.dataset.demo)));
 wheelNudgeEl.querySelectorAll(".helper-dismiss").forEach(b =>
