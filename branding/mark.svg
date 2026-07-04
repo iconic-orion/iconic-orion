@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="ring" viewBox="0 0 32 32">
+      <path d="M16,16 L16,2 A14,14 0 0,1 25.899,6.101 Z" fill="#eb894a"/>
+      <path d="M16,16 L25.899,6.101 A14,14 0 0,1 30,16 Z" fill="#db7e97"/>
+      <path d="M16,16 L30,16 A14,14 0 0,1 25.899,25.899 Z" fill="#b65b3d"/>
+      <path d="M16,16 L25.899,25.899 A14,14 0 0,1 16,30 Z" fill="#ee665e"/>
+      <path d="M16,16 L16,30 A14,14 0 0,1 6.101,25.899 Z" fill="#d19456"/>
+      <path d="M16,16 L6.101,25.899 A14,14 0 0,1 2,16 Z" fill="#7fc275"/>
+      <path d="M16,16 L2,16 A14,14 0 0,1 6.101,6.101 Z" fill="#dfa850"/>
+      <path d="M16,16 L6.101,6.101 A14,14 0 0,1 16,2 Z" fill="#6ebdab"/>
+      <circle cx="16" cy="16" r="6" fill="#0e0d10"/>
+    </symbol>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0e0d10"/>
+  <circle cx="256" cy="256" r="212" fill="none" stroke="#8a8579" stroke-opacity="0.42"
+          stroke-width="2.5" stroke-dasharray="3 11" stroke-linecap="round"/>
+  <use href="#ring" x="64" y="64" width="384" height="384"/>
+</svg>
