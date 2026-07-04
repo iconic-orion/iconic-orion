@@ -91,6 +91,17 @@
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
   header button:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* Feedback CTA — filled gold so it reads clearly as the primary call to
+     action, both in the HUD and at the foot of the About → maker section.
+     Opens the Google feedback form in a new tab. */
+  .feedback-cta { display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #1a1810; border: 1px solid var(--accent);
+    padding: 6px 11px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; text-decoration: none; font-family: inherit; white-space: nowrap; }
+  .feedback-cta:hover { background: #e7bd7d; border-color: #e7bd7d; color: #1a1810; }
+  .feedback-cta svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .maker-feedback { margin-top: 14px; }
+
   /* Mobile HUD: a ☰ toggle (shown only on phones) drops the secondary control
      cluster into a second header row. On desktop the toggle is hidden and
      .hud-extra is a transparent wrapper (display: contents), so its children
@@ -1735,6 +1746,12 @@
         </label>
       </div>
     </div>
+    <!-- Feedback CTA → Google form (also mirrored at the foot of About → maker).
+         URL appears in both places; keep them in sync. -->
+    <a id="hud-feedback" class="feedback-cta" href="https://forms.gle/d6onz2i3rzuSPs6H8" target="_blank" rel="noopener" title="Share feedback on the prototype (opens a Google Form in a new tab)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z"/></svg>
+      Feedback
+    </a>
     <button id="info-open-btn" title="About, How to Use, Methodology, Types of Aroma. Reference and glossary." aria-label="Open info">i</button>
     <button id="reset">Start Over</button>
   </div>
@@ -8153,6 +8170,7 @@ function renderAbout() {
       <p class="credits-line">aromawheel.net is home to this original concept and design by <strong>Nolan [Æ]</strong>. The terpene wheel was first built in August 2025; aromawheel 2.0 launched in May 2026. Built in Portland, OR.</p>
       <p class="credits-copyright">© 2025–2026 · aromawheel</p>
     </div>
+    <p class="maker-feedback"><a class="feedback-cta" href="https://forms.gle/d6onz2i3rzuSPs6H8" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z"/></svg>Share feedback on the prototype</a></p>
   `;
 }
 
