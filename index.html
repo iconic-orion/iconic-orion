@@ -1546,13 +1546,30 @@
     overflow: visible;
   }
   .origin-marker { cursor: pointer; }
-  .origin-marker circle {
+  .origin-marker .origin-dot {
     fill: var(--accent);
     opacity: 0.85;
     transition: r 0.15s, opacity 0.15s;
   }
-  .origin-marker.active circle { r: 8; opacity: 1; }
+  .origin-marker.active .origin-dot { r: 8; opacity: 1; }
   .origin-marker.dimmed { opacity: 0.25; }
+
+  /* Selection indicator (map). Clicking a marker selects it for viewing: the
+     dot + label go white and a dashed ring spins closely around the dot. The
+     spinning is a rotating dashed stroke on a circle sized just outside the
+     dot. All reverts when the marker loses .selected (deselect / detail ×). */
+  .origin-select-ring {
+    display: none; fill: none; stroke: #fff; stroke-width: 1.6px;
+    stroke-dasharray: 3 3; vector-effect: non-scaling-stroke;
+    transform-box: fill-box; transform-origin: center; pointer-events: none;
+  }
+  .origin-marker.selected .origin-select-ring {
+    display: block; animation: origin-ring-spin 3.5s linear infinite;
+  }
+  @keyframes origin-ring-spin { to { transform: rotate(360deg); } }
+  /* Dot + label emphasis for the selected marker (after .active so it wins). */
+  .origin-marker.selected .origin-dot { fill: #fff !important; opacity: 1; }
+  .origin-marker.selected .origin-label { fill: #fff !important; font-weight: 700; }
   .origin-leader { fill: none; stroke: var(--accent); stroke-width: 1; opacity: 0.7; }
   .origin-leader.dashed { stroke-dasharray: 4 3; }
   .origin-label {
@@ -1566,7 +1583,7 @@
   /* Search-hit ring sits on top of the marker's own active/dimmed state
      (set via inline opacity in JS so it overrides the entry-selection
      dimming unambiguously rather than fighting it on CSS specificity). */
-  .origin-marker.search-hit circle { stroke: #fff; stroke-width: 2; }
+  .origin-marker.search-hit .origin-dot { stroke: #fff; stroke-width: 2; }
   .origin-marker.search-hit .origin-label { font-weight: 700; }
 
   #origins-search-wrap {
@@ -1630,6 +1647,9 @@
   .ol-filter input[type=checkbox] { accent-color: var(--accent); cursor: pointer;
     margin: 0; width: 12px; height: 12px; flex-shrink: 0; }
   .ol-filter .ol-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ol-toggle-all { color: var(--accent); cursor: pointer; white-space: nowrap;
+    user-select: none; }
+  .ol-toggle-all:hover { text-decoration: underline; }
   #origins-group-filters { display: inline-flex; align-items: center; gap: 10px;
     flex-wrap: wrap; row-gap: 6px; }
   #origins-filter-empty { color: var(--accent); }
@@ -1940,6 +1960,7 @@
     </label>
     <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
     <span class="ol-sep">·</span>
+    <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every group off so you can switch on just the ones you want (click again to turn all back on)">toggle all</span>
     <span id="origins-group-filters"></span>
     <span class="ol-sep">·</span>
     <span class="ol-note">Pre-Columbian Exchange framing. Click markers to select notes.</span>
@@ -4172,6 +4193,7 @@ const state = {
   // zeroes its scoring contribution, but these only filter what the map draws.
   originsOnlyTasting: false,        // true: only markers for notes you've entered
   originsHiddenGroups: new Set(),   // group ids unchecked in the map legend
+  selectedOriginNote: null,         // map: note whose detail is open — highlighted (spinning ring + white), not an entry change
   hiddenClasses: new Set(),  // compound-class names hidden via legend
   openCalloutKey: null,      // currently-open edit/delete callout's entry key, if any
   // Wheel organizing principle. "scent": note-group arcs on the ring, compounds
@@ -9050,13 +9072,14 @@ function updateOriginsFilterEmpty() {
 // which belongs to the wheel legend and affects scoring.
 function buildOriginsLegendFilters() {
   const wrap = document.getElementById("origins-group-filters");
+  const boxes = [];   // { cb, id } — kept so "toggle all" can re-sync them
   GROUPS.forEach(g => {
     const label = document.createElement("label");
     label.className = "ol-filter";
     label.title = `Show / hide ${g.label} notes on the map`;
     const cb = document.createElement("input");
     cb.type = "checkbox";
-    cb.checked = true;
+    cb.checked = !state.originsHiddenGroups.has(g.id);
     cb.addEventListener("change", () => {
       if (cb.checked) state.originsHiddenGroups.delete(g.id);
       else state.originsHiddenGroups.add(g.id);
@@ -9067,7 +9090,23 @@ function buildOriginsLegendFilters() {
     dot.style.background = groupColor(g.id);
     label.append(cb, dot, document.createTextNode(g.label));
     wrap.appendChild(label);
+    boxes.push({ cb, id: g.id });
   });
+
+  // "Toggle all": if everything's already off, turn all on; otherwise turn all
+  // off — the common case, so a user can then flip on just the groups they want.
+  const toggleAll = () => {
+    const allHidden = state.originsHiddenGroups.size === GROUPS.length;
+    state.originsHiddenGroups = allHidden ? new Set() : new Set(GROUPS.map(g => g.id));
+    boxes.forEach(({ cb, id }) => { cb.checked = !state.originsHiddenGroups.has(id); });
+    rebuildOriginMarkers();
+  };
+  const toggleAllEl = document.getElementById("origins-toggle-all");
+  toggleAllEl.addEventListener("click", toggleAll);
+  toggleAllEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleAll(); }
+  });
+
   document.getElementById("origins-only-tasting").addEventListener("change", (e) => {
     state.originsOnlyTasting = e.target.checked;
     rebuildOriginMarkers();
@@ -9332,9 +9371,18 @@ function buildOriginMarkers() {
       line.setAttribute("vector-effect", "non-scaling-stroke");
 
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.classList.add("origin-dot");
       circle.setAttribute("cx", x); circle.setAttribute("cy", y);
       circle.setAttribute("r", 5);
       circle.setAttribute("fill", color);
+
+      // Selection ring — hidden until this marker is .selected (CSS drives the
+      // spinning dashed stroke). Its radius is kept hugging the dot on zoom in
+      // refreshOriginMarkers().
+      const selectRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      selectRing.classList.add("origin-select-ring");
+      selectRing.setAttribute("cx", x); selectRing.setAttribute("cy", y);
+      selectRing.setAttribute("r", 9);
 
       // Position is stored as a LOCAL offset from the cluster anchor (lx,ly),
       // not an absolute coordinate. refreshOriginMarkers() reapplies
@@ -9360,21 +9408,24 @@ function buildOriginMarkers() {
 
       g.appendChild(line);
       g.appendChild(circle);
+      g.appendChild(selectRing);
       g.appendChild(text);
 
       g.addEventListener("click", () => {
-        if (hasAnyEntry(note.id)) {
-          deleteEntry(note.id, null);
-        } else {
+        // Selecting a marker is a non-destructive VIEW action — it never removes
+        // the note (that surprised users: clicking an entered note deleted it and
+        // it vanished under "only my tasting"). A not-yet-entered note is added,
+        // so the map is still a way to build a tasting; an already-entered note is
+        // just highlighted. Removal now lives on the sliders. After a rebuild the
+        // markers are recreated, so re-apply the selection to the fresh nodes.
+        if (!hasAnyEntry(note.id)) {
           commitEntry(note.id, null, 5);
+          syncSliders();
+          recompute();
+          if (state.originsOnlyTasting) rebuildOriginMarkers();
         }
-        syncSliders();
-        recompute();
+        selectOriginNote(note.id);
         openOriginDetail(note, origin);
-        // Under "only my tasting", toggling an entry changes which markers
-        // qualify — rebuild so a just-removed note's marker disappears (and
-        // the survivors re-cluster). Safe mid-handler; we're done with `g`.
-        if (state.originsOnlyTasting) rebuildOriginMarkers();
       });
 
       svg.appendChild(g);
@@ -9421,8 +9472,13 @@ function refreshOriginMarkers() {
     const active = hasAnyEntry(noteId);
     g.classList.toggle("active", active);
     g.classList.toggle("dimmed", anyActive && !active);
-    const circle = g.querySelector("circle");
-    if (circle) circle.setAttribute("r", (active ? MARKER_ACTIVE_R : MARKER_BASE_R) / pxPerUnit);
+    const dot = g.querySelector(".origin-dot");
+    if (dot) dot.setAttribute("r", (active ? MARKER_ACTIVE_R : MARKER_BASE_R) / pxPerUnit);
+    // Selection ring hugs the dot. Active dots are sized in CSS user-units
+    // (r:8), so its ring is a matching fixed offset; inactive dots are sized in
+    // screen px (÷ pxPerUnit), so its ring divides too.
+    const ring = g.querySelector(".origin-select-ring");
+    if (ring) ring.setAttribute("r", active ? (MARKER_ACTIVE_R + 3) : (MARKER_BASE_R + 3) / pxPerUnit);
   });
 
   // Labels and cluster boxes are stored as a local offset from their anchor
@@ -9437,6 +9493,29 @@ function refreshOriginMarkers() {
     const lox = +el.dataset.localX, loy = +el.dataset.localY;
     el.setAttribute("transform", `translate(${lx} ${ly}) scale(${k}) translate(${lox} ${loy})`);
   });
+  // Selection highlight is re-applied here so it survives zoom refreshes and
+  // full marker rebuilds (both call refreshOriginMarkers at the end).
+  applyOriginSelection();
+}
+
+// ---------- MAP MARKER SELECTION ----------
+// Selecting a marker highlights it (spinning ring + white dot/label) and opens
+// its detail; it does not change the tasting entries. Deselecting reverts.
+function selectOriginNote(id) {
+  state.selectedOriginNote = id;
+  applyOriginSelection();
+}
+function clearOriginSelection() {
+  if (state.selectedOriginNote === null) return;
+  state.selectedOriginNote = null;
+  applyOriginSelection();
+}
+function applyOriginSelection() {
+  const svg = document.getElementById("markers-svg");
+  if (!svg) return;
+  svg.querySelectorAll(".origin-marker").forEach(g => {
+    g.classList.toggle("selected", g.dataset.note === state.selectedOriginNote);
+  });
 }
 
 // Single HUD button switches between the wheel, the origins map, and the
@@ -9448,6 +9527,7 @@ function setWorkspace(mode) {
   document.body.classList.toggle("taxonomy-mode", mode === "tree");
   document.getElementById("origins-view").hidden = mode !== "map";
   document.getElementById("origins-detail-panel").hidden = true;
+  clearOriginSelection();
   document.getElementById("origins-search").value = "";
   applyOriginsSearch("");
   document.getElementById("taxonomy-view").hidden = mode !== "tree";
@@ -9463,6 +9543,7 @@ document.querySelectorAll("#workspace-tabs button").forEach(b => {
 });
 document.getElementById("origins-detail-close").addEventListener("click", () => {
   document.getElementById("origins-detail-panel").hidden = true;
+  clearOriginSelection();
 });
 
 // ---------- TAXONOMY TREE rendering (third workspace) ----------
