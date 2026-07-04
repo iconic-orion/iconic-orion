@@ -38,8 +38,8 @@
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   body { display: grid;
     grid-template-columns: var(--notes-pane-w) 1fr var(--detail-pane-w);
-    grid-template-rows: 48px 1fr;
-    grid-template-areas: "head head head" "notes wheel detail"; height: 100vh; overflow: hidden; }
+    grid-template-rows: 48px 1fr auto;
+    grid-template-areas: "head head head" "notes wheel detail" "foot foot foot"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
      independently hidden. The header view tabs (Notes / Dashboard / Compounds)
@@ -50,6 +50,12 @@
   body.detail-hidden { grid-template-columns: var(--notes-pane-w) 1fr 0; }
   body.detail-hidden aside.detail { display: none; }
   body.notes-hidden.detail-hidden { grid-template-columns: 0 1fr 0; }
+
+  /* Slim always-visible page footer — the bottom grid row, spanning all
+     columns across every layout (wheel / map / tree, desktop + mobile). */
+  .site-footer { grid-area: foot; display: flex; align-items: center; justify-content: center;
+    padding: 4px 12px; font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-dim);
+    background: var(--panel); border-top: 1px solid var(--line); }
 
   /* Small "hide / show" tab pinned to the viewport edges adjacent to each
      side pane. position:fixed (relative to viewport, not to the wheel cell)
@@ -437,6 +443,17 @@
   .wheel-hint .wheel-hint-long { display: none; }
   .wheel-hint.open .wheel-hint-short { display: none; }
   .wheel-hint.open .wheel-hint-long  { display: inline; }
+
+  /* Dismiss (×) affordance shared by the wheel's helper boxes — the first-run
+     nudge and the context caption. Everything a user might want gone can be
+     X'd; a page reload brings them back. */
+  .helper-dismiss { pointer-events: auto; background: transparent; border: none;
+    color: var(--ink-dim); font-size: 15px; line-height: 1; cursor: pointer;
+    padding: 2px 5px; font-family: inherit; transition: color 0.15s; }
+  .helper-dismiss:hover { color: var(--accent); }
+  .wheel-nudge .helper-dismiss { position: absolute; top: 2px; right: 3px; }
+  .wheel-hint .helper-dismiss { align-self: flex-start; flex-shrink: 0;
+    margin: -1px -5px 0 2px; }
 
   /* Tap-revealed rationale text under a Note Suggester row (mobile-reachable
      twin of the ⓘ hover tooltip). Spans the whole grid row below the item. */
@@ -847,6 +864,11 @@
     font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1; }
   .info-close:hover { color: var(--accent); }
 
+  /* Maker credits block (About overlay). */
+  .maker-credits { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line); }
+  .maker-credits .credits-line { font-size: 12px; color: var(--ink-dim); line-height: 1.5; margin: 0 0 6px; }
+  .maker-credits .credits-copyright { font-size: 11px; color: var(--ink-dim); margin: 0; }
+
   .info-overlay-body { padding: 20px 28px; overflow-y: auto; flex: 1; line-height: 1.55; }
   .info-overlay-body h2 { font-size: 17px; margin: 0 0 12px; letter-spacing: 0.01em; }
   .info-overlay-body h3 { font-size: 14px; margin: 18px 0 8px; color: var(--accent); letter-spacing: 0.02em; }
@@ -1125,8 +1147,8 @@
     body,
     body.notes-hidden, body.detail-hidden, body.notes-hidden.detail-hidden {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 46vh 1fr;
-      grid-template-areas: "head" "wheel" "panel";
+      grid-template-rows: auto 46vh 1fr auto;
+      grid-template-areas: "head" "wheel" "panel" "foot";
     }
     /* Wheel workspace on mobile: let the PAGE scroll rather than trap a tall
        compound/slider list in the short bottom cell (measured 2026px of content
@@ -1271,7 +1293,7 @@
        matching fix), which comes after that unconditional rule in source
        order and so actually sticks. See the comment there for why this
        needs overriding at all. */
-    body.taxonomy-mode { grid-template-rows: auto 46vh 1fr; grid-template-areas: "head" "wheel" "panel"; }
+    body.taxonomy-mode { grid-template-rows: auto 46vh 1fr auto; grid-template-areas: "head" "wheel" "panel" "foot"; }
 
     /* The edge pane-toggle arrows assume side-by-side panes; meaningless stacked. */
     .pane-toggle { display: none; }
@@ -1763,6 +1785,7 @@
        core loop (slide a note → odorants surface) and offers one-click examples.
        Hidden the moment any note is logged; reappears after Start Over. -->
   <div id="wheel-nudge" class="wheel-nudge" hidden>
+    <button type="button" class="helper-dismiss" data-dismiss-helper="nudge" aria-label="Dismiss this tip" title="Dismiss">×</button>
     <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
     <div class="nudge-sub">Aromatic compounds appear as evidence accumulates — tap any one to see the chemistry and citations behind it. Works with coffee, tea, wine, beer, botanicals, and food.</div>
     <div class="nudge-demos-label">Try an example:</div>
@@ -1789,6 +1812,7 @@
       <span class="wheel-hint-short" id="wheel-hint-short"></span>
       <span class="wheel-hint-long" id="wheel-hint-long"></span>
     </span>
+    <span class="helper-dismiss" data-dismiss-helper="hint" aria-label="Dismiss this caption" title="Dismiss" role="button">×</span>
   </button>
   <!-- Mobile-only "Show compound labels" toggle. On phones the floating dot
        labels are hidden for a clean dot map; this lets the user opt into
@@ -4140,7 +4164,11 @@ const state = {
   // sliders below it in the panel (e.g. expanding "Mint" reveals Peppermint/
   // Spearmint/Wintergreen rows). Persists across panel rebuilds; available in
   // both default and Go Deeper mode — it's just a standing feature of the row.
-  expandedVarietals: new Set()
+  expandedVarietals: new Set(),
+  // Helper/hint boxes the user has X'd this session (e.g. "nudge", "hint").
+  // Session-only, matching the app's no-persistence convention — a reload
+  // brings them back; Start Over does not.
+  dismissedHelpers: new Set()
 };
 
 // ---------- ENTRY HELPERS ----------
@@ -7200,9 +7228,10 @@ function updateWheelHint() {
   // explains the wheel, and stacking both just clutters. The hint takes over
   // once the first note is logged (nudge gone) and the mode caption becomes
   // the thing that's actually still useful.
-  wheelHintEl.hidden = state.entries.size === 0;
+  wheelHintEl.hidden = state.entries.size === 0 || state.dismissedHelpers.has("hint");
 }
-wheelHintEl.addEventListener("click", () => {
+wheelHintEl.addEventListener("click", (e) => {
+  if (e.target.closest(".helper-dismiss")) { dismissHelper("hint"); return; }
   const open = wheelHintEl.classList.toggle("open");
   wheelHintEl.setAttribute("aria-expanded", String(open));
 });
@@ -7525,9 +7554,19 @@ function loadDemo(name) { setNotes(DEMOS[name] || DEMOS.ethiopian); }
 // Visible only while the wheel is empty; updateNudge() runs from recompute()
 // (which fires on every entry change) and once at init.
 const wheelNudgeEl = document.getElementById("wheel-nudge");
-function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0; updateWheelHint(); }
+function updateNudge() { wheelNudgeEl.hidden = state.entries.size > 0 || state.dismissedHelpers.has("nudge"); updateWheelHint(); }
 wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
   b.addEventListener("click", () => loadDemo(b.dataset.demo)));
+wheelNudgeEl.querySelectorAll(".helper-dismiss").forEach(b =>
+  b.addEventListener("click", () => dismissHelper("nudge")));
+
+// Shared X-to-dismiss for the wheel's helper boxes (first-run nudge, context
+// caption). Session-only: records the id in state.dismissedHelpers and re-runs
+// the visibility updaters so the box hides at once and stays gone until reload.
+function dismissHelper(id) {
+  state.dismissedHelpers.add(id);
+  updateNudge();   // refreshes both boxes (updateNudge tail-calls updateWheelHint)
+}
 
 // ---------- GO DEEPER TOGGLE ----------
 function setGoDeeper(on) {
@@ -8108,7 +8147,12 @@ function renderAbout() {
     <p>A public, educational project: one static HTML file, source on GitHub, with comments that walk through the design choices as they come up. The interesting part is probably the thinking, not the tool. Current scope is things you ingest: coffee, beer, wine, mocktails. Perfumery sits at the orthonasal "sniff" end of smell, while this tool centers the retronasal end (the post-swallow exhale that's most of what you mean by "flavor"); it's a close adjacent the project might explore later, but isn't supported yet.</p>
 
     <h3 id="about-maker">About the maker</h3>
-    <p>Built by Nolan, who works variously as a UI/UX designer, museum education specialist, science communicator, geographer, GIS analyst, and systems analyst. The wheel sits in the middle of all of those: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
+    <p>An independent experience designer in Portland, Oregon, with a background running through museum education, inquiry-based learning, science communication, UI/UX design, and GIS/systems analysis. The wheel sits in the middle of all of it: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
+
+    <div class="maker-credits">
+      <p class="credits-line">aromawheel.net is home to this original concept and design by <strong>Nolan [Æ]</strong>. The terpene wheel was first built in August 2025; aromawheel 2.0 launched in May 2026. Built in Portland, OR.</p>
+      <p class="credits-copyright">© 2025–2026 · aromawheel</p>
+    </div>
   `;
 }
 
@@ -10665,5 +10709,6 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
  </circle>
 </svg>
 </template>
+<footer class="site-footer">© Æckhart</footer>
 </body>
 </html>
