@@ -640,6 +640,12 @@
     --row-accent: var(--accent); --fill: 0%;
     transition: background 0.15s, border-color 0.15s; }
   .note-row:hover { background: var(--panel-2); }
+  /* Tabbing to either the slider or the number box previously gave no
+     row-level feedback (only a tiny thumb box-shadow / input border) —
+     easy to lose your place scanning 75 rows by keyboard. Mirror :hover's
+     background and pop the label to accent so the focused row is obvious. */
+  .note-row:focus-within { background: var(--panel-2); }
+  .note-row:focus-within .note-label-text { color: var(--accent); }
   /* Active row: group-tinted wash + a solid group-colored spine on the left,
      a bold group-colored label, and a thin intensity meter along the bottom
      edge whose width tracks the committed value. Four redundant cues (color,
