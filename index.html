@@ -90,6 +90,7 @@
   header button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
   header button:hover { border-color: var(--accent); color: var(--accent); }
+  header button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* Feedback CTA — filled gold so it reads clearly as the primary call to
      action, both in the HUD and at the foot of the About → maker section.
@@ -116,6 +117,7 @@
     color: var(--ink-dim); }
   .tabs button.active { background: var(--accent); color: #1a1810; }
   .tabs button:not(.active):hover { background: var(--panel-2); color: var(--ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   /* Small inline caption inside a segmented control (e.g. "Organize"). */
   .tabs .tabs-label { padding: 6px 8px 6px 10px; font-size: 10px; color: var(--ink-dim);
     text-transform: uppercase; letter-spacing: 0.08em; align-self: center;
@@ -1700,20 +1702,29 @@
      parent clips the oversized, rotated inner tile so the diagonal grid
      has no bare corners. The tile is an inline-SVG data URI (one word per
      cell) — cheaper and crisper than a wall of DOM text nodes. */
-  .prototype-watermark { position: fixed; inset: 0; z-index: 100000;
-    pointer-events: none; overflow: hidden; }
-  .prototype-watermark .wm-inner { position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    transform: rotate(-28deg); transform-origin: center;
-    background-repeat: repeat; background-position: center;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='130'%3E%3Ctext x='150' y='78' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='26' font-weight='700' letter-spacing='4' fill='%23ffffff' fill-opacity='0.05'%3EPROTOTYPE%3C/text%3E%3C/svg%3E"); }
+  /* A single small corner badge, not a full-screen tile: still unmistakably
+     "work in progress" without competing with the wheel (the actual payoff)
+     for attention during a first-time visitor's trust-forming first look. */
+  .prototype-watermark { position: fixed; right: 10px; bottom: 10px; z-index: 100000;
+    pointer-events: none; padding: 3px 8px; border-radius: 999px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; color: rgba(255,255,255,0.35); }
+
+  /* Screen-reader-only: visually hidden but still announced. Used for the
+     results aria-live region (see #results-announcer). */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 </style>
 </head>
 <body>
-<!-- Whole-app "prototype" watermark (see .prototype-watermark). Non-interactive
-     overlay above all content; sits first in the body so its DOM order is
+<!-- "Prototype" badge (see .prototype-watermark). Non-interactive, fixed to
+     the bottom-right corner; sits first in the body so its DOM order is
      obvious, but z-index (not order) is what puts it on top. -->
-<div class="prototype-watermark" aria-hidden="true"><div class="wm-inner"></div></div>
+<div class="prototype-watermark" aria-hidden="true">PROTOTYPE</div>
+<!-- Announces recompute() results to screen readers (see announceResults()).
+     Silent on its own; text is only ever set from JS. -->
+<div id="results-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <header>
   <div class="brand">
     <h1>Aroma Wheel</h1>
@@ -1743,8 +1754,8 @@
     <div class="hud-vdivider" aria-hidden="true"></div>
     <div class="tabs" id="view-tabs" title="Which side panels are open around the wheel.">
       <span class="tabs-label">Panels</span>
-      <button data-view="note-input">Notes</button>
-      <button data-view="dashboard" class="active">Both</button>
+      <button data-view="note-input" class="active">Notes</button>
+      <button data-view="dashboard" title="Show the notes sliders and the results side by side">Notes + Results</button>
       <button data-view="analysis">Results</button>
     </div>
     <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
@@ -1840,8 +1851,7 @@
   <div id="wheel-nudge" class="wheel-nudge" hidden>
     <button type="button" class="helper-dismiss" data-dismiss-helper="nudge" aria-label="Dismiss this tip" title="Dismiss">×</button>
     <div class="nudge-head"><span class="nudge-arrow">←</span> Slide a flavor note to begin</div>
-    <div class="nudge-sub">Aromatic compounds appear as evidence accumulates — tap any one to see the chemistry and citations behind it. Works with coffee, tea, wine, beer, botanicals, and food.</div>
-    <div class="nudge-demos-label">Try an example:</div>
+    <div class="nudge-demos-label">Or try an example:</div>
     <div class="nudge-demos">
       <button type="button" class="nudge-demo" data-demo="ethiopian">Ethiopian coffee</button>
       <button type="button" class="nudge-demo" data-demo="ipa">IPA</button>
@@ -1852,6 +1862,7 @@
       <button type="button" class="nudge-demo" data-demo="marinara">Marinara</button>
       <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
+    <div class="nudge-sub">Compounds appear as evidence accumulates. Works with coffee, tea, wine, beer, botanicals, and food.</div>
   </div>
   <!-- Persistent, tap-expandable context caption (see .wheel-hint CSS). Always
        says what the wheel is showing and updates with the Organize mode, so the
@@ -2763,7 +2774,11 @@ const COMPOUND_CLASS_COLOR = {
 // organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
 // get a short ring label so the 12 arc labels don't collide.
 const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
+// Short labels exist ONLY so the 12 Chemistry-mode ring-arc sectors don't
+// collide — don't reuse them anywhere with room for the full class name
+// (e.g. the "Main aroma compound class" headline uses CLASS_FULL instead).
 const CLASS_SHORT = { "phenolic-aldehyde": "phen-ald", "norisoprenoid": "norisopr.", "phenylpropene": "phenylprop.", "haloanisole": "halo-anisole" };
+const CLASS_FULL = { "phenolic-aldehyde": "phenolic aldehyde", "norisoprenoid": "norisoprenoid", "phenylpropene": "phenylpropene", "haloanisole": "haloanisole" };
 const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color: COMPOUND_CLASS_COLOR[id] }));
 
 // ---------- INFO-TAB CONTENT ----------
@@ -4181,8 +4196,13 @@ const state = {
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
   jiggleEnabled: false,       // device-motion delight toggle (notes nudge with phone tilt/shake)
   readingMode: false,         // dyslexia-friendly / high-legibility font + spacing toggle
-  freezeBubbles: false,       // off (default): the float sim never fully settles-and-stops,
-                              // it eases to a low perpetual simmer instead. On: settles and holds still.
+  // Off by default (perpetual gentle simmer) — EXCEPT when the OS reports
+  // prefers-reduced-motion, where we default to on (settle-and-hold-still).
+  // The perpetual drift is otherwise unconditional/unopt-in-able motion
+  // triggered on every device, which is exactly what that preference exists
+  // to suppress; the manual "Freeze aroma bubbles" checkbox still lets
+  // anyone override either default.
+  freezeBubbles: window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   selectedFamily: null,     // when set (via a taxonomy-tree family node), the detail pane shows that plant family's page
@@ -4800,6 +4820,25 @@ function drawGroupArcs() {
     .attr("cx", CX).attr("cy", CY).attr("r", R_COMPOUND_MAX + 12);
 }
 
+// Shared by wheel-note click and Enter/Space keyboard activation: scroll the
+// slider panel to this note's row (focusing its slider) and surface the
+// note's outbound compound graph in the analysis pane, the inverse of
+// clicking a compound.
+function activateWheelNote(d) {
+  const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
+  if (row) {
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.classList.add("flash");
+    setTimeout(() => row.classList.remove("flash"), 600);
+    const slider = row.querySelector("input[type=range]");
+    if (slider) slider.focus();
+  }
+  state.selectedNote = d.id;
+  state.selectedCompound = null;
+  gComps.selectAll("g.compound").classed("selected", false);
+  renderDetail();
+}
+
 function drawNotes() {
   // Only render notes that have at least one confirmed entry. The wheel
   // populates as the user inputs perceptions on the left; group arcs and
@@ -4813,28 +4852,17 @@ function drawNotes() {
   // Every rendered note has at least one entry by definition, so the .active
   // styling (heavier stroke) applies to all of them from the start.
   const enter = sel.enter().append("g").attr("class", "note active")
+    // Keyboard/AT operable: same activation as a click, reachable via Tab.
+    .attr("role", "button").attr("tabindex", 0)
     .on("mouseenter", function(e, d) {
       state.hoveredNote = d.id;
       d3.select(this).raise();  // pop hovered note + its label above siblings
       updateEdges();
     })
     .on("mouseleave", () => { state.hoveredNote = null; updateEdges(); })
-    .on("click", (e, d) => {
-      // Default: scroll the slider panel to this note's row and focus its slider.
-      const row = document.querySelector(`.note-row[data-note="${d.id}"]`);
-      if (row) {
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
-        row.classList.add("flash");
-        setTimeout(() => row.classList.remove("flash"), 600);
-        const slider = row.querySelector("input[type=range]");
-        if (slider) slider.focus();
-      }
-      // Also surface this note's outbound compound graph in the analysis
-      // pane — the inverse of clicking a compound.
-      state.selectedNote = d.id;
-      state.selectedCompound = null;
-      gComps.selectAll("g.compound").classed("selected", false);
-      renderDetail();
+    .on("click", (e, d) => activateWheelNote(d))
+    .on("keydown", (e, d) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateWheelNote(d); }
     });
   enter.append("circle").attr("class", "note-halo");
   enter.append("text").attr("class", "node-glyph");
@@ -4853,6 +4881,7 @@ function drawNotes() {
     const half = sz * 0.5;
     const ox = Math.cos(d._angle), oy = Math.sin(d._angle);
     const g = d3.select(this);
+    g.attr("aria-label", d.label + (sig > 0 ? `, intensity ${Math.round(sig * 10)} of 10` : ""));
     g.select("circle.note-halo")
       .attr("r", sz * 0.62)
       .style("fill", groupColor(d.group))
@@ -6040,6 +6069,27 @@ function recompute() {
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
   refreshGhostRows();
+  announceResults();
+}
+
+// Screen-reader summary of the current inference result, since none of the
+// wheel/analysis-pane recompute above is otherwise announced. Debounced so a
+// slider drag (many recompute() calls per second) doesn't flood the aria-live
+// buffer — only the settled end state gets spoken.
+const resultsAnnouncerEl = document.getElementById("results-announcer");
+let announceResultsTimer = null;
+function announceResults() {
+  clearTimeout(announceResultsTimer);
+  announceResultsTimer = setTimeout(() => {
+    const active = compoundNodes.filter(n => n.intensity_raw > 0);
+    if (active.length === 0) { resultsAnnouncerEl.textContent = ""; return; }
+    const top = active.slice().sort((a, b) => b.score - a.score)[0];
+    const topLabel = CPD_BY_ID[top.id].label;
+    const confPct = Math.round(top.confidence * 100);
+    resultsAnnouncerEl.textContent =
+      `${active.length} compound${active.length === 1 ? "" : "s"} active. ` +
+      `Top compound: ${topLabel}, ${confPct}% confidence.`;
+  }, 500);
 }
 
 // ---------- PANEL: notes ----------
@@ -6205,6 +6255,7 @@ function renderNoteRow(n) {
   slider.type = "range"; slider.min = 0; slider.max = 10; slider.step = 1;
   slider.id = "slider-" + n.id;
   slider.value = state.pendingIntensity[n.id] || 0;
+  slider.setAttribute("aria-label", `${n.label} intensity, 0 to 10`);
 
   // Shared by both inputs so typing a number and dragging the slider commit
   // through the exact same path (Go Deeper pending-vs-live-commit logic).
@@ -6863,7 +6914,7 @@ function renderBouquetHtml(activeNotes, allActive) {
   const domCls = ranked[0][0];
   const domColor = COMPOUND_CLASS_COLOR[domCls] || "var(--accent)";
   const domChar = CLASS_CHARACTER[domCls] || "";
-  const support = ranked.slice(1, 3).map(([c]) => CLASS_SHORT[c] || c);
+  const support = ranked.slice(1, 3).map(([c]) => CLASS_FULL[c] || c);
   const subText = domChar + (support.length ? ` — with ${support.join(" and ")} in support` : "");
   const spanLine = ranked.length > 1
     ? `<div class="bouquet-span">Spans ${ranked.length} compound classes — a “single” aroma is rarely one molecule.</div>`
@@ -6871,7 +6922,7 @@ function renderBouquetHtml(activeNotes, allActive) {
   const mainCloud = `
     <div class="bouquet-cloud bouquet-main" style="--bq-accent:${domColor}">
       <div class="bouquet-kicker">Main aroma compound class</div>
-      <div class="bouquet-headline"><span class="bq-icon" aria-hidden="true">${classIcon(domCls)}</span> ${cap(CLASS_SHORT[domCls] || domCls)}</div>
+      <div class="bouquet-headline"><span class="bq-icon" aria-hidden="true">${classIcon(domCls)}</span> ${cap(CLASS_FULL[domCls] || domCls)}</div>
       <div class="bouquet-sub">${subText}.</div>
       ${spanLine}
     </div>`;
@@ -7308,9 +7359,10 @@ document.getElementById("toggle-detail").addEventListener("click", () => {
 // on resize. Threshold is 1100px so tablet landscape and half-screen browser
 // windows land in a focus mode instead of a cramped 3-pane.
 function autoDetectViewMode() {
-  const w = window.innerWidth;
-  if (w >= 1100) setView("dashboard");
-  else setView("note-input");
+  // Lead with the wheel + sliders on first load, even on wide desktop —
+  // the dense compound-library/analysis pane is a one-click reveal, not
+  // the first thing a new visitor should see (depth is opt-in).
+  setView("note-input");
 }
 
 // ---------- NOTES SEARCH ----------
@@ -7801,7 +7853,11 @@ const jiggleToggleBtn = document.getElementById("jiggle-toggle");
 // reliably means no point offering it.) Jiggle is currently the gear's only
 // item, so the gear itself only appears where Jiggle does — no empty dropdown
 // on desktops without motion support.
-if ('ondevicemotion' in window) {
+// Also respect prefers-reduced-motion: Jiggle is an accelerometer-driven
+// screen-motion effect, exactly the vestibular-trigger case that preference
+// exists to opt out of, so don't even offer it where the OS has asked for
+// reduced motion.
+if ('ondevicemotion' in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
   jiggleToggleBtn.hidden = false;
   document.getElementById("settings-wrap").hidden = false;
   jiggleToggleBtn.addEventListener("click", async () => {
@@ -8123,6 +8179,7 @@ function applyCompassScale(widthPx) {
   });
 })();
 setCompassVisible(state.compassVisible); // sync initial DOM/body-class to the default above; must run after COMPASS_MIN_W etc. are declared
+freezeToggleCheck.checked = state.freezeBubbles; // sync checkbox to the prefers-reduced-motion-aware default above
 
 // ---------- INFO ("i") TAB ----------
 // Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
@@ -8346,7 +8403,7 @@ function renderHowToUse() {
       <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
       <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated. The wheel controls grey out on the map since they don't apply there.</li>
-      <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel. <em>Both</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
+      <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel (the default). <em>Notes + Results</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
       <li><strong>Compass (header).</strong> Pops up a small draggable, resizable radar (drag its corner handle to scale everything proportionally) — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class (pick which via the dropdown) — that last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
