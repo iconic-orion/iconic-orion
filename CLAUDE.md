@@ -22,7 +22,14 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-_None active._ `claude/mobile-ui-pass-3` merged into `prototype` on 2026-07-03 (PR #15) and was deleted — see below. The next long-running branch (Slice 2 — meats/eggs/stocks, queued, not started) should be created fresh off `prototype`.
+- **`feature/bloom`** — the **long-running "shareable tasting experience" branch**, off `prototype` (2026-07-05). Consolidates two earlier local branches that were actually a linear chain — `feature/ux-checkup-fixes` and `feature/go-deeper-naturalist` — into one body of work, because they're the same thesis: **the wheel is a shareable tasting standard; quick-use is the powerful, front-and-center default; Go Deeper "blooms" into the extended naturalist/chemistry science.** Both sub-branches were deleted after consolidation (fully contained, never pushed). One draft tracking PR against `prototype`; do NOT auto-merge. Roadmap phases (see the tracking PR body / the session roadmap):
+  - **Committed** (`1fb8052`): UX checkup fixes — wheel-accessible screen-reader loop (aria-labels on wheel nodes + sliders, aria-live results announcer), fresh-load defaults to the wheel + Notes (not the dense dashboard), "Both"→"Notes + Results", reduced-motion guards on idle drift + Jiggle, PROTOTYPE watermark shrunk to a corner badge, `Norisopr.`→`Norisoprenoid`, focus-visible on header/tab buttons.
+  - **Committed** (`3578eff`): note-row `:focus-within` highlight for keyboard tabbing.
+  - **Committed** (`0102cb4`): Go Deeper naturalist skin — the "event horizon" warp reskinned as a descent through forest strata (canopy→soil), the 🧬 badge became `helixGlyph()` (a twining vine double-helix), and a climbing corner vine grows into the wheel while go-deeper is on.
+  - **Committed** (`6d4689a`): vines grown into the Tree workspace (two framing climbers) + a faint baked overgrowth on the go-deeper results pane + the wheel vine tuned larger/richer. One shared vine visual language + keyframes; all unfurl gated on prefers-reduced-motion.
+  - **Queued** (see roadmap): shareable client-side export (PNG/JPG/PDF tasting card, no backend), quick-use↔Go-Deeper parity pass, and the rolling Go Deeper science backlog (phylogenetic "why here", 2D molecular structures, shape→smell, volatility/temperature/humidity/mask threshold explorers, molecule-size vs detection threshold).
+
+Slice 2 (meats/eggs/stocks, from the mobile-ui-pass-3 era) remains queued/not started — start it fresh off `prototype`, separate from `feature/bloom`.
 
 ### Historical: mobile-ui-pass-3 (merged 2026-07-03)
 
