@@ -1024,6 +1024,18 @@
   #share-caption:focus { outline: none; border-color: var(--accent); }
   .share-seg { align-self: flex-start; flex-wrap: wrap; }
   .share-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); cursor: pointer; }
+  .share-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .share-count { color: var(--ink-dim); font-size: 11px; }
+  .share-disclosure { background: none; border: none; color: var(--ink-dim); cursor: pointer;
+    font-size: 13px; padding: 2px 6px; line-height: 1; transition: transform 0.15s; }
+  .share-disclosure:hover { color: var(--accent); }
+  .share-disclosure.open { transform: rotate(90deg); }
+  .share-compound-list { max-height: 172px; overflow-y: auto; display: flex; flex-direction: column;
+    gap: 5px; padding: 9px 10px; margin-top: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+  .share-compound-list[hidden] { display: none; }
+  .share-compound-list.dim { opacity: 0.4; pointer-events: none; }
+  .share-compound-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink); cursor: pointer; }
+  .share-compound-item .cc-conf { margin-left: auto; color: var(--ink-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
   .share-hint { font-size: 11px; color: var(--ink-dim); margin: 0; line-height: 1.5; }
   .share-primary { background: var(--accent); color: #1a1810; border: 1px solid var(--accent);
     border-radius: 6px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -2246,6 +2258,16 @@
             <button type="button" data-style="informative" class="active">More informative</button>
             <button type="button" data-style="stunning">More stunning</button>
           </div>
+        </div>
+
+        <div class="share-field">
+          <span class="share-label">Include on card</span>
+          <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Tasting notes</span></label>
+          <div class="share-row">
+            <label class="share-check"><input type="checkbox" id="share-show-compounds" checked /><span>Compounds <span id="share-compound-count" class="share-count"></span></span></label>
+            <button type="button" id="share-compound-toggle" class="share-disclosure" aria-expanded="false" title="Choose which compounds to show">▸</button>
+          </div>
+          <div id="share-compound-list" class="share-compound-list" hidden></div>
         </div>
 
         <p class="share-hint" id="share-hint">Customize above — the preview updates live. When it looks right, generate a link or download the image.</p>
@@ -10184,7 +10206,7 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
   const linkInput = document.getElementById("share-link");
   const hintEl = document.getElementById("share-hint");
 
-  const opts = { format: "portrait", style: "informative" };
+  const opts = { format: "portrait", style: "informative", showNotes: true, showCompounds: true, hiddenCompounds: new Set() };
   let lastCanvas = null;         // last rasterized full-res canvas (feeds all downloads)
   let previewTimer = null;
 
@@ -10206,7 +10228,7 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
       .filter(x => x.total > 0)
       .sort((a, b) => b.total - a.total || a.n.label.localeCompare(b.n.label));
     const comps = compoundNodes.filter(c => c.intensity_raw > 0)
-      .map(c => ({ label: CPD_BY_ID[c.id].label, conf: c.confidence || 0, score: c.score || 0 }))
+      .map(c => ({ id: c.id, label: CPD_BY_ID[c.id].label, conf: c.confidence || 0, score: c.score || 0 }))
       .sort((a, b) => b.conf - a.conf || b.score - a.score);
     return { notes, comps };
   }
@@ -10231,7 +10253,8 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     const portrait = opts.format === "portrait";
     const stunning = opts.style === "stunning";
     const W = 1080, H = portrait ? 1350 : 1080;
-    const { notes, comps } = activeTasting();
+    const { notes, comps: allComps } = activeTasting();
+    const comps = allComps.filter(c => !opts.hiddenCompounds.has(c.id));
     const cap = (captionInput.value || "My tasting").trim() || "My tasting";
     const PAD = 64, footerTop = H - 104;
 
@@ -10242,47 +10265,65 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     svg.appendChild(sEl("text", { x: PAD, y: 92, fill: "#e9e6df", "font-size": 46, "font-weight": 700, "font-family": SANS }, cap));
     svg.appendChild(sEl("text", { x: PAD, y: 126, fill: "#8a8579", "font-size": 22, "font-family": SANS }, dateStr() + " · " + notes.length + " note" + (notes.length === 1 ? "" : "s")));
 
-    // Wheel panel
+    // What to include is controlled by the checkboxes; "style" now only affects
+    // the wheel size / vibe (stunning = wheel-forward, section labels dropped).
+    const showLabels = !stunning;
+    const compsShown = opts.showCompounds ? comps : [];
+
+    // Wheel grows to fill the space freed by any hidden section.
     const wheelTop = 152;
-    const wheelH = portrait ? (stunning ? 860 : 600) : (stunning ? 700 : 520);
+    let wheelH;
+    if (portrait) {
+      wheelH = 560;
+      if (!opts.showCompounds || !compsShown.length) wheelH += 210;
+      if (!opts.showNotes) wheelH += 150;
+      if (stunning) wheelH += 110;
+      wheelH = Math.min(wheelH, 1000);
+    } else {
+      wheelH = 500;
+      if (!opts.showCompounds || !compsShown.length) wheelH += 150;
+      if (!opts.showNotes) wheelH += 110;
+      if (stunning) wheelH += 70;
+      wheelH = Math.min(wheelH, 840);
+    }
     const panelX = PAD - 16, panelW = W - 2 * (PAD - 16);
     svg.appendChild(sEl("rect", { x: panelX, y: wheelTop, width: panelW, height: wheelH, rx: 18, fill: "#141216" }));
     svg.appendChild(wheelGroup(panelX + 10, wheelTop + 10, panelW - 20, wheelH - 20));
 
     let y = wheelTop + wheelH + 42;
 
-    // Notes chips (truncate to what fits ~2 rows)
-    svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "YOU NOTICED"));
-    y += 26;
-    const chipH = 46, gap = 12, rowGap = 12, maxX = W - PAD;
-    const notesBudgetBottom = y + chipH * 2 + rowGap + 4;   // at most 2 rows
-    let cx = PAD, cy = y, shown = 0;
-    for (const { n, total } of notes) {
-      const label = n.label.split(" / ")[0];
-      const labelW = textW(label, 22, 500), valW = textW(String(total), 22, 700);
-      const w = 46 + labelW + 10 + valW + 18;
-      if (cx + w > maxX) { cx = PAD; cy += chipH + rowGap; }
-      if (cy + chipH > notesBudgetBottom) break;             // out of room → stop
-      const col = vividColor(groupColor(n.group));
-      const g = sEl("g", { transform: "translate(" + cx + "," + cy + ")" });
-      g.appendChild(sEl("rect", { x: 0, y: 0, width: w, height: chipH, rx: 23, fill: col, "fill-opacity": 0.16, stroke: col, "stroke-opacity": 0.55, "stroke-width": 1.5 }));
-      g.appendChild(sEl("text", { x: 15, y: chipH / 2 + 9, "font-size": 24 }, noteIcon(n)));
-      g.appendChild(sEl("text", { x: 46, y: chipH / 2 + 8, fill: "#e9e6df", "font-size": 22, "font-weight": 500, "font-family": SANS }, label));
-      g.appendChild(sEl("text", { x: 46 + labelW + 10, y: chipH / 2 + 8, fill: col, "font-size": 22, "font-weight": 700, "font-family": SANS }, String(total)));
-      svg.appendChild(g);
-      cx += w + gap; shown++;
+    // Notes chips (up to ~2 rows, then "+N more")
+    if (opts.showNotes && notes.length) {
+      if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "YOU NOTICED")); y += 26; }
+      const chipH = 46, gap = 12, rowGap = 12, maxX = W - PAD;
+      const notesBudgetBottom = y + chipH * 2 + rowGap + 4;
+      let cx = PAD, cy = y, shown = 0;
+      for (const { n, total } of notes) {
+        const label = n.label.split(" / ")[0];
+        const labelW = textW(label, 22, 500), valW = textW(String(total), 22, 700);
+        const w = 46 + labelW + 10 + valW + 18;
+        if (cx + w > maxX) { cx = PAD; cy += chipH + rowGap; }
+        if (cy + chipH > notesBudgetBottom) break;
+        const col = vividColor(groupColor(n.group));
+        const g = sEl("g", { transform: "translate(" + cx + "," + cy + ")" });
+        g.appendChild(sEl("rect", { x: 0, y: 0, width: w, height: chipH, rx: 23, fill: col, "fill-opacity": 0.16, stroke: col, "stroke-opacity": 0.55, "stroke-width": 1.5 }));
+        g.appendChild(sEl("text", { x: 15, y: chipH / 2 + 9, "font-size": 24 }, noteIcon(n)));
+        g.appendChild(sEl("text", { x: 46, y: chipH / 2 + 8, fill: "#e9e6df", "font-size": 22, "font-weight": 500, "font-family": SANS }, label));
+        g.appendChild(sEl("text", { x: 46 + labelW + 10, y: chipH / 2 + 8, fill: col, "font-size": 22, "font-weight": 700, "font-family": SANS }, String(total)));
+        svg.appendChild(g);
+        cx += w + gap; shown++;
+      }
+      if (shown < notes.length) {
+        svg.appendChild(sEl("text", { x: cx + 4, y: cy + chipH / 2 + 8, fill: "#8a8579", "font-size": 20, "font-family": SANS }, "+" + (notes.length - shown) + " more"));
+      }
+      y = cy + chipH + 40;
     }
-    if (shown < notes.length) {
-      svg.appendChild(sEl("text", { x: cx + 4, y: cy + chipH / 2 + 8, fill: "#8a8579", "font-size": 20, "font-family": SANS }, "+" + (notes.length - shown) + " more"));
-    }
-    y = cy + chipH + 40;
 
-    // Likely compounds (informative only; fill until the footer)
-    if (!stunning && comps.length && y < footerTop - 70) {
-      svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "LIKELY COMPOUNDS · BY CONFIDENCE"));
-      y += 28;
+    // Likely compounds — checkbox-controlled, ordered by prominence, fills to footer.
+    if (compsShown.length && y < footerTop - 60) {
+      if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "LIKELY COMPOUNDS · BY CONFIDENCE")); y += 28; }
       const barW = 280, barX = W - PAD - barW;
-      for (const c of comps) {
+      for (const c of compsShown) {
         if (y + 30 > footerTop) break;
         svg.appendChild(sEl("text", { x: PAD, y: y + 16, fill: "#e9e6df", "font-size": 22, "font-family": SANS }, c.label));
         svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: barW, height: 15, rx: 7, fill: "#26242b" }));
@@ -10345,6 +10386,8 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     params.set("t", t);
     params.set("fmt", opts.format[0]);
     params.set("sty", opts.style[0]);
+    if (!opts.showNotes) params.set("n", "0");
+    if (!opts.showCompounds) params.set("cp", "0");
     const cap = (captionInput.value || "").trim();
     if (cap) params.set("c", cap);
     return location.origin + location.pathname + "?" + params.toString();
@@ -10401,7 +10444,47 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     formatTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.format === opts.format));
     styleTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.style === opts.style));
   }
-  function openShare() { overlay.hidden = false; syncTabs(); renderPreview(); }
+
+  // Per-compound checklist, ordered by prominence (confidence). All checked by
+  // default — uncheck down to a favourite few, or leave them all for the full
+  // aroma soup. Rebuilt each time the modal opens (the tasting can't change
+  // while it's open).
+  const compListEl = document.getElementById("share-compound-list");
+  const compCountEl = document.getElementById("share-compound-count");
+  const showNotesCb = document.getElementById("share-show-notes");
+  const showCompCb = document.getElementById("share-show-compounds");
+  const compToggleBtn = document.getElementById("share-compound-toggle");
+
+  function updateCompoundCount() {
+    const { comps } = activeTasting();
+    const shown = comps.filter(c => !opts.hiddenCompounds.has(c.id)).length;
+    compCountEl.textContent = comps.length ? "(" + shown + " of " + comps.length + ")" : "";
+    compListEl.classList.toggle("dim", !opts.showCompounds);
+  }
+  function renderCompoundList() {
+    const { comps } = activeTasting();
+    compListEl.innerHTML = "";
+    // Drop selections for compounds no longer present so the count stays honest.
+    const ids = new Set(comps.map(c => c.id));
+    [...opts.hiddenCompounds].forEach(id => { if (!ids.has(id)) opts.hiddenCompounds.delete(id); });
+    comps.forEach(c => {
+      const item = document.createElement("label");
+      item.className = "share-compound-item";
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = !opts.hiddenCompounds.has(c.id);
+      cb.addEventListener("change", () => {
+        if (cb.checked) opts.hiddenCompounds.delete(c.id); else opts.hiddenCompounds.add(c.id);
+        updateCompoundCount(); renderPreview();
+      });
+      const nm = document.createElement("span"); nm.textContent = c.label;
+      const cf = document.createElement("span"); cf.className = "cc-conf"; cf.textContent = Math.round(c.conf * 100) + "%";
+      item.append(cb, nm, cf);
+      compListEl.appendChild(item);
+    });
+    updateCompoundCount();
+  }
+
+  function openShare() { overlay.hidden = false; syncTabs(); showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds; renderCompoundList(); renderPreview(); }
   function closeShare() { overlay.hidden = true; }
 
   document.getElementById("share-open-btn").addEventListener("click", openShare);
@@ -10411,6 +10494,14 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
   captionInput.addEventListener("input", () => { clearTimeout(previewTimer); previewTimer = setTimeout(renderPreview, 200); });
   formatTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.format = b.dataset.format; syncTabs(); renderPreview(); });
   styleTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.style = b.dataset.style; syncTabs(); renderPreview(); });
+  showNotesCb.addEventListener("change", () => { opts.showNotes = showNotesCb.checked; renderPreview(); });
+  showCompCb.addEventListener("change", () => { opts.showCompounds = showCompCb.checked; updateCompoundCount(); renderPreview(); });
+  compToggleBtn.addEventListener("click", () => {
+    const willOpen = compListEl.hidden;
+    compListEl.hidden = !willOpen;
+    compToggleBtn.classList.toggle("open", willOpen);
+    compToggleBtn.setAttribute("aria-expanded", String(willOpen));
+  });
   genBtn.addEventListener("click", generate);
   document.getElementById("share-copy").addEventListener("click", () => {
     linkInput.select();
@@ -10434,6 +10525,8 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     if (p.get("c")) captionInput.value = p.get("c");
     if (p.get("fmt") === "s") opts.format = "square";
     if (p.get("sty") === "s") opts.style = "stunning";
+    if (p.get("n") === "0") opts.showNotes = false;
+    if (p.get("cp") === "0") opts.showCompounds = false;
   })();
 })();
 </script>
