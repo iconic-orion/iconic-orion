@@ -5582,6 +5582,20 @@ function updateSimulationCenter() {
 // class-mates sit adjacent — without this they'd stack on one point and
 // collide would shove them apart arbitrarily every time.
 const FLOAT_ZONE_R = () => R_COMPOUND_MAX * 0.82;
+
+// Seed a newly-appearing float at its computed home (or the wheel center if no
+// home yet), using the CURRENT CX/CY. Without this, a float that has never been
+// active still carries the x/y it was given at module-eval time — when the wheel
+// may not have been laid out yet, so CX/CY were ~0 and the node was born in the
+// top-left corner. On first appearance the weak center-spring then crawls it in
+// from ~10-11 o'clock over several seconds (worse on slow devices). Snapping to
+// home means it blooms in place via its fade/scale-in instead of migrating.
+function seedFloatAtHome(d) {
+  const jit = () => (Math.random() - 0.5) * 8;
+  if (d._homeX != null && d._homeY != null) { d.x = d._homeX + jit(); d.y = d._homeY + jit(); }
+  else { d.x = CX + jit(); d.y = CY + jit(); }
+  d.vx = 0; d.vy = 0;
+}
 function computeFloatHomes() {
   updateCollideScale();
   if (inChemistry()) {
@@ -5867,6 +5881,7 @@ function renderCompoundFloats() {
         d3.select(this).attr("transform", `translate(${e.x},${e.y})`);
       })
       .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
+  enter.each(seedFloatAtHome);   // appear at home, don't crawl in from the corner
   enter.append("circle").attr("class", "cpd-token");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
@@ -5955,6 +5970,7 @@ function renderNoteFloats() {
         d3.select(this).attr("transform", `translate(${e.x},${e.y})`);
       })
       .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
+  enter.each(seedFloatAtHome);   // appear at home, don't crawl in from the corner
   enter.append("circle").attr("class", "note-halo");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
