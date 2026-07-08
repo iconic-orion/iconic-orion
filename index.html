@@ -1814,9 +1814,19 @@
        tree's "wheel" area resolves to the leftover first column — 0px wide
        on desktop sizing — and the whole tree renders scrunched into a
        sliver in the corner. */
-    body.taxonomy-mode { grid-template-columns: 1fr; }
-    body.taxonomy-mode #taxonomy-view,
-    body.taxonomy-mode aside.detail { grid-column: 1; }
+    body.taxonomy-mode { grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto; grid-template-areas: "head" "wheel" "foot"; }
+    body.taxonomy-mode #taxonomy-view { grid-column: 1; grid-area: wheel; }
+    /* Results pane rides as a translucent bottom sheet OVER the tree (per the
+       "slotted in with opacity" call) instead of taking a stacked row — so the
+       tree keeps its full height and the results read layered over it, the
+       family/compound detail still one tap away. */
+    body.taxonomy-mode aside.detail {
+      position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto;
+      max-height: 44vh; z-index: 60; border-radius: 12px;
+      background: rgba(18, 16, 20, 0.88); border: 1px solid var(--line);
+      overflow-y: auto; padding: 12px 14px 16px;
+      box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.5); }
   }
 
   /* ── "PROTOTYPE" watermark ─────────────────────────────────────────
@@ -9890,7 +9900,22 @@ function applyOriginSelection() {
 // taxonomy tree. Lives in the header rather than floating on the wheel
 // canvas, since a floating version used to collide with the mobile-only
 // "Show compound labels" toggle (both pinned to the same top-left corner).
+let _preTreeDetailHidden = null;
 function setWorkspace(mode) {
+  // The Tree is meant to be read alongside your compound results, so entering it
+  // always shows the results/detail pane on the side. Remember the prior pane
+  // state so leaving the Tree restores the wheel's own layout instead of
+  // stranding the results pane open.
+  const wasTree = document.body.classList.contains("taxonomy-mode");
+  if (mode === "tree" && !wasTree) {
+    _preTreeDetailHidden = state.detailHidden;
+    state.detailHidden = false;
+    applyPaneState();
+  } else if (mode !== "tree" && wasTree && _preTreeDetailHidden != null) {
+    state.detailHidden = _preTreeDetailHidden;
+    _preTreeDetailHidden = null;
+    applyPaneState();
+  }
   document.body.classList.toggle("origins-mode", mode === "map");
   document.body.classList.toggle("taxonomy-mode", mode === "tree");
   document.getElementById("origins-view").hidden = mode !== "map";
