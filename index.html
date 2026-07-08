@@ -487,6 +487,17 @@
     border-radius: 999px; padding: 5px 7px 5px 13px;
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.42); backdrop-filter: blur(6px); }
   .tasting-tray[hidden] { display: none; }
+  /* Pin-hint cloud — same pill language as the tray, floated just above it. */
+  .pin-hint { position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%);
+    z-index: 8; max-width: min(440px, calc(100% - 24px));
+    display: flex; align-items: center; gap: 9px;
+    background: rgba(23, 22, 27, 0.9); border: 1px solid var(--line);
+    border-radius: 999px; padding: 7px 9px 7px 13px; font-size: 12px; color: var(--ink-dim);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.42); backdrop-filter: blur(6px); pointer-events: auto; }
+  .pin-hint[hidden] { display: none; }
+  .pin-hint strong { color: var(--accent); font-weight: 600; }
+  .pin-hint-icon { font-size: 15px; flex-shrink: 0; }
+  .pin-hint .helper-dismiss { flex-shrink: 0; }
   .tray-head { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .tray-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--ink-dim); white-space: nowrap; }
@@ -2084,6 +2095,15 @@
        a literacy aid second (each input shows its emoji). Each chip jumps to its
        slider on click and removes the input via ×. Populated by renderTastingTray();
        hidden whenever there are no inputs. -->
+  <!-- One-time discoverability cloud for pinning: floats can be dragged to a
+       fixed spot and double-tapped to release. Shown once the wheel has floats,
+       dismissible, and auto-dismissed the first time the user actually drags a
+       float (they've discovered it). Sits just above the tasting tray. -->
+  <div id="pin-hint" class="pin-hint" hidden>
+    <span class="pin-hint-icon" aria-hidden="true">✋</span>
+    <span>Something stand out? <strong>Drag</strong> it to pin it where you want — double-tap to free it.</span>
+    <button type="button" class="helper-dismiss" data-dismiss-helper="pin" aria-label="Dismiss this tip" title="Dismiss">×</button>
+  </div>
   <div id="tasting-tray" class="tasting-tray" hidden aria-label="Your current tasting inputs">
     <div class="tray-head">
       <span class="tray-title">Your tasting</span>
@@ -5907,7 +5927,7 @@ function renderCompoundFloats() {
     // releases the pin and lets it rejoin the float.
     .on("dblclick", (e, d) => { d.fx = null; d.fy = null; sim.alpha(0.3).restart(); })
     .call(d3.drag()
-      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; dismissHelper("pin"); })
       // Write the dragged dot's position + transform synchronously in the
       // pointer event rather than only setting fx/fy and waiting for the
       // next sim tick — the tick re-joins and restyles every float, edge,
@@ -6003,7 +6023,7 @@ function renderNoteFloats() {
     // instead of waiting on the (expensive) sim tick.
     .on("dblclick", (e, d) => { d.fx = null; d.fy = null; sim.alpha(0.3).restart(); })
     .call(d3.drag()
-      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; dismissHelper("pin"); })
       .on("drag",  function(e, d) {
         d.fx = d.x = e.x; d.fy = d.y = e.y;
         d3.select(this).attr("transform", `translate(${e.x},${e.y})`);
@@ -7975,7 +7995,15 @@ function updateNudge() {
   // and compound-labels toggle) and to know the empty state is active.
   document.body.classList.toggle("nudge-active", !wheelNudgeEl.hidden);
   updateWheelHint();
+  updatePinHint();
 }
+// Pin-hint cloud: show once the wheel has floats (so there's something to pin),
+// until the user dismisses it or drags a float for the first time.
+const pinHintEl = document.getElementById("pin-hint");
+function updatePinHint() {
+  pinHintEl.hidden = state.entries.size === 0 || state.dismissedHelpers.has("pin");
+}
+pinHintEl.addEventListener("click", (e) => { if (e.target.closest(".helper-dismiss")) dismissHelper("pin"); });
 wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
   b.addEventListener("click", () => loadDemo(b.dataset.demo)));
 wheelNudgeEl.querySelectorAll(".helper-dismiss").forEach(b =>
