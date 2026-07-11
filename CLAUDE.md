@@ -11,6 +11,17 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 
 - **`feature/*` or `claude/*`** — branched off `prototype` (or off a long-running dev branch, see below) for a specific scoped change. PR back to whichever branch you branched from. Delete after merge.
 
+## External-tool branches (ChatGPT/Codex sandbox)
+
+**`codex/*` branches are **reserved exclusively for ChatGPT / OpenAI Codex work**. Claude does not work on these branches; they are quarantined to isolate any bugs, architectural mismatches, or regressions introduced by external tools.**
+
+- **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT sandbox. Mobile/responsive UX refinements and bug fixes. Claude continues main work on `feature/bloom` and other branches. This branch can accumulate polish without risk to the core codebase.
+- **Protocol**: 
+  - ChatGPT has explicit permission to work only on `codex/*` branches.
+  - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches — never on `codex/*`.
+  - Before any `codex/*` branch merges to `prototype`, changes are reviewed and tested in isolation.
+  - If `codex/*` drifts out of sync with `prototype`, rebase it explicitly rather than merging, to keep history clean.
+
 ## Long-running dev branches (for multi-slice work)
 
 When a body of work is big enough to need multiple coherent commits before it's ready to merge into `prototype`, give it a dedicated long-running branch off `prototype`. Rules:
