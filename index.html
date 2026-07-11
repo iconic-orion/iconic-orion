@@ -1405,9 +1405,10 @@
     aside.notes, aside.detail { grid-area: panel; width: auto;
       border-left: none; border-right: none; border-top: 1px solid var(--line); }
     body:not(.notes-hidden) aside.detail { display: none; }
-    /* Taxonomy mode has no notes pane to toggle from — its detail panel always
-       shows in the bottom band when a leaf is tapped, same area as the tree. */
-    body.taxonomy-mode aside.detail { display: block; }
+    /* Taxonomy mode has no notes pane to toggle from. Keep the detail panel
+       hidden until a tree node is actually chosen, then show it as the same
+       bottom-sheet detail surface used elsewhere on mobile. */
+    body.taxonomy-mode:not(.detail-hidden) aside.detail { display: block; }
     /* grid-template-columns is deliberately NOT set here — the unconditional
        (non-media-query) body.taxonomy-mode rule further down the sheet sets
        it too, and being later in source order at equal specificity, it would
@@ -1428,8 +1429,11 @@
        (tall) nudge pushed its top — and its × — above the band, clipped and
        impossible to close. Anchor it to the TOP of the band so the header row
        and × are always visible; keep it narrow enough to stay inside the ring. */
-    .wheel-nudge { width: min(200px, 52vw); padding: 12px 10px;
+    .wheel-nudge { width: min(260px, calc(100vw - 44px)); padding: 12px 10px;
       top: 12px; transform: translateX(-50%); }
+    .wheel-nudge .nudge-head { font-size: 12px; line-height: 1.25; }
+    .wheel-nudge .nudge-sub { font-size: 10.5px; line-height: 1.45; }
+    .wheel-nudge .nudge-demo { padding: 4px 10px; }
     /* Bigger, unmistakable top-right close target for touch. */
     .wheel-nudge .helper-dismiss { top: 2px; right: 2px; left: auto;
       font-size: 20px; padding: 6px 10px; }
@@ -1790,6 +1794,19 @@
     #origins-map-wrap { flex: 1 1 50%; min-height: 0; }
     #origins-detail-panel { width: auto; flex: 1 1 50%; min-height: 0;
       border-left: none; border-top: 1px solid var(--line); }
+    body.origins-mode #markers-svg .origin-leader,
+    body.origins-mode #markers-svg .origin-label,
+    body.origins-mode #markers-svg .origin-cluster-box {
+      opacity: 0;
+    }
+    body.origins-mode #markers-svg .origin-marker.active .origin-leader,
+    body.origins-mode #markers-svg .origin-marker.active .origin-label,
+    body.origins-mode #markers-svg .origin-marker.selected .origin-leader,
+    body.origins-mode #markers-svg .origin-marker.selected .origin-label,
+    body.origins-mode #markers-svg .origin-marker.search-hit .origin-leader,
+    body.origins-mode #markers-svg .origin-marker.search-hit .origin-label {
+      opacity: 1;
+    }
 
     /* Taxonomy tree needs the equivalent of the origins-mode fix just above:
        the unconditional body.taxonomy-mode rule (no media query) sets a
@@ -1803,11 +1820,15 @@
     body.taxonomy-mode { grid-template-columns: 1fr;
       grid-template-rows: auto 1fr auto; grid-template-areas: "head" "wheel" "foot"; }
     body.taxonomy-mode #taxonomy-view { grid-column: 1; grid-area: wheel; }
+    #taxonomy-search-wrap { flex-wrap: wrap; align-items: stretch; gap: 8px; }
+    #taxonomy-search-wrap input[type=search] { flex: 1 1 100%; max-width: none; }
+    #taxonomy-search-wrap button { flex: 1 1 auto; min-height: 36px; }
+    #taxonomy-legend-note { font-size: 10.5px; line-height: 1.45; }
     /* Results pane rides as a translucent bottom sheet OVER the tree (per the
        "slotted in with opacity" call) instead of taking a stacked row — so the
        tree keeps its full height and the results read layered over it, the
        family/compound detail still one tap away. */
-    body.taxonomy-mode aside.detail {
+    body.taxonomy-mode:not(.detail-hidden) aside.detail {
       position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto;
       max-height: 44vh; z-index: 60; border-radius: 12px;
       background: rgba(18, 16, 20, 0.88); border: 1px solid var(--line);
@@ -8665,10 +8686,11 @@ function renderHowToUse() {
     <ul>
       <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
-      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated. The wheel controls grey out on the map since they don't apply there.</li>
+      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated; <em>Tree</em> shows every note by real plant, fungus, animal, or process taxonomy. Wheel-only controls grey out when they do not apply.</li>
       <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel (the default). <em>Notes + Results</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
       <li><strong>Compass (header).</strong> Pops up a small draggable, resizable radar (drag its corner handle to scale everything proportionally) — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class (pick which via the dropdown) — that last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
+      <li><strong>Share (header).</strong> Opens a tasting-card preview with image/PDF downloads and a URL that preserves the current tasting.</li>
       <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
 
@@ -9864,7 +9886,7 @@ function setWorkspace(mode) {
   const wasTree = document.body.classList.contains("taxonomy-mode");
   if (mode === "tree" && !wasTree) {
     _preTreeDetailHidden = state.detailHidden;
-    state.detailHidden = false;
+    state.detailHidden = window.matchMedia("(max-width: 760px)").matches;
     applyPaneState();
   } else if (mode !== "tree" && wasTree && _preTreeDetailHidden != null) {
     state.detailHidden = _preTreeDetailHidden;
@@ -9884,6 +9906,12 @@ function setWorkspace(mode) {
     b.classList.toggle("active", b.dataset.workspace === mode));
   if (mode === "map") loadOrigins();
   if (mode === "tree") loadTaxonomyTree();
+}
+function showTaxonomyDetail() {
+  if (state.detailHidden) {
+    state.detailHidden = false;
+    applyPaneState();
+  }
 }
 // Workspace switch (Wheel | Map | Tree) — the primary "which screen" control.
 document.querySelectorAll("#workspace-tabs button").forEach(b => {
@@ -10108,6 +10136,7 @@ function renderTaxonomyTree() {
     if (d.data.noteId) {
       state.selectedNote = d.data.noteId;
       state.selectedCompound = null;
+      showTaxonomyDetail();
       renderDetail();
       return;
     }
@@ -10121,6 +10150,7 @@ function renderTaxonomyTree() {
       state.selectedFamily = d.data.name;
       state.selectedNote = null;
       state.selectedCompound = null;
+      showTaxonomyDetail();
       renderDetail();
       return;
     }
