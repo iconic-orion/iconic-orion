@@ -11,16 +11,17 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 
 - **`feature/*` or `claude/*`** — branched off `prototype` (or off a long-running dev branch, see below) for a specific scoped change. PR back to whichever branch you branched from. Delete after merge.
 
-## External-tool branches (ChatGPT/Codex sandbox)
+## External-tool branches (ChatGPT experimental lab)
 
-**`codex/*` branches are **reserved exclusively for ChatGPT / OpenAI Codex work**. Claude does not work on these branches; they are quarantined to isolate any bugs, architectural mismatches, or regressions introduced by external tools.**
+**`codex/*` branches are experimental labs where ChatGPT explores ideas freely. Claude reviews the work, learns from ChatGPT's different thinking lens, and cherry-picks valuable features to integrate into `feature/bloom` and proper PRs.**
 
-- **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT sandbox. Mobile/responsive UX refinements and bug fixes. Claude continues main work on `feature/bloom` and other branches. This branch can accumulate polish without risk to the core codebase.
+- **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT's experimental UX lab. ChatGPT works here without constraints; Claude periodically reviews, evaluates ideas, and integrates the best work into the main feature branches.
 - **Protocol**: 
-  - ChatGPT has explicit permission to work only on `codex/*` branches.
-  - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches — never on `codex/*`.
-  - Before any `codex/*` branch merges to `prototype`, changes are reviewed and tested in isolation.
-  - If `codex/*` drifts out of sync with `prototype`, rebase it explicitly rather than merging, to keep history clean.
+  - ChatGPT has explicit permission to work **only on `codex/*` branches**.
+  - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches — never directly edits `codex/*`.
+  - **Claude's review workflow**: Check this branch regularly. Evaluate ChatGPT's approach, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
+  - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Claude extracts and re-implements valuable work in the proper branches.
+  - If `codex/*` drifts out of sync with `prototype`, rebase it explicitly to keep it current for ChatGPT to build on.
 
 ## Long-running dev branches (for multi-slice work)
 
