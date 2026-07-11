@@ -16,10 +16,11 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 **`codex/*` branches are experimental labs where ChatGPT explores ideas freely. Claude reviews the work, learns from ChatGPT's different thinking lens, and cherry-picks valuable features to integrate into `feature/bloom` and proper PRs.**
 
 - **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT's experimental UX lab. ChatGPT works here without constraints; Claude periodically reviews, evaluates ideas, and integrates the best work into the main feature branches.
-- **Protocol**: 
+- **Handoff protocol**: ChatGPT uses `.claude/codex-handoff-template.md` to document each batch of work — what was done, why, testing approach, questions/blockers, and next priorities. Claude uses `.claude/codex-example-checkin.md` as a reference for what a good check-in looks like. This replaces ad-hoc commit messages with structured handoffs.
+- **Rules**: 
   - ChatGPT has explicit permission to work **only on `codex/*` branches**.
   - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches — never directly edits `codex/*`.
-  - **Claude's review workflow**: Check this branch regularly. Evaluate ChatGPT's approach, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
+  - **Claude's review workflow**: Check this branch regularly when ChatGPT posts a check-in. Read the handoff, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
   - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Claude extracts and re-implements valuable work in the proper branches.
   - If `codex/*` drifts out of sync with `prototype`, rebase it explicitly to keep it current for ChatGPT to build on.
 
