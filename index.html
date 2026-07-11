@@ -848,49 +848,6 @@
   @keyframes vine-leaf-in { from { opacity: 0; transform: scale(0.15); } to { opacity: 1; transform: scale(1); } }
   @keyframes vine-bud-in { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
 
-  /* Settings gear: a small anchored dropdown for secondary toggles that don't
-     need their own header slot. Holds Jiggle today; built to take more later
-     without the header growing a button per feature. */
-  .settings-wrap { position: relative; display: inline-flex; }
-  #settings-toggle-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0;
-    display: inline-flex; align-items: center; justify-content: center; }
-  #settings-toggle-btn svg { width: 15px; height: 15px; display: block; }
-  #settings-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-  body.settings-open #settings-toggle-btn { border-color: var(--accent); color: var(--accent); }
-  .settings-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-    padding: 6px; min-width: 130px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    display: flex; flex-direction: column; gap: 4px; }
-  .settings-menu[hidden] { display: none; }
-
-  /* Jiggle toggle: only unhidden by JS once devicemotion support is detected
-     (most desktops have no accelerometer, so the button stays hidden there). */
-  #jiggle-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; width: 100%; }
-  #jiggle-toggle[hidden] { display: none; }
-  #jiggle-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
-  #jiggle-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  body.jiggle-on #jiggle-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
-
-  /* Reading-mode toggle: same look as the Jiggle item; always present (no
-     hardware gate), so the settings gear is now always worth showing. */
-  #reading-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; width: 100%; }
-  #reading-toggle svg { width: 14px; height: 14px; flex-shrink: 0; display: block; }
-  #reading-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  body.reading-mode #reading-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
-
-  /* Freeze-aroma-bubbles: same row look as the button-style toggles above,
-     but a real checkbox (this one's a binary on/off setting, not an action). */
-  .settings-check-row { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px; width: 100%; box-sizing: border-box; }
-  .settings-check-row:hover { border-color: var(--accent); }
-  .settings-check-row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; margin: 0; flex-shrink: 0; }
-
   /* ── Reading / dyslexia mode ──────────────────────────────────────────
      A legibility pass: Atkinson Hyperlegible (lazy-loaded; falls back to
      Verdana/Tahoma offline, both wider-spaced than the default sans), plus
@@ -1065,10 +1022,35 @@
   .share-empty { color: var(--ink-dim); font-size: 13px; text-align: center; padding: 40px 20px; line-height: 1.6; }
   #share-open-btn svg { width: 15px; height: 15px; }
   #share-open-btn { display: inline-flex; align-items: center; gap: 6px; }
+  .share-check.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+  /* Front/back flip card. The stage supplies 3D perspective; .share-flip-inner
+     is the card that actually rotates, holding two stacked faces (the back
+     pre-rotated 180deg so it reads right-side-up once the flip completes).
+     Downloads don't depend on any of this — it's purely a preview delight —
+     so the transition can be freely skipped under reduced motion. */
+  .share-preview-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .share-flip-btn { display: none; align-items: center; gap: 6px; background: var(--panel-2);
+    color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px;
+    font-size: 12px; cursor: pointer; font-family: inherit; }
+  .share-flip-btn.visible { display: inline-flex; }
+  .share-flip-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .share-flip-stage { perspective: 2200px; }
+  .share-flip-inner { position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.1, 0.2, 1);
+    transform-style: preserve-3d; }
+  .share-flip-inner.flipped { transform: rotateY(180deg); }
+  .share-face-front, .share-face-back { backface-visibility: hidden; }
+  .share-face-front svg, .share-face-back svg { max-width: 100%; max-height: 68vh; height: auto;
+    border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); display: block; }
+  .share-face-back { position: absolute; inset: 0; transform: rotateY(180deg); }
+  @media (prefers-reduced-motion: reduce) {
+    .share-flip-inner { transition: none; }
+  }
   @media (max-width: 760px) {
     .share-body { grid-template-columns: 1fr; }
     .share-preview-wrap { border-right: none; border-bottom: 1px solid var(--line); }
     .share-preview svg { max-height: 42vh; }
+    .share-face-front svg, .share-face-back svg { max-height: 42vh; }
   }
 
   /* Search field + filter row inside Types of Aroma */
@@ -1396,14 +1378,7 @@
     header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 2; justify-self: end; }
     header.hud-open .hud-divider      { display: block; grid-row: 5; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #settings-wrap   { grid-row: 6; grid-column: 1; justify-self: start; margin-top: 6px; }
-    header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: end; margin-top: 6px; }
-    header.hud-open #settings-toggle-btn { width: 44px; height: 44px; }
-    /* The gear sits at the tray's left edge on mobile (see #settings-wrap
-       above); the desktop dropdown's right:0 anchor pushed most of its width
-       off the left of the viewport here. Anchor left instead so it opens
-       fully on-screen. */
-    header.hud-open .settings-menu { left: 0; right: auto; }
+    header.hud-open #reset            { grid-row: 6; grid-column: 1 / -1; justify-self: end; margin-top: 6px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -1919,25 +1894,6 @@
     <!-- Desktop-only flexible gap: pushes the utilities cluster to the far right
          while workspace + wheel controls stay left. Hidden in the mobile grid. -->
     <span class="hud-spacer" aria-hidden="true"></span>
-    <div class="settings-wrap" id="settings-wrap">
-      <button type="button" id="settings-toggle-btn" aria-haspopup="true" aria-expanded="false" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M18 12h2.6M16.2 16.2l1.8 1.8M12 18v2.6M7.8 16.2l-1.8 1.8M6 12H3.4M7.8 7.8 5.9 5.9M12 6V3.4M16.2 7.8l1.8-1.8" stroke-linecap="round"/></svg>
-      </button>
-      <div class="settings-menu" id="settings-menu" hidden>
-        <button id="reading-toggle" type="button" aria-pressed="false" title="Reading mode: a dyslexia-friendly, high-legibility font with extra letter and line spacing, easier on the eyes for long reading.">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="14" r="3.2"/><circle cx="18" cy="14" r="3.2"/><path d="M9.2 14c0-1.2 1.2-2 2.8-2s2.8 .8 2.8 2M3 11l1.5-4h3M21 11l-1.5-4h-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Reading mode
-        </button>
-        <button id="jiggle-toggle" hidden title="Tilt or shake your phone to nudge the flavor notes (uses the accelerometer)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="18" rx="1.6"/><path d="M4 9c-1 1-1 5 0 6M20 9c1 1 1 5 0 6" stroke-linecap="round"/></svg>
-          Jiggle
-        </button>
-        <label class="settings-check-row" id="freeze-toggle-wrap" title="Off (default): the floating aroma compounds/notes never fully stop — they settle to a faint perpetual drift, like a suspension in a petri dish. On: they settle and hold still.">
-          <input type="checkbox" id="freeze-toggle">
-          Freeze aroma bubbles
-        </label>
-      </div>
-    </div>
     <!-- Feedback CTA → Google form (also mirrored at the foot of About → maker).
          URL appears in both places; keep them in sync. -->
     <a id="hud-feedback" class="feedback-cta" href="https://forms.gle/d6onz2i3rzuSPs6H8" target="_blank" rel="noopener" title="Share feedback on the prototype (opens a Google Form in a new tab)">
@@ -2266,7 +2222,10 @@
     </div>
     <div class="share-body">
       <div class="share-preview-wrap">
-        <div id="share-preview" class="share-preview" aria-live="polite"></div>
+        <div class="share-preview-col">
+          <button type="button" id="share-flip-btn" class="share-flip-btn" aria-label="Flip card to see the other side">⟳ Flip card</button>
+          <div id="share-preview" class="share-preview" aria-live="polite"></div>
+        </div>
       </div>
       <div class="share-controls">
         <label class="share-field">
@@ -2291,6 +2250,14 @@
         </div>
 
         <div class="share-field">
+          <span class="share-label">Layout</span>
+          <div class="tabs share-seg" id="share-layout">
+            <button type="button" data-layout="one" class="active">One card</button>
+            <button type="button" data-layout="flip">Front &amp; back</button>
+          </div>
+        </div>
+
+        <div class="share-field">
           <span class="share-label">Include on card</span>
           <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Tasting notes</span></label>
           <div class="share-row">
@@ -2299,6 +2266,7 @@
           </div>
           <div id="share-compound-list" class="share-compound-list" hidden></div>
           <label class="share-check"><input type="checkbox" id="share-compound-icons" /><span>Show ingredient icons <span class="share-count">(where known)</span></span></label>
+          <label class="share-check" id="share-show-map-row"><input type="checkbox" id="share-show-map" checked /><span>Origin map <span id="share-map-hint" class="share-count"></span></span></label>
         </div>
 
         <p class="share-hint" id="share-hint">Customize above — the preview updates live. When it looks right, generate a link or download the image.</p>
@@ -4506,15 +4474,7 @@ const state = {
   pendingIntensity: Object.fromEntries(NOTES.map(n => [n.id, 0])), // working slider value per note
   hiddenPhases: new Set(),    // tagged-phase entries in here are filtered out
   goDeeper: false,            // advanced mode toggle (reveals ortho/retro buttons)
-  jiggleEnabled: false,       // device-motion delight toggle (notes nudge with phone tilt/shake)
-  readingMode: false,         // dyslexia-friendly / high-legibility font + spacing toggle
-  // Off by default (perpetual gentle simmer) — EXCEPT when the OS reports
-  // prefers-reduced-motion, where we default to on (settle-and-hold-still).
-  // The perpetual drift is otherwise unconditional/unopt-in-able motion
-  // triggered on every device, which is exactly what that preference exists
-  // to suppress; the manual "Freeze aroma bubbles" checkbox still lets
-  // anyone override either default.
-  freezeBubbles: window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  readingMode: true,          // THE app presentation, not a toggle: high-legibility font + spacing plus a calm (settled, non-drifting) float sim. Pinned on — the read-only flag bubblesFrozen() and the body.reading-mode CSS consult. Applied at init by applyLegibleCalmDefault().
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   selectedFamily: null,     // when set (via a taxonomy-tree family node), the detail pane shows that plant family's page
@@ -5470,12 +5430,20 @@ function driftStrength() { return Math.max(0.4, R_COMPOUND_MAX * 0.0179); }
 // that wheel is a phone's 150px float zone or a desktop's 600px one.
 function collidePadding() { return Math.max(8, R_COMPOUND_MAX * 0.186); }
 function hasAnyActiveFloat() { return floatNodes().some(n => (n.score || 0) > 0); }
+// The app runs in a permanently calm presentation (state.readingMode, pinned
+// on — see applyLegibleCalmDefault()): the float sim settles to a real stop
+// instead of the old perpetual gentle simmer. Both the alphaTarget decision
+// below and the per-tick driftForce() consult this one predicate so they never
+// disagree. (Once user-toggleable via a "Freeze aroma bubbles" checkbox and a
+// reading-mode toggle; those options were removed in favour of the calm
+// default, leaving the drift/simmer path below dormant but intact.)
+function bubblesFrozen() { return state.readingMode; }
 function applyFreezeMode() {
   if (!sim) return;
   // No point idling forever (perpetual ticking + a small perpetual quadtree/
   // collide cost) on an empty wheel with nothing to drift — only keep the
   // simmer alive once there's actual evidence to show.
-  if (state.freezeBubbles || !hasAnyActiveFloat()) sim.alphaTarget(0);
+  if (bubblesFrozen() || !hasAnyActiveFloat()) sim.alphaTarget(0);
   else sim.alphaTarget(IDLE_ALPHA).restart();
 }
 // Tiny perpetual random-walk nudge — the "fluid in a petri dish" ground
@@ -5500,7 +5468,7 @@ function applyFreezeMode() {
 // wanders over roughly a second or more — a lazy sway — instead of buzzing.
 const DRIFT_SMOOTH = 0.02;
 function driftForce() {
-  if (state.freezeBubbles) return;
+  if (bubblesFrozen()) return;
   const drift = driftStrength();
   floatNodes().forEach(n => {
     if (n.fx != null || n.fy != null) return;
@@ -5783,6 +5751,10 @@ function parkHome(node) {
 // (fx set) are integrated by the sim as fixed, so the spring never fights
 // a manual placement.
 const HOME_SPRING_FLOOR = 1.3;
+// Keep a float within this wide a wedge (each side) of its home DIRECTION.
+// ~70° lets the local fan breathe but stops a float from ending up on the far
+// side of the wheel from the note feeding it.
+const HOME_WEDGE = Math.PI * 0.39;
 function targetForce(strength) {
   let s = strength;
   function force(alpha) {
@@ -5791,6 +5763,29 @@ function targetForce(strength) {
       if (node._homeX == null) return;
       node.vx += (node._homeX - node.x) * k;
       node.vy += (node._homeY - node.y) * k;
+      // Angular containment. The linear pull above aims straight at the home
+      // POINT — but when collide has shoved a float clear across the wheel (a
+      // crowded home direction can't seat every strong compound, so an outlier
+      // gets flung to the far side), that straight path home runs back through
+      // the jammed center and the float stays stranded out there. A fruity
+      // compound stuck down in the Sweet sector then trails an edge sweeping the
+      // whole wheel — reads as "why is there a line out of Sweet?". So when a
+      // float strays past HOME_WEDGE of its home direction, add a TANGENTIAL
+      // nudge that walks it AROUND the rim back toward its home angle, escaping
+      // that far-side trap without shoving through the middle against collide.
+      const ah = Math.atan2(node._homeY - CY, node._homeX - CX);
+      const an = Math.atan2(node.y - CY, node.x - CX);
+      let dA = an - ah;
+      while (dA > Math.PI) dA -= 2 * Math.PI;
+      while (dA < -Math.PI) dA += 2 * Math.PI;
+      if (Math.abs(dA) > HOME_WEDGE) {
+        const r = Math.hypot(node.x - CX, node.y - CY) || 1;
+        const over = Math.abs(dA) - HOME_WEDGE;   // radians past the wedge
+        const dir = dA > 0 ? -1 : 1;              // shrink |dA|
+        const mag = over * r * k;                 // arc-length spring, matches the linear term's k
+        node.vx += -Math.sin(an) * dir * mag;
+        node.vy +=  Math.cos(an) * dir * mag;
+      }
     });
   }
   force.strength = function(v) { if (!arguments.length) return s; s = v; return force; };
@@ -6239,16 +6234,31 @@ function noteAnchorFor(noteId) {
 // ---------- EDGES rendering ----------
 // Each edge bows GENTLY toward the center rather than passing through it.
 // Routing every edge through the exact (CX,CY) used to knot them all at one
-// point in the middle; a control point only ~60% of the way from the edge's
-// own midpoint toward center keeps the inward bow but lets each curve keep
-// its own lane, so the fan reads as arcs instead of a central tangle.
+// point in the middle; a control point pulled a fraction of the way from the
+// edge's own midpoint toward center keeps the inward bow but lets each curve
+// keep its own lane, so the fan reads as arcs instead of a central tangle.
+//
+// That pull FRACTION tapers with edge length. The dense local fan (a note and
+// the compounds sitting near it) keeps the strong ~0.6 bow that reads as tidy
+// arcs. But a long cross-wheel edge — e.g. a top-right note to a compound the
+// float-spread pushed down toward the bottom — bowed that hard swings wide into
+// the opposite quadrant, so it visually grazes sections it has nothing to do
+// with (the "why is there a line coming out of Sweet?" effect). Straightening
+// the long ones keeps each edge hugging the direct line between its real
+// endpoints, so it can't be misread as touching an unrelated section.
+//
 // Scent: note anchor (_x/_y) → compound float (x/y). Chemistry: compound
 // anchor (_x/_y) → note float (x/y).
 function edgePath(d, chem) {
   const x0 = chem ? d.c._x : d.n._x, y0 = chem ? d.c._y : d.n._y;
   const x1 = chem ? d.nf.x : d.c.x, y1 = chem ? d.nf.y : d.c.y;
   const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-  const cxp = mx + (CX - mx) * 0.6, cyp = my + (CY - my) * 0.6;
+  // Full bow up to ~0.9·R_NOTE of length, then taper to nearly straight by
+  // ~1.5·R_NOTE (about the longest an edge can get: rim note → far-side float).
+  const len = Math.hypot(x1 - x0, y1 - y0);
+  const t = Math.max(0, Math.min(1, (len - R_NOTE * 0.9) / (R_NOTE * 0.6)));
+  const bow = 0.6 + (0.12 - 0.6) * t;
+  const cxp = mx + (CX - mx) * bow, cyp = my + (CY - my) * bow;
   return `M ${x0} ${y0} Q ${cxp} ${cyp} ${x1} ${y1}`;
 }
 
@@ -6262,7 +6272,8 @@ function updateEdgeGeometry() {
 }
 
 function updateEdges() {
-  // only draw edges where note has weight > 0 OR note is hovered OR compound is selected
+  // draw an edge where the note has weight > 0 (lit), or the note/compound is
+  // hovered (transient full fan). A selected compound draws only its lit edges.
   const chem = inChemistry();
   const drawn = [];
   EDGES.forEach(e => {
@@ -6276,11 +6287,22 @@ function updateEdges() {
     const anchorN = chem ? NOTE_BY_ID[e.note] : noteAnchorFor(e.note);
     if (!chem && anchorN._x == null) return; // parent itself unpositioned too (e.g. hidden group)
     const sig = effectiveNoteSignal(e.note, e.cpd);
-    const isHovered = state.hoveredNote === e.note || state.hoveredCompound === e.cpd || state.selectedCompound === e.cpd;
+    // Hover vs. selection differ deliberately. HOVER is a transient probe, so it
+    // draws the hovered node's FULL fan (every note a compound draws from / every
+    // compound a note feeds) — a momentary "where else does this live?" that
+    // clears the instant the pointer leaves. SELECTION is persistent (the detail
+    // panel stays open), so pinning that same full fan onto the wheel left a
+    // permanent thicket of faint lines to notes you never entered — and it's
+    // already spelled out, with citations, in the panel's "Contributing notes"
+    // list. So a selected compound keeps only its LIT edges (to notes actually
+    // in the tasting); the "also appears in…" discovery lives in the panel, not
+    // as wheel clutter. Selected lit edges still render focused (emphasized).
+    const isHovered = state.hoveredNote === e.note || state.hoveredCompound === e.cpd;
+    const isSelected = state.selectedCompound === e.cpd;
     const w = sig * e.w;
-    // Scent: draw lit edges plus a hovered/selected node's full fan. Chemistry:
-    // the floating endpoint is the note, which is only on screen when entered, so
-    // restrict to lit edges (sig > 0) to avoid lines to off-screen parked notes.
+    // Scent: draw lit edges plus a HOVERED node's full fan. Chemistry: the
+    // floating endpoint is the note, only on screen when entered, so restrict to
+    // lit edges (sig > 0) to avoid lines to off-screen parked notes.
     if (sig > 0 || (isHovered && !chem)) {
       drawn.push({
         ...e,
@@ -6289,7 +6311,7 @@ function updateEdges() {
         nf: NOTE_NODE_BY_ID[e.note],   // note float node (chemistry endpoint)
         contrib: w,
         lit: sig > 0,
-        focused: isHovered
+        focused: isHovered || isSelected
       });
     }
   });
@@ -7618,9 +7640,8 @@ function setOrganizeBy(mode) {
   gEdges.selectAll("*").remove();
   gComps.selectAll("*").remove();
   gNotes.selectAll("*").remove();
-  // Clear any jiggle offset too — which container is "the notes layer" swaps
-  // with the mode, and a stale translate left on the other one would shift
-  // its new occupant (compound anchors or floats) out of position.
+  // Defensive: clear any leftover layer transform so a stale translate never
+  // shifts a swapped-in occupant (compound anchors or floats) out of position.
   gComps.attr("transform", null);
   gNotes.attr("transform", null);
   gArcs.selectAll("path.group-arc, text.group-arc-label, path.arc-label-path").remove();
@@ -8072,37 +8093,18 @@ document.getElementById("godeeper-toggle").addEventListener("click", () => {
   playDeeperWarp(() => setGoDeeper(true));
 });
 
-// ---------- SETTINGS MENU (gear) ----------
-// Small anchored dropdown for secondary toggles that don't warrant their own
-// header button. Holds Jiggle for now; more can land inside without the
-// header growing a button per feature.
-const settingsWrap = document.getElementById("settings-wrap");
-const settingsToggleBtn = document.getElementById("settings-toggle-btn");
-const settingsMenu = document.getElementById("settings-menu");
-function setSettingsMenu(open) {
-  settingsMenu.hidden = !open;
-  settingsToggleBtn.setAttribute("aria-expanded", String(open));
-  document.body.classList.toggle("settings-open", open);
-}
-settingsToggleBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  setSettingsMenu(settingsMenu.hidden);
-});
-// Outside click / Escape closes it, same convention as the info overlay.
-document.addEventListener("click", (e) => {
-  if (!settingsMenu.hidden && !settingsWrap.contains(e.target)) setSettingsMenu(false);
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !settingsMenu.hidden) setSettingsMenu(false);
-});
-
-// ---------- READING / DYSLEXIA MODE ----------
-// Toggle a high-legibility, dyslexia-friendlier reading pass (see the
-// body.reading-mode CSS): Atkinson Hyperlegible + extra letter/word/line
-// spacing on the text-heavy surfaces. The web font is lazy-loaded the first
-// time the mode is switched on, so users who never touch it pay no network
-// cost; offline, the Verdana/Tahoma fallback still applies the spacing wins.
-const readingToggleBtn = document.getElementById("reading-toggle");
+// ---------- LEGIBLE / CALM DEFAULT ----------
+// The app ships in one deliberate presentation instead of a menu of toggles: a
+// high-legibility, dyslexia-friendlier reading pass (Atkinson Hyperlegible plus
+// extra letter/word/line spacing — see the body.reading-mode CSS) together with
+// a calm float sim that settles to rest rather than drifting forever (see
+// bubblesFrozen(), which stays true because state.readingMode is pinned on in
+// the state defaults). This replaced a settings gear that held three opt-in
+// controls — a reading-mode toggle, a "freeze aroma bubbles" checkbox, and a
+// device-motion "jiggle" — all dropped in favour of just making the good state
+// THE experience. state.readingMode remains the single flag the sim and CSS
+// read; it is simply never turned off. The body class + font are applied once
+// at init (end of script), where the sim and layout groups are ready.
 function ensureReadingFont() {
   if (document.getElementById("reading-font-link")) return;
   const link = document.createElement("link");
@@ -8111,108 +8113,13 @@ function ensureReadingFont() {
   link.href = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap";
   document.head.appendChild(link);
 }
-function setReadingMode(on) {
-  state.readingMode = !!on;
-  if (state.readingMode) ensureReadingFont();
-  document.body.classList.toggle("reading-mode", state.readingMode);
-  readingToggleBtn.setAttribute("aria-pressed", String(state.readingMode));
-}
-readingToggleBtn.addEventListener("click", () => setReadingMode(!state.readingMode));
-
-// ---------- FREEZE AROMA BUBBLES ----------
-// See applyFreezeMode()/driftForce() near the sim setup: off (default) keeps
-// the float sim at a perpetual gentle simmer instead of settling to a dead
-// stop; on restores a real settle-and-hold-still.
-const freezeToggleCheck = document.getElementById("freeze-toggle");
-function setFreezeBubbles(on) {
-  state.freezeBubbles = !!on;
-  freezeToggleCheck.checked = state.freezeBubbles;
-  applyFreezeMode();
-}
-freezeToggleCheck.addEventListener("change", (e) => setFreezeBubbles(e.target.checked));
-
-// ---------- JIGGLE (device motion) ----------
-// Mobile delight feature: tilt or shake the phone and the flavor notes nudge
-// in response. devicemotion's accelerationIncludingGravity captures both a
-// tilt bias (gravity leaning toward the low side) and transient shake spikes
-// (real acceleration) in the same reading — exactly "moved or tilted" in one
-// signal, no separate orientation listener needed.
-//
-// "The flavor notes" are whichever top-level group currently renders them:
-// gNotes in Scent mode (fixed rim dots), gComps in Chemistry mode (where
-// notes are the simulated floats and gComps's usual occupant, compounds,
-// sits fixed on the rim instead). Jiggling the wrong one in Chemistry mode
-// would nudge compounds, not notes — see jiggleTargetGroup().
-let jiggleDX = 0, jiggleDY = 0;     // smoothed offset applied to the notes layer
-let jiggleRAF = null;
-let motionListenerAttached = false;
-const JIGGLE_MAX = 7;               // px clamp so it nudges, doesn't fling the layer around
-const JIGGLE_SMOOTH = 0.12;         // low-pass filter factor; lower = lazier, smoother motion
-
-function jiggleTargetGroup() { return inChemistry() ? gComps : gNotes; }
-
-function onDeviceMotion(e) {
-  const g = e.accelerationIncludingGravity;
-  if (!g) return;
-  // Device x/y axes map loosely to screen x/y when the phone is held upright
-  // in portrait — good enough for a playful nudge, not a precise tilt model.
-  const tx = Math.max(-JIGGLE_MAX, Math.min(JIGGLE_MAX, g.x || 0));
-  const ty = Math.max(-JIGGLE_MAX, Math.min(JIGGLE_MAX, -(g.y || 0)));
-  jiggleDX += (tx - jiggleDX) * JIGGLE_SMOOTH;
-  jiggleDY += (ty - jiggleDY) * JIGGLE_SMOOTH;
-}
-
-function jiggleTick() {
-  jiggleTargetGroup().attr("transform", `translate(${jiggleDX.toFixed(2)},${jiggleDY.toFixed(2)})`);
-  jiggleRAF = requestAnimationFrame(jiggleTick);
-}
-
-function setJiggle(on) {
-  state.jiggleEnabled = !!on;
-  document.body.classList.toggle("jiggle-on", state.jiggleEnabled);
-  jiggleToggleBtn.setAttribute("aria-pressed", String(state.jiggleEnabled));
-  if (state.jiggleEnabled) {
-    if (!jiggleRAF) jiggleTick();
-  } else {
-    if (jiggleRAF) { cancelAnimationFrame(jiggleRAF); jiggleRAF = null; }
-    // Snap both possible target groups back to identity so switching Organize
-    // mode mid-jiggle never leaves a stale offset on the one not in use.
-    gNotes.attr("transform", null);
-    gComps.attr("transform", null);
-    jiggleDX = 0; jiggleDY = 0;
-  }
-}
-
-const jiggleToggleBtn = document.getElementById("jiggle-toggle");
-// Most desktops have no accelerometer; only surface the button where the API
-// exists at all. (Presence doesn't guarantee a real sensor, but absence
-// reliably means no point offering it.) Jiggle is currently the gear's only
-// item, so the gear itself only appears where Jiggle does — no empty dropdown
-// on desktops without motion support.
-// Also respect prefers-reduced-motion: Jiggle is an accelerometer-driven
-// screen-motion effect, exactly the vestibular-trigger case that preference
-// exists to opt out of, so don't even offer it where the OS has asked for
-// reduced motion.
-if ('ondevicemotion' in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  jiggleToggleBtn.hidden = false;
-  document.getElementById("settings-wrap").hidden = false;
-  jiggleToggleBtn.addEventListener("click", async () => {
-    if (state.jiggleEnabled) { setJiggle(false); return; }
-    if (!motionListenerAttached) {
-      // iOS 13+ gates motion behind an explicit permission prompt that must
-      // be triggered by a user gesture — this click is that gesture. Other
-      // platforms have no such API and start listening immediately.
-      if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
-        try {
-          const result = await DeviceMotionEvent.requestPermission();
-          if (result !== "granted") return;
-        } catch { return; }
-      }
-      window.addEventListener("devicemotion", onDeviceMotion);
-      motionListenerAttached = true;
-    }
-    setJiggle(true);
-  });
+function applyLegibleCalmDefault() {
+  ensureReadingFont();
+  document.body.classList.add("reading-mode");
+  // Start the float sim in its calm state (settled, not drifting). The sim
+  // already reads state.readingMode via bubblesFrozen(), so this is just the
+  // explicit initial kick to the settled target once the sim exists.
+  if (typeof applyFreezeMode === "function") applyFreezeMode();
 }
 
 // ---------- PERCEPTION COMPASS ----------
@@ -8487,22 +8394,39 @@ function applyCompassScale(widthPx) {
     handle.releasePointerCapture(e.pointerId);
   });
 
-  let resizing = false, resizeStartX, resizeStartWidth;
+  // The resize grip lives at the top-LEFT corner, so it follows the OS
+  // top-left-grip convention: dragging the grip LEFT widens the box, the left
+  // edge tracks the cursor, and the RIGHT edge stays anchored. (Earlier this
+  // grew width with rightward motion, which pinned the left edge under the
+  // grip and grew the box away from the cursor — the inverted feel the user
+  // reported.) We capture the start left/top so the right edge can be held
+  // fixed as width changes.
+  let resizing = false, resizeStartX, resizeStartWidth, resizeStartLeft, resizeStartTop;
   resizeHandle.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
     resizing = true;
     resizeHandle.setPointerCapture(e.pointerId);
     resizeStartX = e.clientX;
-    resizeStartWidth = compassEl.getBoundingClientRect().width;
+    const rect = compassEl.getBoundingClientRect();
+    const wheelRect = wheelEl.getBoundingClientRect();
+    resizeStartWidth = rect.width;
+    resizeStartLeft = rect.left - wheelRect.left;
+    resizeStartTop = rect.top - wheelRect.top;
   });
   resizeHandle.addEventListener("pointermove", (e) => {
     if (!resizing) return;
-    const w = Math.min(maxWidth(), Math.max(MIN_W, resizeStartWidth + (e.clientX - resizeStartX)));
+    // Drag left (negative delta) → wider; drag right → narrower.
+    const w = Math.min(maxWidth(), Math.max(MIN_W, resizeStartWidth - (e.clientX - resizeStartX)));
     state.compassWidth = w;
     applyCompassScale(w);
-    // Growing the box can push its bottom-right past the wheel's edge even
-    // if its top-left (the dragged position) never moved; re-clamp position.
-    if (state.compassPos) { state.compassPos = clampCompassPos(state.compassPos); applyCompassPos(state.compassPos); }
+    // Hold the right edge where it started: left = (fixed right edge) − new
+    // width. Computed from the applied (clamped) width, not the raw pointer
+    // delta, so hitting the min/max size doesn't drift the anchored edge.
+    // applyCompassScale ran first so clampCompassPos sees the new offsetWidth.
+    const rightEdge = resizeStartLeft + resizeStartWidth;
+    const pos = clampCompassPos({ x: rightEdge - w, y: resizeStartTop });
+    state.compassPos = pos;
+    applyCompassPos(pos);
   });
   resizeHandle.addEventListener("pointerup", (e) => {
     resizing = false;
@@ -8515,7 +8439,10 @@ function applyCompassScale(widthPx) {
   });
 })();
 setCompassVisible(state.compassVisible); // sync initial DOM/body-class to the default above; must run after COMPASS_MIN_W etc. are declared
-freezeToggleCheck.checked = state.freezeBubbles; // sync checkbox to the prefers-reduced-motion-aware default above
+// Bake in the legible/calm presentation (see applyLegibleCalmDefault): body
+// class + legibility font + the float sim's settled initial state. Runs at the
+// end so the sim is ready — same reason setCompassVisible is deferred here.
+applyLegibleCalmDefault();
 
 // ---------- INFO ("i") TAB ----------
 // Modal overlay with three sub-tabs: About, How to Use, Types of Aroma.
@@ -10299,13 +10226,20 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
   const captionInput = document.getElementById("share-caption");
   const formatTabs = document.getElementById("share-format");
   const styleTabs = document.getElementById("share-style");
+  const layoutTabs = document.getElementById("share-layout");
+  const flipBtn = document.getElementById("share-flip-btn");
+  const showMapCb = document.getElementById("share-show-map");
+  const mapHintEl = document.getElementById("share-map-hint");
+  const mapRowEl = document.getElementById("share-show-map-row");
   const genBtn = document.getElementById("share-generate");
   const outputEl = document.getElementById("share-output");
   const linkInput = document.getElementById("share-link");
   const hintEl = document.getElementById("share-hint");
 
-  const opts = { format: "portrait", style: "informative", showNotes: true, showCompounds: true, hiddenCompounds: new Set(), compoundIcons: false };
-  let lastCanvas = null;         // last rasterized full-res canvas (feeds all downloads)
+  const opts = { format: "portrait", style: "informative", layout: "one", showNotes: true, showCompounds: true, showMap: true, hiddenCompounds: new Set(), compoundIcons: false };
+  let lastCanvas = null;         // last rasterized full-res canvas (front/single face — feeds all downloads)
+  let lastCanvasBack = null;     // back face's canvas, only set in flip layout
+  let cardFlipped = false;       // which face the flip-card preview is currently showing
   let previewTimer = null;
 
   function sEl(tag, attrs, text) {
@@ -10347,26 +10281,127 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     return g;
   }
 
-  function buildShareCard() {
+  // Origin-map inset: a minimal dot-plot, deliberately NOT the real Origins
+  // map's country geometry. Two reasons: (1) it stays crisp at card-inset
+  // size instead of turning into an illegible tangle of tiny path data, and
+  // (2) every card uses the exact same fixed world frame (full -180..180 /
+  // -90..90, via the same lat/lon math as the live map) rather than
+  // auto-zooming to each user's own pins — so a pin's position means the same
+  // thing on any two people's cards, which is the whole point of a card
+  // that's meant to be compared side by side.
+  const MAP_W = 2000, MAP_H = 857;
+  function mapLatLonToXY(lat, lon) { return [(lon + 180) / 360 * MAP_W, (90 - lat) / 180 * MAP_H]; }
+
+  function originItemsFor(notes) {
+    return notes.map(({ n, total }) => ({ n, total, origin: NOTE_ORIGINS[n.id] })).filter(x => x.origin);
+  }
+
+  // legend: "compact" (one-card inset, short list) or "full" (dedicated back
+  // face, room to breathe). Numbered pins + a numbered legend beats trying to
+  // fit text labels directly on the plot, which collide badly at this scale.
+  function mapInsetGroup(bx, by, bw, bh, items, legend) {
+    const g = sEl("g", {});
+    g.appendChild(sEl("rect", { x: bx, y: by, width: bw, height: bh, rx: 18, fill: "#141216" }));
+    const padX = 20, padY = 18;
+    const maxRows = legend === "full" ? Math.min(items.length, 12) : Math.min(items.length, 6);
+    const legendH = maxRows ? (legend === "full" ? maxRows * 30 + 14 : maxRows * 24 + 14) : 0;
+    const plotX = bx + padX, plotY = by + padY;
+    const plotW = bw - padX * 2, plotH = bh - padY * 2 - legendH - (legendH ? 10 : 0);
+
+    g.appendChild(sEl("rect", { x: plotX, y: plotY, width: plotW, height: plotH, rx: 8, fill: "#0e0d10", stroke: "#26242b" }));
+    if (!items.length) {
+      g.appendChild(sEl("text", { x: plotX + plotW / 2, y: plotY + plotH / 2, "text-anchor": "middle", fill: "#8a8579", "font-size": 20, "font-family": SANS }, "No origin data for your current notes yet"));
+      return g;
+    }
+    const frame = sEl("g", { opacity: 0.6 });
+    for (let lon = -180; lon <= 180; lon += 30) {
+      const px = plotX + ((lon + 180) / 360) * plotW;
+      frame.appendChild(sEl("line", { x1: px, y1: plotY, x2: px, y2: plotY + plotH, stroke: "#26242b", "stroke-width": 1 }));
+    }
+    for (let lat = -60; lat <= 60; lat += 30) {
+      const py = plotY + ((90 - lat) / 180) * plotH;
+      const isEq = lat === 0;
+      frame.appendChild(sEl("line", { x1: plotX, y1: py, x2: plotX + plotW, y2: py, stroke: isEq ? "#3d3a30" : "#26242b", "stroke-width": isEq ? 1.5 : 1 }));
+    }
+    g.appendChild(frame);
+
+    items.forEach((it, i) => {
+      const [gx, gy] = mapLatLonToXY(it.origin.lat, it.origin.lon);
+      const px = plotX + (gx / MAP_W) * plotW, py = plotY + (gy / MAP_H) * plotH;
+      const col = vividColor(groupColor(it.n.group));
+      const approx = it.origin.certainty === "approximate";
+      const r = legend === "full" ? 10 : 8;
+      const pin = sEl("circle", { cx: px, cy: py, r, fill: approx ? "none" : col, stroke: col, "stroke-width": approx ? 2 : 0 });
+      if (approx) pin.setAttribute("stroke-dasharray", "2 2");
+      g.appendChild(pin);
+      g.appendChild(sEl("text", { x: px, y: py + r * 0.42, "text-anchor": "middle", "font-size": r * 1.15, "font-weight": 700, "font-family": SANS, fill: approx ? col : "#0e0d10" }, String(i + 1)));
+    });
+
+    if (legendH) {
+      const rowH = legend === "full" ? 30 : 24;
+      const fs = legend === "full" ? 20 : 16;
+      let ly = plotY + plotH + 26;
+      for (let i = 0; i < maxRows; i++) {
+        const it = items[i];
+        const col = vividColor(groupColor(it.n.group));
+        g.appendChild(sEl("circle", { cx: plotX + 8, cy: ly - fs * 0.32, r: fs * 0.4, fill: col }));
+        g.appendChild(sEl("text", { x: plotX + 8, y: ly, "text-anchor": "middle", "font-size": fs * 0.62, "font-weight": 700, "font-family": SANS, fill: "#0e0d10" }, String(i + 1)));
+        const region = it.origin.country || (it.origin.region || "").split("/")[0].split("(")[0].trim();
+        g.appendChild(sEl("text", { x: plotX + 8 + fs * 0.9, y: ly, "font-size": fs, fill: "#e9e6df", "font-family": SANS }, it.n.label.split(" / ")[0] + (region ? " · " + region : "")));
+        ly += rowH;
+      }
+      if (items.length > maxRows) {
+        g.appendChild(sEl("text", { x: plotX + 8, y: ly, "font-size": fs * 0.85, fill: "#8a8579", "font-family": SANS }, "+" + (items.length - maxRows) + " more"));
+      }
+    }
+    return g;
+  }
+
+  // face: "single" (one-card layout, the default), "front" or "back" (flip
+  // layout — front carries everything except the map, back is a dedicated
+  // map face so it stands on its own if someone shares just that side).
+  function buildShareCard(face) {
+    face = face || "single";
     const portrait = opts.format === "portrait";
     const stunning = opts.style === "stunning";
     const W = 1080, H = portrait ? 1350 : 1080;
     const { notes, comps: allComps } = activeTasting();
     const comps = allComps.filter(c => !opts.hiddenCompounds.has(c.id));
+    const mapItems = originItemsFor(notes);
     const cap = (captionInput.value || "My tasting").trim() || "My tasting";
     const PAD = 64, footerTop = H - 104;
 
     const svg = sEl("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
     svg.appendChild(sEl("rect", { x: 0, y: 0, width: W, height: H, fill: "#0e0d10" }));
 
+    function appendFooter() {
+      svg.appendChild(sEl("line", { x1: PAD, y1: footerTop, x2: W - PAD, y2: footerTop, stroke: "#26242b", "stroke-width": 1 }));
+      svg.appendChild(sEl("text", { x: PAD, y: footerTop + 40, fill: "#d8a657", "font-size": 24, "font-weight": 700, "font-family": SANS }, "aromawheel.net"));
+      svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Perceptions are real — and they change with the moment."));
+    }
+
     // Title
     svg.appendChild(sEl("text", { x: PAD, y: 92, fill: "#e9e6df", "font-size": 46, "font-weight": 700, "font-family": SANS }, cap));
-    svg.appendChild(sEl("text", { x: PAD, y: 126, fill: "#8a8579", "font-size": 22, "font-family": SANS }, dateStr() + " · " + notes.length + " note" + (notes.length === 1 ? "" : "s")));
+    const subtitle = face === "back" ? "Where it comes from" : dateStr() + " · " + notes.length + " note" + (notes.length === 1 ? "" : "s");
+    svg.appendChild(sEl("text", { x: PAD, y: 126, fill: "#8a8579", "font-size": 22, "font-family": SANS }, subtitle));
+
+    if (face === "back") {
+      svg.appendChild(mapInsetGroup(PAD - 16, 152, W - 2 * (PAD - 16), footerTop - 152 - 24, mapItems, "full"));
+      appendFooter();
+      return { svg };
+    }
+
+    // Map only lives on a section of the single card in "one card" layout —
+    // in flip layout it's exclusive to the back face above.
+    const showMapSection = face === "single" && opts.showMap && mapItems.length > 0;
 
     // What to include is controlled by the checkboxes; "style" now only affects
     // the wheel size / vibe (stunning = wheel-forward, section labels dropped).
     const showLabels = !stunning;
     const compsShown = opts.showCompounds ? comps : [];
+    // When the map section will follow, notes/compounds stop short of the
+    // footer to leave it guaranteed room instead of fighting over leftovers.
+    const contentBottom = showMapSection ? footerTop - 230 : footerTop;
 
     // Wheel grows to fill the space freed by any hidden section.
     const wheelTop = 152;
@@ -10376,14 +10411,17 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
       if (!opts.showCompounds || !compsShown.length) wheelH += 210;
       if (!opts.showNotes) wheelH += 150;
       if (stunning) wheelH += 110;
+      if (showMapSection) wheelH -= 260;
       wheelH = Math.min(wheelH, 1000);
     } else {
       wheelH = 500;
       if (!opts.showCompounds || !compsShown.length) wheelH += 150;
       if (!opts.showNotes) wheelH += 110;
       if (stunning) wheelH += 70;
+      if (showMapSection) wheelH -= 200;
       wheelH = Math.min(wheelH, 840);
     }
+    wheelH = Math.max(wheelH, portrait ? 260 : 220);
     const panelX = PAD - 16, panelW = W - 2 * (PAD - 16);
     svg.appendChild(sEl("rect", { x: panelX, y: wheelTop, width: panelW, height: wheelH, rx: 18, fill: "#141216" }));
     svg.appendChild(wheelGroup(panelX + 10, wheelTop + 10, panelW - 20, wheelH - 20));
@@ -10417,12 +10455,13 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
       y = cy + chipH + 40;
     }
 
-    // Likely compounds — checkbox-controlled, ordered by prominence, fills to footer.
-    if (compsShown.length && y < footerTop - 60) {
+    // Likely compounds — checkbox-controlled, ordered by prominence, fills to
+    // contentBottom (== footerTop unless a map section follows).
+    if (compsShown.length && y < contentBottom - 60) {
       if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "LIKELY COMPOUNDS · BY CONFIDENCE")); y += 28; }
       const barW = 280, barX = W - PAD - barW;
       for (const c of compsShown) {
-        if (y + 30 > footerTop) break;
+        if (y + 30 > contentBottom) break;
         const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
         if (ic) svg.appendChild(sEl("text", { x: PAD, y: y + 17, "font-size": 22 }, ic));
         svg.appendChild(sEl("text", { x: PAD + (ic ? 34 : 0), y: y + 16, fill: "#e9e6df", "font-size": 22, "font-family": SANS }, c.label));
@@ -10433,24 +10472,62 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
       }
     }
 
-    // Footer
-    svg.appendChild(sEl("line", { x1: PAD, y1: footerTop, x2: W - PAD, y2: footerTop, stroke: "#26242b", "stroke-width": 1 }));
-    svg.appendChild(sEl("text", { x: PAD, y: footerTop + 40, fill: "#d8a657", "font-size": 24, "font-weight": 700, "font-family": SANS }, "aromawheel.net"));
-    svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Perceptions are real — and they change with the moment."));
+    // Origin map — one-card layout only (flip layout puts it on the back face).
+    if (showMapSection) {
+      if (y < contentBottom) y = contentBottom;
+      if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "WHERE IT COMES FROM")); y += 20; }
+      const mh = Math.max(140, footerTop - y - 10);
+      svg.appendChild(mapInsetGroup(panelX, y, panelW, mh, mapItems, "compact"));
+    }
+
+    appendFooter();
     return { svg };
   }
 
-  function invalidateOutput() { outputEl.hidden = true; lastCanvas = null; if (hintEl) hintEl.textContent = "Customize above — the preview updates live. When it looks right, generate a link or download the image."; }
+  function invalidateOutput() { outputEl.hidden = true; lastCanvas = null; lastCanvasBack = null; if (hintEl) hintEl.textContent = "Customize above — the preview updates live. When it looks right, generate a link or download the image."; }
+
+  // The map checkbox means different things depending on layout: in "one card"
+  // it's a real toggle (and disables itself if none of the active notes have
+  // origin data); in "flip" the map always lives on the back, so the checkbox
+  // just reflects that rather than offering a redundant choice.
+  function syncMapCheckboxState(notes) {
+    const has = originItemsFor(notes).length > 0;
+    if (opts.layout === "flip") {
+      showMapCb.checked = true; showMapCb.disabled = true;
+      mapHintEl.textContent = has ? "(on the back)" : "(no origin data yet)";
+    } else {
+      showMapCb.disabled = !has;
+      if (!has) opts.showMap = false;
+      showMapCb.checked = has && opts.showMap;
+      mapHintEl.textContent = has ? "" : "(no origin data for your current notes)";
+    }
+    mapRowEl.classList.toggle("disabled", showMapCb.disabled);
+  }
 
   function renderPreview() {
     previewEl.innerHTML = "";
     const { notes } = activeTasting();
     if (!notes.length) {
       previewEl.innerHTML = '<div class="share-empty">Add a few notes to your tasting first — your shareable card is built from what you noticed.</div>';
-      genBtn.disabled = true; invalidateOutput(); return;
+      genBtn.disabled = true; flipBtn.classList.remove("visible"); invalidateOutput(); return;
     }
     genBtn.disabled = false;
-    previewEl.appendChild(buildShareCard().svg);
+    syncMapCheckboxState(notes);
+    if (opts.layout === "flip") {
+      flipBtn.classList.add("visible");
+      const stage = document.createElement("div"); stage.className = "share-flip-stage";
+      const inner = document.createElement("div"); inner.className = "share-flip-inner" + (cardFlipped ? " flipped" : "");
+      const front = document.createElement("div"); front.className = "share-face-front";
+      front.appendChild(buildShareCard("front").svg);
+      const back = document.createElement("div"); back.className = "share-face-back";
+      back.appendChild(buildShareCard("back").svg);
+      inner.append(front, back);
+      stage.appendChild(inner);
+      previewEl.appendChild(stage);
+    } else {
+      flipBtn.classList.remove("visible");
+      previewEl.appendChild(buildShareCard("single").svg);
+    }
     invalidateOutput();
   }
 
@@ -10486,8 +10563,10 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     params.set("t", t);
     params.set("fmt", opts.format[0]);
     params.set("sty", opts.style[0]);
+    if (opts.layout === "flip") params.set("lay", "f");
     if (!opts.showNotes) params.set("n", "0");
     if (!opts.showCompounds) params.set("cp", "0");
+    if (!opts.showMap) params.set("m", "0");
     const cap = (captionInput.value || "").trim();
     if (cap) params.set("c", cap);
     return location.origin + location.pathname + "?" + params.toString();
@@ -10495,25 +10574,49 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
 
   async function generate() {
     genBtn.disabled = true; hintEl.textContent = "Building your card…";
-    const { svg } = buildShareCard();
-    svg.setAttribute("style", "position:fixed;left:-99999px;top:0;opacity:0;pointer-events:none");
-    document.body.appendChild(svg);
-    try { lastCanvas = await rasterize(svg, 2); }
-    catch (e) { hintEl.textContent = "Couldn't render the image — try again."; genBtn.disabled = false; svg.remove(); return; }
-    svg.remove();
+    const flip = opts.layout === "flip";
+    const svgs = flip ? [buildShareCard("front").svg, buildShareCard("back").svg] : [buildShareCard("single").svg];
+    svgs.forEach(s => { s.setAttribute("style", "position:fixed;left:-99999px;top:0;opacity:0;pointer-events:none"); document.body.appendChild(s); });
+    try {
+      lastCanvas = await rasterize(svgs[0], 2);
+      lastCanvasBack = flip ? await rasterize(svgs[1], 2) : null;
+    } catch (e) {
+      hintEl.textContent = "Couldn't render the image — try again."; genBtn.disabled = false;
+      svgs.forEach(s => s.remove()); return;
+    }
+    svgs.forEach(s => s.remove());
     linkInput.value = buildShareUrl();
     try { history.replaceState(null, "", buildShareUrl()); } catch (e) {}
     outputEl.hidden = false; genBtn.disabled = false;
-    hintEl.textContent = "Ready — the link is also the bookmark. Copy it, or download the image.";
+    hintEl.textContent = flip
+      ? "Ready — the link is also the bookmark. PNG/JPG stack both sides in one image; PDF keeps them as two pages."
+      : "Ready — the link is also the bookmark. Copy it, or download the image.";
   }
 
   function safeName() {
     return ((captionInput.value || "tasting").trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "tasting").slice(0, 40);
   }
+  // Front/back downloads default to "one practical image" over "two separate
+  // files" — most sharing (texting, social) is a single image, so front and
+  // back are stacked top-to-bottom into one canvas. PDF (below) keeps them as
+  // genuinely separate pages instead, for anyone printing a physical card.
+  function stackedCanvas() {
+    if (!lastCanvasBack) return lastCanvas;
+    const gap = 48;
+    const w = Math.max(lastCanvas.width, lastCanvasBack.width);
+    const h = lastCanvas.height + gap + lastCanvasBack.height;
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#0e0d10"; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(lastCanvas, (w - lastCanvas.width) / 2, 0);
+    ctx.drawImage(lastCanvasBack, (w - lastCanvasBack.width) / 2, lastCanvas.height + gap);
+    return c;
+  }
   function downloadCanvas(kind) {
     if (!lastCanvas) return;
+    const canvas = stackedCanvas();
     const mime = kind === "jpg" ? "image/jpeg" : "image/png";
-    lastCanvas.toBlob((blob) => {
+    canvas.toBlob((blob) => {
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
       a.download = "aroma-" + safeName() + "." + kind; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -10537,12 +10640,17 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     const W = lastCanvas.width / 2, H = lastCanvas.height / 2;
     const pdf = new lib.jsPDF({ orientation: H >= W ? "portrait" : "landscape", unit: "pt", format: [W, H] });
     pdf.addImage(lastCanvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, W, H);
+    if (lastCanvasBack) {
+      pdf.addPage([W, H], H >= W ? "portrait" : "landscape");
+      pdf.addImage(lastCanvasBack.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, W, H);
+    }
     pdf.save("aroma-" + safeName() + ".pdf");
   }
 
   function syncTabs() {
     formatTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.format === opts.format));
     styleTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.style === opts.style));
+    layoutTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.layout === opts.layout));
   }
 
   // Per-compound checklist, ordered by prominence (confidence). All checked by
@@ -10584,7 +10692,7 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     updateCompoundCount();
   }
 
-  function openShare() { overlay.hidden = false; syncTabs(); showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds; renderCompoundList(); renderPreview(); }
+  function openShare() { overlay.hidden = false; cardFlipped = false; syncTabs(); showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds; renderCompoundList(); renderPreview(); }
   function closeShare() { overlay.hidden = true; }
 
   document.getElementById("share-open-btn").addEventListener("click", openShare);
@@ -10594,6 +10702,13 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
   captionInput.addEventListener("input", () => { clearTimeout(previewTimer); previewTimer = setTimeout(renderPreview, 200); });
   formatTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.format = b.dataset.format; syncTabs(); renderPreview(); });
   styleTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.style = b.dataset.style; syncTabs(); renderPreview(); });
+  layoutTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.layout = b.dataset.layout; cardFlipped = false; syncTabs(); renderPreview(); });
+  flipBtn.addEventListener("click", () => {
+    cardFlipped = !cardFlipped;
+    const inner = previewEl.querySelector(".share-flip-inner");
+    if (inner) inner.classList.toggle("flipped", cardFlipped);
+  });
+  showMapCb.addEventListener("change", () => { opts.showMap = showMapCb.checked; renderPreview(); });
   showNotesCb.addEventListener("change", () => { opts.showNotes = showNotesCb.checked; renderPreview(); });
   showCompCb.addEventListener("change", () => { opts.showCompounds = showCompCb.checked; updateCompoundCount(); renderPreview(); });
   document.getElementById("share-compound-icons").addEventListener("change", (e) => { opts.compoundIcons = e.target.checked; renderPreview(); });
@@ -10626,8 +10741,10 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     if (p.get("c")) captionInput.value = p.get("c");
     if (p.get("fmt") === "s") opts.format = "square";
     if (p.get("sty") === "s") opts.style = "stunning";
+    if (p.get("lay") === "f") opts.layout = "flip";
     if (p.get("n") === "0") opts.showNotes = false;
     if (p.get("cp") === "0") opts.showCompounds = false;
+    if (p.get("m") === "0") opts.showMap = false;
   })();
 })();
 </script>
