@@ -22,7 +22,10 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
   - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches — never directly edits `codex/*`.
   - **Claude's review workflow**: Check this branch regularly when ChatGPT posts a check-in. Read the handoff, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
   - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Claude extracts and re-implements valuable work in the proper branches.
-  - If `codex/*` drifts out of sync with `prototype`, rebase it explicitly to keep it current for ChatGPT to build on.
+  - If `codex/*` drifts out of sync with `prototype`, **merge `prototype` into it** (`git merge prototype`) to keep it current for ChatGPT to build on. **Merge, never rebase** — rebasing rewrites history that an external agent is actively holding refs to, and never merge in the other direction. Syncing happens when Nolan asks for it, not on an agent's own judgment.
+  - **What "explicitly instructed otherwise" means**: a written directive from Nolan, in the current session, naming **both the target branch and the specific change**. Implication, inference, and passing remarks are not authorization. If it's uncertain, it wasn't authorization — ask.
+  - **Failure protocol**: on any boundary crossing or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
+  - **Claude's reviewer stance**: treat the handoff's testing/verification section as **claims to check, not conclusions to trust**. Re-run what it says it ran.
 
 ## Long-running dev branches (for multi-slice work)
 
@@ -116,6 +119,12 @@ On `main`:
 - Require pull request before merging
 - Require status checks to pass
 - Disallow direct pushes
+
+On `prototype` (it deploys live to aromawheel.net — it deserves the same fence as `main`):
+- Require pull request before merging
+- Disallow direct pushes
+
+These settings are the only *real* enforcement of the agent branch rules above. Everything in this file is a soft fence; branch protection is a hard one.
 
 ## Worktrees
 
