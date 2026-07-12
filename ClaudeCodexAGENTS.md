@@ -14,7 +14,7 @@ ambiguous, stop and ask Nolan — do not resolve ambiguity with judgment.
 
 | Branch | Role | Codex (ChatGPT) | Claude |
 |---|---|---|---|
-| `codex/aroma-wheel-responsive-ux-pass` | Experimental sandbox | Read + write | Read only |
+| `codex/aroma-wheel-responsive-ux-pass` | Experimental sandbox | Read + write | Read + write |
 | `prototype` | Stable development line | Read only | Write via PR only |
 | `main` | Canonical | Read only | Write via PR only |
 | All other branches | — | Read only | Read only unless Nolan names the branch |
@@ -39,9 +39,14 @@ ambiguous, stop and ask Nolan — do not resolve ambiguity with judgment.
 
 ## Rules for Claude
 
-1. **Do not push to the codex branch.** Review it, test it, comment on it —
-   but the experiment stays authored by Codex. Fixes or suggestions go in the
-   review notes, not into the branch.
+1. **You may commit and push to the codex branch.** It is a shared
+   experimental space — the one branch you and Codex both write to. The
+   confinement is one-directional: Codex may touch *only* this branch; you are
+   simply also allowed here. You still review Codex's batches and treat their
+   Verification section as claims to check, but fixes and ideas can now go
+   straight into the branch, not only into review notes. To carry work onward to
+   `prototype` or `main`, still use the promotion mechanism below — never merge
+   the codex branch directly into a protected branch.
 2. **Promotion mechanism:** carry work forward by creating a fresh branch off
    `prototype` (naming: `promote/<short-description>`), implementing or
    cherry-picking there, and opening a PR into `prototype`. The PR description

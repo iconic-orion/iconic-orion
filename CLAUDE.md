@@ -15,13 +15,13 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 
 **`codex/*` branches are experimental labs where ChatGPT explores ideas freely. Claude reviews the work, learns from ChatGPT's different thinking lens, and cherry-picks valuable features to integrate into `feature/bloom` and proper PRs.**
 
-- **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT's experimental UX lab. ChatGPT works here without constraints; Claude periodically reviews, evaluates ideas, and integrates the best work into the main feature branches.
+- **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT's experimental UX lab, and the **one branch ChatGPT is allowed to touch**. ChatGPT works here without constraints; Claude periodically reviews, evaluates ideas, integrates the best work into the main feature branches, **and may also commit directly to this branch** — it's a shared experimental space, not ChatGPT-exclusive.
 - **Handoff protocol**: ChatGPT uses `.claude/codex-handoff-template.md` to document each batch of work — what was done, why, testing approach, questions/blockers, and next priorities. Claude uses `.claude/codex-example-checkin.md` as a reference for what a good check-in looks like. This replaces ad-hoc commit messages with structured handoffs.
 - **Rules**: 
-  - ChatGPT has explicit permission to work **only on `codex/*` branches**.
-  - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches — never directly edits `codex/*`.
+  - ChatGPT has explicit permission to work **only on `codex/*` branches** — that is the sole branch namespace it may touch.
+  - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches, **and may also commit directly to `codex/*`**. The codex confinement is **one-directional**: ChatGPT may touch *only* `codex/*`, but Claude is not fenced *out* of it — Claude simply isn't limited *to* it.
   - **Claude's review workflow**: Check this branch regularly when ChatGPT posts a check-in. Read the handoff, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
-  - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Claude extracts and re-implements valuable work in the proper branches.
+  - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Move work onward by extracting/re-implementing (or cherry-picking) it onto a proper branch and opening a PR — this holds whether ChatGPT or Claude authored the codex commits.
   - If `codex/*` drifts out of sync with `prototype`, **merge `prototype` into it** (`git merge prototype`) to keep it current for ChatGPT to build on. **Merge, never rebase** — rebasing rewrites history that an external agent is actively holding refs to, and never merge in the other direction. Syncing happens when Nolan asks for it, not on an agent's own judgment.
   - **What "explicitly instructed otherwise" means**: a written directive from Nolan, in the current session, naming **both the target branch and the specific change**. Implication, inference, and passing remarks are not authorization. If it's uncertain, it wasn't authorization — ask.
   - **Failure protocol**: on any boundary crossing or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
