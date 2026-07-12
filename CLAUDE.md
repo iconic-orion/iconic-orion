@@ -10,6 +10,7 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 ## Short-lived branches
 
 - **`feature/*` or `claude/*`** — branched off `prototype` (or off a long-running dev branch, see below) for a specific scoped change. PR back to whichever branch you branched from. Delete after merge.
+- **`codex/*`** — ChatGPT's exploration sandbox (same repo, but operationally separate). Frontend/UI design, mathematical/algorithmic work. ChatGPT treats as independent workspace; Claude reviews and integrates promising work via PR to `prototype`. All standard tools/CI apply.
 
 ## Long-running dev branches (for multi-slice work)
 
@@ -22,14 +23,20 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-- **`feature/bloom`** — the **long-running "shareable tasting experience" branch**, off `prototype` (2026-07-05). Consolidates two earlier local branches that were actually a linear chain — `feature/ux-checkup-fixes` and `feature/go-deeper-naturalist` — into one body of work, because they're the same thesis: **the wheel is a shareable tasting standard; quick-use is the powerful, front-and-center default; Go Deeper "blooms" into the extended naturalist/chemistry science.** Both sub-branches were deleted after consolidation (fully contained, never pushed). One draft tracking PR against `prototype`; do NOT auto-merge. Roadmap phases (see the tracking PR body / the session roadmap):
+None. Work now flows through `codex/*` branches (ChatGPT exploration) → Claude review → `prototype`.
+
+### Historical: feature/bloom era (archived 2026-07-11)
+
+**Baseline commit**: at session start, 2026-07-11, before the dual-agent (Claude + ChatGPT) workflow begins.
+
+- **`feature/bloom`** — the **long-running "shareable tasting experience" branch**, off `prototype` (branched 2026-07-05). Consolidates two earlier local branches that were actually a linear chain — `feature/ux-checkup-fixes` and `feature/go-deeper-naturalist` — into one body of work, because they're the same thesis: **the wheel is a shareable tasting standard; quick-use is the powerful, front-and-center default; Go Deeper "blooms" into the extended naturalist/chemistry science.** Both sub-branches were deleted after consolidation (fully contained, never pushed). One draft tracking PR against `prototype`; do NOT auto-merge. Roadmap phases (see the tracking PR body / the session roadmap):
   - **Committed** (`1fb8052`): UX checkup fixes — wheel-accessible screen-reader loop (aria-labels on wheel nodes + sliders, aria-live results announcer), fresh-load defaults to the wheel + Notes (not the dense dashboard), "Both"→"Notes + Results", reduced-motion guards on idle drift + Jiggle, PROTOTYPE watermark shrunk to a corner badge, `Norisopr.`→`Norisoprenoid`, focus-visible on header/tab buttons.
   - **Committed** (`3578eff`): note-row `:focus-within` highlight for keyboard tabbing.
   - **Committed** (`0102cb4`): Go Deeper naturalist skin — the "event horizon" warp reskinned as a descent through forest strata (canopy→soil), the 🧬 badge became `helixGlyph()` (a twining vine double-helix), and a climbing corner vine grows into the wheel while go-deeper is on.
   - **Committed** (`6d4689a`): vines grown into the Tree workspace (two framing climbers) + a faint baked overgrowth on the go-deeper results pane + the wheel vine tuned larger/richer. One shared vine visual language + keyframes; all unfurl gated on prefers-reduced-motion.
   - **Queued** (see roadmap): shareable client-side export (PNG/JPG/PDF tasting card, no backend), quick-use↔Go-Deeper parity pass, and the rolling Go Deeper science backlog (phylogenetic "why here", 2D molecular structures, shape→smell, volatility/temperature/humidity/mask threshold explorers, molecule-size vs detection threshold).
 
-Slice 2 (meats/eggs/stocks, from the mobile-ui-pass-3 era) remains queued/not started — start it fresh off `prototype`, separate from `feature/bloom`.
+**Scope closure** — meats/eggs/stocks (Slice 2) deliberately dropped 2026-07-11. Keeping the tool botanical-focused; protein notes are out of scope.
 
 ### Historical: mobile-ui-pass-3 (merged 2026-07-03)
 
@@ -83,10 +90,15 @@ Recently merged into `prototype`:
 ```
 feature/X ──PR──▶ prototype ──PR──▶ main      (small self-contained changes)
 
-(future long-running work) ──PR──▶ prototype ──PR──▶ main
-   ▲
-   │ slice commits accumulate here
+codex/* (ChatGPT exploration: frontend + math, same repo)
+   ▼
+Claude review ──PR──▶ prototype ──PR──▶ main (dual-agent integration, as of 2026-07-11)
 ```
+
+**Dual-agent workflow** (starting 2026-07-11):
+- **`codex/*`** branches: ChatGPT's independent exploration sandbox for UI and mathematical/algorithmic work (frontend design, data visualization, interaction patterns, performance tuning). Operationally separate; ChatGPT owns the branch lifecycle.
+- **Claude review**: Reads and reviews `codex/*` branches, integrates promising work via PR back to `prototype` (same repo infrastructure).
+- Small scoped changes still use **`feature/*`** or **`claude/*`** and PR directly to `prototype` as before.
 
 ## Tags
 
