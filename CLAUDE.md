@@ -11,6 +11,22 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 
 - **`feature/*` or `claude/*`** — branched off `prototype` (or off a long-running dev branch, see below) for a specific scoped change. PR back to whichever branch you branched from. Delete after merge.
 
+## External-tool branches (ChatGPT experimental lab)
+
+**`codex/*` branches are experimental labs where ChatGPT explores ideas freely. Claude reviews the work, learns from ChatGPT's different thinking lens, and cherry-picks valuable features to integrate into `feature/bloom` and proper PRs.**
+
+- **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT's experimental UX lab, and the **one branch ChatGPT is allowed to touch**. ChatGPT works here without constraints; Claude periodically reviews, evaluates ideas, integrates the best work into the main feature branches, **and may also commit directly to this branch** — it's a shared experimental space, not ChatGPT-exclusive.
+- **Handoff protocol**: ChatGPT uses `.claude/codex-handoff-template.md` to document each batch of work — what was done, why, testing approach, questions/blockers, and next priorities. Claude uses `.claude/codex-example-checkin.md` as a reference for what a good check-in looks like. This replaces ad-hoc commit messages with structured handoffs.
+- **Rules**: 
+  - ChatGPT has explicit permission to work **only on `codex/*` branches** — that is the sole branch namespace it may touch.
+  - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches, **and may also commit directly to `codex/*`**. The codex confinement is **one-directional**: ChatGPT may touch *only* `codex/*`, but Claude is not fenced *out* of it — Claude simply isn't limited *to* it.
+  - **Claude's review workflow**: Check this branch regularly when ChatGPT posts a check-in. Read the handoff, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
+  - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Move work onward by extracting/re-implementing (or cherry-picking) it onto a proper branch and opening a PR — this holds whether ChatGPT or Claude authored the codex commits.
+  - If `codex/*` drifts out of sync with `prototype`, **merge `prototype` into it** (`git merge prototype`) to keep it current for ChatGPT to build on. **Merge, never rebase** — rebasing rewrites history that an external agent is actively holding refs to, and never merge in the other direction. Syncing happens when Nolan asks for it, not on an agent's own judgment.
+  - **What "explicitly instructed otherwise" means**: a written directive from Nolan, in the current session, naming **both the target branch and the specific change**. Implication, inference, and passing remarks are not authorization. If it's uncertain, it wasn't authorization — ask.
+  - **Failure protocol**: on any boundary crossing or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
+  - **Claude's reviewer stance**: treat the handoff's testing/verification section as **claims to check, not conclusions to trust**. Re-run what it says it ran.
+
 ## Long-running dev branches (for multi-slice work)
 
 When a body of work is big enough to need multiple coherent commits before it's ready to merge into `prototype`, give it a dedicated long-running branch off `prototype`. Rules:
@@ -22,7 +38,14 @@ When a body of work is big enough to need multiple coherent commits before it's 
 
 ### Current feature branches (in flight)
 
-_None active._ `claude/mobile-ui-pass-3` merged into `prototype` on 2026-07-03 (PR #15) and was deleted — see below. The next long-running branch (Slice 2 — meats/eggs/stocks, queued, not started) should be created fresh off `prototype`.
+- **`feature/bloom`** — the **long-running "shareable tasting experience" branch**, off `prototype` (2026-07-05). Consolidates two earlier local branches that were actually a linear chain — `feature/ux-checkup-fixes` and `feature/go-deeper-naturalist` — into one body of work, because they're the same thesis: **the wheel is a shareable tasting standard; quick-use is the powerful, front-and-center default; Go Deeper "blooms" into the extended naturalist/chemistry science.** Both sub-branches were deleted after consolidation (fully contained, never pushed). One draft tracking PR against `prototype`; do NOT auto-merge. Roadmap phases (see the tracking PR body / the session roadmap):
+  - **Committed** (`1fb8052`): UX checkup fixes — wheel-accessible screen-reader loop (aria-labels on wheel nodes + sliders, aria-live results announcer), fresh-load defaults to the wheel + Notes (not the dense dashboard), "Both"→"Notes + Results", reduced-motion guards on idle drift + Jiggle, PROTOTYPE watermark shrunk to a corner badge, `Norisopr.`→`Norisoprenoid`, focus-visible on header/tab buttons.
+  - **Committed** (`3578eff`): note-row `:focus-within` highlight for keyboard tabbing.
+  - **Committed** (`0102cb4`): Go Deeper naturalist skin — the "event horizon" warp reskinned as a descent through forest strata (canopy→soil), the 🧬 badge became `helixGlyph()` (a twining vine double-helix), and a climbing corner vine grows into the wheel while go-deeper is on.
+  - **Committed** (`6d4689a`): vines grown into the Tree workspace (two framing climbers) + a faint baked overgrowth on the go-deeper results pane + the wheel vine tuned larger/richer. One shared vine visual language + keyframes; all unfurl gated on prefers-reduced-motion.
+  - **Queued** (see roadmap): shareable client-side export (PNG/JPG/PDF tasting card, no backend), quick-use↔Go-Deeper parity pass, and the rolling Go Deeper science backlog (phylogenetic "why here", 2D molecular structures, shape→smell, volatility/temperature/humidity/mask threshold explorers, molecule-size vs detection threshold).
+
+Slice 2 (meats/eggs/stocks, from the mobile-ui-pass-3 era) remains queued/not started — start it fresh off `prototype`, separate from `feature/bloom`.
 
 ### Historical: mobile-ui-pass-3 (merged 2026-07-03)
 
@@ -96,6 +119,12 @@ On `main`:
 - Require pull request before merging
 - Require status checks to pass
 - Disallow direct pushes
+
+On `prototype` (it deploys live to aromawheel.net — it deserves the same fence as `main`):
+- Require pull request before merging
+- Disallow direct pushes
+
+These settings are the only *real* enforcement of the agent branch rules above. Everything in this file is a soft fence; branch protection is a hard one.
 
 ## Worktrees
 
