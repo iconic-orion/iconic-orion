@@ -10795,10 +10795,13 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     // in flip layout it's exclusive to the back face above.
     const showMapSection = face === "single" && opts.showMap && mapItems.length > 0;
 
-    // What to include is controlled by the checkboxes; "style" now only affects
-    // the wheel size / vibe (stunning = wheel-forward, section labels dropped).
+    // "More stunning" = wheel is the hero — bigger wheel, compounds list hidden,
+    // section labels dropped so nothing competes with the visual.
+    // "More informative" = full content, default layout.
     const showLabels = !stunning;
-    const compsShown = opts.showCompounds ? comps : [];
+    // Stunning drops the compound list regardless of the checkbox so the wheel
+    // can breathe; the checkbox still controls informative mode.
+    const compsShown = opts.showCompounds && !stunning ? comps : [];
     // When the map section will follow, notes/compounds stop short of the
     // footer to leave it guaranteed room instead of fighting over leftovers.
     const contentBottom = showMapSection ? footerTop - 230 : footerTop;
@@ -10807,18 +10810,26 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     const wheelTop = 152;
     let wheelH;
     if (portrait) {
-      wheelH = 560;
-      if (!opts.showCompounds || !compsShown.length) wheelH += 210;
-      if (!opts.showNotes) wheelH += 150;
-      if (stunning) wheelH += 110;
-      if (showMapSection) wheelH -= 260;
+      wheelH = stunning ? 780 : 560;
+      if (stunning) {
+        if (!opts.showNotes) wheelH += 100;
+        if (showMapSection) wheelH -= 200;
+      } else {
+        if (!opts.showCompounds || !allComps.length) wheelH += 210;
+        if (!opts.showNotes) wheelH += 150;
+        if (showMapSection) wheelH -= 260;
+      }
       wheelH = Math.min(wheelH, 1000);
     } else {
-      wheelH = 500;
-      if (!opts.showCompounds || !compsShown.length) wheelH += 150;
-      if (!opts.showNotes) wheelH += 110;
-      if (stunning) wheelH += 70;
-      if (showMapSection) wheelH -= 200;
+      wheelH = stunning ? 660 : 500;
+      if (stunning) {
+        if (!opts.showNotes) wheelH += 70;
+        if (showMapSection) wheelH -= 160;
+      } else {
+        if (!opts.showCompounds || !allComps.length) wheelH += 150;
+        if (!opts.showNotes) wheelH += 110;
+        if (showMapSection) wheelH -= 200;
+      }
       wheelH = Math.min(wheelH, 840);
     }
     wheelH = Math.max(wheelH, portrait ? 260 : 220);
