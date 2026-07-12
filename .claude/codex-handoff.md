@@ -48,3 +48,18 @@ Commits: uncommitted exploratory batch
 - Added token-aware containment, so the whole compound bubble—not only its center point—stays within the center boundary.
 - Scent-mode drag/pin now clamps to that arena instead of allowing a molecule to be parked outside the wheel. Chemistry retains its existing free-pin behavior.
 - Verified with the Ethiopian coffee demo: six flavor notes remained on the rim; all 17 rendered compound bubbles were inside the dotted boundary (maximum bubble extent ~176 px against a ~256 px dotted radius); no console errors or warnings.
+
+## Follow-up: mobile hamburger controls
+
+- Replaced the collapsed `•••` glyph with the hamburger glyph already used by the open/close script, so the control no longer changes visual language on first tap.
+- Put Share and Start Over on one explicit utility row; Feedback remains a full-width final action instead of Share falling into an accidental half-empty row.
+- Share and Go Deeper now dismiss the tray after activation, consistent with workspace, panel, organize, Compass, Info, and Start Over actions.
+- Verified at 360 × 760: the tray fits within the viewport; Share opens its dialog, Info opens its overlay, Compass toggles, and Go Deeper completes its transition. Every tested action closes the tray and produced no console errors.
+
+## Follow-up: five-leaf Go Deeper depth trail
+
+- Converted the five decorative wheel-vine leaves into keyboard- and touch-accessible depth controls with enlarged invisible hit areas and luminous focus/active states.
+- Added five progressive field-note cards: perception as evidence; physical molecule/receptor behavior; taxonomy and convergent chemistry; pre-Columbian cultivation biogeography; and genes, pathways, selection, ecology, and evolutionary phylogeny.
+- Cards include a 1–5 navigator and contextual actions: switch to Chemistry, open Tree, or open Map. Leaving Go Deeper closes any open card.
+- Visual treatment is translucent botanical glass with a restrained slow shimmer; reduced-motion users get a static card.
+- Verified at 360 × 760: the card fits fully above the bottom interaction zone, touch and keyboard leaf activation work, the level navigator updates content, and the Tree action changes workspace and closes the card. No console errors.

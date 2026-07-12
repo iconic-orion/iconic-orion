@@ -810,9 +810,47 @@
   .vine-curl { stroke-dasharray: 80; }
 
   /* wheel corner vine — climbs the wheel's empty bottom-left corner */
-  #deeper-vines { position: absolute; left: -6px; bottom: 0; z-index: 4; pointer-events: none;
+  #deeper-vines { position: absolute; left: -6px; bottom: 0; z-index: 9; pointer-events: none;
     opacity: 0; transform: translateY(14px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
-  body.go-deeper #deeper-vines { opacity: 0.62; transform: none; }
+  body.go-deeper #deeper-vines { opacity: 0.82; transform: none; pointer-events: auto; }
+  #deeper-vines .vine-leaf { cursor: pointer; pointer-events: all; outline: none; }
+  #deeper-vines .vine-leaf-hit { fill: transparent; pointer-events: all; }
+  #deeper-vines .vine-leaf path { transition: filter .2s ease, stroke .2s ease, transform .2s ease; }
+  #deeper-vines .vine-leaf:hover path,
+  #deeper-vines .vine-leaf:focus-visible path,
+  #deeper-vines .vine-leaf.active path { stroke: #d9c487; stroke-width: 1.2px;
+    filter: drop-shadow(0 0 5px rgba(217,196,135,.9)) drop-shadow(0 0 12px rgba(127,194,117,.55));
+    transform: scale(1.08); }
+
+  .depth-card { position: fixed; left: calc(var(--notes-pane-w) + 32px); bottom: 28px; z-index: 180;
+    width: min(370px, calc(100% - 112px)); padding: 17px 18px 15px; overflow: hidden;
+    border: 1px solid rgba(151,205,174,.34); border-radius: 17px;
+    background: linear-gradient(145deg, rgba(15,25,23,.92), rgba(24,25,28,.9));
+    box-shadow: 0 18px 55px rgba(0,0,0,.52), inset 0 1px rgba(255,255,255,.055);
+    backdrop-filter: blur(18px) saturate(1.12); transform-origin: left bottom;
+    animation: depth-card-in .28s cubic-bezier(.2,.85,.25,1) both; }
+  .depth-card[hidden] { display: none; }
+  .depth-card::before { content:""; position:absolute; inset:-80% -45%; pointer-events:none;
+    background: linear-gradient(105deg, transparent 42%, rgba(190,235,210,.08) 49%, rgba(222,196,127,.12) 52%, transparent 59%);
+    transform: translateX(-35%) rotate(6deg); animation: depth-shimmer 5.5s ease-in-out infinite; }
+  .depth-card-top { position:relative; display:flex; align-items:flex-start; gap:12px; }
+  .depth-card-level { flex:0 0 auto; display:grid; place-items:center; width:35px; height:35px;
+    border:1px solid rgba(217,196,135,.38); border-radius:50%; color:#e3ca85;
+    font:400 18px/1 Georgia,serif; box-shadow:0 0 16px rgba(127,194,117,.12); }
+  .depth-card-kicker { color:#8ec5a4; font-size:9px; letter-spacing:.15em; text-transform:uppercase; margin:1px 0 4px; }
+  .depth-card h3 { margin:0; font:400 18px/1.2 Georgia,"Times New Roman",serif; color:var(--ink); }
+  .depth-card-close { position:absolute; right:-6px; top:-7px; width:38px; height:38px;
+    border:0; background:transparent; color:var(--ink-dim); font-size:19px; cursor:pointer; }
+  .depth-card p { position:relative; margin:12px 0 0; color:#c6cec9; font-size:12px; line-height:1.58; }
+  .depth-card-footer { position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:13px; }
+  .depth-card-progress { display:flex; gap:5px; }
+  .depth-card-progress button { width:22px; height:22px; padding:0; border:1px solid rgba(151,205,174,.2);
+    border-radius:50%; color:var(--ink-dim); background:rgba(255,255,255,.025); font-size:9px; cursor:pointer; }
+  .depth-card-progress button.active { color:#111713; background:#d9c487; border-color:#d9c487; }
+  .depth-card-action { min-height:34px; padding:7px 11px; border:1px solid rgba(217,196,135,.35);
+    border-radius:10px; color:#e3ca85; background:rgba(217,196,135,.06); font-size:10px; cursor:pointer; }
+  @keyframes depth-card-in { from { opacity:0; transform:translate(-8px,8px) scale(.96); } to { opacity:1; transform:none; } }
+  @keyframes depth-shimmer { 0%,55% { transform:translateX(-45%) rotate(6deg); } 85%,100% { transform:translateX(45%) rotate(6deg); } }
 
   /* Tree workspace vines — frame the dendrogram from two corners */
   #tree-vines { position: absolute; inset: 0; z-index: 2; pointer-events: none;
@@ -847,6 +885,20 @@
   @keyframes vine-draw { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }
   @keyframes vine-leaf-in { from { opacity: 0; transform: scale(0.15); } to { opacity: 1; transform: scale(1); } }
   @keyframes vine-bud-in { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+
+  @media (max-width: 760px) {
+    #deeper-vines { transform:scale(.82) translateY(14px); transform-origin:left bottom; }
+    body.go-deeper #deeper-vines { transform:scale(.82); }
+    .depth-card { position:fixed; left:10px; right:10px; bottom:74px; width:auto;
+      padding:15px 16px 13px; z-index:175; border-radius:20px; transform-origin:center bottom; }
+    .depth-card h3 { font-size:17px; padding-right:24px; }
+    .depth-card p { font-size:11.5px; line-height:1.52; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .depth-card { animation:none; }
+    .depth-card::before { animation:none; display:none; }
+  }
 
   /* ── Reading / dyslexia mode ──────────────────────────────────────────
      A legibility pass: Atkinson Hyperlegible (lazy-loaded; falls back to
@@ -1378,7 +1430,8 @@
     header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 2; justify-self: end; }
     header.hud-open .hud-divider      { display: block; grid-row: 5; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #reset            { grid-row: 6; grid-column: 1 / -1; justify-self: end; margin-top: 6px; }
+    header.hud-open #share-open-btn   { grid-row: 6; grid-column: 1; justify-self: stretch; margin-top: 6px; justify-content:center; }
+    header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: stretch; margin-top: 6px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -2053,7 +2106,7 @@
     <button id="reset">Start Over</button>
   </div>
   <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
-  <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">•••</button>
+  <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">☰</button>
 </header>
 <aside class="notes" id="left-panel">
   <div class="legend collapsed" id="legend">
@@ -2102,16 +2155,16 @@
        main.wheel so it frames the wheel (never the sliders) and vanishes in
        Map/Tree. Non-interactive; the stem draw-on is gated on
        prefers-reduced-motion (reduced = it just appears, already grown). -->
-  <div id="deeper-vines" aria-hidden="true">
+  <div id="deeper-vines" aria-label="Five depths of aroma science">
     <svg viewBox="0 0 120 270" width="120" height="270" fill="none" preserveAspectRatio="xMinYMax meet">
       <path class="vine-stem" d="M22 270 C8 224 54 208 34 162 C18 124 58 108 38 68 C28 44 48 32 40 10"
         stroke="#5a9c4f" stroke-width="3.6" stroke-linecap="round"/>
       <path class="vine-curl" d="M48 152 C64 148 66 164 52 166 C44 167 46 156 54 158" stroke="#6a9a4e" stroke-width="2" stroke-linecap="round"/>
-      <g class="vine-leaf vine-leaf-1" fill="#5a9c4f"><path d="M34 200 C22 192 18 206 28 216 C40 210 44 206 34 200 Z"/></g>
-      <g class="vine-leaf vine-leaf-2" fill="#7fc275"><path d="M40 158 C52 150 56 164 46 174 C34 168 30 164 40 158 Z"/></g>
-      <g class="vine-leaf vine-leaf-3" fill="#4f7a3a"><path d="M34 118 C22 110 18 124 28 134 C40 128 44 124 34 118 Z"/></g>
-      <g class="vine-leaf vine-leaf-4" fill="#7fc275"><path d="M42 80 C54 72 58 86 48 96 C36 90 32 86 42 80 Z"/></g>
-      <g class="vine-leaf vine-leaf-5" fill="#5a9c4f"><path d="M36 44 C24 36 20 50 30 60 C42 54 46 50 36 44 Z"/></g>
+      <g class="vine-leaf vine-leaf-1" data-depth="1" role="button" tabindex="0" aria-label="Depth 1: Perception becomes evidence" fill="#5a9c4f"><circle class="vine-leaf-hit" cx="31" cy="207" r="15"/><path d="M34 200 C22 192 18 206 28 216 C40 210 44 206 34 200 Z"/></g>
+      <g class="vine-leaf vine-leaf-2" data-depth="2" role="button" tabindex="0" aria-label="Depth 2: Molecules move through bodies" fill="#7fc275"><circle class="vine-leaf-hit" cx="45" cy="162" r="15"/><path d="M40 158 C52 150 56 164 46 174 C34 168 30 164 40 158 Z"/></g>
+      <g class="vine-leaf vine-leaf-3" data-depth="3" role="button" tabindex="0" aria-label="Depth 3: Aromas have family trees" fill="#4f7a3a"><circle class="vine-leaf-hit" cx="31" cy="125" r="15"/><path d="M34 118 C22 110 18 124 28 134 C40 128 44 124 34 118 Z"/></g>
+      <g class="vine-leaf vine-leaf-4" data-depth="4" role="button" tabindex="0" aria-label="Depth 4: Cultivation has a geography" fill="#7fc275"><circle class="vine-leaf-hit" cx="47" cy="84" r="15"/><path d="M42 80 C54 72 58 86 48 96 C36 90 32 86 42 80 Z"/></g>
+      <g class="vine-leaf vine-leaf-5" data-depth="5" role="button" tabindex="0" aria-label="Depth 5: Evolution writes the recipe" fill="#5a9c4f"><circle class="vine-leaf-hit" cx="31" cy="51" r="15"/><path d="M36 44 C24 36 20 50 30 60 C42 54 46 50 36 44 Z"/></g>
       <circle class="vine-bud" cx="40" cy="9" r="3.6" fill="#d8a657"/>
     </svg>
   </div>
@@ -2227,6 +2280,15 @@
   </div>
   <div class="mobile-sheet-readout"><strong id="mobile-sheet-value">0</strong> intensity · slide or tap</div>
 </section>
+<aside id="depth-card" class="depth-card" hidden aria-live="polite" aria-label="Go Deeper introduction">
+  <div class="depth-card-top">
+    <div class="depth-card-level" id="depth-card-level">1</div>
+    <div><div class="depth-card-kicker" id="depth-card-kicker">First lens</div><h3 id="depth-card-title"></h3></div>
+    <button type="button" id="depth-card-close" class="depth-card-close" aria-label="Close depth card">×</button>
+  </div>
+  <p id="depth-card-copy"></p>
+  <div class="depth-card-footer"><div class="depth-card-progress" id="depth-card-progress" aria-label="Choose a depth"></div><button type="button" id="depth-card-action" class="depth-card-action" hidden></button></div>
+</aside>
 <div id="origins-view" hidden>
   <div id="origins-body">
     <div id="origins-map-wrap">
@@ -7864,7 +7926,7 @@ hudToggleBtn.addEventListener("click", () => {
 document.addEventListener("click", (e) => {
   if (!headerEl.classList.contains("hud-open")) return;
   if (!headerEl.contains(e.target)) { setHudOpen(false); return; }
-  if (e.target.closest("#workspace-tabs button, #view-tabs button, #organize-tabs button, #reset, #compass-toggle, #info-open-btn")) {
+  if (e.target.closest("#workspace-tabs button, #view-tabs button, #organize-tabs button, #reset, #compass-toggle, #godeeper-toggle, #share-open-btn, #info-open-btn")) {
     setHudOpen(false);
   }
 });
@@ -8286,6 +8348,77 @@ function dismissHelper(id) {
 }
 
 // ---------- GO DEEPER TOGGLE ----------
+const DEPTH_STORIES = [
+  {
+    kicker: "First lens · perception",
+    title: "Your nose is evidence",
+    copy: "Start with what you notice. The wheel compares your notes with known aroma links and suggests molecules worth investigating."
+  },
+  {
+    kicker: "Second lens · physicalism",
+    title: "Aroma is motion",
+    copy: "Volatile molecules travel through air and the retronasal passage. Heat, airflow, saliva, and receptor thresholds shape each sniff and exhale.",
+    action: "View by chemistry", actionType: "chemistry"
+  },
+  {
+    kicker: "Third lens · taxonomy",
+    title: "Kinship and convergence",
+    copy: "Plant relatives often share aromatic pathways. Open Tree to see where a scent may come from shared ancestry or parallel evolution.",
+    action: "Open the Tree", actionType: "tree"
+  },
+  {
+    kicker: "Fourth lens · biogeography",
+    title: "Where flavor traveled",
+    copy: "Ingredients began in particular places. Map follows cultivation origins before the Columbian Exchange and connects scent with climate, soils, domestication, and trade.",
+    action: "Open the Map", actionType: "map"
+  },
+  {
+    kicker: "Fifth lens · evolution",
+    title: "Genes, ecology, selection",
+    copy: "Genes guide the enzyme pathways that make aromatic compounds. Ripeness, plant tissue, stress, microbes, climate, and breeding tune the final bouquet.",
+    action: "Trace it in the Tree", actionType: "tree"
+  }
+];
+const depthCard = document.getElementById("depth-card");
+const depthLeaves = [...document.querySelectorAll("#deeper-vines .vine-leaf[data-depth]")];
+let activeDepth = 0;
+function closeDepthCard() {
+  depthCard.hidden = true;
+  depthLeaves.forEach(l => l.classList.remove("active"));
+}
+function openDepthCard(depth) {
+  const i = Math.max(0, Math.min(DEPTH_STORIES.length - 1, depth - 1));
+  const story = DEPTH_STORIES[i]; activeDepth = i;
+  document.getElementById("depth-card-level").textContent = i + 1;
+  document.getElementById("depth-card-kicker").textContent = story.kicker;
+  document.getElementById("depth-card-title").textContent = story.title;
+  document.getElementById("depth-card-copy").textContent = story.copy;
+  const action = document.getElementById("depth-card-action");
+  action.hidden = !story.action; action.textContent = story.action || ""; action.dataset.action = story.actionType || "";
+  depthLeaves.forEach((l, idx) => l.classList.toggle("active", idx === i));
+  [...document.querySelectorAll("#depth-card-progress button")].forEach((b, idx) => b.classList.toggle("active", idx === i));
+  depthCard.hidden = false;
+}
+const depthProgress = document.getElementById("depth-card-progress");
+DEPTH_STORIES.forEach((story, i) => {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = i + 1;
+  b.setAttribute("aria-label", `Open depth ${i + 1}: ${story.title}`);
+  b.addEventListener("click", () => openDepthCard(i + 1)); depthProgress.appendChild(b);
+});
+depthLeaves.forEach(leaf => {
+  const open = () => openDepthCard(+leaf.dataset.depth);
+  leaf.addEventListener("click", open);
+  leaf.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+});
+document.getElementById("depth-card-close").addEventListener("click", closeDepthCard);
+document.getElementById("depth-card-action").addEventListener("click", e => {
+  const action = e.currentTarget.dataset.action;
+  closeDepthCard();
+  if (action === "chemistry") setOrganizeBy("chemistry");
+  else if (action === "tree" || action === "map") setWorkspace(action);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !depthCard.hidden) closeDepthCard(); });
+
 function setGoDeeper(on) {
   const wasOn = state.goDeeper;
   state.goDeeper = !!on;
@@ -8294,6 +8427,7 @@ function setGoDeeper(on) {
   // existing null-phase entries so the slider faithfully represents the
   // committed state. In default mode, slider IS the entry.
   if (wasOn && !state.goDeeper) {
+    closeDepthCard();
     for (const noteId of Object.keys(state.pendingIntensity)) {
       const nullEntry = getEntry(noteId, null);
       state.pendingIntensity[noteId] = nullEntry !== undefined ? nullEntry : 0;
