@@ -10795,25 +10795,24 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     // in flip layout it's exclusive to the back face above.
     const showMapSection = face === "single" && opts.showMap && mapItems.length > 0;
 
-    // "More stunning" = wheel is the hero — bigger wheel, compounds list hidden,
-    // section labels dropped so nothing competes with the visual.
-    // "More informative" = full content, default layout.
+    // "More stunning" = wheel is the hero — section labels dropped, map never shown,
+    // defaults to wheel-only; user can opt in notes/compounds via checkboxes.
+    // "More informative" = full content with compound bars and map readout.
     const showLabels = !stunning;
-    // Stunning drops the compound list regardless of the checkbox so the wheel
-    // can breathe; the checkbox still controls informative mode.
-    const compsShown = opts.showCompounds && !stunning ? comps : [];
-    // When the map section will follow, notes/compounds stop short of the
-    // footer to leave it guaranteed room instead of fighting over leftovers.
+    // Both modes honour the checkbox; rendering differs (pills vs bars).
+    const compsShown = opts.showCompounds ? comps : [];
+    // Stunning never shows the map (it's an informative detail).
     const contentBottom = showMapSection ? footerTop - 230 : footerTop;
 
-    // Wheel grows to fill the space freed by any hidden section.
+    // Wheel size. Stunning starts at its maximum and shrinks only when the user
+    // has opted in sections; informative starts smaller with all sections included.
     const wheelTop = 152;
     let wheelH;
     if (portrait) {
-      wheelH = stunning ? 780 : 560;
+      wheelH = stunning ? 900 : 560;
       if (stunning) {
-        if (!opts.showNotes) wheelH += 100;
-        if (showMapSection) wheelH -= 200;
+        if (opts.showNotes && notes.length) wheelH -= 150;
+        if (compsShown.length) wheelH -= 120;
       } else {
         if (!opts.showCompounds || !allComps.length) wheelH += 210;
         if (!opts.showNotes) wheelH += 150;
@@ -10821,10 +10820,10 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
       }
       wheelH = Math.min(wheelH, 1000);
     } else {
-      wheelH = stunning ? 660 : 500;
+      wheelH = stunning ? 720 : 500;
       if (stunning) {
-        if (!opts.showNotes) wheelH += 70;
-        if (showMapSection) wheelH -= 160;
+        if (opts.showNotes && notes.length) wheelH -= 80;
+        if (compsShown.length) wheelH -= 80;
       } else {
         if (!opts.showCompounds || !allComps.length) wheelH += 150;
         if (!opts.showNotes) wheelH += 110;
@@ -10866,20 +10865,40 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
       y = cy + chipH + 40;
     }
 
-    // Likely compounds — checkbox-controlled, ordered by prominence, fills to
-    // contentBottom (== footerTop unless a map section follows).
-    if (compsShown.length && y < contentBottom - 60) {
-      if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "LIKELY COMPOUNDS · BY CONFIDENCE")); y += 28; }
-      const barW = 280, barX = W - PAD - barW;
-      for (const c of compsShown) {
-        if (y + 30 > contentBottom) break;
-        const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
-        if (ic) svg.appendChild(sEl("text", { x: PAD, y: y + 17, "font-size": 22 }, ic));
-        svg.appendChild(sEl("text", { x: PAD + (ic ? 34 : 0), y: y + 16, fill: "#e9e6df", "font-size": 22, "font-family": SANS }, c.label));
-        svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: barW, height: 15, rx: 7, fill: "#26242b" }));
-        svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: Math.max(6, barW * Math.min(1, c.conf)), height: 15, rx: 7, fill: "#d8a657" }));
-        svg.appendChild(sEl("text", { x: barX - 12, y: y + 16, fill: "#8a8579", "font-size": 16, "text-anchor": "end", "font-family": SANS }, Math.round(c.conf * 100) + "%"));
-        y += 38;
+    // Likely compounds — checkbox-controlled, ordered by prominence.
+    // Stunning: elegant name-only pill chips (no bars, no numbers).
+    // Informative: full confidence bar chart.
+    if (compsShown.length && y < contentBottom - 40) {
+      if (stunning) {
+        const pillH = 38, gap = 10, rowGap = 8, maxX = W - PAD;
+        let cx = PAD, cy = y, rows = 0;
+        for (const c of compsShown) {
+          const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
+          const iconOff = ic ? 28 : 0;
+          const w = iconOff + textW(c.label, 19, 500) + 28;
+          if (cx + w > maxX) { cx = PAD; cy += pillH + rowGap; rows++; if (rows >= 2) break; }
+          if (cy + pillH > contentBottom) break;
+          const g = sEl("g", { transform: "translate(" + cx + "," + cy + ")" });
+          g.appendChild(sEl("rect", { x: 0, y: 0, width: w, height: pillH, rx: pillH / 2, fill: "#1e1c21" }));
+          if (ic) g.appendChild(sEl("text", { x: 12, y: pillH / 2 + 7, "font-size": 18 }, ic));
+          g.appendChild(sEl("text", { x: 12 + iconOff, y: pillH / 2 + 7, fill: "#c8c0b4", "font-size": 19, "font-family": SANS }, c.label));
+          svg.appendChild(g);
+          cx += w + gap;
+        }
+        y = cy + pillH + 32;
+      } else {
+        if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "LIKELY COMPOUNDS · BY CONFIDENCE")); y += 28; }
+        const barW = 280, barX = W - PAD - barW;
+        for (const c of compsShown) {
+          if (y + 30 > contentBottom) break;
+          const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
+          if (ic) svg.appendChild(sEl("text", { x: PAD, y: y + 17, "font-size": 22 }, ic));
+          svg.appendChild(sEl("text", { x: PAD + (ic ? 34 : 0), y: y + 16, fill: "#e9e6df", "font-size": 22, "font-family": SANS }, c.label));
+          svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: barW, height: 15, rx: 7, fill: "#26242b" }));
+          svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: Math.max(6, barW * Math.min(1, c.conf)), height: 15, rx: 7, fill: "#d8a657" }));
+          svg.appendChild(sEl("text", { x: barX - 12, y: y + 16, fill: "#8a8579", "font-size": 16, "text-anchor": "end", "font-family": SANS }, Math.round(c.conf * 100) + "%"));
+          y += 38;
+        }
       }
     }
 
@@ -11103,7 +11122,12 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
     updateCompoundCount();
   }
 
-  function openShare() { overlay.hidden = false; cardFlipped = false; syncTabs(); showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds; renderCompoundList(); renderPreview(); }
+  function openShare() {
+    overlay.hidden = false; cardFlipped = false; syncTabs();
+    showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds;
+    mapRowEl.hidden = opts.style === "stunning";
+    renderCompoundList(); renderPreview();
+  }
   function closeShare() { overlay.hidden = true; }
 
   document.getElementById("share-open-btn").addEventListener("click", openShare);
@@ -11112,7 +11136,22 @@ document.getElementById("taxonomy-collapse-all").addEventListener("click", colla
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !overlay.hidden) closeShare(); });
   captionInput.addEventListener("input", () => { clearTimeout(previewTimer); previewTimer = setTimeout(renderPreview, 200); });
   formatTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.format = b.dataset.format; syncTabs(); renderPreview(); });
-  styleTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.style = b.dataset.style; syncTabs(); renderPreview(); });
+  styleTabs.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    opts.style = b.dataset.style;
+    if (opts.style === "stunning") {
+      // Default to wheel-only; user can opt in anything they want.
+      opts.showNotes = false; opts.showCompounds = false; opts.showMap = false;
+      showNotesCb.checked = false; showCompCb.checked = false; showMapCb.checked = false;
+      mapRowEl.hidden = true;
+    } else {
+      opts.showNotes = true; opts.showCompounds = true;
+      showNotesCb.checked = true; showCompCb.checked = true;
+      mapRowEl.hidden = false;
+      // showMap restored by syncMapCheckboxState in renderPreview
+    }
+    syncTabs(); renderPreview();
+  });
   layoutTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.layout = b.dataset.layout; cardFlipped = false; syncTabs(); renderPreview(); });
   flipBtn.addEventListener("click", () => {
     cardFlipped = !cardFlipped;
