@@ -2043,6 +2043,46 @@
       letter-spacing:.055em; pointer-events:none; }
   }
 
+  /* Delivery strip — the third sensory dimension. Sits above the note list and
+     stays collapsed by default so it frames the tasting without competing with
+     the primary input. */
+  .delivery-strip { border: 1px solid var(--line); border-radius: 5px;
+    background: var(--panel); margin: 0 0 10px; }
+  .delivery-summary { display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 8px 10px; list-style: none; font-size: 11px; }
+  .delivery-summary::-webkit-details-marker { display: none; }
+  .delivery-title { text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ink-dim); font-size: 10px; white-space: nowrap; }
+  .delivery-chips { flex: 1; color: var(--accent); font-size: 11px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .delivery-chips.empty { color: var(--ink-dim); font-style: italic; }
+  .delivery-strip .caret { color: var(--ink-dim); font-size: 9px; transition: transform .15s; }
+  .delivery-strip[open] .caret { transform: rotate(180deg); }
+  .delivery-body { padding: 2px 10px 11px; border-top: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 9px; }
+  .delivery-intro { margin: 9px 0 0; font-size: 11px; color: var(--ink-dim); line-height: 1.45; }
+  .delivery-row { display: flex; flex-direction: column; gap: 4px; }
+  .delivery-row-label { font-size: 10px; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--ink-dim); cursor: help; }
+  .delivery-opts { display: flex; flex-wrap: wrap; gap: 4px; }
+  .delivery-opt { font-size: 11px; padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: transparent; color: var(--ink-dim);
+    cursor: pointer; min-height: 30px; }
+  .delivery-opt:hover { border-color: var(--accent-2); color: var(--ink); }
+  .delivery-opt[aria-pressed="true"] { background: var(--accent);
+    border-color: var(--accent); color: #1a1408; font-weight: 600; }
+  .delivery-opt:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+  .delivery-readout { display: flex; flex-direction: column; gap: 6px; }
+  .delivery-effect { font-size: 11px; line-height: 1.45; }
+  .delivery-effect-k { color: var(--accent-2); display: block; font-weight: 600; }
+  .delivery-effect-v { color: var(--ink-dim); }
+  .delivery-tension { font-size: 11px; line-height: 1.5; color: var(--ink);
+    border-left: 2px solid var(--accent); padding: 7px 9px;
+    background: rgba(216,166,87,.08); border-radius: 0 3px 3px 0; }
+  .delivery-caveat { margin: 2px 0 0; font-size: 10px; line-height: 1.45;
+    color: var(--ink-dim); font-style: italic; }
+  .delivery-empty { margin: 0; font-size: 11px; color: var(--ink-dim); line-height: 1.45; }
+
   /* Compact-phone contract. This final responsive layer owns the portrait HUD
      and Tree sheet so later exploratory styles cannot place two controls in
      the same coordinates. */
@@ -2220,6 +2260,23 @@
        are visible as the user types. Empty query = show all. -->
   <input type="search" id="notes-search" class="notes-search" placeholder="Search notes…" autocomplete="off" />
   <nav id="mobile-scent-nav" class="mobile-scent-nav" aria-label="Jump to aroma family"></nav>
+  <!-- Delivery: the third sensory dimension, alongside aroma-compound and
+       mouthfeel. These are not ingredients — they are the conditions under which
+       the same liquid reaches you. Temperature, bubbles, swirling and breath all
+       change what gets to your nose without changing what is in the cup. It sits
+       above the notes because it frames the whole tasting, not one note. -->
+  <details id="delivery-strip" class="delivery-strip">
+    <summary class="delivery-summary">
+      <span class="delivery-title">How you're tasting it</span>
+      <span class="delivery-chips" id="delivery-chips" aria-live="polite"></span>
+      <span class="caret">▼</span>
+    </summary>
+    <div class="delivery-body">
+      <p class="delivery-intro">Same drink, different conditions, different aroma. These don't change the chemistry — they change how much of it reaches you.</p>
+      <div id="delivery-controls"></div>
+      <div id="delivery-readout" class="delivery-readout" aria-live="polite"></div>
+    </div>
+  </details>
   <div id="notes-panel"></div>
 </aside>
 <main class="wheel">
@@ -4150,6 +4207,66 @@ function formatRefFull(ref) {
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
 }
 
+// ── Delivery: the third sensory dimension ────────────────────────────────
+// The first two dimensions describe WHAT is there: aroma compounds (GC-grounded)
+// and mouthfeel/chemesthesis. This one describes HOW it reaches you. Temperature,
+// carbonation, agitation and breath do not change a drink's composition at all —
+// they change how much of each volatile escapes the liquid and gets to the
+// olfactory epithelium. That is why the same coffee is a different object hot and
+// iced, and why an espresso tonic is not just cold coffee.
+//
+// DELIBERATELY QUALITATIVE. Doing this quantitatively needs per-compound
+// air/liquid partition coefficients (Henry's law) or vapour pressures, which this
+// dataset does not have. Rather than invent coefficients, delivery EXPLAINS and
+// ANNOTATES; it never silently reweights a compound score. Every number in the
+// results still comes from the notes you entered. When real partition data is
+// sourced, this layer can start computing without any of the framing changing.
+//
+// Framing rule: these are conditions, never mistakes. A held breath is not user
+// error, it is a delivery condition that happened to carry less to the nose.
+const DELIVERY_CONDITIONS = [
+  {
+    id: "temperature", label: "Temperature", neutral: "room",
+    mechanism: "Volatility rises with temperature, so a hot cup pushes far more molecules into the air above it than a cold one. It is not a volume knob though: light, highly volatile compounds gain much more than heavy ones, so heat re-weights the profile rather than just amplifying it.",
+    options: [
+      { id: "hot",     label: "Hot",     effect: "Maximum headspace. Light, volatile top notes dominate; delicate compounds may blow off before you drink." },
+      { id: "warm",    label: "Warm",    effect: "The classic tasting window — enough lift for aroma without scalding the palate." },
+      { id: "room",    label: "Room",    effect: "Baseline. Roughly the condition most published aroma thresholds are measured at." },
+      { id: "chilled", label: "Chilled", effect: "Reduced headspace. Heavier compounds hold on while volatile top notes recede." },
+      { id: "iced",    label: "Iced",    effect: "Strongly suppressed volatility. Aroma narrows toward whatever is potent enough to register cold — which is why iced coffee can read cleaner but flatter." }
+    ]
+  },
+  {
+    id: "effervescence", label: "Bubbles", neutral: "still",
+    mechanism: "Carbonation is not only mouthfeel. CO₂ bubbles nucleate, rise, and burst at the surface, throwing tiny aerosol droplets into the air — and surface-active aroma compounds concentrate in those droplets. Bubbles actively pump volatiles upward rather than waiting for them to evaporate. This is the mechanism studied in sparkling-wine research.",
+    options: [
+      { id: "still",     label: "Still",     effect: "No bubble transport. Aroma reaches you by evaporation alone." },
+      { id: "light",     label: "Lightly sparkling", effect: "Gentle, sustained lift — bubbles carry aroma up over a longer window." },
+      { id: "sparkling", label: "Sparkling", effect: "Vigorous aerosol transport, plus carbonic-acid bite. Can deliver aroma strongly even when the liquid is cold enough to suppress plain evaporation." }
+    ]
+  },
+  {
+    id: "agitation", label: "Movement", neutral: "still-glass",
+    mechanism: "Swirling does not change the equilibrium between liquid and air — it gets you there faster, by adding surface area and replacing the saturated air sitting above the drink with fresh air.",
+    options: [
+      { id: "still-glass", label: "Undisturbed", effect: "Headspace has settled; you smell the equilibrium." },
+      { id: "swirled",     label: "Swirled",     effect: "Refreshed headspace and more surface area — a bigger, faster burst of aroma." },
+      { id: "stirred",     label: "Stirred / poured", effect: "Strong mixing. Releases trapped volatiles, and in a carbonated drink knocks out CO₂ along with them." }
+    ]
+  },
+  {
+    id: "breath", label: "Breath", neutral: "normal",
+    mechanism: "Retronasal aroma only happens if air actually moves from your mouth up through the nasal passage — usually on the exhale after swallowing. No airflow, no smell, however much volatile is present.",
+    options: [
+      { id: "sniff",  label: "Sniffed first", effect: "Orthonasal — you met the aroma before the liquid. Closest to how perfume is evaluated." },
+      { id: "normal", label: "Normal sip",    effect: "A mix of both routes, whatever your breathing happened to do." },
+      { id: "exhale", label: "Deliberate exhale", effect: "Retronasal on purpose — the post-swallow breath out, where most of what people call flavour actually lives." },
+      { id: "held",   label: "Breath held",   effect: "Little to no retronasal delivery. The compounds were there; the airflow that carries them was not. Not a mistake — just a condition worth recording." }
+    ]
+  }
+];
+const DELIVERY_BY_ID = Object.fromEntries(DELIVERY_CONDITIONS.map(d => [d.id, d]));
+
 // ── Citation honesty policy ──────────────────────────────────────────────
 // Every reference in this tool was drafted with AI assistance, and language
 // models can fabricate plausible-looking citations. So NOTHING is trusted by
@@ -4866,6 +4983,9 @@ const state = {
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false,       // mobile callout labels toggle
   taxonomySheetSnap: "half", // mobile Tree detail: "peek" | "half" | "full"
+  // Delivery conditions for the current tasting (see DELIVERY_CONDITIONS).
+  // null = not stated, which is different from "neutral" — we don't assume.
+  delivery: { temperature: null, effervescence: null, agitation: null, breath: null },
   // Parent note ids whose varietal children are expanded into their own
   // sliders below it in the panel (e.g. expanding "Mint" reveals Peppermint/
   // Spearmint/Wintergreen rows). Persists across panel rebuilds; available in
@@ -6826,6 +6946,87 @@ function announceResults() {
 
 // ---------- PANEL: notes ----------
 const notesPanel = document.getElementById("notes-panel");
+
+// ── Delivery strip ───────────────────────────────────────────────────────
+// Renders DELIVERY_CONDITIONS as option pills and explains what the chosen
+// combination implies. Purely explanatory: nothing here touches recompute().
+const deliveryControls = document.getElementById("delivery-controls");
+const deliveryReadout  = document.getElementById("delivery-readout");
+const deliveryChips    = document.getElementById("delivery-chips");
+
+function buildDeliveryStrip() {
+  deliveryControls.innerHTML = "";
+  DELIVERY_CONDITIONS.forEach(cond => {
+    const row = document.createElement("div");
+    row.className = "delivery-row";
+    const lab = document.createElement("div");
+    lab.className = "delivery-row-label";
+    lab.textContent = cond.label;
+    lab.title = cond.mechanism;
+    row.appendChild(lab);
+    const opts = document.createElement("div");
+    opts.className = "delivery-opts";
+    opts.setAttribute("role", "group");
+    opts.setAttribute("aria-label", cond.label);
+    cond.options.forEach(o => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "delivery-opt";
+      b.textContent = o.label;
+      b.title = o.effect;
+      b.setAttribute("aria-pressed", String(state.delivery[cond.id] === o.id));
+      b.addEventListener("click", () => {
+        // Clicking the active option clears it — "not stated" stays reachable.
+        state.delivery[cond.id] = state.delivery[cond.id] === o.id ? null : o.id;
+        buildDeliveryStrip();
+      });
+      opts.appendChild(b);
+    });
+    row.appendChild(opts);
+    deliveryControls.appendChild(row);
+  });
+  renderDeliveryReadout();
+}
+
+// The payoff: says what the stated conditions imply, and — more usefully —
+// flags when two of them pull in opposite directions, which is exactly the
+// espresso-tonic case (cold suppressing volatility while bubbles pump it up).
+function renderDeliveryReadout() {
+  const stated = DELIVERY_CONDITIONS
+    .map(c => ({ cond: c, opt: c.options.find(o => o.id === state.delivery[c.id]) }))
+    .filter(x => x.opt);
+
+  deliveryChips.textContent = stated.length
+    ? stated.map(x => x.opt.label).join(" · ")
+    : "not stated";
+  deliveryChips.classList.toggle("empty", stated.length === 0);
+
+  if (!stated.length) {
+    deliveryReadout.innerHTML = `<p class="delivery-empty">Nothing stated yet. These are optional — but recording them is what lets the same drink be compared across two different moments.</p>`;
+    return;
+  }
+
+  const cold = ["chilled", "iced"].includes(state.delivery.temperature);
+  const bubbly = ["light", "sparkling"].includes(state.delivery.effervescence);
+  const tension = cold && bubbly;
+
+  deliveryReadout.innerHTML = `
+    ${stated.map(x => `
+      <div class="delivery-effect">
+        <span class="delivery-effect-k">${x.cond.label} · ${x.opt.label}</span>
+        <span class="delivery-effect-v">${x.opt.effect}</span>
+      </div>`).join("")}
+    ${tension ? `
+      <div class="delivery-tension">
+        <strong>Two forces pulling opposite ways.</strong> The cold is suppressing
+        evaporation while the bubbles are actively pumping aroma upward. That
+        combination is why a sparkling cold drink can smell more expressive than a
+        still one at the same temperature — the transport route changes, not the
+        chemistry.
+      </div>` : ``}
+    <p class="delivery-caveat">Delivery is recorded, not calculated. Every intensity in your results still comes only from the notes you entered — putting real numbers on this needs per-compound partition data the tool doesn't have yet.</p>
+  `;
+}
 
 function buildNotesPanel() {
   notesPanel.innerHTML = "";
@@ -9691,6 +9892,7 @@ document.addEventListener("keydown", (e) => {
 
 // ---------- INIT ----------
 buildLegend();
+buildDeliveryStrip();
 buildNotesPanel();
 layout();
 startSim();
