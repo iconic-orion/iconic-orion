@@ -27,6 +27,56 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
   - **Failure protocol**: on any boundary crossing or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
   - **Claude's reviewer stance**: treat the handoff's testing/verification section as **claims to check, not conclusions to trust**. Re-run what it says it ran.
 
+## Product design contract — mobile first
+
+This is the standing product-design priority for the Aroma Wheel. It applies to every
+future UI change, especially work on the Codex experimental branch.
+
+- **Mobile is the canonical experience.** Most people will arrive from a social-app
+  in-app browser, often in portrait. Design the primary interaction and information
+  hierarchy for a phone first; desktop is the same experience with additional room,
+  not a separate desktop-first layout squeezed down later.
+- **Use named viewport classes, not one generic “mobile” layout.** Treat the Galaxy
+  S10e portrait class (360 × 760 CSS px) as a required compact-phone reference.
+  Establish and document additional compact, standard, and large-phone reference
+  viewports before introducing breakpoints. A breakpoint must represent a deliberate
+  layout/design change, not an emergency response to clipping.
+- **No critical control may collide, clip, or become unreachable at a reference
+  viewport.** This includes the `aeckhart` HUD wordmark, workspace/panel controls,
+  and the Go Deeper control. Prefer a compact, intentional mobile HUD (clear primary
+  action plus an explicit overflow/control tray) over wrapped or overlapping buttons.
+  Respect safe-area insets and the reduced visible area common in social in-app
+  browsers.
+- **Pane ownership belongs to the user on mobile.** When Tree detail/compounds are
+  open, they must be a draggable bottom sheet: a visible grab handle, direct drag up
+  to expand, drag down to minimize, sensible snap points, and a fully minimized state
+  that restores the tree. It must update live without losing the selected tree node
+  or scroll/zoom context. Do not permanently reserve most of the screen for detail.
+- **The Tree must read as a connected explanation, not a giant horizontal diagram.**
+  Show the hierarchy and links as the primary object; make Kingdom → Order → Family →
+  note legible in the default mobile framing. Use the family as the meaningful bridge:
+  explain that relatives often share aromatic pathways and therefore hint at likely
+  molecular structures/aroma families. Pan/zoom/scroll support is secondary to a
+  useful initial framing, obvious directionality, and an accessible selected path.
+- **Validate, then document.** For each responsive change, inspect every named
+  reference viewport in portrait, record the dimensions and interaction checked in
+  `.claude/codex-handoff.md`, and call out any in-app-browser uncertainty. Do not
+  claim a physical-device result unless it was tested on that device.
+
+### Current mobile-first roadmap (2026-07-14)
+
+1. Audit the HUD at 360 × 760 first: inventory intrinsic button/wordmark widths,
+   define compact-phone header composition, and remove `aeckhart` / Go Deeper
+   overlap before visual polish.
+2. Replace the Tree mobile detail behavior with a resizable bottom sheet. Preserve
+   selection, tree pan/zoom, and open/closed state across workspace changes; provide
+   touch, pointer, keyboard, and reduced-motion-friendly behavior.
+3. Reframe the Tree mobile layout around visible parent–child connections and a
+   concise “what this family predicts” explanation. Reduce dependence on horizontal
+   scrolling; retain pan/zoom as enhancement rather than the only way to understand it.
+4. Define the viewport matrix and test checklist (starting with 360 × 760), then
+   make desktop adaptations only after the mobile state is complete and stable.
+
 ## Long-running dev branches (for multi-slice work)
 
 When a body of work is big enough to need multiple coherent commits before it's ready to merge into `prototype`, give it a dedicated long-running branch off `prototype`. Rules:
