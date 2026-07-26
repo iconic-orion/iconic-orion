@@ -3261,6 +3261,13 @@ const EDGES = [
   { note: "carrot",     cpd: "carotol",   w: 0.80, cite: "Sieniawska, Świątek, Rajtar, Kozioł, Polz-Dacewicz & Skalicka-Woźniak 2016 (carotol, main constituent of carrot seed oil)." },
   { note: "tomato",     cpd: "isobutylthiazole", w: 0.80, cite: "Petro-Turza 1987 (2-isobutylthiazole, a tomato-specific marker compound)." },
   { note: "tomato",     cpd: "bdam",      w: 0.45, cite: "Petro-Turza 1987 (β-damascenone among ripe-tomato's major volatiles)." },
+  // The COOKED tomato register. Raw tomato reads green and vine-like — that's
+  // 2-isobutylthiazole above. What makes a tomato taste like sauce is a
+  // different set: a sweet caramellic furanone, and the sulfide that heat
+  // liberates. Both compounds already existed in this dataset for other notes,
+  // so this is a new link, not new chemistry.
+  { note: "tomato",     cpd: "furaneol",  w: 0.55, cite: "Buttery, Takeoka & Ling 1995 (furaneol occurs well above its odor threshold in tomato and ranks among the ten compounds most likely to contribute to both fresh and processed tomato aroma)." },
+  { note: "tomato",     cpd: "dms",       w: 0.50, cite: "USDA patent 5,064,673 (dimethyl sulfide is a named component of the registered cooked-tomato flavor composition, alongside β-damascenone — heat treatment raises it far above threshold in processed tomato)." },
   { note: "arugula",    cpd: "erucin",    w: 0.85, cite: "Jirovetz, Smith & Buchbauer 2002 (erucin, arugula's major isothiocyanate)." },
   { note: "lettuce",    cpd: "ipmp",      w: 0.75, cite: "Determination of odour active aroma compounds study (2-methoxy-3-isopropylpyrazine, key lettuce odorant)." },
   { note: "romaine",    cpd: "ipmp",      w: 0.75, cite: "Same Lactuca sativa base as the umbrella default — no distinguishing compound found." },
@@ -3731,6 +3738,28 @@ const COMPOUND_CLASS_INFO = {
 // and conservative — only papers where the full citation is well-established.
 // Add more entries here as they're verified; no edge data changes needed.
 const REFERENCES = {
+  "buttery1995furaneol": {
+    authors: "Buttery, R. G., Takeoka, G. R., & Ling, L. C.",
+    year: 1995,
+    title: "Furaneol: odor threshold and importance to tomato aroma.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "43", issue: "6", pages: "1638–1640"
+  },
+  // A patent, not a paper — the first in this catalog. Included because it is
+  // unusually direct evidence: it is the formulation the USDA registered FOR
+  // producing cooked-tomato flavor, so it states which compounds carry that
+  // character rather than merely reporting what was detected in a sample.
+  "usda1991cookedtomato": {
+    type: "patent",
+    // Inventors deliberately omitted: the patent record retrieved did not list
+    // them, and guessing plausible names is exactly the failure mode this
+    // catalog exists to prevent. Assignee is used as the author, which is the
+    // standard fallback. Fill the inventors in during human verification.
+    authors: "United States of America, as represented by the Secretary of Agriculture",
+    year: 1991,
+    title: "Cooked tomato flavor composition.",
+    publisher: "U.S. Patent 5,064,673 (filed 19 Dec 1990, issued 12 Nov 1991)"
+  },
   "blank1992": {
     authors: "Blank, I., Sen, A., & Grosch, W.",
     year: 1992,
@@ -4051,6 +4080,8 @@ const REFERENCES = {
 // Map cite-string prefixes (or distinctive substrings) to REFERENCES keys.
 // Order matters when multiple prefixes could match — most specific first.
 const CITE_TO_REF = [
+  ["Buttery, Takeoka & Ling 1995", "buttery1995furaneol"],
+  ["USDA patent 5,064,673",        "usda1991cookedtomato"],
   ["Blank, Sen, Grosch 1992",     "blank1992"],
   ["Blank et al. 1992",           "blank1992"],
   ["Blank 1992",                  "blank1992"],
@@ -4112,7 +4143,7 @@ function refForCite(citeString) {
 }
 
 function formatRefFull(ref) {
-  if (ref.type === "book" || ref.type === "thesis") {
+  if (ref.type === "book" || ref.type === "thesis" || ref.type === "patent") {
     return `${ref.authors} (${ref.year}). <em>${ref.title}</em> ${ref.publisher}.`;
   }
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
@@ -4143,7 +4174,14 @@ function formatRefFull(ref) {
 // it will render as under-review again; that is the escape hatch that keeps this
 // honest rather than decorative.
 const UNVERIFIED_REFS = new Set([
-  // (empty — no reference is currently awaiting human review)
+  // Added 2026-07-25 for the cooked-tomato register. Found by an agent via
+  // search, NOT yet opened and confirmed by a human — so they render as
+  // under-review, exactly as the policy above requires. Remove a key once it
+  // has been checked. The patent entry additionally needs its inventor list
+  // filled in; the record retrieved did not include it and it was left blank
+  // rather than guessed.
+  "buttery1995furaneol",
+  "usda1991cookedtomato",
 ]);
 function isCiteVerified(refId) { return !UNVERIFIED_REFS.has(refId); }
 
