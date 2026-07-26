@@ -2066,6 +2066,51 @@
       letter-spacing:.055em; pointer-events:none; }
   }
 
+  /* Lap rail — the tasting stopwatch. A narrow column pinned to the right edge
+     of the wheel area on desktop; a horizontal strip on phones. Strata reading:
+     newest layer on top, first lap at the bottom of the pile. */
+  /* Absolute inside main.wheel (which is position:relative), NOT fixed to the
+     viewport — a viewport-pinned rail overlapped the detail panel whenever it
+     opened. Anchoring to the wheel keeps it clear of the results column. */
+  .lap-rail { position: absolute; right: 8px; top: 8px; width: 128px; z-index: 90;
+    display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  .lap-rail > * { pointer-events: auto; }
+  .lap-rail-head { display: flex; }
+  #lap-save { flex: 1; font-size: 11px; padding: 6px 8px; border-radius: 4px;
+    border: 1px solid var(--accent); background: rgba(216,166,87,.12);
+    color: var(--accent); cursor: pointer; min-height: 32px; }
+  #lap-save:hover { background: rgba(216,166,87,.22); }
+  #lap-save:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .lap-preview-bar { display: flex; flex-direction: column; gap: 4px;
+    padding: 7px; border-radius: 4px; border: 1px solid var(--accent-2);
+    background: rgba(125,174,163,.14); font-size: 10px; color: var(--ink); }
+  .lap-preview-bar[hidden] { display: none; }
+  .lap-preview-bar button { font-size: 10px; padding: 5px 6px; border-radius: 3px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    cursor: pointer; min-height: 28px; }
+  .lap-preview-bar button:hover { border-color: var(--accent-2); }
+  #lap-preview-label { font-weight: 600; color: var(--accent-2); }
+  /* column-reverse turns chronological DOM order into a pile with the oldest at
+     the bottom — the stratigraphic read. */
+  .lap-stack { display: flex; flex-direction: column-reverse; gap: 4px;
+    max-height: 46vh; overflow-y: auto; }
+  .lap-chip { position: relative; text-align: left; width: 100%;
+    padding: 6px 8px 7px; border-radius: 3px; cursor: pointer;
+    border: 1px solid var(--line); border-left: 3px solid var(--accent-2);
+    background: var(--panel); color: var(--ink-dim); font-size: 10px;
+    line-height: 1.35; }
+  .lap-chip:hover { border-color: var(--accent-2); color: var(--ink); }
+  .lap-chip:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+  .lap-chip.active { border-color: var(--accent); border-left-color: var(--accent);
+    background: rgba(216,166,87,.12); color: var(--ink); }
+  .lap-chip-n { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .lap-chip-meta { display: block; color: var(--ink-dim); }
+  .lap-chip-cond { display: block; color: var(--accent-2); font-size: 9.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lap-empty { margin: 0; font-size: 10px; color: var(--ink-dim);
+    line-height: 1.4; font-style: italic; }
+  .lap-empty[hidden] { display: none; }
+
   /* Delivery strip — the third sensory dimension. Sits above the note list and
      stays collapsed by default so it frames the tasting without competing with
      the primary input. */
@@ -2164,6 +2209,34 @@
     body.taxonomy-mode #taxonomy-legend-note { display: none; }
     .tx-link { stroke: rgba(233,230,223,.34); stroke-width: 2; }
     .tx-node text { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+  }
+
+  @media (max-width: 760px) {
+    /* No right rail on a phone. The pile becomes a horizontal strip under the
+       header: oldest on the LEFT, so left-to-right still reads earliest-first
+       and the ordering survives even though the vertical geology read doesn't.
+       Docked rather than floating so it never covers the wheel or the sheet. */
+    .lap-rail { top: 6px; left: 8px; right: 8px; width: auto;
+      flex-direction: row; align-items: center; gap: 6px;
+      padding: 4px 6px; border-radius: 4px;
+      background: rgba(18,16,20,.86); border: 1px solid var(--line);
+      backdrop-filter: blur(3px); z-index: 40; }
+    .lap-rail-head { flex: 0 0 auto; }
+    #lap-save { font-size: 10px; padding: 5px 7px; white-space: nowrap; min-height: 30px; }
+    /* align-items:center is load-bearing. The rail centres the stack, so the
+       stack sizes to its content; with the default `stretch` the chips then try
+       to fill a container whose height is derived from them, and every chip
+       collapses to 0px. Centring makes chips size to their own content instead. */
+    .lap-stack { flex-direction: row; align-items: center; gap: 5px;
+      max-height: none; overflow-x: auto; overflow-y: hidden; flex: 1; }
+    .lap-chip { width: auto; flex: 0 0 auto; min-width: 78px;
+      border-left-width: 1px; border-bottom: 3px solid var(--accent-2); }
+    .lap-chip.active { border-bottom-color: var(--accent); }
+    .lap-chip-cond { max-width: 96px; }
+    .lap-empty { flex: 1; font-size: 9.5px; }
+    .lap-preview-bar { position: absolute; left: 8px; right: 8px; top: 100%;
+      flex-direction: row; align-items: center; z-index: 41; }
+    .lap-preview-bar button { flex: 1; }
   }
 
   @media (max-width: 390px) {
@@ -2304,6 +2377,30 @@
 </aside>
 <main class="wheel">
   <svg id="svg"></svg>
+  <!-- Lap stack — a stopwatch for tasting. Save lap freezes the current notes and
+       delivery conditions as a layer; keep adjusting, save again, and the layers
+       accumulate. Oldest sits at the BOTTOM, newest on top, read like a geological
+       section: down is earlier. Same vertical axis as the Go Deeper strata descent
+       and the Tree.
+       Lives INSIDE main.wheel rather than pinned to the viewport, so "right-hand
+       side" means the wheel's right edge — a viewport-fixed rail sat on top of the
+       detail panel whenever it opened.
+       Selecting a lap PREVIEWS it and never overwrites live work; branching is a
+       separate, labelled action. -->
+  <div id="lap-rail" class="lap-rail" aria-label="Tasting laps">
+    <div class="lap-rail-head">
+      <button type="button" id="lap-save" title="Freeze the current notes and conditions as a lap">＋ Save lap</button>
+    </div>
+    <div class="lap-preview-bar" id="lap-preview-bar" hidden>
+      <span id="lap-preview-label">Previewing</span>
+      <button type="button" id="lap-continue" title="Make this lap the live tasting and keep editing from here">Continue from here</button>
+      <button type="button" id="lap-return" title="Discard the preview and return to your live tasting">Back to live</button>
+    </div>
+    <!-- column-reverse: DOM order is chronological, visual order puts newest on
+         top and the first lap at the bottom of the pile. -->
+    <div class="lap-stack" id="lap-stack"></div>
+    <p class="lap-empty" id="lap-empty">No laps yet. Save one to mark this moment, then keep tasting.</p>
+  </div>
   <!-- Go Deeper "vines" — a decorative climbing vine grown into the wheel's
        empty bottom-left corner only while body.go-deeper is on. Ecobrutalism:
        the hard UI stays, the plant breaks in at the edges. Lives inside
@@ -2670,6 +2767,13 @@
   </div>
 </div>
 
+<!-- Lap stack — a stopwatch for tasting. Hitting Save lap freezes the current
+     notes and delivery conditions as a layer; you keep adjusting, save again,
+     and the layers accumulate. Oldest sits at the BOTTOM, newest on top, read
+     like a geological section: down is earlier. Same vertical axis the Go Deeper
+     strata descent and the Tree both use.
+     Selecting a lap PREVIEWS it — never overwrites live work — with an explicit
+     "Continue from here" to branch. -->
 <!-- "Descent into the canopy" transition played once when Go Deeper switches
      on (see playDeeperWarp()). Purely decorative — pointer-events:none — and
      skipped entirely under prefers-reduced-motion. -->
@@ -5022,6 +5126,10 @@ const state = {
   // Delivery conditions for the current tasting (see DELIVERY_CONDITIONS).
   // null = not stated, which is different from "neutral" — we don't assume.
   delivery: { temperature: null, effervescence: null, agitation: null, breath: null },
+  // Saved laps — immutable snapshots of {entries, delivery}, oldest first.
+  // previewingLap holds the lap number currently being viewed (null = live).
+  laps: [],
+  previewingLap: null,
   // Parent note ids whose varietal children are expanded into their own
   // sliders below it in the panel (e.g. expanding "Mint" reveals Peppermint/
   // Spearmint/Wintergreen rows). Persists across panel rebuilds; available in
@@ -8592,6 +8700,119 @@ function setNotes(entries) {
   recompute();
 }
 
+// ---------- LAPS ----------
+// A tasting stopwatch. Save lap freezes the current notes + delivery conditions
+// as an immutable layer; you keep tasting and save again, and the layers stack.
+// Reading down the pile reads backwards in time.
+//
+// Laps are SNAPSHOTS, not a re-keying of state.entries — which is why this is a
+// small additive change rather than a migration. Nothing downstream
+// (noteSignal, recompute, the wheel, the share card) knows laps exist.
+//
+// Selecting a lap PREVIEWS it. Live work is stashed in _liveStash and restored
+// on "Back to live", so a stray click can never destroy unsaved input. Making a
+// lap live is a deliberate second action ("Continue from here").
+const lapRailEl     = document.getElementById("lap-rail");
+const lapStackEl    = document.getElementById("lap-stack");
+const lapEmptyEl    = document.getElementById("lap-empty");
+const lapPreviewBar = document.getElementById("lap-preview-bar");
+const lapPreviewLbl = document.getElementById("lap-preview-label");
+let _liveStash = null;   // live tasting parked while previewing a lap
+
+// Snapshot the entry Map verbatim as [key, intensity] pairs. Deliberately does
+// NOT decompose keys back into {note, phase}: entryKey() returns a BARE noteId
+// for default (null-phase) entries and only appends ":phase" for ortho/retro, so
+// any parse-and-rebuild round-trip silently mangles default entries — which is
+// almost all of them. Copying the Map is both exact and cheaper.
+function snapshotTasting() {
+  return { entries: [...state.entries.entries()], delivery: { ...state.delivery } };
+}
+
+// Mirrors setNotes()'s refresh sequence, but writes the entryAp directly rather
+// than re-committing parsed {note, phase} objects, for the reason above.
+function applyTasting(snap) {
+  state.delivery = { ...snap.delivery };
+  buildDeliveryStrip();
+  state.entries.clear();
+  Object.keys(state.pendingIntensity).forEach(k => state.pendingIntensity[k] = 0);
+  closeAllCallouts();
+  snap.entries.forEach(([key, intensity]) => state.entries.set(key, intensity));
+  // Reflect committed intensities back into the sliders, same as setNotes does.
+  NOTES.forEach(n => {
+    const vals = INPUT_PHASES.map(p => getEntry(n.id, p)).filter(v => v != null);
+    if (vals.length) state.pendingIntensity[n.id] = Math.max(...vals);
+  });
+  buildLegend();
+  syncSliders();
+  recompute();
+}
+
+// noteIds never contain ":", so the segment before it is always the note.
+const lapNoteIds = lap => new Set(lap.entries.map(([k]) => k.split(":")[0]));
+
+function lapConditionSummary(delivery) {
+  return DELIVERY_CONDITIONS
+    .map(c => (c.options.find(o => o.id === delivery[c.id]) || {}).label)
+    .filter(Boolean).join(" · ");
+}
+
+function saveLap() {
+  const snap = snapshotTasting();
+  if (!snap.entries.length) return;   // nothing to freeze
+  state.laps.push({ n: state.laps.length + 1, ...snap });
+  renderLapStack();
+}
+
+function previewLap(lap) {
+  if (!_liveStash) _liveStash = snapshotTasting();   // park live work once
+  state.previewingLap = lap.n;
+  applyTasting(lap);
+  renderLapStack();
+}
+
+function returnToLive() {
+  if (!_liveStash) return;
+  const stash = _liveStash;
+  _liveStash = null;
+  state.previewingLap = null;
+  applyTasting(stash);
+  renderLapStack();
+}
+
+// Branch: the previewed lap becomes the live tasting. The stash is dropped, so
+// this is the one path that discards unsaved work — and it takes an explicit
+// click on a labelled button to get here.
+function continueFromLap() {
+  _liveStash = null;
+  state.previewingLap = null;
+  renderLapStack();
+}
+
+function renderLapStack() {
+  lapStackEl.innerHTML = "";
+  state.laps.forEach(lap => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lap-chip" + (state.previewingLap === lap.n ? " active" : "");
+    const noteCount = lapNoteIds(lap).size;
+    const cond = lapConditionSummary(lap.delivery);
+    b.innerHTML = `<span class="lap-chip-n">Lap ${lap.n}</span>
+      <span class="lap-chip-meta">${noteCount} note${noteCount === 1 ? "" : "s"}</span>
+      ${cond ? `<span class="lap-chip-cond">${cond}</span>` : ``}`;
+    b.title = `Preview lap ${lap.n}${cond ? ` — ${cond}` : ""}. Your live tasting is kept.`;
+    b.addEventListener("click", () => previewLap(lap));
+    lapStackEl.appendChild(b);
+  });
+  lapEmptyEl.hidden = state.laps.length > 0;
+  const previewing = state.previewingLap != null;
+  lapPreviewBar.hidden = !previewing;
+  if (previewing) lapPreviewLbl.textContent = `Previewing lap ${state.previewingLap}`;
+}
+
+document.getElementById("lap-save").addEventListener("click", saveLap);
+document.getElementById("lap-return").addEventListener("click", returnToLive);
+document.getElementById("lap-continue").addEventListener("click", continueFromLap);
+
 document.getElementById("reset").addEventListener("click", () => setNotes([]));
 // Tasting Tray "Clear" — same effect as Start Over for inputs (leaves view
 // state, legend, and mode alone; just empties what you've entered).
@@ -9939,6 +10160,7 @@ document.addEventListener("keydown", (e) => {
 // ---------- INIT ----------
 buildLegend();
 buildDeliveryStrip();
+renderLapStack();
 buildNotesPanel();
 layout();
 startSim();
