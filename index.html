@@ -2075,7 +2075,10 @@
   .lap-rail { position: absolute; right: 8px; top: 8px; width: 128px; z-index: 90;
     display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .lap-rail > * { pointer-events: auto; }
-  .lap-rail-head { display: flex; }
+  .lap-rail-head { display: flex; gap: 4px; }
+  /* Desktop has room for the full vertical pile, so the ribbon toggle is a
+     phones-only affordance. */
+  .lap-expand { display: none; }
   #lap-save { flex: 1; font-size: 11px; padding: 6px 8px; border-radius: 4px;
     border: 1px solid var(--accent); background: rgba(216,166,87,.12);
     color: var(--accent); cursor: pointer; min-height: 32px; }
@@ -2233,7 +2236,25 @@
       border-left-width: 1px; border-bottom: 3px solid var(--accent-2); }
     .lap-chip.active { border-bottom-color: var(--accent); }
     .lap-chip-cond { max-width: 96px; }
-    .lap-empty { flex: 1; font-size: 9.5px; }
+    /* Hidden on phones: the empty-state sentence made the no-laps strip TALLER
+       (50px) than the populated collapsed one (40px), spending wheel space to
+       explain a button already labelled "＋ Save lap". */
+    .lap-empty { display: none; }
+
+    /* Ribbon. Collapsed, a chip is just its number — the strip costs one row
+       (~34px) instead of 67px, which was a fifth of the wheel pane. Expanded,
+       each layer unfurls its note count and delivery conditions. */
+    .lap-expand { display: block; flex: 0 0 auto; width: 28px; min-height: 30px;
+      padding: 0; border-radius: 3px; border: 1px solid var(--line);
+      background: var(--panel); color: var(--ink-dim); cursor: pointer;
+      font-size: 10px; line-height: 1; transition: transform .18s ease; }
+    .lap-expand:hover { border-color: var(--accent-2); color: var(--ink); }
+    .lap-expand:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+    .lap-rail.laps-open .lap-expand { transform: rotate(180deg); }
+    .lap-rail:not(.laps-open) .lap-chip { min-width: 0; padding: 5px 9px 6px; }
+    .lap-rail:not(.laps-open) .lap-chip-meta,
+    .lap-rail:not(.laps-open) .lap-chip-cond { display: none; }
+    .lap-rail:not(.laps-open) .lap-expand[hidden] { display: none; }
     .lap-preview-bar { position: absolute; left: 8px; right: 8px; top: 100%;
       flex-direction: row; align-items: center; z-index: 41; }
     .lap-preview-bar button { flex: 1; }
@@ -2390,6 +2411,12 @@
   <div id="lap-rail" class="lap-rail" aria-label="Tasting laps">
     <div class="lap-rail-head">
       <button type="button" id="lap-save" title="Freeze the current notes and conditions as a lap">＋ Save lap</button>
+      <!-- Ribbon toggle, phones only. Collapsed the strip shows just lap numbers
+           so it costs one compact row; expanded it unfurls each layer's note
+           count and delivery conditions. The wheel is the point — a bookkeeping
+           strip shouldn't hold a fifth of it hostage by default. -->
+      <button type="button" id="lap-expand" class="lap-expand" aria-expanded="false"
+        aria-controls="lap-stack" title="Expand the laps to show notes and conditions">▾</button>
     </div>
     <div class="lap-preview-bar" id="lap-preview-bar" hidden>
       <span id="lap-preview-label">Previewing</span>
@@ -8804,10 +8831,21 @@ function renderLapStack() {
     lapStackEl.appendChild(b);
   });
   lapEmptyEl.hidden = state.laps.length > 0;
+  lapExpandBtn.hidden = state.laps.length === 0;   // nothing to unfurl yet
   const previewing = state.previewingLap != null;
   lapPreviewBar.hidden = !previewing;
   if (previewing) lapPreviewLbl.textContent = `Previewing lap ${state.previewingLap}`;
 }
+
+// Ribbon toggle (phones). Hidden entirely when there are no laps to unfurl.
+const lapExpandBtn = document.getElementById("lap-expand");
+lapExpandBtn.addEventListener("click", () => {
+  const open = lapRailEl.classList.toggle("laps-open");
+  lapExpandBtn.setAttribute("aria-expanded", String(open));
+  lapExpandBtn.title = open
+    ? "Collapse the laps back to numbers"
+    : "Expand the laps to show notes and conditions";
+});
 
 document.getElementById("lap-save").addEventListener("click", saveLap);
 document.getElementById("lap-return").addEventListener("click", returnToLive);
