@@ -41,6 +41,63 @@ Commits: uncommitted exploratory batch
 - Run physical-device checks for Android range input and safe-area behavior.
 - Consider a small search affordance inside the bottom sheet for reaching any note without scrolling the library.
 
+## Design directive: mobile-first Tree and HUD follow-up (2026-07-14)
+
+**Decision:** Mobile is now the canonical product experience because discovery is
+expected to happen primarily through social-app in-app browsers. Desktop remains
+important, but it should expose the same mobile interaction model with more space;
+it is not the layout to design first and then compress.
+
+**Reference:** Start with portrait Galaxy S10e class — **360 × 760 CSS px**. Treat
+this as a deliberate compact-phone design, not merely a generic `max-width: 760px`
+fallback. Define the rest of the named phone viewport matrix before adding or moving
+breakpoints.
+
+**Problems to fix:**
+
+- At compact-phone width, the `aeckhart` HUD label overlaps/clips against adjacent
+  controls; Go Deeper also clips in that bar. Recompose the compact HUD so its
+  controls are intentionally placed, reachable, and never overlap.
+- In Tree on mobile, the detail/compounds pane can cover most of the screen and the
+  user has no size control. Replace the static on-demand panel with a resizable,
+  draggable bottom sheet: visible grip, expand/minimize drag, snap points, and a
+  minimized state that restores the tree. Switching its state must preserve selected
+  node and tree pan/zoom.
+- The Tree currently reads like a large horizontally scrolled graphic. Make connected
+  parent/child relationships explicit in the initial mobile view and make the
+  family-level insight legible: plant relatives often share pathways, so family helps
+  users predict the molecular structures and aroma patterns a note may have.
+
+**Execution order:** HUD compact-phone audit → Tree resizable sheet → Tree connected
+story/default framing → viewport matrix and regression checklist → desktop expansion.
+Record viewport dimensions, interactions tested, and any physical-device/in-app-
+browser uncertainty in future check-ins. The full durable contract lives in
+`CLAUDE.md` under “Product design contract — mobile first.”
+
+## Follow-up: compact-phone HUD + resizable Tree foundation
+
+- Rebuilt the 360 × 760 portrait HUD as explicit non-overlapping slots: Aroma Wheel
+  and `© Æckhart` stay together at left, Go Deeper owns a fixed action slot, and the
+  hamburger owns the safe-area-aware far-right slot. The document does not overflow
+  the available viewport width.
+- Added a user-resizable Tree detail sheet with a visible 44px drag target and three
+  snap states: minimized (112px), half (42svh), and expanded (viewport minus header
+  breathing room). Tapping cycles states; dragging snaps to the nearest state;
+  Arrow Up/Down and Home/End provide keyboard control.
+- Sheet resizing preserves the selected note/family and the Tree's scroll/zoom state.
+  Opening a new detail from minimized restores the half-height reading state.
+- Added a live lineage readout (`All notes → Kingdom → Order → Family → Note`) and
+  highlights that complete connected path in the tree when a note or family is chosen.
+- Compact phones now start Tree at the connected kingdom overview instead of the
+  fully expanded 119-leaf canvas. Tree vines recede to 10% opacity, connector contrast
+  is raised, and the long desktop instruction footer is removed on phones so the tree
+  owns the screen.
+- Verified in the in-app browser at 360 × 760: HUD boxes do not overlap; document
+  width is 360px; Lemon search exposes its lineage; selecting Lemon opens the sheet;
+  tap cycles half → expanded → minimized; minimized keeps Lemon selected and the
+  highlighted path intact; no console warnings/errors. This is a viewport simulation,
+  not a physical Galaxy S10e / Instagram in-app-browser claim.
+
 ## Follow-up: desktop Scent-wheel containment
 
 - Confirmed with Nolan that flavor-note ingredients should remain attached to the outer rim; Chemistry mode was already correct and is deliberately unchanged.
@@ -63,3 +120,47 @@ Commits: uncommitted exploratory batch
 - Cards include a 1–5 navigator and contextual actions: switch to Chemistry, open Tree, or open Map. Leaving Go Deeper closes any open card.
 - Visual treatment is translucent botanical glass with a restrained slow shimmer; reduced-motion users get a static card.
 - Verified at 360 × 760: the card fits fully above the bottom interaction zone, touch and keyboard leaf activation work, the level navigator updates content, and the Tree action changes workspace and closes the card. No console errors.
+
+## Claude review: 2026-07-14 batch (reviewed 2026-07-25)
+
+Reviewed the uncommitted working-tree batch before committing it. Re-ran the
+check-in's own verification rather than trusting it, per the reviewer stance.
+
+**Confirmed working at 360 x 760 portrait:**
+- HUD slots do not overlap. Document width exactly 360, no horizontal overflow.
+  Brand 16-126, Go Deeper 238-308, hamburger 314-350, footer on the row below.
+- Lineage readout renders `All notes -> Plantae -> Sapindales -> Rutaceae -> Lemon`
+  and highlights 9 connected path nodes.
+- Selection survives every sheet state change. Mobile Tree enters collapsed to 4
+  kingdom nodes as intended. No console errors on load.
+
+**Found broken — the sheet resize itself, the batch's headline feature.**
+The state machine was fine (snap cycled, body classes toggled, `--taxonomy-sheet-h`
+resolved to 112px / 42svh / calc(100svh - 136px)) and the handle tracked the
+variable correctly. But `aside.detail` never resized: height stayed 319px and top
+stayed 433px in all three states, leaving the grab handle up to ~330px away from
+the sheet it belongs to.
+
+**Root cause:** a custom-property change does not retrigger a CSS transition on a
+property derived from it. With `transition: height .24s` declared, the panel stayed
+frozen at the height it first rendered at (42svh) while the variable moved beneath
+it. Proven by setting `transition: none`, after which every snap landed exactly
+(peek 112, half 319, full 624). This also explains why it was missed: the handle's
+`bottom` has no transition, and dragging works because `.sheet-dragging` already
+sets `transition: none` — so both paths that were tested behave correctly. Only the
+tap/keyboard path was broken.
+
+**Fix:** height is now written directly onto the panel in px by
+`applyTaxonomySheetHeight()` rather than being read from the variable by the
+stylesheet. The variable is still kept in sync because it positions the handle. The
+inline height is cleared whenever the sheet is not active so the desktop grid layout
+is untouched, and a resize listener recomputes the viewport-derived snap heights.
+
+**Verified after fix at 360 x 760:** peek 112 / half 319 / full 624, all exact, with
+the handle holding a constant 24px offset from the sheet edge in every state.
+Selection, lineage, and path highlighting intact. Leaving Tree clears both the inline
+height and the variable. No console errors.
+
+**Note for future check-ins:** the verification section claimed this feature worked.
+Please test the tap and keyboard paths separately from drag — they take different
+code paths, and drag masks this entire class of bug.

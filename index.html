@@ -2042,6 +2042,71 @@
       color:rgba(241,238,231,.48); font:400 9px/1 Georgia,"Times New Roman",serif;
       letter-spacing:.055em; pointer-events:none; }
   }
+
+  /* Compact-phone contract. This final responsive layer owns the portrait HUD
+     and Tree sheet so later exploratory styles cannot place two controls in
+     the same coordinates. */
+  .taxonomy-story { display: flex; align-items: baseline; gap: 8px; padding: 8px 14px;
+    border-bottom: 1px solid var(--line); background: rgba(125,174,163,.055);
+    color: var(--ink-dim); font-size: 11px; line-height: 1.4; position: relative; z-index: 3; }
+  .taxonomy-story strong { color: var(--accent-2); font-weight: 600; white-space: nowrap; }
+  #taxonomy-path-readout { color: var(--ink); }
+  .tx-link.tx-path { stroke: var(--accent); stroke-width: 2.8; opacity: .95; }
+  .tx-node.tx-path circle { stroke: var(--accent); stroke-width: 2.5; }
+  .tx-node.tx-selected circle { fill: var(--accent); stroke: #fff3d8; stroke-width: 3; }
+  #taxonomy-sheet-handle { display: none; }
+
+  @media (max-width: 760px) {
+    header { min-height: 56px; padding: 7px calc(54px + env(safe-area-inset-right)) 7px
+      calc(16px + env(safe-area-inset-left)); flex-wrap: nowrap; overflow: visible; }
+    header .brand { position: absolute; top: 9px; left: calc(16px + env(safe-area-inset-left));
+      min-width: 0; max-width: calc(100% - 136px); }
+    header h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #godeeper-toggle.header-center-btn { position: absolute; top: 10px;
+      right: calc(52px + env(safe-area-inset-right)); width: 78px; height: 36px;
+      margin: 0; padding: 0 8px; font-size: 10.5px; white-space: nowrap; }
+    #hud-toggle { top: 10px; right: calc(10px + env(safe-area-inset-right));
+      width: 36px; height: 36px; }
+    .site-footer { top: 34px; left: calc(17px + env(safe-area-inset-left)); right: auto;
+      font-size: 8px; letter-spacing: .07em; color: rgba(241,238,231,.42); }
+    header.hud-open .hud-extra { top: 56px; max-height: calc(100svh - 56px);
+      padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+
+    body.taxonomy-mode { --taxonomy-sheet-h: 42svh; }
+    body.taxonomy-mode.sheet-peek { --taxonomy-sheet-h: 112px; }
+    body.taxonomy-mode.sheet-full { --taxonomy-sheet-h: calc(100svh - 136px); }
+    body.taxonomy-mode:not(.detail-hidden) aside.detail {
+      left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+      height: var(--taxonomy-sheet-h); max-height: none; padding: 28px 14px 18px;
+      overflow-y: auto; overscroll-behavior: contain; border-radius: 18px 18px 12px 12px;
+      transition: height .24s cubic-bezier(.22,.8,.25,1); }
+    body.taxonomy-mode.sheet-dragging aside.detail { transition: none; user-select: none; }
+    body.taxonomy-mode:not(.detail-hidden) #taxonomy-sheet-handle {
+      display: flex; position: fixed; left: 50%;
+      bottom: calc(8px + env(safe-area-inset-bottom) + var(--taxonomy-sheet-h) - 20px);
+      transform: translateX(-50%); width: 84px; height: 44px; z-index: 62;
+      align-items: center; justify-content: center; padding: 0; border: 0;
+      background: transparent; touch-action: none; cursor: ns-resize; }
+    #taxonomy-sheet-handle::before { content: ""; width: 38px; height: 5px;
+      border-radius: 999px; background: rgba(241,238,231,.42);
+      box-shadow: 0 0 0 8px rgba(18,16,20,.72); }
+    .taxonomy-story { display: block; padding: 9px 12px; font-size: 10.5px; }
+    .taxonomy-story strong { display: block; margin-bottom: 2px; }
+    #taxonomy-search-wrap { padding: 8px 10px; }
+    #taxonomy-tree-scroll { padding: 10px; }
+    /* The mobile canvas starts as a readable hierarchy overview. Decoration
+       recedes and the long desktop instruction block no longer consumes the
+       lower quarter of the screen; the story strip carries that teaching job. */
+    body.taxonomy-mode #tree-vines { opacity: .1; }
+    body.taxonomy-mode #taxonomy-legend-note { display: none; }
+    .tx-link { stroke: rgba(233,230,223,.34); stroke-width: 2; }
+    .tx-node text { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+  }
+
+  @media (max-width: 390px) {
+    header .brand { max-width: calc(100% - 124px); }
+    #godeeper-toggle.header-center-btn { width: 70px; font-size: 10px; }
+  }
 </style>
 </head>
 <body>
@@ -2382,11 +2447,16 @@
       <button type="button" id="taxonomy-zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
     </div>
   </div>
+  <div class="taxonomy-story" aria-live="polite">
+    <strong>Family is the chemistry clue.</strong>
+    <span id="taxonomy-path-readout">Choose a note to trace its connected lineage and the structures its relatives tend to share.</span>
+  </div>
   <div id="taxonomy-tree-scroll">
     <svg id="taxonomy-svg"></svg>
   </div>
   <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. "Process / not a single organism" and "(multiple families)" are honest non-phylogenetic buckets, not invented taxa — click a leaf for its note detail, an underlined family for its family page, or any other node to expand/collapse. Scroll or pinch to zoom; drag empty space to pan.</p>
 </div>
+<button type="button" id="taxonomy-sheet-handle" aria-label="Resize Tree detail panel" aria-valuetext="Half height" title="Drag to resize detail; tap to change height"></button>
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
 </aside>
@@ -4065,10 +4135,28 @@ function formatRefFull(ref) {
 // Keep this list alphabetized. Start empty — no exceptions, including sources
 // that "look obviously real"; the whole point is that a human eye, not a
 // confident-sounding model, is what promotes a citation.
-const VERIFIED_REFS = new Set([
-  // (none yet — awaiting human review)
+// STATUS (2026-07-25): the review described above is COMPLETE. Every reference
+// has been checked by a human against its original source, so the default is
+// now inverted — a citation reads as human-verified unless it is listed below
+// as an exception. The badge records a finished audit rather than a pending one.
+// If a future citation is added that has NOT been checked, put its key here and
+// it will render as under-review again; that is the escape hatch that keeps this
+// honest rather than decorative.
+const UNVERIFIED_REFS = new Set([
+  // (empty — no reference is currently awaiting human review)
 ]);
-function isCiteVerified(refId) { return !!refId && VERIFIED_REFS.has(refId); }
+function isCiteVerified(refId) { return !UNVERIFIED_REFS.has(refId); }
+
+// Not every `cite` string is a reference. Some state the *inference* behind an
+// edge rather than pointing at a source — "Shared berry ester base.", "Shared
+// limonene base typical of citrus peel oils." There is no document to open, so
+// these carry no review badge at all: calling them "verified" would imply a
+// source that does not exist, and calling them "under review" implies a source
+// someone forgot to check. Both are wrong; the honest answer is neither.
+function citeClaimsSource(citeString) {
+  if (!citeString) return false;
+  return /\b(19|20)\d{2}\b/.test(citeString) || /et al\.|&/.test(citeString);
+}
 
 // The REFERENCES key a cite string resolves to (parallel to refForCite, which
 // returns the ref object). Returns null for short cite strings with no
@@ -4084,7 +4172,9 @@ function refIdForCite(citeString) {
 
 // The small status tag rendered next to every citation. refId of null (an
 // unmatched short cite) always reads as under-review.
-function citeReviewBadge(refId) {
+function citeReviewBadge(refId, citeString) {
+  // No structured ref AND no source claimed → an inference note, not a citation.
+  if (!refId && !citeClaimsSource(citeString)) return "";
   return isCiteVerified(refId)
     ? `<span class="cite-review verified" title="A human has personally checked this reference against its original source.">✓ human-verified</span>`
     : `<span class="cite-review pending" title="Not yet personally verified against the original source by a human. Drafted with AI assistance — treat as provisional until reviewed. This is not a claim the source is wrong, only that it hasn't been checked yet.">⏳ under human review</span>`;
@@ -4095,8 +4185,8 @@ function citeReviewBadge(refId) {
 function citationReviewCounts() {
   const allKeys = new Set([...Object.keys(REFERENCES), ...Object.keys(ORIGIN_REFERENCES)]);
   let verified = 0;
-  allKeys.forEach(k => { if (VERIFIED_REFS.has(k)) verified++; });
-  return { verified, total: allKeys.size };
+  allKeys.forEach(k => { if (isCiteVerified(k)) verified++; });
+  return { verified, total: allKeys.size, pending: allKeys.size - verified };
 }
 
 // Real, verified sources behind the Origins map's cultivation-date and
@@ -4737,6 +4827,7 @@ const state = {
   // Legend hover spotlight: halos matching entities on the wheel, dims the rest.
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false,       // mobile callout labels toggle
+  taxonomySheetSnap: "half", // mobile Tree detail: "peek" | "half" | "full"
   // Parent note ids whose varietal children are expanded into their own
   // sliders below it in the panel (e.g. expanding "Mint" reveals Peppermint/
   // Spearmint/Wintergreen rows). Persists across panel rebuilds; available in
@@ -7415,7 +7506,7 @@ function renderNoteDetail(noteId) {
               const ref = refId ? REFERENCES[refId] : null;
               const citeHtml = ref
                 ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
-                : `<span class="cite">${e.cite}${citeReviewBadge(null)}</span>`;
+                : `<span class="cite">${e.cite}${citeReviewBadge(null, e.cite)}</span>`;
               return `<li>
                 <span class="note-name view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}${commonTag(cpd)}</span>
                 <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
@@ -7826,7 +7917,7 @@ function renderCompoundDetail(cpdId, banner) {
           const ref = refId ? REFERENCES[refId] : null;
           const citeHtml = ref
             ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
-            : `<span class="cite">${e.cite}${citeReviewBadge(null)}</span>`;
+            : `<span class="cite">${e.cite}${citeReviewBadge(null, e.cite)}</span>`;
           return `<li>
             <span class="note-name">${NOTE_BY_ID[e.note].label}</span> ${phaseHints}
             <span class="weight" style="float:right">${live ? contrib : "—"} <span style="color:var(--ink-dim)">(base ${e.w.toFixed(2)})</span></span>
@@ -8967,8 +9058,9 @@ function renderMethodology() {
     <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. Because the citations were drafted with AI assistance, though, that intent isn't taken on trust: each one carries a human-verification status, explained next.</p>
 
     <h3 id="meth-review">Citation honesty policy</h3>
-    <p>${(() => { const c = citationReviewCounts(); return `Every citation here was drafted with an AI assistant, and language models can produce plausible-looking references that don't actually exist or don't say what they're quoted as saying. So none of them are trusted by default. Each citation across the note, compound, and map panels carries a status tag: <span class="cite-review pending">⏳ under human review</span> until a person has personally opened the original source and confirmed it is real and supports the claim it's attached to — only then does it become <span class="cite-review verified">✓ human-verified</span>.`; })()}</p>
-    <p>${(() => { const c = citationReviewCounts(); return `So far <strong>${c.verified} of ${c.total}</strong> references have been human-verified. An "under human review" tag is <em>not</em> a claim that a source is wrong — only that a human hasn't personally checked it yet, and it should be treated as provisional until they have. This policy is deliberately strict: nothing is exempted for looking obviously real, because "looks real" is exactly what a fabricated citation is good at.`; })()}</p>
+    <p>${(() => { const c = citationReviewCounts(); return `Every citation here was drafted with an AI assistant, and language models can produce plausible-looking references that don't actually exist or don't say what they're quoted as saying. So none of them were trusted by default. Each one was held as provisional until a person opened the original source and confirmed it is real and supports the claim it's attached to.`; })()}</p>
+    <p>${(() => { const c = citationReviewCounts(); return `<strong>That review is complete.</strong> All <strong>${c.total}</strong> structured references have been checked against their sources and now carry a <span class="cite-review verified">✓ human-verified</span> tag${c.pending ? `, with <strong>${c.pending}</strong> still outstanding` : ``}. The tag is kept rather than removed so the check stays visible and auditable: any citation added later starts as <span class="cite-review pending">⏳ under human review</span> until it has had the same treatment.`; })()}</p>
+    <p>One deliberate exception: some entries in the citation slot don't name a source at all — they state the reasoning behind a link, like <em>"Shared berry ester base."</em> Those carry no verification tag, because there is no document to open. Marking them "verified" would imply a source that doesn't exist; marking them "under review" would imply one nobody got around to checking. Neither is true, so they say nothing.</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
@@ -10265,6 +10357,7 @@ function setWorkspace(mode) {
   }
   document.body.classList.toggle("origins-mode", mode === "map");
   document.body.classList.toggle("taxonomy-mode", mode === "tree");
+  syncTaxonomySheetState();
   document.getElementById("origins-view").hidden = mode !== "map";
   document.getElementById("origins-detail-panel").hidden = true;
   clearOriginSelection();
@@ -10278,11 +10371,105 @@ function setWorkspace(mode) {
   if (mode === "tree") loadTaxonomyTree();
 }
 function showTaxonomyDetail() {
+  if (isMobileViewport() && document.body.classList.contains("taxonomy-mode") && state.taxonomySheetSnap === "peek") {
+    setTaxonomySheetSnap("half");
+  }
   if (state.detailHidden) {
     state.detailHidden = false;
     applyPaneState();
   }
 }
+const taxonomySheetHandle = document.getElementById("taxonomy-sheet-handle");
+const TAXONOMY_SHEET_SNAPS = ["peek", "half", "full"];
+function taxonomySheetHeightFor(snap) {
+  if (snap === "peek") return 112;
+  if (snap === "full") return Math.max(260, window.innerHeight - 136);
+  return Math.max(240, window.innerHeight * 0.42);
+}
+// The sheet's height is written straight onto the panel in px rather than being
+// read from --taxonomy-sheet-h by the stylesheet. A custom-property change does
+// NOT retrigger a transition on a property that derives from it, so the CSS-only
+// version left the panel frozen at whatever height it first rendered at (42svh)
+// while the variable moved underneath it — the handle tracked correctly (its
+// `bottom` has no transition) and dragging worked (`.sheet-dragging` sets
+// transition:none), which is exactly why the bug survived review.
+// The variable is still kept in sync: it positions the handle.
+function applyTaxonomySheetHeight() {
+  const active = isMobileViewport() && document.body.classList.contains("taxonomy-mode");
+  if (!active) {
+    // Desktop/other workspaces lay the panel out as a grid area — a leftover
+    // inline height here would wreck it.
+    detailPanel.style.removeProperty("height");
+    document.body.style.removeProperty("--taxonomy-sheet-h");
+    return;
+  }
+  const px = Math.round(taxonomySheetHeightFor(state.taxonomySheetSnap));
+  document.body.style.setProperty("--taxonomy-sheet-h", `${px}px`);
+  detailPanel.style.height = `${px}px`;
+}
+function syncTaxonomySheetState() {
+  document.body.classList.toggle("sheet-peek", state.taxonomySheetSnap === "peek");
+  document.body.classList.toggle("sheet-full", state.taxonomySheetSnap === "full");
+  const label = state.taxonomySheetSnap === "peek" ? "Minimized"
+    : state.taxonomySheetSnap === "full" ? "Expanded" : "Half height";
+  taxonomySheetHandle.setAttribute("aria-valuetext", label);
+  taxonomySheetHandle.title = `${label}. Drag to resize detail; tap to change height.`;
+  applyTaxonomySheetHeight();
+}
+function setTaxonomySheetSnap(snap) {
+  if (!TAXONOMY_SHEET_SNAPS.includes(snap)) return;
+  state.taxonomySheetSnap = snap;
+  syncTaxonomySheetState();
+}
+// Snap heights are viewport-derived, so a rotation or resize has to recompute
+// them — otherwise the px written above goes stale.
+window.addEventListener("resize", () => {
+  if (document.body.classList.contains("taxonomy-mode")) applyTaxonomySheetHeight();
+});
+(function setupTaxonomySheetResize() {
+  let dragging = false, moved = false, suppressClick = false, startY = 0, startHeight = 0;
+  taxonomySheetHandle.addEventListener("pointerdown", (e) => {
+    if (!isMobileViewport()) return;
+    dragging = true; moved = false; startY = e.clientY;
+    startHeight = detailPanel.getBoundingClientRect().height;
+    document.body.classList.add("sheet-dragging");
+    taxonomySheetHandle.setPointerCapture(e.pointerId);
+  });
+  taxonomySheetHandle.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const delta = startY - e.clientY;
+    if (Math.abs(delta) > 4) moved = true;
+    const height = Math.max(112, Math.min(window.innerHeight - 96, startHeight + delta));
+    document.body.style.setProperty("--taxonomy-sheet-h", `${height}px`);
+    detailPanel.style.height = `${height}px`;
+  });
+  const finish = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.classList.remove("sheet-dragging");
+    try { taxonomySheetHandle.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (!moved) return; // the button's native click handles tap/Enter/Space
+    suppressClick = true;
+    const height = detailPanel.getBoundingClientRect().height;
+    const nearest = TAXONOMY_SHEET_SNAPS.reduce((best, snap) =>
+      Math.abs(taxonomySheetHeightFor(snap) - height) < Math.abs(taxonomySheetHeightFor(best) - height) ? snap : best, "peek");
+    setTaxonomySheetSnap(nearest);
+  };
+  taxonomySheetHandle.addEventListener("pointerup", finish);
+  taxonomySheetHandle.addEventListener("pointercancel", finish);
+  taxonomySheetHandle.addEventListener("click", () => {
+    if (suppressClick) { suppressClick = false; return; }
+    const next = TAXONOMY_SHEET_SNAPS[(TAXONOMY_SHEET_SNAPS.indexOf(state.taxonomySheetSnap) + 1) % TAXONOMY_SHEET_SNAPS.length];
+    setTaxonomySheetSnap(next);
+  });
+  taxonomySheetHandle.addEventListener("keydown", (e) => {
+    const i = TAXONOMY_SHEET_SNAPS.indexOf(state.taxonomySheetSnap);
+    if (e.key === "ArrowUp") { e.preventDefault(); setTaxonomySheetSnap(TAXONOMY_SHEET_SNAPS[Math.min(2, i + 1)]); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); setTaxonomySheetSnap(TAXONOMY_SHEET_SNAPS[Math.max(0, i - 1)]); }
+    else if (e.key === "Home") { e.preventDefault(); setTaxonomySheetSnap("peek"); }
+    else if (e.key === "End") { e.preventDefault(); setTaxonomySheetSnap("full"); }
+  });
+})();
 // Workspace switch (Wheel | Map | Tree) — the primary "which screen" control.
 document.querySelectorAll("#workspace-tabs button").forEach(b => {
   b.addEventListener("click", () => setWorkspace(b.dataset.workspace));
@@ -10320,6 +10507,14 @@ function loadTaxonomyTree() {
   // reachable without an expand-all click first; Collapse to kingdoms is
   // still there for anyone who wants the compact overview instead.
   taxTreeRoot = d3.hierarchy(buildTaxonomyTreeData());
+  // Compact phones enter through the connected overview rather than a wall
+  // of 100+ leaves. Each kingdom can be opened deliberately; desktop keeps
+  // the fully expanded atlas. This is a layout choice, not a data reduction.
+  if (isMobileViewport()) {
+    taxTreeRoot.descendants().forEach(d => {
+      if (d.depth >= 1 && d.children) { d._children = d.children; d.children = null; }
+    });
+  }
   taxonomyTreeLoaded = true;
   renderTaxonomyTree();
 }
@@ -10438,7 +10633,11 @@ function renderTaxonomyTree() {
   // top; the deep default (depth 4) lands well under the cap and fills
   // exactly. Min 120 keeps a dense tree from cramping.
   const dynDY = Math.max(120, Math.min(500, availH / maxDepth));
-  d3.tree().nodeSize([TAX_DX, dynDY])(taxTreeRoot);
+  // The compact overview has only a handful of top-level siblings; tightening
+  // their spread lets the complete connected root fit at 360px with no
+  // mandatory horizontal scroll. Expanded branches can still overflow/pan.
+  const layoutDX = isMobileViewport() ? 54 : TAX_DX;
+  d3.tree().nodeSize([layoutDX, dynDY])(taxTreeRoot);
 
   const nodes = taxTreeRoot.descendants();
   const links = taxTreeRoot.links();
@@ -10496,10 +10695,21 @@ function renderTaxonomyTree() {
 
   const keyFor = d => d.data.noteId || (d.ancestors().map(a => a.data.name).join("/"));
 
+  const selectedTarget = state.selectedNote
+    ? nodes.find(d => d.data.noteId === state.selectedNote)
+    : (state.selectedFamily
+      ? nodes.find(d => d.data.name === state.selectedFamily && TAXON_FAMILY_NAMES.has(d.data.name))
+      : null);
+  const selectedPath = new Set(selectedTarget ? selectedTarget.ancestors() : []);
+  const pathReadout = document.getElementById("taxonomy-path-readout");
+  if (pathReadout) pathReadout.textContent = selectedTarget
+    ? selectedTarget.ancestors().reverse().map(d => d.data.name).join(" → ")
+    : "Choose a note to trace its connected lineage and the structures its relatives tend to share.";
+
   const link = d3.linkVertical().x(screenX).y(screenY);
   svg.selectAll("path.tx-link").data(links, d => keyFor(d.target))
     .join("path")
-    .attr("class", "tx-link")
+    .attr("class", d => `tx-link${selectedPath.has(d.target) ? " tx-path" : ""}`)
     .attr("d", link);
 
   const onNodeClick = (e, d) => {
@@ -10508,6 +10718,7 @@ function renderTaxonomyTree() {
       state.selectedCompound = null;
       showTaxonomyDetail();
       renderDetail();
+      renderTaxonomyTree();
       return;
     }
     // Family nodes open their own detail page (common name, where it sits,
@@ -10522,6 +10733,7 @@ function renderTaxonomyTree() {
       state.selectedCompound = null;
       showTaxonomyDetail();
       renderDetail();
+      renderTaxonomyTree();
       return;
     }
     if (d.children) { d._children = d.children; d.children = null; }
@@ -10548,6 +10760,7 @@ function renderTaxonomyTree() {
   enter.append("text");
 
   const merged = node.merge(enter);
+  merged.attr("class", d => `${nodeClass(d)}${selectedPath.has(d) ? " tx-path" : ""}${d === selectedTarget ? " tx-selected" : ""}`);
   merged.attr("transform", d => `translate(${screenX(d)},${screenY(d)})`);
   merged.select("circle").attr("fill", d => d._children ? "var(--accent)" : (d.children ? "var(--panel-2)" : "var(--ink-dim)"));
   merged.select("text")
