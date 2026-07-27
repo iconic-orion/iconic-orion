@@ -38,7 +38,13 @@
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   body { display: grid;
     grid-template-columns: var(--notes-pane-w) 1fr var(--detail-pane-w);
-    grid-template-rows: 48px 1fr auto;
+    /* minmax, not a flat 48px: the header wraps to a second row between ~760px
+       and ~1400px (its controls need ~1365px intrinsically — see the header
+       rule). A fixed 48px row let it wrap but then clipped the wrapped rows
+       outside the grid cell, so the controls were laid out correctly and still
+       unreachable. minmax keeps the 48px floor on roomy screens and lets the
+       row grow exactly as much as the header actually needs. */
+    grid-template-rows: minmax(48px, auto) 1fr auto;
     grid-template-areas: "head head head" "notes wheel detail" "foot foot foot"; height: 100vh; overflow: hidden; }
 
   /* Per-pane visibility. The wheel is always present; each side pane can be
@@ -77,8 +83,20 @@
   .pane-toggle.right { right: var(--detail-pane-w); border-right: none; border-radius: 6px 0 0 6px; }
   body.notes-hidden  .pane-toggle.left  { left:  0; }
   body.detail-hidden .pane-toggle.right { right: 0; }
-  header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
-    border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
+  /* flex-wrap is load-bearing. The header's controls need ~1365px of intrinsic
+     width (measured: 1621px including the wordmark), but the mobile HUD only
+     takes over at 760px — so from 761px to ~1400px the desktop header applies
+     to a space it cannot fit in. With nowrap, the overflow was resolved by
+     crushing segmented groups to zero width, and because .tabs clips
+     (overflow:hidden, for its rounded corners) the buttons vanished silently:
+     at 768px (iPad portrait) SEVEN header controls were unreachable and
+     #view-tabs / #organize-tabs were 0px wide. Wrapping to a second row costs
+     vertical space and keeps every control reachable, which is the right trade
+     — the grid's head row is auto-sized, so the layout absorbs it. */
+  header { grid-area: head; display: flex; align-items: center; flex-wrap: wrap;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line); background: var(--panel);
+    gap: 6px 12px; }   /* row gap tighter than column gap once it wraps */
   /* The title is the header's designated shrink victim: min-width:0 lets it
      compress below its intrinsic text width (a flex item won't, by default),
      so tight headers ellipsize the wordmark instead of amputating a workspace
@@ -126,7 +144,14 @@
   /* Divider only appears inside the mobile tray; never on desktop's inline row. */
   .hud-divider { display: none; }
 
-  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  /* flex-shrink:0 pairs with the header's flex-wrap. overflow:hidden here is
+     what rounds the corners of the buttons inside, but it also means a
+     compressed group silently AMPUTATES its trailing buttons — no ellipsis, no
+     scrollbar. Refusing to shrink converts that invisible data loss into an
+     honest wrap onto the next row. Applies to every segmented group, not just
+     the workspace switcher: #view-tabs and #organize-tabs had the same bug. */
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px;
+    overflow: hidden; flex-shrink: 0; }
   .tabs button { border: none; border-radius: 0; padding: 6px 12px; background: transparent;
     color: var(--ink-dim); }
   .tabs button.active { background: var(--accent); color: #1a1810; }
@@ -142,18 +167,14 @@
      hierarchy, distinct from the lighter wheel-control segmented groups beside
      it. Its buttons carry an icon + label.
 
-     flex-shrink:0 is load-bearing, not tidiness. `.tabs` sets overflow:hidden to
-     clip button backgrounds to its rounded corners, and it's a flex ITEM in the
-     header, so at default shrink the header squeezes it and the overflow
-     silently AMPUTATES the trailing button — no ellipsis, no scrollbar, no cue.
-     That is exactly what happened to Tree once it became the third workspace
-     (this rule's comment still said "Wheel | Map"): at 1280px the container was
-     clipped to 155px of a needed 217px, so Tree rendered at x438-507 while the
-     clip ended at 447. Its centre fell outside the clip, so it never hit-tested
-     and was simply unclickable. All three workspaces are primary navigation and
-     must never be the thing that gets compressed — the title absorbs it instead
-     (see .brand/h1 below). */
-  .workspace-tabs { border-color: var(--accent); flex-shrink: 0; }
+     Historical note, since it cost real debugging: Tree was silently
+     unclickable for a while. This rule's own comment still read "Wheel | Map"
+     — written when two buttons fit — and once Tree became the third, header
+     compression clipped the group to 155px of a needed 217px at 1280px. Tree
+     rendered at x438-507 while the clip ended at 447, so its centre fell
+     outside and it never hit-tested. The no-shrink protection now lives on
+     `.tabs` (see above), which covers this group and its siblings alike. */
+  .workspace-tabs { border-color: var(--accent); }
   .workspace-tabs button { display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; padding: 6px 12px; }
   .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
