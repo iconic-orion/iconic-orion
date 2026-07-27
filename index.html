@@ -1878,6 +1878,34 @@
 
   .geo-production-marker,
   .geo-tradition-marker { cursor: pointer; }
+  .geo-displacement-casing,
+  .geo-displacement-path {
+    fill: none; vector-effect: non-scaling-stroke; pointer-events: none;
+    stroke-linecap: round;
+  }
+  .geo-displacement-casing {
+    stroke: var(--bg); stroke-width: 4; opacity: 0.88;
+  }
+  .geo-displacement-path {
+    stroke: var(--accent-2); stroke-width: 2.1; opacity: 1;
+    vector-effect: non-scaling-stroke; pointer-events: none;
+  }
+  .geo-displacement-route.selected .geo-displacement-casing { stroke-width: 5; }
+  .geo-displacement-route.selected .geo-displacement-path {
+    stroke-width: 2.8;
+  }
+  .geo-displacement-origin-ring {
+    fill: var(--bg); stroke: var(--accent-2); stroke-width: 1.8;
+    vector-effect: non-scaling-stroke;
+  }
+  .geo-displacement-origin-core { fill: var(--accent-2); }
+  .geo-origin-label,
+  .geo-origin-sublabel {
+    fill: var(--ink); font-weight: 650;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 4px;
+    stroke-linejoin: round; pointer-events: none;
+  }
+  .geo-origin-sublabel { fill: var(--ink-dim); font-weight: 500; }
   .geo-production-dot {
     fill: var(--accent); stroke: var(--ink); stroke-width: 1.25;
     vector-effect: non-scaling-stroke;
@@ -2026,7 +2054,8 @@
     body.origins-mode #markers-svg .geo-production-leader,
     body.origins-mode #markers-svg .geo-layer-label,
     body.origins-mode #markers-svg .geo-layer-sublabel,
-    body.origins-mode #markers-svg .geo-tradition-leader {
+    body.origins-mode #markers-svg .geo-tradition-leader,
+    body.origins-mode #markers-svg .geo-origin-sublabel {
       opacity: 0;
     }
     body.origins-mode #markers-svg .geo-production-marker.selected .geo-production-leader,
@@ -10701,6 +10730,49 @@ function formatProductionTonnes(value) {
   return `${Math.round(value).toLocaleString()} t`;
 }
 
+function greatCircleDistanceKm(a, b) {
+  const toRad = degrees => degrees * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  const clamped = Math.max(0, Math.min(1, h));
+  return Math.round(6371.0088 * 2 * Math.atan2(Math.sqrt(clamped), Math.sqrt(1 - clamped)));
+}
+
+function greatCircleMapPoints(a, b, steps = 48) {
+  const toRad = degrees => degrees * Math.PI / 180;
+  const toDeg = radians => radians * 180 / Math.PI;
+  const vector = point => {
+    const lat = toRad(point.lat), lon = toRad(point.lon);
+    return [Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)];
+  };
+  const av = vector(a), bv = vector(b);
+  const omega = Math.acos(Math.max(-1, Math.min(1,
+    av[0] * bv[0] + av[1] * bv[1] + av[2] * bv[2])));
+  const sinOmega = Math.sin(omega);
+  let previousLon = a.lon;
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const t = i / steps;
+    const aw = sinOmega < 1e-8 ? 1 - t : Math.sin((1 - t) * omega) / sinOmega;
+    const bw = sinOmega < 1e-8 ? t : Math.sin(t * omega) / sinOmega;
+    const x = aw * av[0] + bw * bv[0];
+    const y = aw * av[1] + bw * bv[1];
+    const z = aw * av[2] + bw * bv[2];
+    const lat = toDeg(Math.atan2(z, Math.hypot(x, y)));
+    let lon = toDeg(Math.atan2(y, x));
+    while (lon - previousLon > 180) lon -= 360;
+    while (lon - previousLon < -180) lon += 360;
+    previousLon = lon;
+    return [(lon + 180) / 360 * 2000, (90 - lat) / 180 * 857];
+  });
+}
+
+function geographyPathData(points, xShift = 0) {
+  return points.map(([x, y], i) => `${i ? "L" : "M"}${(x + xShift).toFixed(2)},${y.toFixed(2)}`).join(" ");
+}
+
 function appendGeographySources(content, sourceKeys) {
   const label = document.createElement("div");
   label.className = "section-label";
@@ -10731,12 +10803,16 @@ function openProductionDetail(note, production, country) {
 
   if (country) {
     const share = country.tonnes / production.worldTonnes * 100;
+    const origin = NOTE_ORIGINS[note.id];
+    const distanceKm = origin ? greatCircleDistanceKm(origin, country) : null;
     const facts = document.createElement("ul");
     facts.className = "origin-facts";
     [
       `${formatProductionTonnes(country.tonnes)} · ${share.toFixed(1)}% of the FAOSTAT world total.`,
+      ...(distanceKm ? [`${distanceKm.toLocaleString()} km from the ${origin.region} origin anchor.`] : []),
       `Source flag ${country.flag}: ${GEOGRAPHY_FLAG_LABELS[country.flag] || "source classification not described"}.`,
       "Circle area, not radius, is proportional to production. Compare symbols only within this ingredient.",
+      ...(distanceKm ? ["Distance is an approximate great-circle measurement between map anchors, not a reconstructed trade or dispersal route."] : []),
     ].forEach(text => {
       const li = document.createElement("li");
       li.textContent = text;
@@ -10748,7 +10824,8 @@ function openProductionDetail(note, production, country) {
     p.textContent = "Choose a production circle to inspect its quantity, share of the world total, and source flag.";
     content.append(p);
   }
-  appendGeographySources(content, [production.sourceKey]);
+  const originKeys = NOTE_ORIGINS[note.id]?.citeKeys || [];
+  appendGeographySources(content, [production.sourceKey, ...originKeys]);
   panel.hidden = false;
 }
 
@@ -10784,6 +10861,26 @@ function refreshPilotMarkers() {
   const svg = document.getElementById("markers-svg");
   if (!svg) return;
   const pxPerUnit = mapPxPerUnit();
+
+  svg.querySelectorAll(".geo-displacement-path").forEach(path => {
+    path.style.strokeDasharray = `${6 / pxPerUnit} ${5 / pxPerUnit}`;
+  });
+
+  svg.querySelectorAll(".geo-displacement-origin").forEach(g => {
+    const x = +g.dataset.x, y = +g.dataset.y;
+    const ring = g.querySelector(".geo-displacement-origin-ring");
+    const core = g.querySelector(".geo-displacement-origin-core");
+    const label = g.querySelector(".geo-origin-label");
+    const sub = g.querySelector(".geo-origin-sublabel");
+    ring.setAttribute("r", 7 / pxPerUnit);
+    core.setAttribute("r", 2.5 / pxPerUnit);
+    label.setAttribute("x", x + 12 / pxPerUnit);
+    label.setAttribute("y", y - 2 / pxPerUnit);
+    label.style.fontSize = `${10.5 / pxPerUnit}px`;
+    sub.setAttribute("x", x + 12 / pxPerUnit);
+    sub.setAttribute("y", y + 10 / pxPerUnit);
+    sub.style.fontSize = `${9 / pxPerUnit}px`;
+  });
 
   svg.querySelectorAll(".geo-production-marker").forEach(g => {
     const x = +g.dataset.x, y = +g.dataset.y;
@@ -10829,14 +10926,20 @@ function refreshPilotMarkers() {
   });
 }
 
-function wireGeographyMarker(g, ariaLabel, onOpen) {
+function wireGeographyMarker(g, ariaLabel, onOpen, routeId = null) {
   g.setAttribute("role", "button");
   g.setAttribute("tabindex", "0");
   g.setAttribute("aria-label", ariaLabel);
   const activate = () => {
     g.parentElement.querySelectorAll(".geo-production-marker.selected, .geo-tradition-marker.selected")
       .forEach(marker => marker.classList.remove("selected"));
+    g.parentElement.querySelectorAll(".geo-displacement-route.selected")
+      .forEach(route => route.classList.remove("selected"));
     g.classList.add("selected");
+    if (routeId) {
+      [...g.parentElement.querySelectorAll(".geo-displacement-route")]
+        .find(route => route.dataset.routeId === routeId)?.classList.add("selected");
+    }
     onOpen();
   };
   g.addEventListener("click", activate);
@@ -10851,15 +10954,56 @@ function wireGeographyMarker(g, ariaLabel, onOpen) {
 function buildProductionMarkers(note, production) {
   const svg = document.getElementById("markers-svg");
   svg.innerHTML = "";
+  const origin = NOTE_ORIGINS[note.id];
+  let originAnchor = null;
   const maxShare = Math.max(...production.countries.map(c => c.tonnes / production.worldTonnes));
   const items = production.countries.map((country, i) => {
     const [x, y] = latLonToXY(country.lat, country.lon);
-    return { id: `production-${i}`, x, y, country };
+    return {
+      id: `production-${i}`, routeId: `displacement-${i}`, x, y, country,
+      distanceKm: origin ? greatCircleDistanceKm(origin, country) : null,
+    };
   });
   const dirIndex = layoutOriginLabelDirections(items);
 
+  if (origin) {
+    items.forEach(item => {
+      const route = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      route.classList.add("geo-displacement-route");
+      route.dataset.routeId = item.routeId;
+      route.setAttribute("aria-hidden", "true");
+      const points = greatCircleMapPoints(origin, item.country);
+      [-2000, 0, 2000].forEach(shift => {
+        const d = geographyPathData(points, shift);
+        const casing = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        casing.classList.add("geo-displacement-casing");
+        casing.setAttribute("d", d);
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.classList.add("geo-displacement-path");
+        path.setAttribute("d", d);
+        route.append(casing, path);
+      });
+      svg.appendChild(route);
+    });
+
+    const [originX, originY] = latLonToXY(origin.lat, origin.lon);
+    originAnchor = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    originAnchor.classList.add("geo-displacement-origin");
+    originAnchor.dataset.x = originX; originAnchor.dataset.y = originY;
+    originAnchor.setAttribute("aria-hidden", "true");
+    const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    ring.classList.add("geo-displacement-origin-ring");
+    ring.setAttribute("cx", originX); ring.setAttribute("cy", originY);
+    const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    core.classList.add("geo-displacement-origin-core");
+    core.setAttribute("cx", originX); core.setAttribute("cy", originY);
+    const label = makeGeographyText(originAnchor, "geo-origin-label", "Origin");
+    const sub = makeGeographyText(originAnchor, "geo-origin-sublabel", origin.region);
+    originAnchor.append(ring, core, label, sub);
+  }
+
   items.forEach(item => {
-    const { country, x, y } = item;
+    const { country, x, y, distanceKm, routeId } = item;
     const share = country.tonnes / production.worldTonnes;
     const screenR = 26 * Math.sqrt(share / maxShare);
     const dir = ORIGIN_DIRS[dirIndex.get(item.id)];
@@ -10878,13 +11022,15 @@ function buildProductionMarkers(note, production) {
     circle.setAttribute("cx", x); circle.setAttribute("cy", y);
     circle.setAttribute("fill", groupColor(note.group));
     const label = makeGeographyText(g, "geo-layer-label", country.name);
-    const sub = makeGeographyText(g, "geo-layer-sublabel", `${(share * 100).toFixed(1)}% · ${country.flag}`);
+    const sub = makeGeographyText(g, "geo-layer-sublabel",
+      `${(share * 100).toFixed(1)}% · ${country.flag}${distanceKm ? ` · ${distanceKm.toLocaleString()} km` : ""}`);
     const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-    title.textContent = `${country.name}: ${formatProductionTonnes(country.tonnes)}, ${(share * 100).toFixed(1)}% of world production`;
+    title.textContent = `${country.name}: ${formatProductionTonnes(country.tonnes)}, ${(share * 100).toFixed(1)}% of world production${distanceKm ? `, ${distanceKm.toLocaleString()} km from origin anchor` : ""}`;
     g.append(title, line, circle, label, sub);
-    wireGeographyMarker(g, title.textContent, () => openProductionDetail(note, production, country));
+    wireGeographyMarker(g, title.textContent, () => openProductionDetail(note, production, country), routeId);
     svg.appendChild(g);
   });
+  if (originAnchor) svg.appendChild(originAnchor);
   refreshPilotMarkers();
 }
 
@@ -10942,7 +11088,7 @@ function updateGeographyLensChrome() {
   if (isOrigin) {
     framing.textContent = "Map positions reflect the pre-Columbian Exchange framing used throughout: where a plant was cultivated or first used by humans before 1492 European contact, not necessarily where it is grown commercially today.";
   } else if (state.geographyLens === "production") {
-    framing.textContent = "Production is a contemporary distribution, not an origin story. Circle area is proportional to 2024 raw-crop tonnes within the selected ingredient.";
+    framing.textContent = "Production is a contemporary distribution, not an origin story. Circle area is proportional to 2024 raw-crop tonnes; routes show approximate great-circle displacement from the ingredient’s origin anchor, not reconstructed trade paths.";
   } else {
     framing.textContent = "Tradition markers are sourced examples, not a ranking, a heatmap of cultural value, or a complete inventory of every community where the ingredient matters.";
   }
@@ -10955,10 +11101,11 @@ function updateGeographyLensLegend() {
   const pilot = GEOGRAPHY_PILOT[note.id];
   if (state.geographyLens === "production") {
     const p = pilot.production;
+    const origin = NOTE_ORIGINS[note.id];
     const shown = p.countries.reduce((sum, country) => sum + country.tonnes, 0);
     wrap.innerHTML = `<span class="geo-legend-dot" aria-hidden="true"></span>
       <span class="geo-legend-key">${note.label}</span>
-      <span class="geo-legend-note">${p.year} FAOSTAT · top five shown (${(shown / p.worldTonnes * 100).toFixed(1)}% of world total) · circle area = tonnes · flags A official, E estimated, I imputed, X external source</span>
+      <span class="geo-legend-note">${p.year} FAOSTAT · top five shown (${(shown / p.worldTonnes * 100).toFixed(1)}% of world total) · circle area = tonnes${origin ? ` · dashed routes = distance from ${origin.region}` : ""} · flags A official, E estimated, I imputed, X external source</span>
       ${citeReviewBadge(p.sourceKey)}`;
   } else {
     wrap.innerHTML = `<span class="geo-legend-diamond" aria-hidden="true"></span>

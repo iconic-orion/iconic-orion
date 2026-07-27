@@ -190,3 +190,19 @@ code paths, and drag masks this entire class of bug.
   (7 markers), production and tradition detail panels, source badges, lens switching,
   ingredient switching, and restoration of the original Vanilla search (`1 match`).
   Browser console reported no warnings or errors.
+
+### Displacement-distance follow-up
+
+- `Grown now` now retains one contextual origin anchor and draws a restrained
+  great-circle route from it to each of the five production markers. Routes wrap
+  correctly at the dateline rather than crossing the long way through the map.
+- Country labels, accessible marker names, and detail panels report the rounded
+  anchor-to-anchor distance in kilometers. Selecting a marker emphasizes only its
+  route; the detail guardrail says explicitly that this is an approximate geometric
+  distance, not a reconstructed trade or crop-dispersal path.
+- Production details now cite both the FAOSTAT record and the ingredient's existing
+  human-verified origin source. The legend names the active origin region so the
+  comparison baseline remains legible without switching lenses.
+- Verified Coffee, Cacao, and Vanilla route sets at 360 x 760 and 1280 x 800,
+  including the Pacific/dateline paths for Vanilla and Cacao. No horizontal overflow
+  or browser console warnings/errors.
