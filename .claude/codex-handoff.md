@@ -365,3 +365,26 @@ code paths, and drag masks this entire class of bug.
 
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file were not staged or changed.
+
+## Follow-up: illustrated Kingdom buttons + coverage-led expansion (2026-07-27)
+
+- Replaced the circular overview's tiny rotated labels with large upright category
+  marks: sprout/Plantae, mushroom/Fungi, bee/Animalia, and alembic/Process. Each also
+  shows its supported-note count; biological categories state that they open Orders.
+- Biological category activation now visibly expands into the next represented ranks:
+  an Order ring followed by the Families actually present in the tool.
+- Orders and Families are sorted by descendant-note coverage so the categories that
+  collect the most supported notes lead each Kingdom. Plantae therefore begins with
+  Sapindales (14), Poales (10), and Rosales (10).
+- Fixed a pre-existing honesty/count gap exposed by testing all Kingdom buttons:
+  Mushroom belongs to Fungi but currently has no Order or Family fields. It now
+  remains visible as an unplaced Kingdom-edge note instead of disappearing when the
+  Fungi overview changed from 2 notes to its placed subset of 1.
+- Verified the enlarged category marks and Plantae drill-down at 360 × 760. Verified
+  Fungi exposes Saccharomycetales → Saccharomycetaceae plus Mushroom, and Animalia
+  exposes Hymenoptera → Apidae → Honey.
+
+### Coordination boundary
+
+- This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.

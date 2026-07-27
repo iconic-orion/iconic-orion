@@ -1871,6 +1871,16 @@
     paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
     pointer-events: none;
   }
+  .tx-root-category { pointer-events: none; text-anchor: middle; }
+  .tx-root-category-icon { font-size: 28px; }
+  .tx-root-category-name {
+    fill: var(--ink); font-size: 17px; font-weight: 650;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
+  }
+  .tx-root-category-meta {
+    fill: var(--ink-dim); font-size: 9px; font-weight: 550;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 2px;
+  }
   .tx-rank-note line { stroke: var(--line); stroke-width: 2; }
   .tx-rank-note circle { stroke: var(--bg); stroke-width: 1.5; }
   .tx-rank-note:hover circle, .tx-rank-note:focus circle {
@@ -1900,6 +1910,9 @@
   #taxonomy-svg.tx-wreath-compact .tx-note-focus-name { font-size: 16px; }
   #taxonomy-svg.tx-wreath-compact .tx-note-lineage-ring { stroke-width: 10; }
   #taxonomy-svg.tx-wreath-compact .tx-note-lineage-label { font-size: 7.5px; stroke-width: 2px; }
+  #taxonomy-svg.tx-wreath-compact .tx-root-category-icon { font-size: 22px; }
+  #taxonomy-svg.tx-wreath-compact .tx-root-category-name { font-size: 14px; stroke-width: 2px; }
+  #taxonomy-svg.tx-wreath-compact .tx-root-category-meta { font-size: 7.5px; stroke-width: 1.5px; }
   @keyframes tx-note-focus-in {
     from { opacity: 0; transform: scale(.78); }
     to { opacity: 1; transform: none; }
@@ -12736,6 +12749,16 @@ function taxonomyChildren(node) {
   return node ? (node.children || node._children || []) : [];
 }
 
+function taxonomyLeafCount(node) {
+  return allTaxonomyDescendants(node, []).filter(d => d.data.noteId).length;
+}
+
+function taxonomyByMostNotes(nodes) {
+  return [...nodes].sort((a, b) =>
+    taxonomyLeafCount(b) - taxonomyLeafCount(a)
+    || a.data.name.localeCompare(b.data.name));
+}
+
 function taxonomyFocusNode(focus) {
   if (!focus || !taxTreeRoot) return null;
   return allTaxonomyDescendants(taxTreeRoot, []).find(node => {
@@ -12775,6 +12798,19 @@ function setTaxonomyFocus(rank, name, noteId = null) {
     if (isMobileViewport()) setTaxonomySheetSnap("peek");
   }
   renderTaxonomyTree();
+}
+
+function focusTaxonomyNoteNode(noteNode) {
+  if (noteNode.parent && TAXON_FAMILY_NAMES.has(noteNode.parent.data.name)) {
+    setTaxonomyFocus("note", noteNode.data.name, noteNode.data.noteId);
+    return;
+  }
+  // A few honest top-level notes (for example Mushroom) do not yet carry an
+  // Order/Family placement. Open their evidence without fabricating rings.
+  state.selectedNote = noteNode.data.noteId;
+  state.selectedCompound = null;
+  showTaxonomyDetail();
+  renderDetail();
 }
 
 function setTaxonomyUpControl(label) {
@@ -12820,7 +12856,7 @@ function equalTaxonomySegments(nodes, start = 0, end = Math.PI * 2) {
     node,
     start: start + i * step,
     end: start + (i + 1) * step,
-    count: allTaxonomyDescendants(node, []).filter(d => d.data.noteId).length,
+    count: taxonomyLeafCount(node),
   }));
 }
 
@@ -12883,21 +12919,33 @@ function renderTaxonomyRootDisc(svg, scrollEl) {
   groups.append("title").text(d =>
     `${d.node.data.name} · ${d.count} note${d.count === 1 ? "" : "s"}`);
   const labelRadius = (centerRadius + (compact ? 16 : 22) + outerRadius) / 2;
-  groups.append("text").attr("class", "tx-rank-label")
+  const rootCategoryVisuals = {
+    Plantae: { icon: "🌱", label: "Plantae" },
+    Fungi: { icon: "🍄", label: "Fungi" },
+    Animalia: { icon: "🐝", label: "Animalia" },
+    "Process / not a single organism": { icon: "⚗️", label: "Process" },
+  };
+  const category = groups.append("g").attr("class", "tx-root-category")
     .attr("transform", d => {
       const a = (d.start + d.end) / 2;
-      const deg = a * 180 / Math.PI - 90;
-      const flip = a > Math.PI ? 180 : 0;
-      return `rotate(${deg}) translate(${labelRadius},0) rotate(${90 + flip})`;
-    })
+      return `translate(${Math.sin(a) * labelRadius},${-Math.cos(a) * labelRadius})`;
+    });
+  category.append("text").attr("class", "tx-root-category-icon").attr("y", compact ? -8 : -11)
+    .text(d => (rootCategoryVisuals[d.node.data.name] || { icon: "•" }).icon);
+  category.append("text").attr("class", "tx-root-category-name").attr("y", compact ? 9 : 12)
+    .text(d => (rootCategoryVisuals[d.node.data.name] || { label: d.node.data.name }).label);
+  category.append("text").attr("class", "tx-root-category-meta").attr("y", compact ? 21 : 27)
     .text(d => d.node.data.name === "Process / not a single organism"
-      ? (compact ? "Process" : "Process / non-organism")
-      : d.node.data.name);
+      ? `${d.count} non-organism notes`
+      : compact
+        ? `${d.count} note${d.count === 1 ? "" : "s"} · orders`
+        : `${d.count} note${d.count === 1 ? "" : "s"} · orders → families`);
   return true;
 }
 
 function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
-  const rawChildren = taxonomyChildren(focusNode).filter(d => !d.data.noteId);
+  const topChildren = taxonomyChildren(focusNode);
+  const rawChildren = taxonomyByMostNotes(topChildren.filter(d => !d.data.noteId));
   // Plantae also contains the explicitly non-taxonomic "(multiple families)"
   // bucket. Keep it in the full tree, but do not mislabel it as an Order in
   // the biological drill-down.
@@ -12905,6 +12953,16 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
     ? rawChildren.filter(node =>
       taxonomyChildren(node).some(child => TAXON_FAMILY_NAMES.has(child.data.name)))
     : rawChildren;
+  const excludedChildren = rank === "kingdom"
+    ? rawChildren.filter(node => !children.includes(node))
+    : [];
+  const looseNotes = rank === "kingdom"
+    ? [
+      ...topChildren.filter(d => d.data.noteId),
+      ...excludedChildren.flatMap(node =>
+        allTaxonomyDescendants(node, []).filter(d => d.data.noteId)),
+    ]
+    : topChildren.filter(d => d.data.noteId);
   if (!children.length) return false;
   document.getElementById("taxonomy-expand-all").hidden = true;
   document.getElementById("taxonomy-collapse-all").hidden = true;
@@ -12916,8 +12974,11 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
   const cx = size / 2, cy = size / 2;
   const centerRadius = compact ? 42 : Math.max(56, Math.min(74, size * .14));
   const outerRadius = size * (compact ? .405 : .42);
-  const notes = children.flatMap(node =>
-    allTaxonomyDescendants(node, []).filter(d => d.data.noteId));
+  const notes = [
+    ...children.flatMap(node =>
+      allTaxonomyDescendants(node, []).filter(d => d.data.noteId)),
+    ...looseNotes,
+  ];
   const parent = focusNode.parent;
   const path = focusNode.ancestors().reverse().map(d => d.data.name).join(" → ");
 
@@ -13010,12 +13071,12 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
     drawSegments(orderSegments, firstRingInner, orderOuter, "order");
     const familySegments = orderSegments.flatMap(orderSeg =>
       equalTaxonomySegments(
-        taxonomyChildren(orderSeg.node).filter(d => !d.data.noteId),
+        taxonomyByMostNotes(taxonomyChildren(orderSeg.node).filter(d => !d.data.noteId)),
         orderSeg.start, orderSeg.end));
     drawSegments(familySegments, orderOuter + 4, outerRadius - 14, "family");
     leafSegments = familySegments;
   } else {
-    const familySegments = equalTaxonomySegments(children);
+    const familySegments = equalTaxonomySegments(taxonomyByMostNotes(children));
     drawSegments(familySegments, firstRingInner, outerRadius - 18, "family");
     leafSegments = familySegments;
   }
@@ -13028,6 +13089,12 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
       angle: segment.start + (i + .5) * step,
     }));
   });
+  looseNotes.forEach((leaf, i) => {
+    noteMarks.push({
+      leaf,
+      angle: (i + .5) * (Math.PI * 2 / Math.max(1, looseNotes.length)),
+    });
+  });
   const note = plot.append("g").attr("class", "tx-rank-notes")
     .selectAll("g").data(noteMarks).join("g")
     .attr("class", "tx-rank-note")
@@ -13037,7 +13104,7 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
       `rotate(${d.angle * 180 / Math.PI - 90}) translate(${outerRadius},0)`)
     .on("click keydown", (event, d) =>
       activateTaxonomyTarget(event, () =>
-        setTaxonomyFocus("note", d.leaf.data.name, d.leaf.data.noteId)));
+        focusTaxonomyNoteNode(d.leaf)));
   note.append("line").attr("x1", -6).attr("x2", 5);
   note.append("circle").attr("cx", 7).attr("r", rank === "kingdom" ? 3.5 : 5.5)
     .attr("fill", d => groupColor(NOTE_BY_ID[d.leaf.data.noteId].group));
@@ -13267,7 +13334,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
     .text(`${tasted ? `${tasted} of ` : ""}${leaves.length} note${leaves.length === 1 ? "" : "s"}`);
 
   const chooseLeaf = leaf => {
-    setTaxonomyFocus("note", leaf.data.name, leaf.data.noteId);
+    focusTaxonomyNoteNode(leaf);
   };
   const node = svg.selectAll("g.tx-wreath-node").data(points, d => d.leaf.data.noteId)
     .join("g")
