@@ -2041,6 +2041,19 @@
     border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer;
   }
   #origins-reset-view:hover { border-color: var(--accent); color: var(--accent); }
+  /* Sits directly under Reset view, same visual weight — both are map-view
+     actions rather than data controls. */
+  #compass-centre-notes {
+    position: absolute; top: 42px; right: 10px; z-index: 5;
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer;
+    white-space: nowrap;
+  }
+  #compass-centre-notes[hidden] { display: none; }
+  #compass-centre-notes:hover { border-color: var(--accent-2); color: var(--accent-2); }
+  #compass-centre-notes:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  #compass-centre-notes:disabled { opacity: 1; color: var(--ink-dim); border-color: var(--line);
+    cursor: default; }
 
   #origins-map-controls {
     position: absolute; bottom: 10px; right: 10px; z-index: 5;
@@ -2823,6 +2836,13 @@
         <span id="origins-search-count"></span>
       </div>
       <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
+      <!-- Drops the bearing compass on the geographic centre of your tasting —
+           the point its notes fan out from evenly. Lives out here rather than
+           inside the compass because the compass is itself a <button> and
+           cannot nest one. Only meaningful in the Origin lens, so it hides with
+           the compass. -->
+      <button type="button" id="compass-centre-notes" hidden
+        title="Move the compass to the geographic centre of your tasting notes">◎ Centre on notes</button>
       <div id="origins-map-controls">
         <div class="omc-pan">
           <button type="button" id="pan-up" aria-label="Pan up" title="Pan up">&#9650;</button>
@@ -10758,14 +10778,98 @@ function compassCardinal(bearing) {
   return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(bearing / 45) % 8];
 }
 
+// Geographic centre of the notes the compass is currently pointing at — the
+// point they fan out from evenly.
+//
+// NOT a mean of lat/lon. Averaging longitude is wrong on a sphere: notes at
+// +170 and -170 are neighbours across the dateline, but their arithmetic mean
+// is 0, the opposite side of the planet. Correct method is the vector mean —
+// put every point on the unit sphere, average the 3D vectors, renormalise. Same
+// lat/lon-to-vector idiom as greatCircleMapPoints() above.
+//
+// Unweighted by intensity on purpose: this answers "where are my notes from,"
+// not "where is my palate weighted," and a centre that shifted when you nudged
+// a slider would be much harder to read.
+function tastingGeoCentroid(items) {
+  if (!items || !items.length) return null;
+  const toRad = d => d * Math.PI / 180;
+  let x = 0, y = 0, z = 0;
+  items.forEach(({ origin }) => {
+    const lat = toRad(origin.lat), lon = toRad(origin.lon);
+    x += Math.cos(lat) * Math.cos(lon);
+    y += Math.cos(lat) * Math.sin(lon);
+    z += Math.sin(lat);
+  });
+  x /= items.length; y /= items.length; z /= items.length;
+  // Near-zero resultant means the points are spread so evenly (or so close to
+  // antipodal) that no centre is meaningful — e.g. two notes on opposite sides
+  // of the globe have a whole great circle of equally-valid midpoints. Say so
+  // rather than picking one and implying it means something.
+  const mag = Math.hypot(x, y, z);
+  if (mag < 1e-6) return null;
+  return {
+    lat: Math.atan2(z, Math.hypot(x, y)) * 180 / Math.PI,
+    lon: Math.atan2(y, x) * 180 / Math.PI,
+    spread: 1 - mag,   // 0 = all co-located, ->1 = scattered across the globe
+  };
+}
+
+// Inverse of mapCompassGeoAnchor(): put the compass ON a given lat/lon.
+function moveCompassToGeo(geo) {
+  const wrap = document.getElementById("origins-map-wrap");
+  const compass = document.getElementById("map-bearing-compass");
+  const wrapRect = wrap.getBoundingClientRect();
+  const svgRect = document.getElementById("markers-svg").getBoundingClientRect();
+  const scale = Math.min(svgRect.width / mapView.w, svgRect.height / mapView.h);
+  const offsetX = (svgRect.width - mapView.w * scale) / 2;
+  const offsetY = (svgRect.height - mapView.h * scale) / 2;
+  const [x, y] = latLonToXY(geo.lat, geo.lon);
+  const cx = svgRect.left + offsetX + (x - mapView.x) * scale;
+  const cy = svgRect.top + offsetY + (y - mapView.y) * scale;
+  // setMapCompassPosition clamps to the drawn map and clears the controls, so a
+  // centroid that lands off-screen parks at the edge instead of vanishing.
+  setMapCompassPosition(
+    cx - wrapRect.left - compass.offsetWidth / 2,
+    cy - wrapRect.top - compass.offsetHeight / 2);
+  renderMapBearingCompass();
+}
+
+function centreCompassOnTasting() {
+  const items = mapCompassTastingItems();
+  const centroid = tastingGeoCentroid(items);
+  const btn = document.getElementById("compass-centre-notes");
+  if (!centroid) {
+    // Honest empty state: no notes placed, or no meaningful centre exists.
+    if (btn) btn.title = items.length
+      ? "These notes have no meaningful centre — they're spread near-antipodally."
+      : "Add tasting notes with a mapped origin first.";
+    return;
+  }
+  moveCompassToGeo(centroid);
+}
+
 function renderMapBearingCompass() {
   const compass = document.getElementById("map-bearing-compass");
+  const centreBtn = document.getElementById("compass-centre-notes");
   const active = document.body.classList.contains("origins-mode") && state.geographyLens === "origin";
   compass.hidden = !active;
+  if (centreBtn) centreBtn.hidden = !active;
   if (!active) return;
   ensureMapCompassPosition();
   const anchor = mapCompassGeoAnchor();
   const items = mapCompassTastingItems();
+
+  // Centre-on-notes is only meaningful with placed notes that actually have a
+  // centre; disabled-with-a-reason beats a button that silently does nothing.
+  if (centreBtn) {
+    const centroid = tastingGeoCentroid(items);
+    centreBtn.disabled = !centroid;
+    centreBtn.title = centroid
+      ? "Move the compass to the geographic centre of your tasting notes"
+      : (items.length
+        ? "These notes have no meaningful centre — they're spread near-antipodally."
+        : "Add tasting notes with a mapped origin first.");
+  }
   const layer = document.getElementById("map-bearing-dynamic");
   layer.innerHTML = "";
   const SVG_NS = "http://www.w3.org/2000/svg";
@@ -10934,6 +11038,7 @@ function wireMapZoom() {
     zoomMapAt(zoom, fx, fy);
   }, { passive: false });
   document.getElementById("origins-reset-view").addEventListener("click", resetMapView);
+  document.getElementById("compass-centre-notes").addEventListener("click", centreCompassOnTasting);
   document.getElementById("zoom-in").addEventListener("click", () => zoomMapAt(0.8, 0.5, 0.5));
   document.getElementById("zoom-out").addEventListener("click", () => zoomMapAt(1 / 0.8, 0.5, 0.5));
   document.getElementById("pan-up").addEventListener("click", () => panMapBy(0, -0.25));
