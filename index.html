@@ -1861,6 +1861,10 @@
   .tx-rank-segment:hover path, .tx-rank-segment:focus path {
     fill: var(--accent); stroke: var(--ink);
   }
+  .tx-rank-segment.noninteractive { cursor: default; }
+  .tx-rank-segment.noninteractive:hover path {
+    fill: var(--panel-2); stroke: var(--bg);
+  }
   .tx-rank-segment:focus, .tx-rank-note:focus { outline: none; }
   .tx-rank-label {
     fill: var(--ink); font-size: 9px; font-weight: 600; text-anchor: middle;
@@ -3095,6 +3099,7 @@
   <div id="taxonomy-search-wrap">
     <input type="search" id="taxonomy-search" placeholder="Search notes…" autocomplete="off" />
     <span id="taxonomy-search-count"></span>
+    <button type="button" id="taxonomy-view-toggle">View branches</button>
     <button type="button" id="taxonomy-expand-all">Expand all</button>
     <button type="button" id="taxonomy-collapse-all">Collapse to kingdoms</button>
     <button type="button" id="taxonomy-back-tree" hidden>← Full tree</button>
@@ -3110,7 +3115,7 @@
   <div id="taxonomy-tree-scroll">
     <svg id="taxonomy-svg"></svg>
   </div>
-  <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. "Process / not a single organism" and "(multiple families)" are honest non-phylogenetic buckets, not invented taxa — click a leaf for its note detail, an underlined family for its family page, or any other node to expand/collapse. Scroll or pinch to zoom; drag empty space to pan.</p>
+  <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. Circles are the primary path: choose a ring or wedge to move inward, choose a note to focus it, and use the one top control to move back out. “View branches” is an optional organization diagram. “Process / not a single organism” and “(multiple families)” remain honest non-phylogenetic buckets, not invented taxa.</p>
 </div>
 <button type="button" id="taxonomy-sheet-handle" aria-label="Resize Tree detail panel" aria-valuetext="Half height" title="Drag to resize detail; tap to change height"></button>
 <aside class="detail" id="detail-panel">
@@ -5740,6 +5745,7 @@ const state = {
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   selectedFamily: null,     // when set (via a taxonomy-tree family node), the detail pane shows that plant family's page
+  taxonomyView: "circles",  // circles are primary; the dendrogram is an optional organization view
   taxonomyFocus: null,      // {rank:"kingdom"|"order"|"family"|"note", name, noteId?}; radial Tree drill-down
   hoveredNote: null,
   hoveredCompound: null,
@@ -12754,6 +12760,7 @@ function activateTaxonomyTarget(event, action) {
 }
 
 function setTaxonomyFocus(rank, name, noteId = null) {
+  state.taxonomyView = "circles";
   state.taxonomyFocus = noteId ? { rank, name, noteId } : { rank, name };
   state.selectedCompound = null;
   state.selectedNote = rank === "note" ? noteId : null;
@@ -12817,6 +12824,78 @@ function equalTaxonomySegments(nodes, start = 0, end = Math.PI * 2) {
   }));
 }
 
+function renderTaxonomyRootDisc(svg, scrollEl) {
+  const kingdoms = taxonomyChildren(taxTreeRoot);
+  if (!kingdoms.length) return false;
+  document.getElementById("taxonomy-expand-all").hidden = true;
+  document.getElementById("taxonomy-collapse-all").hidden = true;
+  document.getElementById("taxonomy-back-tree").hidden = true;
+
+  const size = Math.max(300, Math.min(760,
+    Math.min(scrollEl.clientWidth - 20, scrollEl.clientHeight - 20)));
+  const compact = size < 560;
+  const cx = size / 2, cy = size / 2;
+  const centerRadius = compact ? 52 : Math.max(68, Math.min(92, size * .15));
+  const outerRadius = size * (compact ? .405 : .38);
+  const segments = equalTaxonomySegments(kingdoms);
+  const noteCount = allTaxonomyDescendants(taxTreeRoot, []).filter(d => d.data.noteId).length;
+
+  svg.classed("taxonomy-wreath", true).classed("tx-wreath-compact", compact);
+  svg.selectAll("*").remove();
+  svg.attr("width", size).attr("height", size).attr("viewBox", `0 0 ${size} ${size}`)
+    .attr("role", "group")
+    .attr("aria-label",
+      `Circular taxonomy overview of ${noteCount} flavor notes across ${kingdoms.length} biological or honest non-biological top-level groups.`);
+  svg.node().style.width = `${size}px`;
+  svg.node().style.height = `${size}px`;
+
+  document.getElementById("taxonomy-path-readout").textContent =
+    `All notes · circular taxonomy overview · ${noteCount} notes`;
+
+  const plot = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+  plot.append("circle").attr("class", "tx-rank-center").attr("r", centerRadius);
+  plot.append("text").attr("class", "tx-rank-center-label").attr("y", -5).text("All notes");
+  plot.append("text").attr("class", "tx-rank-center-meta").attr("y", 14)
+    .text(`${noteCount} flavor notes`);
+
+  const arc = d3.arc();
+  const biological = d => taxonomyChildren(d.node).some(child =>
+    taxonomyChildren(child).some(grandchild => TAXON_FAMILY_NAMES.has(grandchild.data.name)));
+  const groups = plot.append("g").attr("class", "tx-kingdom-ring")
+    .selectAll("g").data(segments).join("g")
+    .attr("class", d => `tx-rank-segment kingdom${biological(d) ? "" : " noninteractive"}`)
+    .attr("role", d => biological(d) ? "button" : null)
+    .attr("tabindex", d => biological(d) ? "0" : null)
+    .attr("aria-label", d =>
+      `${d.node.data.name}, ${d.count} note${d.count === 1 ? "" : "s"}`
+      + (biological(d) ? ", open circular kingdom view" : ", non-biological grouping"))
+    .on("click keydown", (event, d) => {
+      if (biological(d)) {
+        activateTaxonomyTarget(event, () => setTaxonomyFocus("kingdom", d.node.data.name));
+      }
+    });
+  groups.append("path").attr("d", d => arc({
+    innerRadius: centerRadius + (compact ? 16 : 22),
+    outerRadius,
+    startAngle: d.start + .014,
+    endAngle: d.end - .014,
+  }));
+  groups.append("title").text(d =>
+    `${d.node.data.name} · ${d.count} note${d.count === 1 ? "" : "s"}`);
+  const labelRadius = (centerRadius + (compact ? 16 : 22) + outerRadius) / 2;
+  groups.append("text").attr("class", "tx-rank-label")
+    .attr("transform", d => {
+      const a = (d.start + d.end) / 2;
+      const deg = a * 180 / Math.PI - 90;
+      const flip = a > Math.PI ? 180 : 0;
+      return `rotate(${deg}) translate(${labelRadius},0) rotate(${90 + flip})`;
+    })
+    .text(d => d.node.data.name === "Process / not a single organism"
+      ? (compact ? "Process" : "Process / non-organism")
+      : d.node.data.name);
+  return true;
+}
+
 function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
   const rawChildren = taxonomyChildren(focusNode).filter(d => !d.data.noteId);
   // Plantae also contains the explicitly non-taxonomic "(multiple families)"
@@ -12829,7 +12908,7 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
   if (!children.length) return false;
   document.getElementById("taxonomy-expand-all").hidden = true;
   document.getElementById("taxonomy-collapse-all").hidden = true;
-  setTaxonomyUpControl(rank === "kingdom" ? "Full tree" : "Kingdom");
+  setTaxonomyUpControl(rank === "kingdom" ? "Overview" : "Kingdom");
 
   const size = Math.max(300, Math.min(760,
     Math.min(scrollEl.clientWidth - 20, scrollEl.clientHeight - 20)));
@@ -13255,11 +13334,16 @@ function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
   const scrollEl = document.getElementById("taxonomy-tree-scroll");
   const wasWreath = svg.classed("taxonomy-wreath");
+  const viewToggle = document.getElementById("taxonomy-view-toggle");
   // selectedFamily predates radial drill-down; promote it once so older entry
   // points (family detail links, restored state) land on the same focus model.
   if (!state.taxonomyFocus && state.selectedFamily) {
+    state.taxonomyView = "circles";
     state.taxonomyFocus = { rank: "family", name: state.selectedFamily };
   }
+  const branchView = state.taxonomyView === "branches";
+  viewToggle.textContent = branchView ? "View circles" : "View branches";
+  viewToggle.setAttribute("aria-pressed", branchView ? "true" : "false");
   const focusNode = taxonomyFocusNode(state.taxonomyFocus);
   if (focusNode) {
     if (state.taxonomyFocus.rank === "note"
@@ -13271,6 +13355,8 @@ function renderTaxonomyTree() {
   } else if (state.taxonomyFocus) {
     state.taxonomyFocus = null;
   }
+  if (!state.taxonomyFocus && state.taxonomyView !== "branches"
+    && renderTaxonomyRootDisc(svg, scrollEl)) return;
   if (wasWreath) svg.selectAll("*").remove();
   svg.classed("taxonomy-wreath", false).classed("tx-wreath-compact", false)
     .attr("role", null).attr("aria-label", null);
@@ -13398,6 +13484,7 @@ function renderTaxonomyTree() {
     // Expand all / Collapse to kingdoms controls, so they don't need a
     // per-node collapse.
     if (TAXON_FAMILY_NAMES.has(d.data.name)) {
+      state.taxonomyView = "circles";
       state.taxonomyFocus = { rank: "family", name: d.data.name };
       state.selectedFamily = d.data.name;
       state.selectedNote = null;
@@ -13528,6 +13615,14 @@ function applyTaxonomySearch(query) {
   countEl.textContent = hits === 0 ? "No matches" : `${hits} match${hits === 1 ? "" : "es"}`;
 }
 document.getElementById("taxonomy-search").addEventListener("input", e => applyTaxonomySearch(e.target.value));
+document.getElementById("taxonomy-view-toggle").addEventListener("click", () => {
+  state.taxonomyView = state.taxonomyView === "branches" ? "circles" : "branches";
+  state.taxonomyFocus = null;
+  state.selectedFamily = null;
+  state.selectedNote = null;
+  taxonomyZoom = 1;
+  renderTaxonomyTree();
+});
 document.getElementById("taxonomy-expand-all").addEventListener("click", expandAllTaxonomy);
 document.getElementById("taxonomy-collapse-all").addEventListener("click", collapseTaxonomyToKingdoms);
 document.getElementById("taxonomy-back-tree").addEventListener("click", taxonomyUpOneLevel);

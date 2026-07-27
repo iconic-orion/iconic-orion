@@ -342,3 +342,26 @@ code paths, and drag masks this entire class of bug.
 - This pass remains scoped to Tree visualization/navigation. The concurrent
   `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file were left untouched.
+
+## Follow-up: circles become the Tree default; branches become optional (2026-07-27)
+
+- Added a top-level circular taxonomy overview and made it the Tree workspace's
+  initial state. Its center represents all 119 notes; four wedges honestly separate
+  Plantae, Fungi, Animalia, and the non-biological Process bucket.
+- Biological Kingdom wedges drill into the existing circular Kingdom → Order →
+  Family → Note path. Returning from a Kingdom now uses `← Overview` and lands on
+  the circular overview rather than unexpectedly opening the dendrogram.
+- Added one stable `View branches` control. It toggles to `View circles` in the
+  optional dendrogram, while `Expand all` and `Collapse to kingdoms` appear only in
+  that branch view.
+- Opening a Family from the optional dendrogram returns to the primary circular
+  interaction automatically. Updated the Tree's explanatory copy to describe circles
+  as the main path and branches as an optional organization diagram.
+- Verified default circle → Plantae → Overview, circle → branches → circle, and
+  branch-only control visibility at 1280 × 720. Verified the centered circular
+  overview and branch toggle at 360 × 760.
+
+### Coordination boundary
+
+- This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file were not staged or changed.
