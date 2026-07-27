@@ -264,3 +264,33 @@ code paths, and drag masks this entire class of bug.
 - Claude added separate uncommitted Map compass-centering work to `index.html` during
   this pass. It is intentionally excluded from this check-in; only the lineage-ring
   hunks and this handoff entry belong to Codex.
+
+## Follow-up: clickable taxonomy rings + stationary Tree border vines (2026-07-27)
+
+- Turned the family disc's named Order and Kingdom rings into keyboard- and
+  pointer-accessible navigation. Family remains the center; selecting either
+  ancestor now zooms the same circular visualization outward to that real rank.
+- Added generated Order and Kingdom discs. Order shows its Family wedges and flavor
+  notes around the living edge; Kingdom shows Order wedges, Family wedges, and all
+  supported flavor-note endpoints. Any Family wedge returns to its family bloom, and
+  any note endpoint opens the existing note detail.
+- The hierarchy is generated from the existing taxonomy tree, including collapsed
+  descendants. It does not invent intermediate clades that are absent from the
+  dataset, and it excludes the explicitly non-taxonomic `(multiple families)` bucket
+  from the biological Kingdom disc.
+- Repaired the decorative Tree vines at the source of the reported overlap: the
+  app-wide `svg { width:100%; height:100% }` rule was stretching each vine across the
+  workspace. Explicit capped heights and automatic widths now keep them as stationary
+  left/right border rails; the compact layout makes them smaller and fainter.
+- Verified the complete Family → Order → Kingdom → Order → Family loop with pointer
+  input and verified ancestor navigation with Enter. At 360 × 760, all three discs
+  fit the Tree viewport, the detail sheet remains at its peek state, and the vines
+  stay outside the central wheel. Also inspected Family, Order, and Kingdom at the
+  normal 1280 × 720 browser viewport. These are browser simulations, not a
+  physical-device or social in-app-browser claim.
+
+### Coordination boundary
+
+- This pass changes only Tree rendering/state and its decorative vines. Claude's Map
+  work and the untracked `.claude/session-handoff-thesis-systems.md` file remain
+  untouched.

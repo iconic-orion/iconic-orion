@@ -939,10 +939,20 @@
 
   /* Tree workspace vines — frame the dendrogram from two corners */
   #tree-vines { position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    opacity: 0; transition: opacity 0.7s ease-out; }
+    opacity: 0; transition: opacity 0.7s ease-out; overflow: hidden; }
   body.taxonomy-mode #tree-vines { opacity: 0.48; }
-  #tree-vines .tv-bl { position: absolute; left: -8px; bottom: 34px; }
-  #tree-vines .tv-tr { position: absolute; right: 4px; top: 50px; }
+  /* Explicit dimensions override the wheel's global
+     `svg { width:100%; height:100% }`. These are stationary side rails, not a
+     second full-canvas layer: their capped height preserves a clear center
+     corridor at every Tree aspect ratio. */
+  #tree-vines .tv-bl {
+    position: absolute; left: 2px; bottom: 24px;
+    width: auto; height: clamp(240px, 46%, 420px);
+  }
+  #tree-vines .tv-tr {
+    position: absolute; right: 2px; top: 28px;
+    width: auto; height: clamp(190px, 38%, 340px);
+  }
 
   /* faint static overgrowth in the go-deeper results pane — a background on the
      pane itself so it survives the pane's frequent innerHTML re-renders and
@@ -1783,6 +1793,40 @@
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-name { font-size: 12px; }
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-latin { font-size: 8.5px; }
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-meta { font-size: 8.5px; }
+  .tx-lineage-action, .tx-rank-segment, .tx-rank-note { cursor: pointer; }
+  .tx-lineage-action:focus { outline: none; }
+  .tx-lineage-action:hover .tx-lineage-band,
+  .tx-lineage-action:focus .tx-lineage-band {
+    stroke: var(--accent); stroke-width: 18;
+  }
+  #taxonomy-svg.tx-wreath-compact .tx-lineage-action:hover .tx-lineage-band,
+  #taxonomy-svg.tx-wreath-compact .tx-lineage-action:focus .tx-lineage-band {
+    stroke-width: 10;
+  }
+  .tx-rank-center { fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2; }
+  .tx-rank-center-label { fill: var(--ink); font-size: 17px; font-weight: 650; text-anchor: middle; }
+  .tx-rank-center-meta { fill: var(--ink-dim); font-size: 10px; text-anchor: middle; }
+  .tx-rank-segment path {
+    fill: var(--panel-2); stroke: var(--bg); stroke-width: 2;
+    transition: fill .16s ease, stroke .16s ease;
+  }
+  .tx-rank-segment.family path { fill: color-mix(in srgb, var(--panel-2) 78%, var(--accent-2)); }
+  .tx-rank-segment:hover path, .tx-rank-segment:focus path {
+    fill: var(--accent); stroke: var(--ink);
+  }
+  .tx-rank-segment:focus, .tx-rank-note:focus { outline: none; }
+  .tx-rank-label {
+    fill: var(--ink); font-size: 9px; font-weight: 600; text-anchor: middle;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
+    pointer-events: none;
+  }
+  .tx-rank-note line { stroke: var(--line); stroke-width: 2; }
+  .tx-rank-note circle { stroke: var(--bg); stroke-width: 1.5; }
+  .tx-rank-note:hover circle, .tx-rank-note:focus circle {
+    stroke: var(--ink); stroke-width: 3;
+  }
+  #taxonomy-svg.tx-wreath-compact .tx-rank-center-label { font-size: 12px; }
+  #taxonomy-svg.tx-wreath-compact .tx-rank-label { font-size: 7.5px; stroke-width: 2px; }
   .tx-node.tx-dim text, .tx-node.tx-dim circle { opacity: 0.2; }
   .tx-node.tx-search-hit circle { stroke: var(--accent); stroke-width: 2; }
   /* Family detail page (taxonomy tree): the diagnostic sentence. */
@@ -2483,6 +2527,8 @@
        recedes and the long desktop instruction block no longer consumes the
        lower quarter of the screen; the story strip carries that teaching job. */
     body.taxonomy-mode #tree-vines { opacity: .1; }
+    #tree-vines .tv-bl { left: -8px; bottom: 14px; height: min(38%, 230px); }
+    #tree-vines .tv-tr { right: -6px; top: 18px; height: min(30%, 170px); }
     body.taxonomy-mode #taxonomy-legend-note { display: none; }
     .tx-link { stroke: rgba(233,230,223,.34); stroke-width: 2; }
     .tx-node text { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
@@ -5599,6 +5645,7 @@ const state = {
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   selectedFamily: null,     // when set (via a taxonomy-tree family node), the detail pane shows that plant family's page
+  taxonomyFocus: null,      // {rank:"kingdom"|"order"|"family", name}; radial Tree drill-down level
   hoveredNote: null,
   hoveredCompound: null,
   infoOpen: false,        // is the "i" info overlay shown
@@ -12584,6 +12631,218 @@ document.getElementById("taxonomy-zoom-out").addEventListener("click", () => zoo
   }, { passive: false });
 })();
 
+function taxonomyChildren(node) {
+  return node ? (node.children || node._children || []) : [];
+}
+
+function taxonomyFocusNode(focus) {
+  if (!focus || !taxTreeRoot) return null;
+  return allTaxonomyDescendants(taxTreeRoot, []).find(node => {
+    if (node.data.name !== focus.name) return false;
+    if (focus.rank === "family") return TAXON_FAMILY_NAMES.has(node.data.name);
+    if (focus.rank === "kingdom") return node.parent === taxTreeRoot;
+    return focus.rank === "order"
+      && node.parent?.parent === taxTreeRoot
+      && !TAXON_FAMILY_NAMES.has(node.data.name);
+  }) || null;
+}
+
+function activateTaxonomyTarget(event, action) {
+  if (event.type === "click" || event.key === "Enter" || event.key === " ") {
+    if (event.type !== "click") event.preventDefault();
+    action();
+  }
+}
+
+function setTaxonomyFocus(rank, name) {
+  state.taxonomyFocus = { rank, name };
+  state.selectedCompound = null;
+  state.selectedNote = null;
+  state.selectedFamily = rank === "family" ? name : null;
+  taxonomyZoom = 1;
+  if (rank === "family") {
+    showTaxonomyDetail();
+    renderDetail();
+  } else {
+    renderDetail();
+    if (isMobileViewport()) setTaxonomySheetSnap("peek");
+  }
+  renderTaxonomyTree();
+}
+
+function equalTaxonomySegments(nodes, start = 0, end = Math.PI * 2) {
+  if (!nodes.length) return [];
+  const step = (end - start) / nodes.length;
+  return nodes.map((node, i) => ({
+    node,
+    start: start + i * step,
+    end: start + (i + 1) * step,
+    count: allTaxonomyDescendants(node, []).filter(d => d.data.noteId).length,
+  }));
+}
+
+function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
+  const rawChildren = taxonomyChildren(focusNode).filter(d => !d.data.noteId);
+  // Plantae also contains the explicitly non-taxonomic "(multiple families)"
+  // bucket. Keep it in the full tree, but do not mislabel it as an Order in
+  // the biological drill-down.
+  const children = rank === "kingdom"
+    ? rawChildren.filter(node =>
+      taxonomyChildren(node).some(child => TAXON_FAMILY_NAMES.has(child.data.name)))
+    : rawChildren;
+  if (!children.length) return false;
+  document.getElementById("taxonomy-expand-all").hidden = true;
+  document.getElementById("taxonomy-collapse-all").hidden = true;
+  document.getElementById("taxonomy-back-tree").hidden = false;
+
+  const size = Math.max(300, Math.min(760,
+    Math.min(scrollEl.clientWidth - 20, scrollEl.clientHeight - 20)));
+  const compact = size < 560;
+  const cx = size / 2, cy = size / 2;
+  const centerRadius = compact ? 42 : Math.max(56, Math.min(74, size * .14));
+  const outerRadius = size * (compact ? .405 : .42);
+  const notes = children.flatMap(node =>
+    allTaxonomyDescendants(node, []).filter(d => d.data.noteId));
+  const parent = focusNode.parent;
+  const path = focusNode.ancestors().reverse().map(d => d.data.name).join(" → ");
+
+  svg.classed("taxonomy-wreath", true).classed("tx-wreath-compact", compact);
+  svg.selectAll("*").remove();
+  svg.attr("width", size).attr("height", size).attr("viewBox", `0 0 ${size} ${size}`)
+    .attr("role", "group")
+    .attr("aria-label",
+      `${rank} ${focusNode.data.name} taxonomy disc with ${children.length} ${rank === "kingdom" ? "orders" : "families"} and ${notes.length} flavor notes.`);
+  svg.node().style.width = `${size}px`;
+  svg.node().style.height = `${size}px`;
+
+  const story = document.getElementById("taxonomy-path-readout");
+  const restoreStory = () => {
+    story.textContent =
+      `${path} · ${children.length} ${rank === "kingdom" ? "orders" : "families"} · ${notes.length} notes`;
+  };
+  const preview = (label, count) => {
+    story.textContent = `${path} → ${label} · ${count} note${count === 1 ? "" : "s"}`;
+  };
+  restoreStory();
+
+  const plot = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+  plot.append("circle").attr("class", "tx-rank-center").attr("r", centerRadius);
+  plot.append("text").attr("class", "tx-rank-center-label").attr("y", -5).text(focusNode.data.name);
+  plot.append("text").attr("class", "tx-rank-center-meta").attr("y", 14)
+    .text(`${rank} · ${notes.length} note${notes.length === 1 ? "" : "s"}`);
+
+  let firstRingInner = centerRadius + (compact ? 16 : 22);
+  if (rank === "order" && parent) {
+    const parentRadius = centerRadius + (compact ? 8 : 11);
+    const ancestor = plot.append("g")
+      .attr("class", "tx-lineage-action")
+      .attr("role", "button").attr("tabindex", "0")
+      .attr("aria-label", `Zoom out to kingdom ${parent.data.name}`)
+      .on("click keydown", event =>
+        activateTaxonomyTarget(event, () => setTaxonomyFocus("kingdom", parent.data.name)));
+    ancestor.append("circle").attr("class", "tx-lineage-band").attr("r", parentRadius);
+    ancestor.append("circle").attr("class", "tx-lineage-band-edge").attr("r", parentRadius);
+    ancestor.append("path")
+      .attr("id", "tx-rank-parent-path")
+      .attr("d", `M${-parentRadius},0 A${parentRadius},${parentRadius} 0 0 0 ${parentRadius},0`)
+      .attr("fill", "none");
+    ancestor.append("text").attr("class", "tx-lineage-label").attr("aria-hidden", "true")
+      .append("textPath")
+      .attr("href", "#tx-rank-parent-path")
+      .attr("startOffset", "50%")
+      .attr("text-anchor", "middle")
+      .text(`KINGDOM · ${parent.data.name}`);
+  }
+
+  const arc = d3.arc();
+  const drawSegments = (segments, inner, outer, segmentRank) => {
+    const groups = plot.append("g").attr("class", `tx-${segmentRank}-ring`)
+      .selectAll("g").data(segments).join("g")
+      .attr("class", `tx-rank-segment ${segmentRank}`)
+      .attr("role", "button").attr("tabindex", "0")
+      .attr("aria-label", d =>
+        `${segmentRank} ${d.node.data.name}, ${d.count} note${d.count === 1 ? "" : "s"}`)
+      .on("mouseenter focus", (event, d) => preview(d.node.data.name, d.count))
+      .on("mouseleave blur", restoreStory)
+      .on("click keydown", (event, d) =>
+        activateTaxonomyTarget(event, () => setTaxonomyFocus(segmentRank, d.node.data.name)));
+    groups.append("path").attr("d", d => arc({
+      innerRadius: inner,
+      outerRadius: outer,
+      startAngle: d.start + .012,
+      endAngle: d.end - .012,
+    }));
+    groups.append("title").text(d =>
+      `${d.node.data.name} · ${d.count} note${d.count === 1 ? "" : "s"}`);
+    const labelRadius = (inner + outer) / 2;
+    groups.filter(d => (d.end - d.start) * labelRadius > Math.max(28, d.node.data.name.length * 4.4))
+      .append("text").attr("class", "tx-rank-label")
+      .attr("transform", d => {
+        const a = (d.start + d.end) / 2;
+        const deg = a * 180 / Math.PI - 90;
+        const flip = a > Math.PI ? 180 : 0;
+        return `rotate(${deg}) translate(${labelRadius},0) rotate(${90 + flip})`;
+      })
+      .text(d => d.node.data.name);
+    return groups;
+  };
+
+  let leafSegments = [];
+  if (rank === "kingdom") {
+    const orderSegments = equalTaxonomySegments(children);
+    const orderOuter = centerRadius + (outerRadius - centerRadius) * .48;
+    drawSegments(orderSegments, firstRingInner, orderOuter, "order");
+    const familySegments = orderSegments.flatMap(orderSeg =>
+      equalTaxonomySegments(
+        taxonomyChildren(orderSeg.node).filter(d => !d.data.noteId),
+        orderSeg.start, orderSeg.end));
+    drawSegments(familySegments, orderOuter + 4, outerRadius - 14, "family");
+    leafSegments = familySegments;
+  } else {
+    const familySegments = equalTaxonomySegments(children);
+    drawSegments(familySegments, firstRingInner, outerRadius - 18, "family");
+    leafSegments = familySegments;
+  }
+
+  const noteMarks = leafSegments.flatMap(segment => {
+    const leafNodes = allTaxonomyDescendants(segment.node, []).filter(d => d.data.noteId);
+    const step = (segment.end - segment.start) / Math.max(1, leafNodes.length);
+    return leafNodes.map((leaf, i) => ({
+      leaf,
+      angle: segment.start + (i + .5) * step,
+    }));
+  });
+  const note = plot.append("g").attr("class", "tx-rank-notes")
+    .selectAll("g").data(noteMarks).join("g")
+    .attr("class", "tx-rank-note")
+    .attr("role", "button").attr("tabindex", "0")
+    .attr("aria-label", d => `Open flavor note ${d.leaf.data.name}`)
+    .attr("transform", d =>
+      `rotate(${d.angle * 180 / Math.PI - 90}) translate(${outerRadius},0)`)
+    .on("click keydown", (event, d) => activateTaxonomyTarget(event, () => {
+      state.selectedNote = d.leaf.data.noteId;
+      state.selectedCompound = null;
+      showTaxonomyDetail();
+      renderDetail();
+      renderTaxonomyTree();
+    }));
+  note.append("line").attr("x1", -6).attr("x2", 5);
+  note.append("circle").attr("cx", 7).attr("r", rank === "kingdom" ? 3.5 : 5.5)
+    .attr("fill", d => groupColor(NOTE_BY_ID[d.leaf.data.noteId].group));
+  if (rank === "order" && noteMarks.length <= 18) {
+    note.append("text").attr("class", "tx-rank-label")
+      .attr("x", 16).attr("y", 3)
+      .attr("transform", d => {
+        const flip = d.angle > Math.PI / 2 && d.angle < Math.PI * 1.5;
+        return flip ? "rotate(180 16 0)" : null;
+      })
+      .attr("text-anchor", d =>
+        d.angle > Math.PI / 2 && d.angle < Math.PI * 1.5 ? "end" : "start")
+      .text(d => compact ? d.leaf.data.name.split(" / ")[0] : d.leaf.data.name);
+  }
+  return true;
+}
+
 function renderTaxonomyWreath(svg, scrollEl, familyName) {
   const familyNode = allTaxonomyDescendants(taxTreeRoot, [])
     .find(d => d.data.name === familyName && TAXON_FAMILY_NAMES.has(d.data.name));
@@ -12669,10 +12928,17 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   const defs = svg.append("defs");
   lineageBands.forEach((band, i) => {
     const pathId = `tx-lineage-${i}`;
-    lineage.append("circle")
+    const bandGroup = lineage.append("g")
+      .attr("class", "tx-lineage-action")
+      .attr("role", "button").attr("tabindex", "0")
+      .attr("aria-label", `Zoom out to ${band.rank.toLowerCase()} ${band.name}`)
+      .on("click keydown", event =>
+        activateTaxonomyTarget(event, () =>
+          setTaxonomyFocus(band.rank.toLowerCase(), band.name)));
+    bandGroup.append("circle")
       .attr("class", "tx-lineage-band")
       .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
-    lineage.append("circle")
+    bandGroup.append("circle")
       .attr("class", "tx-lineage-band-edge")
       .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
     const left = cx - band.radius, right = cx + band.radius;
@@ -12681,7 +12947,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
       .attr("d", band.arc === "top"
         ? `M${left},${cy} A${band.radius},${band.radius} 0 0 1 ${right},${cy}`
         : `M${left},${cy} A${band.radius},${band.radius} 0 0 0 ${right},${cy}`);
-    lineage.append("text")
+    bandGroup.append("text")
       .attr("class", "tx-lineage-label")
       .attr("aria-hidden", "true")
       .append("textPath")
@@ -12700,7 +12966,11 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   });
 
   // No spoke layer: see the growth-ring note above.
-  const center = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+  const center = svg.append("g").attr("transform", `translate(${cx},${cy})`)
+    .attr("role", "button").attr("tabindex", "0")
+    .attr("aria-label", `Open family ${familyName}`)
+    .on("click keydown", event =>
+      activateTaxonomyTarget(event, () => setTaxonomyFocus("family", familyName)));
   center.append("circle").attr("class", "tx-wreath-center-ring").attr("r", centerRadius);
   // Common name leads, scientific name sits under it as a caption. The Latin is
   // never dropped - it is the real term and stays - it just isn't the way in.
@@ -12782,7 +13052,20 @@ function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
   const scrollEl = document.getElementById("taxonomy-tree-scroll");
   const wasWreath = svg.classed("taxonomy-wreath");
-  if (state.selectedFamily && renderTaxonomyWreath(svg, scrollEl, state.selectedFamily)) return;
+  // selectedFamily predates radial drill-down; promote it once so older entry
+  // points (family detail links, restored state) land on the same focus model.
+  if (!state.taxonomyFocus && state.selectedFamily) {
+    state.taxonomyFocus = { rank: "family", name: state.selectedFamily };
+  }
+  const focusNode = taxonomyFocusNode(state.taxonomyFocus);
+  if (focusNode) {
+    if (state.taxonomyFocus.rank === "family"
+      && renderTaxonomyWreath(svg, scrollEl, focusNode.data.name)) return;
+    if (state.taxonomyFocus.rank !== "family"
+      && renderTaxonomyRankDisc(svg, scrollEl, focusNode, state.taxonomyFocus.rank)) return;
+  } else if (state.taxonomyFocus) {
+    state.taxonomyFocus = null;
+  }
   if (wasWreath) svg.selectAll("*").remove();
   svg.classed("taxonomy-wreath", false).classed("tx-wreath-compact", false)
     .attr("role", null).attr("aria-label", null);
@@ -12910,6 +13193,7 @@ function renderTaxonomyTree() {
     // Expand all / Collapse to kingdoms controls, so they don't need a
     // per-node collapse.
     if (TAXON_FAMILY_NAMES.has(d.data.name)) {
+      state.taxonomyFocus = { rank: "family", name: d.data.name };
       state.selectedFamily = d.data.name;
       state.selectedNote = null;
       state.selectedCompound = null;
@@ -13042,6 +13326,7 @@ document.getElementById("taxonomy-search").addEventListener("input", e => applyT
 document.getElementById("taxonomy-expand-all").addEventListener("click", expandAllTaxonomy);
 document.getElementById("taxonomy-collapse-all").addEventListener("click", collapseTaxonomyToKingdoms);
 document.getElementById("taxonomy-back-tree").addEventListener("click", () => {
+  state.taxonomyFocus = null;
   state.selectedFamily = null;
   taxonomyZoom = 1;
   renderTaxonomyTree();
