@@ -79,8 +79,13 @@
   body.detail-hidden .pane-toggle.right { right: 0; }
   header { grid-area: head; display: flex; align-items: center; padding: 0 16px;
     border-bottom: 1px solid var(--line); background: var(--panel); gap: 12px; }
-  .brand { display: flex; flex-direction: column; gap: 2px; }
-  header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em; }
+  /* The title is the header's designated shrink victim: min-width:0 lets it
+     compress below its intrinsic text width (a flex item won't, by default),
+     so tight headers ellipsize the wordmark instead of amputating a workspace
+     button. See .workspace-tabs' flex-shrink:0 note below. */
+  .brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  header h1 { font-size: 14px; margin: 0; font-weight: 600; letter-spacing: 0.02em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tagline { font-size: 10px; color: var(--ink-dim); margin: 0; line-height: 1; letter-spacing: 0.01em; }
   /* On mid-width viewports (tablet landscape, half-screen browser windows), the
      results pane flexes a bit narrower so the wheel has more room. Sliders pane
@@ -132,11 +137,23 @@
     text-transform: uppercase; letter-spacing: 0.08em; align-self: center;
     border-right: 1px solid var(--line); background: var(--panel-2); }
 
-  /* Workspace switch (Wheel | Map): the primary "which screen" control. Given
-     a slightly heavier accent border so it reads as the top of the hierarchy,
-     distinct from the lighter wheel-control segmented groups beside it. Its
-     buttons carry an icon + label. */
-  .workspace-tabs { border-color: var(--accent); }
+  /* Workspace switch (Wheel | Map | Tree): the primary "which screen" control.
+     Given a slightly heavier accent border so it reads as the top of the
+     hierarchy, distinct from the lighter wheel-control segmented groups beside
+     it. Its buttons carry an icon + label.
+
+     flex-shrink:0 is load-bearing, not tidiness. `.tabs` sets overflow:hidden to
+     clip button backgrounds to its rounded corners, and it's a flex ITEM in the
+     header, so at default shrink the header squeezes it and the overflow
+     silently AMPUTATES the trailing button — no ellipsis, no scrollbar, no cue.
+     That is exactly what happened to Tree once it became the third workspace
+     (this rule's comment still said "Wheel | Map"): at 1280px the container was
+     clipped to 155px of a needed 217px, so Tree rendered at x438-507 while the
+     clip ended at 447. Its centre fell outside the clip, so it never hit-tested
+     and was simply unclickable. All three workspaces are primary navigation and
+     must never be the thing that gets compressed — the title absorbs it instead
+     (see .brand/h1 below). */
+  .workspace-tabs { border-color: var(--accent); flex-shrink: 0; }
   .workspace-tabs button { display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; padding: 6px 12px; }
   .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
