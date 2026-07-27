@@ -1840,10 +1840,91 @@
   .origin-marker.search-hit .origin-dot { stroke: #fff; stroke-width: 2; }
   .origin-marker.search-hit .origin-label { font-weight: 700; }
 
+  /* Three mutually-exclusive geography lenses. The point is comparison
+     through a shared frame, not translucent overlays: only one mark system is
+     ever drawn at a time. */
+  #geography-lens-controls {
+    position: absolute; top: 10px; left: 50%; z-index: 6;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 3px;
+    padding: 3px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--panel);
+  }
+  #geography-lens-controls button,
+  #geography-pilot-picker button {
+    border: 0; border-radius: 999px; cursor: pointer;
+    color: var(--ink-dim); background: transparent;
+    font: 600 10px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: .02em;
+  }
+  #geography-lens-controls button { min-height: 28px; padding: 0 10px; }
+  #geography-lens-controls button.active,
+  #geography-pilot-picker button.active {
+    color: var(--bg); background: var(--accent);
+  }
+  #geography-lens-controls button:focus-visible,
+  #geography-pilot-picker button:focus-visible {
+    outline: 2px solid var(--accent-2); outline-offset: 2px;
+  }
+  #geography-pilot-picker {
+    position: absolute; top: 48px; left: 50%; z-index: 6;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px; border-radius: 999px; background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  #geography-pilot-picker[hidden] { display: none; }
+  #geography-pilot-picker button { min-height: 26px; padding: 0 9px; }
+
+  .geo-production-marker,
+  .geo-tradition-marker { cursor: pointer; }
+  .geo-production-dot {
+    fill: var(--accent); stroke: var(--ink); stroke-width: 1.25;
+    vector-effect: non-scaling-stroke;
+  }
+  .geo-tradition-glyph {
+    fill: var(--accent-2); stroke: var(--ink); stroke-width: 1.4;
+    vector-effect: non-scaling-stroke;
+  }
+  .geo-layer-label {
+    fill: var(--ink); font-size: 11px; font-weight: 650;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 4px;
+    stroke-linejoin: round; pointer-events: none;
+  }
+  .geo-layer-sublabel {
+    fill: var(--ink-dim); font-size: 9.5px; font-weight: 500;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px;
+    stroke-linejoin: round; pointer-events: none;
+  }
+  .geo-production-marker:hover .geo-production-dot,
+  .geo-production-marker:focus .geo-production-dot,
+  .geo-tradition-marker:hover .geo-tradition-glyph,
+  .geo-tradition-marker:focus .geo-tradition-glyph {
+    stroke: var(--accent); stroke-width: 2.5;
+  }
+  #geography-lens-legend[hidden],
+  #origins-legend-origin[hidden] { display: none; }
+  #origins-legend-origin {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  #geography-lens-legend {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .geo-legend-key { color: var(--ink); font-weight: 650; }
+  .geo-legend-note { color: var(--ink-dim); line-height: 1.35; }
+  .geo-legend-dot,
+  .geo-legend-diamond {
+    width: 10px; height: 10px; flex: 0 0 auto;
+    background: var(--accent); border: 1px solid var(--ink);
+  }
+  .geo-legend-dot { border-radius: 50%; }
+  .geo-legend-diamond { background: var(--accent-2); transform: rotate(45deg); }
+
   #origins-search-wrap {
     position: absolute; top: 10px; left: 10px; z-index: 5;
     display: flex; align-items: center; gap: 6px;
   }
+  #origins-search-wrap[hidden] { display: none; }
   #origins-search {
     width: 170px; background: var(--panel-2); color: var(--ink);
     border: 1px solid var(--line); border-radius: 6px;
@@ -1925,6 +2006,10 @@
     #origins-map-wrap { flex: 1 1 50%; min-height: 0; }
     #origins-detail-panel { width: auto; flex: 1 1 50%; min-height: 0;
       border-left: none; border-top: 1px solid var(--line); }
+    #geography-lens-controls { top: 48px; }
+    #geography-lens-controls button { min-height: 30px; padding: 0 9px; font-size: 9.5px; }
+    #geography-pilot-picker { top: 84px; }
+    #geography-pilot-picker button { min-height: 28px; padding: 0 8px; }
     body.origins-mode #markers-svg .origin-leader,
     body.origins-mode #markers-svg .origin-label,
     body.origins-mode #markers-svg .origin-cluster-box {
@@ -1936,6 +2021,19 @@
     body.origins-mode #markers-svg .origin-marker.selected .origin-label,
     body.origins-mode #markers-svg .origin-marker.search-hit .origin-leader,
     body.origins-mode #markers-svg .origin-marker.search-hit .origin-label {
+      opacity: 1;
+    }
+    body.origins-mode #markers-svg .geo-production-leader,
+    body.origins-mode #markers-svg .geo-layer-label,
+    body.origins-mode #markers-svg .geo-layer-sublabel,
+    body.origins-mode #markers-svg .geo-tradition-leader {
+      opacity: 0;
+    }
+    body.origins-mode #markers-svg .geo-production-marker.selected .geo-production-leader,
+    body.origins-mode #markers-svg .geo-production-marker.selected .geo-layer-label,
+    body.origins-mode #markers-svg .geo-production-marker.selected .geo-layer-sublabel,
+    body.origins-mode #markers-svg .geo-tradition-marker.selected .geo-tradition-leader,
+    body.origins-mode #markers-svg .geo-tradition-marker.selected .geo-layer-label {
       opacity: 1;
     }
 
@@ -2582,6 +2680,16 @@
     <div id="origins-map-wrap">
       <div id="map-svg-container"></div>
       <svg id="markers-svg" viewBox="0 0 2000 857" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+      <div id="geography-lens-controls" role="group" aria-label="Geography lens">
+        <button type="button" class="active" data-geography-lens="origin" aria-pressed="true">Origin</button>
+        <button type="button" data-geography-lens="production" aria-pressed="false">Grown now</button>
+        <button type="button" data-geography-lens="traditions" aria-pressed="false">Traditions</button>
+      </div>
+      <div id="geography-pilot-picker" role="group" aria-label="Pilot ingredient" hidden>
+        <button type="button" class="active" data-geography-note="coffee" aria-pressed="true">Coffee</button>
+        <button type="button" data-geography-note="chocolate" aria-pressed="false">Cacao</button>
+        <button type="button" data-geography-note="vanilla" aria-pressed="false">Vanilla</button>
+      </div>
       <div id="origins-search-wrap">
         <input type="search" id="origins-search" placeholder="Search ingredients…" autocomplete="off" />
         <span id="origins-search-count"></span>
@@ -2607,22 +2715,25 @@
     </aside>
   </div>
   <div id="origins-legend">
-    <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Known origin</span>
-    <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Approximate</span>
-    <span class="ol-sep">·</span>
-    <!-- Map-local visibility filters (see buildOriginsLegendFilters()): the
-         master "only my tasting" declutter switch plus one checkbox per flavor
-         group. Display filters only — no effect on the wheel or scoring. -->
-    <label class="ol-filter" id="origins-only-tasting-wrap">
-      <input type="checkbox" id="origins-only-tasting">
-      Only notes in my tasting
-    </label>
-    <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
-    <span class="ol-sep">·</span>
-    <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every group off so you can switch on just the ones you want (click again to turn all back on)">toggle all</span>
-    <span id="origins-group-filters"></span>
-    <span class="ol-sep">·</span>
-    <span class="ol-note">Pre-Columbian Exchange framing. Click markers to select notes.</span>
+    <div id="origins-legend-origin">
+      <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Known origin</span>
+      <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Approximate</span>
+      <span class="ol-sep">·</span>
+      <!-- Map-local visibility filters (see buildOriginsLegendFilters()): the
+           master "only my tasting" declutter switch plus one checkbox per flavor
+           group. Display filters only — no effect on the wheel or scoring. -->
+      <label class="ol-filter" id="origins-only-tasting-wrap">
+        <input type="checkbox" id="origins-only-tasting">
+        Only notes in my tasting
+      </label>
+      <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
+      <span class="ol-sep">·</span>
+      <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every group off so you can switch on just the ones you want (click again to turn all back on)">toggle all</span>
+      <span id="origins-group-filters"></span>
+      <span class="ol-sep">·</span>
+      <span class="ol-note">Pre-Columbian Exchange framing. Click markers to select notes.</span>
+    </div>
+    <div id="geography-lens-legend" hidden></div>
   </div>
 </div>
 <div id="taxonomy-view" hidden>
@@ -3941,6 +4052,107 @@ const NOTE_ORIGINS = {
                   modernNote: "Soy sauce and miso share the same deep roots in Chinese fermented-soybean jiang traditions before diverging into the distinct products known today." },
 };
 
+// Three-note geography pilot. Unlike NOTE_ORIGINS (one historical point per
+// ingredient), these lenses answer two separate questions:
+//   production — where the raw crop is produced now, encoded by proportional
+//                symbols within one selected ingredient;
+//   traditions — discrete, sourced cultural attestations, never a ranking or
+//                a claim about where an ingredient is "most valued."
+// Production values are tonnes from FAOSTAT's Crops and livestock products
+// domain, calendar year 2024, bulk release dated 2025-12-31. Flags are retained
+// from the source: A official; E estimated; I receiving-agency imputation;
+// X external-organization figure. The displayed top five are compared only
+// within their own commodity — never across coffee/cacao/vanilla.
+const GEOGRAPHY_PILOT = {
+  coffee: {
+    production: {
+      item: "Coffee, green", year: 2024, worldTonnes: 11284877.41,
+      sourceKey: "faostat2024production",
+      countries: [
+        { name: "Brazil",       lat: -10.0, lon: -52.0, tonnes: 3387724.00, flag: "A" },
+        { name: "Viet Nam",     lat:  15.5, lon: 108.0, tonnes: 2015289.00, flag: "A" },
+        { name: "Colombia",     lat:   4.0, lon: -73.5, tonnes:  839846.69, flag: "A" },
+        { name: "Indonesia",    lat:  -2.0, lon: 118.0, tonnes:  807578.00, flag: "A" },
+        { name: "Ethiopia",     lat:   9.0, lon:  40.0, tonnes:  575696.18, flag: "I" },
+      ],
+    },
+    traditions: [
+      {
+        place: "Türkiye", lat: 39.0, lon: 35.0,
+        title: "Turkish coffee culture and tradition",
+        claim: "UNESCO describes a communal preparation and serving tradition tied to hospitality, conversation, ceremonies, holidays, and informal intergenerational transmission.",
+        sourceKey: "unesco2013turkishcoffee",
+      },
+      {
+        place: "Arabian Peninsula", lat: 24.0, lon: 45.0,
+        title: "Arabic coffee, a symbol of generosity",
+        claim: "UNESCO documents serving rituals and hospitality practices across Jordan, Oman, Qatar, Saudi Arabia, and the United Arab Emirates. This single marker represents a multi-state inscription, not one cultural center.",
+        sourceKey: "unesco2024arabiccoffee",
+      },
+    ],
+  },
+  chocolate: {
+    production: {
+      item: "Cocoa beans", year: 2024, worldTonnes: 5233245.33,
+      sourceKey: "faostat2024production",
+      countries: [
+        { name: "Côte d’Ivoire", lat:  7.5, lon:  -5.5, tonnes: 1890442.00, flag: "A" },
+        { name: "Indonesia",     lat: -2.0, lon: 118.0, tonnes:  632702.00, flag: "A" },
+        { name: "Ghana",         lat:  7.9, lon:  -1.0, tonnes:  530000.00, flag: "X" },
+        { name: "Ecuador",       lat: -1.4, lon: -78.5, tonnes:  403698.83, flag: "A" },
+        { name: "Nigeria",       lat:  9.0, lon:   8.0, tonnes:  350000.00, flag: "X" },
+      ],
+    },
+    traditions: [
+      {
+        place: "Talamanca, Costa Rica", lat: 9.6, lon: -82.9,
+        title: "Bribri oral tradition and cacao rituals",
+        claim: "UNESCO documents Bribri oral traditions and rituals in which cacao carries ceremonial and cosmological meaning. This is a cultural attestation, not a measure of consumption.",
+        sourceKey: "unesco2016bribricacao",
+      },
+      {
+        place: "Ecuador", lat: -1.4, lon: -78.5,
+        title: "Ecuadorian Cacao Cultural Landscape",
+        claim: "Ecuador’s 2026 UNESCO Tentative List submission describes a living landscape of inherited cacao cultivation, processing knowledge, collective memory, and gastronomy. Tentative List status is not World Heritage inscription.",
+        sourceKey: "unesco2026ecuadorcacao",
+      },
+      {
+        place: "Tabasco, Mexico", lat: 17.9, lon: -92.6,
+        title: "Cacao Grijalva denomination of origin",
+        claim: "Mexico protects Cacao Grijalva as a place-linked denomination of origin. This records geographic reputation and production knowledge; it does not rank Mexican cacao above other traditions.",
+        sourceKey: "mexico2016cacaogrijalva",
+      },
+    ],
+  },
+  vanilla: {
+    production: {
+      item: "Vanilla, raw", year: 2024, worldTonnes: 7114.54,
+      sourceKey: "faostat2024production",
+      countries: [
+        { name: "Madagascar",        lat: -19.0, lon:  47.0, tonnes: 3089.54, flag: "E" },
+        { name: "Indonesia",         lat:  -2.0, lon: 118.0, tonnes: 1526.00, flag: "A" },
+        { name: "Mexico",            lat:  23.0, lon:-102.0, tonnes:  510.34, flag: "A" },
+        { name: "Papua New Guinea",  lat:  -6.0, lon: 147.0, tonnes:  492.92, flag: "I" },
+        { name: "China, mainland",   lat:  35.0, lon: 103.0, tonnes:  434.86, flag: "E" },
+      ],
+    },
+    traditions: [
+      {
+        place: "Papantla, Mexico", lat: 20.45, lon: -97.32,
+        title: "Vainilla de Papantla and Totonac harvest ritual",
+        claim: "Mexico’s agriculture ministry links Papantla vanilla to a protected denomination of origin and documents a Totonac thanksgiving ritual at the opening of harvest.",
+        sourceKey: "mexico2024papantlavainilla",
+      },
+      {
+        place: "Réunion", lat: -21.12, lon: 55.53,
+        title: "Vanille de l’île de La Réunion",
+        claim: "The EU and France’s INAO document a protected, intergenerational production tradition. Réunion is also where the hand-pollination and curing methods underlying global vanilla production were developed.",
+        sourceKey: "eu2021reunionvanilla",
+      },
+    ],
+  },
+};
+
 // Per-class plain-English explanations. The class names themselves (ester, thiol,
 // pyrazine) ARE the kind of jargon worth defining; specific molecules live below.
 const COMPOUND_CLASS_INFO = {
@@ -4474,6 +4686,17 @@ const UNVERIFIED_REFS = new Set([
   // filled in; the record retrieved did not include it and it was left blank
   // rather than guessed.
   "buttery1995furaneol",
+  // Added 2026-07-26 for the three-note geography pilot. These are real
+  // institutional records opened by an agent, but the standing policy requires
+  // Nolan's own review before their badges can change to human-verified.
+  "eu2021reunionvanilla",
+  "faostat2024production",
+  "mexico2016cacaogrijalva",
+  "mexico2024papantlavainilla",
+  "unesco2013turkishcoffee",
+  "unesco2016bribricacao",
+  "unesco2024arabiccoffee",
+  "unesco2026ecuadorcacao",
   "usda1991cookedtomato",
 ]);
 function isCiteVerified(refId) { return !UNVERIFIED_REFS.has(refId); }
@@ -4526,6 +4749,56 @@ function citationReviewCounts() {
 // cover non-journal sources (a monograph, a primary historical text) that
 // don't fit the journal/volume/pages shape.
 const ORIGIN_REFERENCES = {
+  faostat2024production: {
+    type: "web", authors: "Food and Agriculture Organization of the United Nations",
+    year: 2025, title: "Crops and livestock products: 2024 production quantities",
+    publisher: "FAOSTAT bulk release, 31 December 2025",
+    url: "https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip",
+    note: "Pilot extraction: Coffee, green; Cocoa beans; Vanilla, raw. Values retain FAOSTAT observation flags."
+  },
+  unesco2013turkishcoffee: {
+    type: "web", authors: "UNESCO Intangible Cultural Heritage",
+    year: 2013, title: "Turkish coffee culture and tradition",
+    publisher: "Representative List of the Intangible Cultural Heritage of Humanity",
+    url: "https://ich.unesco.org/en/RL/turkish-coffee-culture-and-tradition-00645"
+  },
+  unesco2024arabiccoffee: {
+    type: "web", authors: "UNESCO Intangible Cultural Heritage",
+    year: 2024, title: "Arabic coffee, a symbol of generosity",
+    publisher: "Representative List of the Intangible Cultural Heritage of Humanity",
+    url: "https://ich.unesco.org/en/RL/arabic-coffee-a-symbol-of-generosity-02111"
+  },
+  unesco2016bribricacao: {
+    type: "web", authors: "UNESCO Intangible Cultural Heritage",
+    year: 2016, title: "Bribris’ oral tradition and rituals of the cacao",
+    publisher: "Representative List of the Intangible Cultural Heritage of Humanity",
+    url: "https://ich.unesco.org/en/RL/bribris-oral-tradition-and-rituals-of-the-cacao-01191"
+  },
+  unesco2026ecuadorcacao: {
+    type: "web", authors: "UNESCO World Heritage Centre",
+    year: 2026, title: "Ecuadorian Cacao Cultural Landscape",
+    publisher: "Tentative List, Ref. 7003",
+    url: "https://whc.unesco.org/en/tentativelists/7003/",
+    note: "A State Party submission on the Tentative List; not an inscription on the World Heritage List."
+  },
+  mexico2016cacaogrijalva: {
+    type: "web", authors: "Instituto Mexicano de la Propiedad Industrial",
+    year: 2016, title: "“Cacao Grijalva” se convierte en la 15ª Denominación de Origen mexicana",
+    publisher: "Government of Mexico",
+    url: "https://www.gob.mx/impi/prensa/cacao-grijalva-se-convierte-en-la-15-denominacion-de-origen-mexicana"
+  },
+  mexico2024papantlavainilla: {
+    type: "web", authors: "Secretaría de Agricultura y Desarrollo Rural",
+    year: 2024, title: "Declara Agricultura el 16 de diciembre de cada año como Día Nacional de la Vainilla",
+    publisher: "Government of Mexico",
+    url: "https://www.gob.mx/agricultura/prensa/declara-agricultura-el-16-de-diciembre-de-cada-ano-como-dia-nacional-de-la-vainilla"
+  },
+  eu2021reunionvanilla: {
+    type: "web", authors: "European Commission",
+    year: 2021, title: "Vanille de l’île de La Réunion PGI",
+    publisher: "Agriculture and Rural Development",
+    url: "https://agriculture.ec.europa.eu/farming/geographical-indications-and-quality-schemes/geographical-indications-food-and-drink/vanille-de-lile-de-la-reunion-pgi_en"
+  },
   anthony2002coffee: { authors: "Anthony, F., Combes, M.C., Astorga, C., Bertrand, B., Graziosi, G., & Lashermes, P.", year: 2002, title: "The origin of cultivated Coffea arabica L. varieties revealed by AFLP and SSR markers.", journal: "Theoretical and Applied Genetics", volume: "104", issue: "5", pages: "894–900" },
   henderson2007cacao: { authors: "Henderson, J.S., Joyce, R.A., Hall, G.R., Hurst, W.J., & McGovern, P.E.", year: 2007, title: "Chemical and archaeological evidence for the earliest cacao beverages.", journal: "PNAS", volume: "104", issue: "48", pages: "18937–18940" },
   lubinsky2008vanilla: { authors: "Lubinsky, P., Bory, S., Hernández Hernández, J., et al.", year: 2008, title: "Origins and dispersal of cultivated vanilla (Vanilla planifolia Jacks. [Orchidaceae]).", journal: "Economic Botany", volume: "62", pages: "127–138" },
@@ -4573,6 +4846,12 @@ const ORIGIN_REFERENCES = {
 function formatOriginRef(ref) {
   if (ref.type === "book") return `${ref.authors} (${ref.year}). <em>${ref.title}</em> ${ref.publisher}. ${ref.note || ""}`;
   if (ref.type === "historical") return `${ref.authors} (c. ${ref.year} CE). <em>${ref.title}</em>. ${ref.note || ""}`;
+  if (ref.type === "web") {
+    const title = ref.url
+      ? `<a href="${ref.url}" target="_blank" rel="noopener">${ref.title}</a>`
+      : ref.title;
+    return `${ref.authors} (${ref.year}). ${title}. <em>${ref.publisher}</em>. ${ref.note || ""}`;
+  }
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
 }
@@ -5144,6 +5423,8 @@ const state = {
   originsOnlyTasting: false,        // true: only markers for notes you've entered
   originsHiddenGroups: new Set(),   // group ids unchecked in the map legend
   selectedOriginNote: null,         // map: note whose detail is open — highlighted (spinning ring + white), not an entry change
+  geographyLens: "origin",          // "origin" | "production" | "traditions"; only one mark system renders at once
+  geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the tasting
   hiddenClasses: new Set(),  // compound-class names hidden via legend
   openCalloutKey: null,      // currently-open edit/delete callout's entry key, if any
   // Wheel organizing principle. "scent": note-group arcs on the ring, compounds
@@ -10402,6 +10683,325 @@ function wireOriginsSearch() {
 }
 wireOriginsSearch();
 
+const GEOGRAPHY_FLAG_LABELS = {
+  A: "official figure",
+  E: "estimated value",
+  I: "value imputed by a receiving agency",
+  X: "figure from an external organization",
+};
+
+function geographyPilotNote() {
+  return NOTE_BY_ID[state.geographyPilotNote] || NOTE_BY_ID.coffee;
+}
+
+function formatProductionTonnes(value) {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(2)}m t`;
+  if (value < 10000 && value >= 1000) return `${(value / 1000).toFixed(1)}k t`;
+  if (value >= 1000) return `${Math.round(value / 1000).toLocaleString()}k t`;
+  return `${Math.round(value).toLocaleString()} t`;
+}
+
+function appendGeographySources(content, sourceKeys) {
+  const label = document.createElement("div");
+  label.className = "section-label";
+  label.textContent = "Sources";
+  const list = document.createElement("ul");
+  list.className = "origin-sources";
+  sourceKeys.forEach(key => {
+    const ref = ORIGIN_REFERENCES[key];
+    if (!ref) return;
+    const li = document.createElement("li");
+    li.innerHTML = formatOriginRef(ref) + citeReviewBadge(key);
+    list.appendChild(li);
+  });
+  content.append(label, list);
+}
+
+function openProductionDetail(note, production, country) {
+  const panel = document.getElementById("origins-detail-panel");
+  const content = document.getElementById("origins-detail-content");
+  content.innerHTML = "";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = country ? `${note.label} · ${country.name}` : note.label;
+  const region = document.createElement("p");
+  region.className = "origin-region";
+  region.textContent = `${production.year} production · ${production.item}`;
+  content.append(h3, region);
+
+  if (country) {
+    const share = country.tonnes / production.worldTonnes * 100;
+    const facts = document.createElement("ul");
+    facts.className = "origin-facts";
+    [
+      `${formatProductionTonnes(country.tonnes)} · ${share.toFixed(1)}% of the FAOSTAT world total.`,
+      `Source flag ${country.flag}: ${GEOGRAPHY_FLAG_LABELS[country.flag] || "source classification not described"}.`,
+      "Circle area, not radius, is proportional to production. Compare symbols only within this ingredient.",
+    ].forEach(text => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      facts.appendChild(li);
+    });
+    content.append(facts);
+  } else {
+    const p = document.createElement("p");
+    p.textContent = "Choose a production circle to inspect its quantity, share of the world total, and source flag.";
+    content.append(p);
+  }
+  appendGeographySources(content, [production.sourceKey]);
+  panel.hidden = false;
+}
+
+function openTraditionDetail(note, tradition) {
+  const panel = document.getElementById("origins-detail-panel");
+  const content = document.getElementById("origins-detail-content");
+  content.innerHTML = "";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = tradition.title;
+  const region = document.createElement("p");
+  region.className = "origin-region";
+  region.textContent = `${note.label} · ${tradition.place}`;
+  const p = document.createElement("p");
+  p.textContent = tradition.claim;
+  const guardrail = document.createElement("p");
+  guardrail.className = "origin-lineage-note";
+  guardrail.textContent = "A documented attestation is evidence that this tradition exists here. It is not a score, a complete inventory, or a claim that the ingredient is valued more here than elsewhere.";
+  content.append(h3, region, p, guardrail);
+  appendGeographySources(content, [tradition.sourceKey]);
+  panel.hidden = false;
+}
+
+function makeGeographyText(svg, className, text) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  el.classList.add(className);
+  el.textContent = text;
+  svg.appendChild(el);
+  return el;
+}
+
+function refreshPilotMarkers() {
+  const svg = document.getElementById("markers-svg");
+  if (!svg) return;
+  const pxPerUnit = mapPxPerUnit();
+
+  svg.querySelectorAll(".geo-production-marker").forEach(g => {
+    const x = +g.dataset.x, y = +g.dataset.y;
+    const screenR = +g.dataset.screenR;
+    const dx = +g.dataset.dx, dy = +g.dataset.dy;
+    const circle = g.querySelector(".geo-production-dot");
+    const line = g.querySelector(".geo-production-leader");
+    const label = g.querySelector(".geo-layer-label");
+    const sub = g.querySelector(".geo-layer-sublabel");
+    const r = screenR / pxPerUnit;
+    const leaderLen = (screenR + 16) / pxPerUnit;
+    const lx = x + dx * leaderLen, ly = y + dy * leaderLen;
+    circle.setAttribute("r", r);
+    line.setAttribute("x1", x); line.setAttribute("y1", y);
+    line.setAttribute("x2", lx); line.setAttribute("y2", ly);
+    const anchor = dx > 0.3 ? "start" : dx < -0.3 ? "end" : "middle";
+    const textX = lx + (dx > 0.3 ? 4 : dx < -0.3 ? -4 : 0) / pxPerUnit;
+    label.setAttribute("x", textX); label.setAttribute("y", ly - 2 / pxPerUnit);
+    label.setAttribute("text-anchor", anchor);
+    label.style.fontSize = `${11 / pxPerUnit}px`;
+    sub.setAttribute("x", textX); sub.setAttribute("y", ly + 10 / pxPerUnit);
+    sub.setAttribute("text-anchor", anchor);
+    sub.style.fontSize = `${9.5 / pxPerUnit}px`;
+  });
+
+  svg.querySelectorAll(".geo-tradition-marker").forEach(g => {
+    const x = +g.dataset.x, y = +g.dataset.y;
+    const dx = +g.dataset.dx, dy = +g.dataset.dy;
+    const size = 8 / pxPerUnit;
+    const glyph = g.querySelector(".geo-tradition-glyph");
+    const line = g.querySelector(".geo-tradition-leader");
+    const label = g.querySelector(".geo-layer-label");
+    glyph.setAttribute("points", `${x},${y-size} ${x+size},${y} ${x},${y+size} ${x-size},${y}`);
+    const leaderLen = 24 / pxPerUnit;
+    const lx = x + dx * leaderLen, ly = y + dy * leaderLen;
+    line.setAttribute("x1", x); line.setAttribute("y1", y);
+    line.setAttribute("x2", lx); line.setAttribute("y2", ly);
+    const anchor = dx > 0.3 ? "start" : dx < -0.3 ? "end" : "middle";
+    const textX = lx + (dx > 0.3 ? 4 : dx < -0.3 ? -4 : 0) / pxPerUnit;
+    label.setAttribute("x", textX); label.setAttribute("y", ly + 4 / pxPerUnit);
+    label.setAttribute("text-anchor", anchor);
+    label.style.fontSize = `${11 / pxPerUnit}px`;
+  });
+}
+
+function wireGeographyMarker(g, ariaLabel, onOpen) {
+  g.setAttribute("role", "button");
+  g.setAttribute("tabindex", "0");
+  g.setAttribute("aria-label", ariaLabel);
+  const activate = () => {
+    g.parentElement.querySelectorAll(".geo-production-marker.selected, .geo-tradition-marker.selected")
+      .forEach(marker => marker.classList.remove("selected"));
+    g.classList.add("selected");
+    onOpen();
+  };
+  g.addEventListener("click", activate);
+  g.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      activate();
+    }
+  });
+}
+
+function buildProductionMarkers(note, production) {
+  const svg = document.getElementById("markers-svg");
+  svg.innerHTML = "";
+  const maxShare = Math.max(...production.countries.map(c => c.tonnes / production.worldTonnes));
+  const items = production.countries.map((country, i) => {
+    const [x, y] = latLonToXY(country.lat, country.lon);
+    return { id: `production-${i}`, x, y, country };
+  });
+  const dirIndex = layoutOriginLabelDirections(items);
+
+  items.forEach(item => {
+    const { country, x, y } = item;
+    const share = country.tonnes / production.worldTonnes;
+    const screenR = 26 * Math.sqrt(share / maxShare);
+    const dir = ORIGIN_DIRS[dirIndex.get(item.id)];
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.classList.add("geo-production-marker");
+    g.dataset.x = x; g.dataset.y = y; g.dataset.screenR = screenR;
+    g.dataset.dx = dir.dx; g.dataset.dy = dir.dy;
+
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.classList.add("geo-production-leader");
+    line.setAttribute("stroke", "var(--ink-dim)");
+    line.setAttribute("stroke-width", "1");
+    line.setAttribute("vector-effect", "non-scaling-stroke");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.classList.add("geo-production-dot");
+    circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+    circle.setAttribute("fill", groupColor(note.group));
+    const label = makeGeographyText(g, "geo-layer-label", country.name);
+    const sub = makeGeographyText(g, "geo-layer-sublabel", `${(share * 100).toFixed(1)}% · ${country.flag}`);
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent = `${country.name}: ${formatProductionTonnes(country.tonnes)}, ${(share * 100).toFixed(1)}% of world production`;
+    g.append(title, line, circle, label, sub);
+    wireGeographyMarker(g, title.textContent, () => openProductionDetail(note, production, country));
+    svg.appendChild(g);
+  });
+  refreshPilotMarkers();
+}
+
+function buildTraditionMarkers(note, traditions) {
+  const svg = document.getElementById("markers-svg");
+  svg.innerHTML = "";
+  const items = traditions.map((tradition, i) => {
+    const [x, y] = latLonToXY(tradition.lat, tradition.lon);
+    return { id: `tradition-${i}`, x, y, tradition };
+  });
+  const dirIndex = layoutOriginLabelDirections(items);
+
+  items.forEach(item => {
+    const { tradition, x, y } = item;
+    const dir = ORIGIN_DIRS[dirIndex.get(item.id)];
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.classList.add("geo-tradition-marker");
+    g.dataset.x = x; g.dataset.y = y; g.dataset.dx = dir.dx; g.dataset.dy = dir.dy;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.classList.add("geo-tradition-leader");
+    line.setAttribute("stroke", "var(--accent-2)");
+    line.setAttribute("stroke-width", "1.25");
+    line.setAttribute("vector-effect", "non-scaling-stroke");
+    const glyph = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    glyph.classList.add("geo-tradition-glyph");
+    const label = makeGeographyText(g, "geo-layer-label", tradition.place);
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent = `${tradition.place}: ${tradition.title}`;
+    g.append(title, line, glyph, label);
+    wireGeographyMarker(g, title.textContent, () => openTraditionDetail(note, tradition));
+    svg.appendChild(g);
+  });
+  refreshPilotMarkers();
+}
+
+function updateGeographyLensChrome() {
+  const isOrigin = state.geographyLens === "origin";
+  document.querySelectorAll("#geography-lens-controls button").forEach(button => {
+    const active = button.dataset.geographyLens === state.geographyLens;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  document.querySelectorAll("#geography-pilot-picker button").forEach(button => {
+    const active = button.dataset.geographyNote === state.geographyPilotNote;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  document.getElementById("geography-pilot-picker").hidden = isOrigin;
+  document.getElementById("origins-search-wrap").hidden = !isOrigin;
+  document.getElementById("origins-legend-origin").hidden = !isOrigin;
+  document.getElementById("geography-lens-legend").hidden = isOrigin;
+  document.getElementById("markers-svg").setAttribute("aria-hidden", String(isOrigin));
+
+  const framing = document.getElementById("origins-detail-framing");
+  if (isOrigin) {
+    framing.textContent = "Map positions reflect the pre-Columbian Exchange framing used throughout: where a plant was cultivated or first used by humans before 1492 European contact, not necessarily where it is grown commercially today.";
+  } else if (state.geographyLens === "production") {
+    framing.textContent = "Production is a contemporary distribution, not an origin story. Circle area is proportional to 2024 raw-crop tonnes within the selected ingredient.";
+  } else {
+    framing.textContent = "Tradition markers are sourced examples, not a ranking, a heatmap of cultural value, or a complete inventory of every community where the ingredient matters.";
+  }
+}
+
+function updateGeographyLensLegend() {
+  if (state.geographyLens === "origin") return;
+  const wrap = document.getElementById("geography-lens-legend");
+  const note = geographyPilotNote();
+  const pilot = GEOGRAPHY_PILOT[note.id];
+  if (state.geographyLens === "production") {
+    const p = pilot.production;
+    const shown = p.countries.reduce((sum, country) => sum + country.tonnes, 0);
+    wrap.innerHTML = `<span class="geo-legend-dot" aria-hidden="true"></span>
+      <span class="geo-legend-key">${note.label}</span>
+      <span class="geo-legend-note">${p.year} FAOSTAT · top five shown (${(shown / p.worldTonnes * 100).toFixed(1)}% of world total) · circle area = tonnes · flags A official, E estimated, I imputed, X external source</span>
+      ${citeReviewBadge(p.sourceKey)}`;
+  } else {
+    wrap.innerHTML = `<span class="geo-legend-diamond" aria-hidden="true"></span>
+      <span class="geo-legend-key">${note.label}</span>
+      <span class="geo-legend-note">${pilot.traditions.length} documented attestation${pilot.traditions.length === 1 ? "" : "s"} · examples, not a ranking or complete inventory</span>`;
+  }
+}
+
+function renderGeographyLayer() {
+  updateGeographyLensChrome();
+  const note = geographyPilotNote();
+  const pilot = GEOGRAPHY_PILOT[note.id];
+  if (state.geographyLens === "production") buildProductionMarkers(note, pilot.production);
+  else if (state.geographyLens === "traditions") buildTraditionMarkers(note, pilot.traditions);
+  else buildOriginMarkers();
+  updateGeographyLensLegend();
+}
+
+function setGeographyLens(lens) {
+  if (!["origin", "production", "traditions"].includes(lens)) return;
+  if (lens !== "origin" && GEOGRAPHY_PILOT[state.selectedOriginNote]) {
+    state.geographyPilotNote = state.selectedOriginNote;
+  }
+  state.geographyLens = lens;
+  document.getElementById("origins-detail-panel").hidden = true;
+  clearOriginSelection();
+  renderGeographyLayer();
+}
+
+function setGeographyPilotNote(noteId) {
+  if (!GEOGRAPHY_PILOT[noteId]) return;
+  state.geographyPilotNote = noteId;
+  document.getElementById("origins-detail-panel").hidden = true;
+  renderGeographyLayer();
+}
+
+document.querySelectorAll("#geography-lens-controls button").forEach(button => {
+  button.addEventListener("click", () => setGeographyLens(button.dataset.geographyLens));
+});
+document.querySelectorAll("#geography-pilot-picker button").forEach(button => {
+  button.addEventListener("click", () => setGeographyPilotNote(button.dataset.geographyNote));
+});
+
 function loadOrigins() {
   // Already loaded: full rebuild, not just a refresh — the tasting may have
   // changed on the Wheel since the last visit, and under the "only my
@@ -10425,7 +11025,7 @@ function loadOrigins() {
     mapSvg.appendChild(land);
   }
   originsLoaded = true;
-  buildOriginMarkers();
+  renderGeographyLayer();
   updateOriginsFilterEmpty();
 }
 
@@ -10433,8 +11033,10 @@ function loadOrigins() {
 // whatever search query is live so its hit-highlighting survives the rebuild.
 function rebuildOriginMarkers() {
   if (!originsLoaded) return;
-  buildOriginMarkers();
-  applyOriginsSearch(document.getElementById("origins-search").value);
+  renderGeographyLayer();
+  if (state.geographyLens === "origin") {
+    applyOriginsSearch(document.getElementById("origins-search").value);
+  }
   updateOriginsFilterEmpty();
 }
 
@@ -10911,6 +11513,10 @@ function buildOriginMarkers() {
 function refreshOriginMarkers() {
   const svg = document.getElementById("markers-svg");
   if (!svg) return;
+  if (state.geographyLens !== "origin") {
+    refreshPilotMarkers();
+    return;
+  }
   const pxPerUnit = mapPxPerUnit();
   const anyActive = NOTES.some(n => hasAnyEntry(n.id));
   svg.querySelectorAll(".origin-marker").forEach(g => {

@@ -164,3 +164,29 @@ height and the variable. No console errors.
 **Note for future check-ins:** the verification section claimed this feature worked.
 Please test the tap and keyboard paths separately from drag — they take different
 code paths, and drag masks this entire class of bug.
+
+## Follow-up: three-ingredient geography lens pilot (2026-07-26)
+
+- Added mutually exclusive `Origin`, `Grown now`, and `Traditions` lenses to the
+  existing world map. Only one mark system renders at a time so present production
+  and cultural documentation cannot be mistaken for botanical origin.
+- Limited the pilot to Coffee, Cacao / Chocolate, and Vanilla. The ingredient picker
+  appears only in the two new lenses; the original search, family filters, marker
+  selection, and pre-Columbian framing return unchanged in `Origin`.
+- `Grown now` shows the five leading 2024 raw-crop producers for each pilot
+  ingredient. Circle area is proportional to tonnes within the selected ingredient.
+  Values and observation flags come from the FAOSTAT normalized bulk release dated
+  31 December 2025; the legend states coverage of the world total and decodes flags.
+- `Traditions` uses seven sourced attestations from UNESCO, Mexican government, and
+  EU geographical-indication pages. The interface explicitly describes them as
+  examples rather than a ranking, heatmap, or complete cultural inventory.
+- New source records remain marked `UNVERIFIED_REFS`, consistent with the app's
+  policy: agent-opened primary sources stay under human review until Nolan verifies
+  them. Detail panels link directly to each source.
+- At 360 x 760, production/tradition labels remain hidden until a marker is selected,
+  avoiding collisions while retaining tap and keyboard access. At 1280 x 800, all
+  labels remain visible. The map has no horizontal overflow at either viewport.
+- Verified all three production datasets (15 markers), all three tradition datasets
+  (7 markers), production and tradition detail panels, source badges, lens switching,
+  ingredient switching, and restoration of the original Vanilla search (`1 match`).
+  Browser console reported no warnings or errors.
