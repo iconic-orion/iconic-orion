@@ -412,3 +412,25 @@ code paths, and drag masks this entire class of bug.
 
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file were left untouched.
+
+## Follow-up: pointer-capture fix for radial controls (2026-07-27)
+
+- Reproduced the reported symptom from its cursor clue: Tree's empty-space
+  drag-to-pan handler treated every newer radial control as empty space because it
+  exempted only legacy `g.tx-node` branch nodes.
+- On pointer-down it set pointer capture and the grabbing cursor; per pointer-event
+  semantics that retargeted the eventual click to the scroll container. The wedge
+  could flash its hover treatment but never receive activation.
+- Expanded the panning exclusion boundary to all semantic SVG button groups plus
+  native buttons, inputs, and links. Empty Tree space still starts drag-to-pan;
+  interactive controls now retain their own complete pointer sequence.
+- Verified with real coordinate mouse input at 1280 × 720: Process wedge → 13-note
+  Process circle, Smoky rim control → focused Smoky disc, and Animalia wedge →
+  Kingdom/Order/Family disc. These checks deliberately did not use synthetic
+  `dispatchEvent` or role-button activation.
+
+### Coordination boundary
+
+- This pass changes only Tree pointer handling and its handoff record. The concurrent
+  `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.

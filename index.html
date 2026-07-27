@@ -12716,9 +12716,12 @@ document.getElementById("taxonomy-zoom-out").addEventListener("click", () => zoo
   // through so clicks (open detail / collapse) still work. Touch is excluded
   // here: single-finger touch uses the container's native overflow scroll,
   // two-finger uses the pinch handler below.
+  // Pointer capture retargets the eventual click to this scroll container, so
+  // every semantic radial control must be excluded along with branch nodes.
   let panning = false, panX = 0, panY = 0, startL = 0, startT = 0;
   scroll.addEventListener("pointerdown", (e) => {
-    if (e.pointerType !== "mouse" || e.target.closest("g.tx-node")) return;
+    if (e.pointerType !== "mouse"
+      || e.target.closest("g.tx-node, g[role='button'], button, input, a")) return;
     panning = true; panX = e.clientX; panY = e.clientY;
     startL = scroll.scrollLeft; startT = scroll.scrollTop;
     scroll.setPointerCapture(e.pointerId); scroll.style.cursor = "grabbing";
