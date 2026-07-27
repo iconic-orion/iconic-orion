@@ -388,3 +388,27 @@ code paths, and drag masks this entire class of bug.
 
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
+## Follow-up: all four overview wedges act; every radial label stays upright (2026-07-27)
+
+- Removed the special non-interactive treatment from Process. All four overview
+  wedges now share hover, focus, pointer, and keyboard behavior.
+- Process opens a dedicated circular group containing all 13 non-organism notes.
+  Selecting one opens a visible note-centered disc with an honest
+  `GROUP · Process / non-organism` ring; `← Process` and `← Overview` preserve the
+  same stable upward navigation used by biological ranks.
+- Extended note focus to honestly unplaced biological notes. Mushroom can now open a
+  Fungi-centered note disc without inventing an Order or Family; moving up returns
+  to Fungi.
+- Replaced rotated rim labels with screen-horizontal labels anchored around the
+  circle. Applied the same treatment to internal Order/Family wedge labels, removing
+  the upside-down Family names found in the Sapindales check.
+- Verified a real coordinate mouse click on the Process wedge at 360 × 760, all 13
+  Process note controls, Process → Smoky → Process, and the full Process circle with
+  upright labels at 1280 × 720 and 360 × 760. Also verified Sapindales Family labels
+  and its 14 note labels remain upright.
+
+### Coordination boundary
+
+- This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file were left untouched.
