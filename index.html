@@ -2082,9 +2082,12 @@
     font-size: 12px; line-height: 1;
   }
   #origins-map-controls button:hover { border-color: var(--accent); color: var(--accent); }
+  /* Everything inside the SVG is in viewBox units, so widening the container
+     scales the ring, spokes and note icons together — only the HTML caption
+     below needs its own bump. */
   #map-bearing-compass {
     position: absolute; left: 16px; bottom: 16px; z-index: 7;
-    width: 142px; padding: 6px 7px 7px;
+    width: 284px; padding: 6px 7px 7px;
     color: var(--ink); background: color-mix(in srgb, var(--panel) 88%, transparent);
     border: 1px solid var(--line); border-radius: 50%;
     cursor: grab; touch-action: none; user-select: none;
@@ -2107,7 +2110,13 @@
   .map-bearing-center { fill: var(--accent); stroke: var(--bg); stroke-width: 1.5; }
   #map-bearing-caption {
     display: block; margin-top: -4px; color: var(--ink-dim);
-    font-size: 8.5px; line-height: 1.25; text-align: center;
+    font-size: 11px; line-height: 1.3; text-align: center;
+  }
+  /* Mobile width is set in JS by sizeMapCompass() — the map pane halves when
+     the detail panel opens, so no fixed value works for both states. Caption
+     only. */
+  @media (max-width: 760px) {
+    #map-bearing-caption { font-size: 9.5px; }
   }
   .omc-pan {
     display: grid; grid-template-columns: 26px 26px 26px; grid-template-rows: 26px 26px 26px;
@@ -10770,7 +10779,26 @@ function setMapCompassPosition(left, top) {
   compass.style.bottom = "auto";
 }
 
+// Grow the compass to the biggest size the map pane can actually hold, capped
+// at the CSS width. A fixed size cannot work on a phone: opening the detail
+// panel halves the pane (measured 520px -> 260px), and with the 120px control
+// clearance on top of that only ~132px of height remains — less than the
+// compass's own original 142px. So it sized itself over the panel below rather
+// than fitting. Sizing to the room available means "as large as it can be here"
+// instead of one number that is wrong in one state or the other.
+const COMPASS_MAX_W = 284;   // matches the CSS width; the roomy-screen size
+function sizeMapCompass() {
+  const wrap = document.getElementById("origins-map-wrap");
+  const compass = document.getElementById("map-bearing-compass");
+  if (!wrap || !compass) return;
+  const clearance = isMobileViewport() ? 120 : 66;   // mirrors setMapCompassPosition
+  const CHROME = 32;   // caption line + vertical padding, i.e. height beyond the dial
+  const room = wrap.clientHeight - clearance - 16 - CHROME;
+  compass.style.width = `${Math.round(Math.max(112, Math.min(COMPASS_MAX_W, room)))}px`;
+}
+
 function ensureMapCompassPosition() {
+  sizeMapCompass();
   const wrap = document.getElementById("origins-map-wrap");
   const compass = document.getElementById("map-bearing-compass");
   if (!state.mapCompassPos) {
