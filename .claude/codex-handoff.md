@@ -237,3 +237,30 @@ code paths, and drag masks this entire class of bug.
 - Claude is concurrently handling the workspace view changer and a separate Go Deeper
   prompt-provenance archive. This batch does not alter either feature. The untracked
   `.claude/session-handoff-thesis-systems.md` file was left untouched.
+
+## Follow-up: named lineage rings inside family discs (2026-07-27)
+
+- Promoted two growth rings from decoration into taxonomy: the upper ring is labeled
+  with the selected family's Order and the lower ring with its Kingdom. Family remains
+  the center/heartwood and supported notes remain leaves on the living edge.
+- The ring names are computed from the selected family node's real ancestors rather
+  than duplicated taxonomy strings. The disc now carries its complete
+  Kingdom → Order → Family lineage without requiring the breadcrumb above it.
+- Reduced decorative-ring density around the named bands so the semantic ranks lead
+  the composition. Compact discs receive thinner bands, smaller center typography,
+  tighter leaf-label spacing, and a larger usable ring span.
+- Added a concise accessible name to the disc that announces common family name,
+  scientific family, Order, Kingdom, and note count. Existing keyboard-selectable
+  note leaves remain unchanged.
+- Verified Rutaceae at 1280 × 720 and Rutaceae/Rosaceae at 360 × 760. The compact
+  Rosaceae disc (10 leaves) had no SVG or viewport overflow; Enter selected Strawberry
+  while preserving both named rings and updating the existing detail pane. Returning
+  to `← Full tree` removed the lineage SVG and its compact/accessibility state.
+- Browser console reported no warnings or errors. These are simulated browser
+  viewports, not physical-device or social in-app-browser claims.
+
+### Coordination boundary
+
+- Claude added separate uncommitted Map compass-centering work to `index.html` during
+  this pass. It is intentionally excluded from this check-in; only the lineage-ring
+  hunks and this handoff entry belong to Codex.

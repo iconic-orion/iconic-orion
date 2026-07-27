@@ -1740,6 +1740,16 @@
      get to spend alpha. Depth comes from stroke weight instead. */
   .tx-ring { fill: none; stroke: #262b27; stroke-width: 1.5; }
   .tx-ring-edge { stroke: #4a5a48; stroke-width: 2.5; }   /* the living edge */
+  /* Two of the growth rings carry the actual lineage. Family remains the
+     heartwood at center; Order and Kingdom become named enclosing bands, so
+     the disc can explain itself without borrowing the breadcrumb above it. */
+  .tx-lineage-band { fill: none; stroke: var(--panel-2); stroke-width: 16; }
+  .tx-lineage-band-edge { fill: none; stroke: var(--line); stroke-width: 1; }
+  .tx-lineage-label {
+    fill: var(--ink); font-size: 9.5px; font-weight: 650; letter-spacing: .055em;
+    text-anchor: middle; paint-order: stroke; stroke: var(--panel-2);
+    stroke-width: 3px; stroke-linejoin: round;
+  }
   .tx-wreath-center-ring { fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2; }
   .tx-wreath-center-name { fill: var(--ink); font-size: 17px; font-weight: 650; text-anchor: middle; }
   /* Scientific name as caption under the common name — present, not primary. */
@@ -1766,6 +1776,13 @@
      media query: iPad portrait is over 760px wide yet still only affords a
      468px disc, so a viewport-width rule missed exactly the case that broke. */
   #taxonomy-svg.tx-wreath-compact .tx-wreath-node text { font-size: 9.5px; stroke-width: 3px; }
+  #taxonomy-svg.tx-wreath-compact .tx-lineage-band { stroke-width: 8; }
+  #taxonomy-svg.tx-wreath-compact .tx-lineage-label {
+    font-size: 8px; letter-spacing: .025em; stroke-width: 2.5px;
+  }
+  #taxonomy-svg.tx-wreath-compact .tx-wreath-center-name { font-size: 12px; }
+  #taxonomy-svg.tx-wreath-compact .tx-wreath-center-latin { font-size: 8.5px; }
+  #taxonomy-svg.tx-wreath-compact .tx-wreath-center-meta { font-size: 8.5px; }
   .tx-node.tx-dim text, .tx-node.tx-dim circle { opacity: 0.2; }
   .tx-node.tx-search-hit circle { stroke: var(--accent); stroke-width: 2; }
   /* Family detail page (taxonomy tree): the diagnostic sentence. */
@@ -12426,16 +12443,25 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   const compact = size < 560;
   // Radii pulled in from the old dot-on-ring values to buy back the ~36px the
   // leaf blade plus its label now occupy outside the rim.
-  const radius = size * (compact ? .185 : (leaves.length > 10 ? .30 : .27));
-  const centerRadius = Math.max(48, Math.min(72, size * .12));
+  const radius = size * (compact ? .215 : (leaves.length > 10 ? .30 : .27));
+  // Compact discs need enough wood between the family center and living edge
+  // for two readable lineage bands. The previous 48px minimum left as little
+  // as 8px total at 320px, which could only support decorative rings.
+  const centerRadius = compact
+    ? Math.max(38, Math.min(46, size * .115))
+    : Math.max(48, Math.min(72, size * .12));
   svg.classed("taxonomy-wreath", true).classed("tx-wreath-compact", compact);
   svg.selectAll("*").remove();
   svg.attr("width", size).attr("height", size).attr("viewBox", `0 0 ${size} ${size}`);
   svg.node().style.width = `${size}px`;
   svg.node().style.height = `${size}px`;
 
-  const common = TAXON_COMMON[familyName] || "family";
   const tasted = leaves.filter(d => hasAnyEntry(d.data.noteId)).length;
+  const orderName = familyNode.parent?.data.name || "Unplaced order";
+  const kingdomName = familyNode.parent?.parent?.data.name || "Unplaced kingdom";
+  svg.attr("role", "group")
+    .attr("aria-label",
+      `${TAXON_COMMON[familyName] || familyName} lineage disc. Family ${familyName}, order ${orderName}, kingdom ${kingdomName}, with ${leaves.length} notes on the living edge.`);
   document.getElementById("taxonomy-path-readout").textContent =
     `${familyNode.ancestors().reverse().map(d => d.data.name).join(" → ")} · family wheel bloom`;
 
@@ -12451,13 +12477,52 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   // function re-runs on every recompute while the Tree is open).
   const RING_STOPS = [0.07, 0.16, 0.22, 0.33, 0.41, 0.54, 0.64, 0.78, 0.89, 1];
   const rings = svg.append("g").attr("class", "tx-rings");
-  RING_STOPS.forEach((t, i) => {
+  // Leave breathing room around the two semantic bands (.38 and .74). The
+  // remaining irregular rings keep the trunk character without turning the
+  // named taxonomy back into one line among many.
+  const visibleRingStops = RING_STOPS.filter(t =>
+    Math.abs(t - .38) > .11 && Math.abs(t - .74) > .11);
+  visibleRingStops.forEach((t, i) => {
     rings.append("circle")
       // The last ring is the living edge the leaves attach to, so it reads
       // heavier than the dormant wood inside it.
-      .attr("class", i === RING_STOPS.length - 1 ? "tx-ring tx-ring-edge" : "tx-ring")
+      .attr("class", i === visibleRingStops.length - 1 ? "tx-ring tx-ring-edge" : "tx-ring")
       .attr("cx", cx).attr("cy", cy)
       .attr("r", centerRadius + (radius - centerRadius) * t);
+  });
+
+  // The taxonomy is containment, so the two ranks above Family are literal
+  // enclosing rings. Put their names on opposite arcs: both remain upright,
+  // compact discs avoid label collisions, and the eye can read the whole
+  // Kingdom → Order → Family lineage without leaving the disc.
+  const lineageSpan = radius - centerRadius;
+  const lineageBands = [
+    { rank: "Order", name: orderName, radius: centerRadius + lineageSpan * .38, arc: "top" },
+    { rank: "Kingdom", name: kingdomName, radius: centerRadius + lineageSpan * .74, arc: "bottom" },
+  ];
+  const lineage = svg.append("g").attr("class", "tx-lineage-rings");
+  const defs = svg.append("defs");
+  lineageBands.forEach((band, i) => {
+    const pathId = `tx-lineage-${i}`;
+    lineage.append("circle")
+      .attr("class", "tx-lineage-band")
+      .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
+    lineage.append("circle")
+      .attr("class", "tx-lineage-band-edge")
+      .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
+    const left = cx - band.radius, right = cx + band.radius;
+    defs.append("path")
+      .attr("id", pathId)
+      .attr("d", band.arc === "top"
+        ? `M${left},${cy} A${band.radius},${band.radius} 0 0 1 ${right},${cy}`
+        : `M${left},${cy} A${band.radius},${band.radius} 0 0 0 ${right},${cy}`);
+    lineage.append("text")
+      .attr("class", "tx-lineage-label")
+      .attr("aria-hidden", "true")
+      .append("textPath")
+      .attr("href", `#${pathId}`)
+      .attr("startOffset", "50%")
+      .text(`${band.rank.toUpperCase()} · ${band.name}`);
   });
 
   const points = leaves.map((leaf, i) => {
@@ -12514,6 +12579,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   // for untasted - a wreath of grey leaves reads as dead rather than dormant -
   // but the signal is identical: bigger and coloured means it's in your cup.
   const leafLen = d => hasAnyEntry(d.leaf.data.noteId) ? 27 : 18;
+  const leafLabelGap = compact ? 6 : 9;
   const leafBlade = (len, wid) =>
     `M0 0 C${(len * .28).toFixed(1)} ${-wid} ${(len * .72).toFixed(1)} ${-wid} ${len} 0`
     + ` C${(len * .72).toFixed(1)} ${wid} ${(len * .28).toFixed(1)} ${wid} 0 0 Z`;
@@ -12532,8 +12598,8 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   node.append("text")
     // Pushed out past the leaf tip along its own radius, so the label clears the
     // blade at every angle instead of only at the horizontal ones.
-    .attr("x", d => (Math.cos(d.angle) * (leafLen(d) + 9)).toFixed(1))
-    .attr("y", d => (Math.sin(d.angle) * (leafLen(d) + 9) + 4).toFixed(1))
+    .attr("x", d => (Math.cos(d.angle) * (leafLen(d) + leafLabelGap)).toFixed(1))
+    .attr("y", d => (Math.sin(d.angle) * (leafLen(d) + leafLabelGap) + 4).toFixed(1))
     .attr("text-anchor", d => {
       const c = Math.cos(d.angle);
       return Math.abs(c) < .22 ? "middle" : (c > 0 ? "start" : "end");
@@ -12553,7 +12619,8 @@ function renderTaxonomyTree() {
   const wasWreath = svg.classed("taxonomy-wreath");
   if (state.selectedFamily && renderTaxonomyWreath(svg, scrollEl, state.selectedFamily)) return;
   if (wasWreath) svg.selectAll("*").remove();
-  svg.classed("taxonomy-wreath", false);
+  svg.classed("taxonomy-wreath", false).classed("tx-wreath-compact", false)
+    .attr("role", null).attr("aria-label", null);
   document.getElementById("taxonomy-expand-all").hidden = false;
   document.getElementById("taxonomy-collapse-all").hidden = false;
   document.getElementById("taxonomy-back-tree").hidden = true;
