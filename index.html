@@ -1711,6 +1711,22 @@
      the size and group-color of the dot itself carry the signal, set in JS. */
   .tx-node.tx-tasted circle { stroke: var(--ink); stroke-width: 1.5; }
   .tx-node.tx-tasted text { fill: var(--ink); font-weight: 600; }
+  #taxonomy-back-tree[hidden] { display: none; }
+  #taxonomy-svg.taxonomy-wreath { margin: auto; }
+  .tx-wreath-ring { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 3 7; }
+  .tx-wreath-link { stroke: var(--line); stroke-width: 1; }
+  .tx-wreath-center-ring { fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2; }
+  .tx-wreath-center-name { fill: var(--ink); font-size: 18px; font-weight: 650; text-anchor: middle; }
+  .tx-wreath-center-meta { fill: var(--ink-dim); font-size: 11px; text-anchor: middle; }
+  .tx-wreath-node { cursor: pointer; }
+  .tx-wreath-node circle { stroke: var(--bg); stroke-width: 2; }
+  .tx-wreath-node text {
+    fill: var(--ink); font-size: 11px; font-weight: 550;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round;
+  }
+  .tx-wreath-node:focus { outline: none; }
+  .tx-wreath-node:focus circle, .tx-wreath-node:hover circle { stroke: var(--accent); stroke-width: 3; }
+  .tx-wreath-node.selected circle { stroke: var(--ink); stroke-width: 3; }
   .tx-node.tx-dim text, .tx-node.tx-dim circle { opacity: 0.2; }
   .tx-node.tx-search-hit circle { stroke: var(--accent); stroke-width: 2; }
   /* Family detail page (taxonomy tree): the diagnostic sentence. */
@@ -1997,6 +2013,33 @@
     font-size: 12px; line-height: 1;
   }
   #origins-map-controls button:hover { border-color: var(--accent); color: var(--accent); }
+  #map-bearing-compass {
+    position: absolute; left: 16px; bottom: 16px; z-index: 7;
+    width: 142px; padding: 6px 7px 7px;
+    color: var(--ink); background: color-mix(in srgb, var(--panel) 88%, transparent);
+    border: 1px solid var(--line); border-radius: 50%;
+    cursor: grab; touch-action: none; user-select: none;
+  }
+  #map-bearing-compass[hidden] { display: none; }
+  #map-bearing-compass:active { cursor: grabbing; }
+  #map-bearing-compass:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  #map-bearing-compass svg { display: block; width: 100%; aspect-ratio: 1; overflow: visible; }
+  .map-bearing-ring, .map-bearing-inner {
+    fill: none; stroke: var(--line); vector-effect: non-scaling-stroke;
+  }
+  .map-bearing-inner { stroke-dasharray: 2 3; }
+  .map-bearing-cross { stroke: var(--line); vector-effect: non-scaling-stroke; }
+  .map-bearing-axis { fill: var(--ink-dim); font-size: 8px; font-weight: 650; }
+  .map-bearing-spoke { stroke: var(--ink-dim); stroke-opacity: .42; vector-effect: non-scaling-stroke; }
+  .map-bearing-note {
+    paint-order: stroke; stroke: var(--panel); stroke-width: 3px;
+    font-size: 13px; dominant-baseline: central; text-anchor: middle;
+  }
+  .map-bearing-center { fill: var(--accent); stroke: var(--bg); stroke-width: 1.5; }
+  #map-bearing-caption {
+    display: block; margin-top: -4px; color: var(--ink-dim);
+    font-size: 8.5px; line-height: 1.25; text-align: center;
+  }
   .omc-pan {
     display: grid; grid-template-columns: 26px 26px 26px; grid-template-rows: 26px 26px 26px;
     gap: 2px;
@@ -2753,6 +2796,22 @@
           <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
         </div>
       </div>
+      <button type="button" id="map-bearing-compass" hidden
+        aria-label="Move the map bearing compass. Arrow keys reposition it." title="Drag to move; arrow keys reposition">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Tasting-note bearings from this point">
+          <circle class="map-bearing-ring" cx="60" cy="60" r="49"></circle>
+          <circle class="map-bearing-inner" cx="60" cy="60" r="30"></circle>
+          <line class="map-bearing-cross" x1="60" y1="9" x2="60" y2="111"></line>
+          <line class="map-bearing-cross" x1="9" y1="60" x2="111" y2="60"></line>
+          <text class="map-bearing-axis" x="60" y="8" text-anchor="middle">N</text>
+          <text class="map-bearing-axis" x="114" y="63" text-anchor="middle">E</text>
+          <text class="map-bearing-axis" x="60" y="118" text-anchor="middle">S</text>
+          <text class="map-bearing-axis" x="6" y="63" text-anchor="middle">W</text>
+          <g id="map-bearing-dynamic"></g>
+          <circle class="map-bearing-center" cx="60" cy="60" r="4"></circle>
+        </svg>
+        <span id="map-bearing-caption">Add tasting notes to orient the compass</span>
+      </button>
     </div>
     <aside id="origins-detail-panel" hidden>
       <button type="button" id="origins-detail-close" aria-label="Close">×</button>
@@ -2812,6 +2871,7 @@
     <span id="taxonomy-search-count"></span>
     <button type="button" id="taxonomy-expand-all">Expand all</button>
     <button type="button" id="taxonomy-collapse-all">Collapse to kingdoms</button>
+    <button type="button" id="taxonomy-back-tree" hidden>← Full tree</button>
     <div class="omc-zoom tx-zoom">
       <button type="button" id="taxonomy-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
       <button type="button" id="taxonomy-zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
@@ -5471,6 +5531,7 @@ const state = {
   selectedOriginNote: null,         // map: note whose detail is open — highlighted (spinning ring + white), not an entry change
   geographyLens: "origin",          // "origin" | "production" | "traditions"; only one mark system renders at once
   geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the tasting
+  mapCompassPos: null,              // {left,top} in map-wrap CSS pixels; null chooses a responsive default
   hiddenClasses: new Set(),  // compound-class names hidden via legend
   openCalloutKey: null,      // currently-open edit/delete callout's entry key, if any
   // Wheel organizing principle. "scent": note-group arcs on the ring, compounds
@@ -7426,6 +7487,7 @@ function recompute() {
   // Perception Compass draws synchronously here rather than via the sim's
   // tick — its axes are a pure function of scores, no physics involved.
   if (typeof renderCompass === "function") renderCompass();
+  if (typeof renderMapBearingCompass === "function") renderMapBearingCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
   // Keep the tree in step with the tasting, but only while it's the visible
@@ -8167,13 +8229,15 @@ function renderFamilyDetail(familyName) {
   if (backBtn) backBtn.addEventListener("click", () => {
     state.selectedFamily = null;
     renderDetail();
+    if (document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
   });
   detailPanel.querySelectorAll(".view-note").forEach(el => {
     el.addEventListener("click", () => {
-      state.selectedFamily = null;
+      if (!document.body.classList.contains("taxonomy-mode")) state.selectedFamily = null;
       state.selectedNote = el.dataset.note;
       state.selectedCompound = null;
       renderDetail();
+      if (document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
     });
   });
 }
@@ -8200,7 +8264,9 @@ function varietalRows(parentId) {
 }
 
 function renderNoteDetail(noteId) {
-  state.selectedFamily = null;   // note view supersedes any family page
+  const keepFamilyWreath = document.body.classList.contains("taxonomy-mode")
+    && state.selectedFamily && NOTE_BY_ID[noteId]?.family === state.selectedFamily;
+  if (!keepFamilyWreath) state.selectedFamily = null;
   const n = NOTE_BY_ID[noteId];
   const g = GROUP_BY_ID[n.group];
   const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
@@ -10557,6 +10623,7 @@ window.addEventListener("resize", () => {
   computeFloatHomes();
   if (sim) sim.alpha(0.5).restart();
   if (originsLoaded) refreshOriginMarkers();
+  if (typeof renderMapBearingCompass === "function") renderMapBearingCompass();
 });
 
 // ── Origins map ──────────────────────────────────────────────────────────────
@@ -10569,6 +10636,175 @@ function latLonToXY(lat, lon) {
     (90 - lat) / 180 * SVG_H
   ];
 }
+
+function initialBearingDegrees(a, b) {
+  const toRad = degrees => degrees * Math.PI / 180;
+  const toDeg = radians => radians * 180 / Math.PI;
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2)
+    - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+function mapCompassTastingItems() {
+  return NOTES.map(note => ({
+    note,
+    origin: NOTE_ORIGINS[note.id],
+    total: INPUT_PHASES.reduce((sum, phase) => sum + (getEntry(note.id, phase) || 0), 0),
+  }))
+    .filter(item => item.origin && item.total > 0)
+    .sort((a, b) => b.total - a.total || a.note.label.localeCompare(b.note.label))
+    .slice(0, 8);
+}
+
+function setMapCompassPosition(left, top) {
+  const wrap = document.getElementById("origins-map-wrap");
+  const compass = document.getElementById("map-bearing-compass");
+  const scale = Math.min(wrap.clientWidth / mapView.w, wrap.clientHeight / mapView.h);
+  const drawnW = mapView.w * scale, drawnH = mapView.h * scale;
+  const contentLeft = (wrap.clientWidth - drawnW) / 2;
+  const contentTop = (wrap.clientHeight - drawnH) / 2;
+  const minLeft = Math.max(8, contentLeft - compass.offsetWidth / 2);
+  const maxLeft = Math.max(minLeft, Math.min(wrap.clientWidth - compass.offsetWidth - 8,
+    contentLeft + drawnW - compass.offsetWidth / 2));
+  const controlsClearance = isMobileViewport() ? 120 : 66;
+  const minTop = Math.max(controlsClearance, contentTop - compass.offsetHeight / 2);
+  const maxTop = Math.max(minTop, Math.min(wrap.clientHeight - compass.offsetHeight - 8,
+    contentTop + drawnH - compass.offsetHeight / 2));
+  state.mapCompassPos = {
+    left: Math.max(minLeft, Math.min(maxLeft, left)),
+    top: Math.max(minTop, Math.min(maxTop, top)),
+  };
+  compass.style.left = `${state.mapCompassPos.left}px`;
+  compass.style.top = `${state.mapCompassPos.top}px`;
+  compass.style.bottom = "auto";
+}
+
+function ensureMapCompassPosition() {
+  const wrap = document.getElementById("origins-map-wrap");
+  const compass = document.getElementById("map-bearing-compass");
+  if (!state.mapCompassPos) {
+    setMapCompassPosition(16, wrap.clientHeight / 2 - compass.offsetHeight / 2);
+  } else {
+    setMapCompassPosition(state.mapCompassPos.left, state.mapCompassPos.top);
+  }
+}
+
+function mapCompassGeoAnchor() {
+  const wrap = document.getElementById("origins-map-wrap");
+  const compass = document.getElementById("map-bearing-compass");
+  const wrapRect = wrap.getBoundingClientRect();
+  const svgRect = document.getElementById("markers-svg").getBoundingClientRect();
+  const cx = wrapRect.left + compass.offsetLeft + compass.offsetWidth / 2;
+  const cy = wrapRect.top + compass.offsetTop + compass.offsetHeight / 2;
+  const scale = Math.min(svgRect.width / mapView.w, svgRect.height / mapView.h);
+  const drawnW = mapView.w * scale, drawnH = mapView.h * scale;
+  const offsetX = (svgRect.width - drawnW) / 2, offsetY = (svgRect.height - drawnH) / 2;
+  const x = Math.max(0, Math.min(SVG_W,
+    mapView.x + (cx - svgRect.left - offsetX) / scale));
+  const y = Math.max(0, Math.min(SVG_H,
+    mapView.y + (cy - svgRect.top - offsetY) / scale));
+  return { lat: 90 - y / SVG_H * 180, lon: x / SVG_W * 360 - 180 };
+}
+
+function compassCardinal(bearing) {
+  return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(bearing / 45) % 8];
+}
+
+function renderMapBearingCompass() {
+  const compass = document.getElementById("map-bearing-compass");
+  const active = document.body.classList.contains("origins-mode") && state.geographyLens === "origin";
+  compass.hidden = !active;
+  if (!active) return;
+  ensureMapCompassPosition();
+  const anchor = mapCompassGeoAnchor();
+  const items = mapCompassTastingItems();
+  const layer = document.getElementById("map-bearing-dynamic");
+  layer.innerHTML = "";
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  items.forEach(item => {
+    const bearing = initialBearingDegrees(anchor, item.origin);
+    const distanceKm = greatCircleDistanceKm(anchor, item.origin);
+    const angle = (bearing - 90) * Math.PI / 180;
+    const radius = 17 + 31 * Math.sqrt(Math.min(1, distanceKm / 20015));
+    const x = 60 + Math.cos(angle) * radius;
+    const y = 60 + Math.sin(angle) * radius;
+    const line = document.createElementNS(SVG_NS, "line");
+    line.classList.add("map-bearing-spoke");
+    line.setAttribute("x1", 60); line.setAttribute("y1", 60);
+    line.setAttribute("x2", x); line.setAttribute("y2", y);
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+    dot.setAttribute("r", hasAnyEntry(item.note.id) ? 6.5 : 5);
+    dot.setAttribute("fill", groupColor(item.note.group));
+    const icon = document.createElementNS(SVG_NS, "text");
+    icon.classList.add("map-bearing-note");
+    icon.setAttribute("x", x); icon.setAttribute("y", y + .5);
+    icon.textContent = noteIcon(item.note);
+    const title = document.createElementNS(SVG_NS, "title");
+    title.textContent = `${item.note.label}: ${compassCardinal(bearing)}, ${distanceKm.toLocaleString()} km`;
+    icon.appendChild(title);
+    layer.append(line, dot, icon);
+  });
+
+  const caption = document.getElementById("map-bearing-caption");
+  const latLabel = `${Math.abs(anchor.lat).toFixed(0)}°${anchor.lat >= 0 ? "N" : "S"}`;
+  const lonLabel = `${Math.abs(anchor.lon).toFixed(0)}°${anchor.lon >= 0 ? "E" : "W"}`;
+  caption.textContent = items.length
+    ? `${latLabel}, ${lonLabel} · ${items.length} tasting note${items.length === 1 ? "" : "s"}`
+    : `${latLabel}, ${lonLabel} · add tasting notes`;
+  const summary = items.slice(0, 4).map(item => {
+    const bearing = initialBearingDegrees(anchor, item.origin);
+    return `${item.note.label} ${compassCardinal(bearing)}`;
+  }).join(", ");
+  compass.setAttribute("aria-label", items.length
+    ? `Move bearing compass. ${summary}${items.length > 4 ? `, and ${items.length - 4} more` : ""}. Arrow keys reposition it.`
+    : "Move bearing compass. Add tasting notes to show their directions. Arrow keys reposition it.");
+}
+
+function setupMapBearingCompass() {
+  const compass = document.getElementById("map-bearing-compass");
+  const wrap = document.getElementById("origins-map-wrap");
+  let dragging = false, offsetX = 0, offsetY = 0;
+  compass.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragging = true;
+    const rect = compass.getBoundingClientRect();
+    offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
+    compass.setPointerCapture(e.pointerId);
+  });
+  compass.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    const rect = wrap.getBoundingClientRect();
+    setMapCompassPosition(e.clientX - rect.left - offsetX, e.clientY - rect.top - offsetY);
+    renderMapBearingCompass();
+  });
+  const stop = e => {
+    if (!dragging) return;
+    dragging = false;
+    try { compass.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  compass.addEventListener("pointerup", stop);
+  compass.addEventListener("pointercancel", stop);
+  compass.addEventListener("keydown", e => {
+    const delta = e.shiftKey ? 32 : 12;
+    const move = {
+      ArrowLeft: [-delta, 0], ArrowRight: [delta, 0],
+      ArrowUp: [0, -delta], ArrowDown: [0, delta],
+    }[e.key];
+    if (!move) return;
+    e.preventDefault();
+    ensureMapCompassPosition();
+    setMapCompassPosition(state.mapCompassPos.left + move[0], state.mapCompassPos.top + move[1]);
+    renderMapBearingCompass();
+  });
+}
+setupMapBearingCompass();
 
 // Zoom/pan state shared by the world map and the markers overlay, kept in
 // sync by setting the same viewBox on both so markers stay pinned to their
@@ -10612,6 +10848,7 @@ function applyMapView() {
   document.getElementById("markers-svg").setAttribute("viewBox", vb);
   mapZoomRatio = mapView.w / SVG_W;
   if (originsLoaded) refreshOriginMarkers();
+  renderMapBearingCompass();
 }
 
 function resetMapView() {
@@ -11109,6 +11346,7 @@ function updateGeographyLensChrome() {
   } else {
     framing.textContent = "Tradition markers are sourced examples, not a ranking, a heatmap of cultural value, or a complete inventory of every community where the ingredient matters.";
   }
+  renderMapBearingCompass();
 }
 
 function updateGeographyLensLegend() {
@@ -11768,6 +12006,7 @@ function setWorkspace(mode) {
     b.classList.toggle("active", b.dataset.workspace === mode));
   if (mode === "map") loadOrigins();
   if (mode === "tree") loadTaxonomyTree();
+  renderMapBearingCompass();
 }
 function showTaxonomyDetail() {
   if (isMobileViewport() && document.body.classList.contains("taxonomy-mode") && state.taxonomySheetSnap === "peek") {
@@ -11823,7 +12062,9 @@ function setTaxonomySheetSnap(snap) {
 // Snap heights are viewport-derived, so a rotation or resize has to recompute
 // them — otherwise the px written above goes stale.
 window.addEventListener("resize", () => {
-  if (document.body.classList.contains("taxonomy-mode")) applyTaxonomySheetHeight();
+  if (!document.body.classList.contains("taxonomy-mode")) return;
+  applyTaxonomySheetHeight();
+  if (taxonomyTreeLoaded) renderTaxonomyTree();
 });
 (function setupTaxonomySheetResize() {
   let dragging = false, moved = false, suppressClick = false, startY = 0, startHeight = 0;
@@ -12011,9 +12252,108 @@ document.getElementById("taxonomy-zoom-out").addEventListener("click", () => zoo
   }, { passive: false });
 })();
 
+function renderTaxonomyWreath(svg, scrollEl, familyName) {
+  const familyNode = allTaxonomyDescendants(taxTreeRoot, [])
+    .find(d => d.data.name === familyName && TAXON_FAMILY_NAMES.has(d.data.name));
+  if (!familyNode) return false;
+  const leaves = allTaxonomyDescendants(familyNode, []).filter(d => d.data.noteId);
+  if (!leaves.length) return false;
+
+  document.getElementById("taxonomy-expand-all").hidden = true;
+  document.getElementById("taxonomy-collapse-all").hidden = true;
+  document.getElementById("taxonomy-back-tree").hidden = false;
+  const natural = Math.max(320, Math.min(760, scrollEl.clientWidth - 20));
+  const size = natural;
+  const cx = size / 2, cy = size / 2;
+  const radius = size * (isMobileViewport() ? .25 : (leaves.length > 10 ? .34 : .31));
+  const centerRadius = Math.max(48, Math.min(72, size * .12));
+  svg.classed("taxonomy-wreath", true);
+  svg.selectAll("*").remove();
+  svg.attr("width", size).attr("height", size).attr("viewBox", `0 0 ${size} ${size}`);
+  svg.node().style.width = `${size}px`;
+  svg.node().style.height = `${size}px`;
+
+  const common = TAXON_COMMON[familyName] || "family";
+  const tasted = leaves.filter(d => hasAnyEntry(d.data.noteId)).length;
+  document.getElementById("taxonomy-path-readout").textContent =
+    `${familyNode.ancestors().reverse().map(d => d.data.name).join(" → ")} · family wheel bloom`;
+
+  svg.append("circle").attr("class", "tx-wreath-ring")
+    .attr("cx", cx).attr("cy", cy).attr("r", radius);
+
+  const points = leaves.map((leaf, i) => {
+    const angle = -Math.PI / 2 + i * (Math.PI * 2 / leaves.length);
+    return {
+      leaf, angle,
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    };
+  });
+
+  svg.selectAll("line.tx-wreath-link").data(points, d => d.leaf.data.noteId)
+    .join("line").attr("class", "tx-wreath-link")
+    .attr("x1", d => cx + Math.cos(d.angle) * centerRadius)
+    .attr("y1", d => cy + Math.sin(d.angle) * centerRadius)
+    .attr("x2", d => d.x).attr("y2", d => d.y);
+
+  const center = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+  center.append("circle").attr("class", "tx-wreath-center-ring").attr("r", centerRadius);
+  center.append("text").attr("class", "tx-wreath-center-name").attr("y", -5).text(familyName);
+  center.append("text").attr("class", "tx-wreath-center-meta").attr("y", 15)
+    .text(`${common} · ${tasted ? `${tasted} of ` : ""}${leaves.length} note${leaves.length === 1 ? "" : "s"}`);
+
+  const chooseLeaf = leaf => {
+    state.selectedNote = leaf.data.noteId;
+    state.selectedCompound = null;
+    showTaxonomyDetail();
+    renderDetail();
+    renderTaxonomyTree();
+  };
+  const node = svg.selectAll("g.tx-wreath-node").data(points, d => d.leaf.data.noteId)
+    .join("g")
+    .attr("class", d => `tx-wreath-node${state.selectedNote === d.leaf.data.noteId ? " selected" : ""}`)
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .attr("role", "button")
+    .attr("tabindex", "0")
+    .attr("aria-label", d => `${d.leaf.data.name}, ${familyName} family`)
+    .on("click", (event, d) => chooseLeaf(d.leaf))
+    .on("keydown", (event, d) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        chooseLeaf(d.leaf);
+      }
+    });
+  node.append("circle")
+    .attr("r", d => hasAnyEntry(d.leaf.data.noteId) ? 9 : 7)
+    .attr("fill", d => groupColor(NOTE_BY_ID[d.leaf.data.noteId].group));
+  node.append("text")
+    .attr("x", d => {
+      const c = Math.cos(d.angle);
+      return Math.abs(c) < .22 ? 0 : (c > 0 ? 13 : -13);
+    })
+    .attr("y", d => Math.sin(d.angle) < -.82 ? -14 : Math.sin(d.angle) > .82 ? 19 : 4)
+    .attr("text-anchor", d => {
+      const c = Math.cos(d.angle);
+      return Math.abs(c) < .22 ? "middle" : (c > 0 ? "start" : "end");
+    })
+    .text(d => {
+      const full = d.leaf.data.name;
+      const mobile = full.split(" / ")[0];
+      return `${noteIcon(d.leaf.data.noteId)} ${isMobileViewport() ? mobile : full}`;
+    });
+  return true;
+}
+
 function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
   const scrollEl = document.getElementById("taxonomy-tree-scroll");
+  const wasWreath = svg.classed("taxonomy-wreath");
+  if (state.selectedFamily && renderTaxonomyWreath(svg, scrollEl, state.selectedFamily)) return;
+  if (wasWreath) svg.selectAll("*").remove();
+  svg.classed("taxonomy-wreath", false);
+  document.getElementById("taxonomy-expand-all").hidden = false;
+  document.getElementById("taxonomy-collapse-all").hidden = false;
+  document.getElementById("taxonomy-back-tree").hidden = true;
   // Vertical margins (declared up here because the depth-spacing calc below
   // needs them); SIDE_MARGIN stays near its use further down.
   const TOP_MARGIN = 44, BOTTOM_MARGIN = 44;
@@ -12138,8 +12478,10 @@ function renderTaxonomyTree() {
       state.selectedFamily = d.data.name;
       state.selectedNote = null;
       state.selectedCompound = null;
+      taxonomyZoom = 1;
       showTaxonomyDetail();
       renderDetail();
+      if (isMobileViewport()) setTaxonomySheetSnap("peek");
       renderTaxonomyTree();
       return;
     }
@@ -12264,6 +12606,11 @@ function applyTaxonomySearch(query) {
 document.getElementById("taxonomy-search").addEventListener("input", e => applyTaxonomySearch(e.target.value));
 document.getElementById("taxonomy-expand-all").addEventListener("click", expandAllTaxonomy);
 document.getElementById("taxonomy-collapse-all").addEventListener("click", collapseTaxonomyToKingdoms);
+document.getElementById("taxonomy-back-tree").addEventListener("click", () => {
+  state.selectedFamily = null;
+  taxonomyZoom = 1;
+  renderTaxonomyTree();
+});
 
 // refreshOriginMarkers() is called from recompute() whenever originsLoaded is true.
 

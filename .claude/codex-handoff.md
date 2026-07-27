@@ -206,3 +206,34 @@ code paths, and drag masks this entire class of bug.
 - Verified Coffee, Cacao, and Vanilla route sets at 360 x 760 and 1280 x 800,
   including the Pacific/dateline paths for Vanilla and Cacao. No horizontal overflow
   or browser console warnings/errors.
+
+## Follow-up: family wheel blooms + directional map compass (2026-07-26)
+
+- The large Tree remains the Kingdom → Order → Family overview. Selecting a family
+  now replaces only the final leaf fan-out with a circular family wheel bloom, so the
+  transition happens exactly where the large branching explanation stops being useful.
+- Each bloom keeps the family at its center and arranges its supported notes around a
+  dotted ring with group-colored dots and the wheel's existing note icons. Notes are
+  keyboard-focusable and open the existing detail view without leaving the bloom.
+- Added an explicit `← Full tree` return action. Returning clears all bloom SVG
+  elements before restoring the hierarchy, preventing the two layouts from layering.
+- At the compact-phone reference viewport (360 × 760), the bloom sizes to 325 × 325,
+  has no horizontal document overflow, keeps every label inside the viewport, and
+  automatically minimizes the existing Tree detail sheet to its peek state.
+- Added a draggable and keyboard-movable compass to the Map's `Origin` lens. The
+  compass converts its on-map position to a geographic anchor and plots up to eight
+  active tasting-note origins by initial bearing and great-circle distance. Its
+  caption and accessible label update as it moves; `Grown now` and `Traditions`
+  intentionally hide it so the lenses remain mutually exclusive.
+- Verified the bloom at 1280 × 800 and 360 × 760, including family → note selection,
+  responsive sizing, peek-sheet behavior, and returning to the full tree. Verified
+  the compass at 360 × 760 with the Ethiopian coffee sample, including Arrow-key
+  repositioning and the resulting direction/anchor updates. Browser console reported
+  no warnings or errors. These are browser viewport simulations, not physical-device
+  or social in-app-browser claims.
+
+### Coordination boundary
+
+- Claude is concurrently handling the workspace view changer and a separate Go Deeper
+  prompt-provenance archive. This batch does not alter either feature. The untracked
+  `.claude/session-handoff-thesis-systems.md` file was left untouched.
