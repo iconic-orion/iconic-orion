@@ -294,3 +294,26 @@ code paths, and drag masks this entire class of bug.
 - This pass changes only Tree rendering/state and its decorative vines. Claude's Map
   work and the untracked `.claude/session-handoff-thesis-systems.md` file remain
   untouched.
+
+## Follow-up: honest ring hit areas + flowering fiddlehead vines (2026-07-27)
+
+- Reproduced the reported hover-without-navigation failure. The accessible SVG
+  `g[role=button]` exposed a rectangular bounding box even though the visible control
+  was circular, so an apparent click could land in empty center space owned by a
+  different SVG sibling.
+- Added an explicit transparent annular hit stroke to every named lineage ring and
+  removed pointer capture from its decorative label/band. Pointer geometry now
+  matches the highlighted ring; keyboard Enter/Space behavior remains unchanged.
+- Replaced both Tree vines' delayed yellow endpoint dots with directional blooms.
+  Each stem now grows through paired lavender florets and resolves into a curled
+  fiddlehead fern tip. The lower-left bloom grows upward; the upper-right bloom hangs
+  downward, preserving the side-border composition.
+- Verified direct mouse clicks on the Family-disc Order ring and the Order-disc
+  Kingdom ring at 1280 × 720, plus the Family-disc Order ring at 360 × 760. Each
+  immediately rendered the requested taxonomy level. The resized vines remained
+  outside the central disc at both viewports.
+
+### Coordination boundary
+
+- This follow-up remains Tree-only. It does not alter Claude's Map work or the
+  untracked `.claude/session-handoff-thesis-systems.md` file.

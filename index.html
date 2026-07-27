@@ -886,10 +886,23 @@
      cross-fades them in already-grown, no drawing/unfurling. ---- */
 
   /* shared rest state (already grown) */
-  .vine-leaf, .vine-bud, .vine-curl { opacity: 1; }
+  .vine-leaf, .vine-bud, .vine-curl, .vine-fiddlehead { opacity: 1; }
   .vine-leaf { transform-box: fill-box; transform-origin: center; }
   .vine-stem { stroke-dasharray: 800; }
   .vine-curl { stroke-dasharray: 80; }
+  .vine-fiddlehead { transform-box: fill-box; }
+  .vine-fiddlehead-up { transform-origin: center bottom; }
+  .vine-fiddlehead-down { transform-origin: center top; }
+  .vine-fiddlehead .vine-spire,
+  .vine-fiddlehead .vine-head {
+    fill: none; stroke: #6a9a4e; stroke-linecap: round;
+  }
+  .vine-fiddlehead .vine-spire { stroke-width: 2.2; }
+  .vine-fiddlehead .vine-head { stroke-width: 2.8; }
+  .vine-fiddlehead .vine-floret {
+    fill: #9f84c7; stroke: #c8b6df; stroke-width: .55;
+  }
+  .vine-fiddlehead .vine-floret-heart { fill: #d8a657; }
 
   /* wheel corner vine — climbs the wheel's empty bottom-left corner */
   #deeper-vines { position: absolute; left: -6px; bottom: 0; z-index: 9; pointer-events: none;
@@ -975,11 +988,33 @@
     .vine-leaf-5 { animation-delay: 1020ms; }
     body.go-deeper #deeper-vines .vine-bud,
     body.taxonomy-mode #tree-vines .vine-bud { animation: vine-bud-in 460ms cubic-bezier(0.34,1.5,0.6,1) 1140ms both; }
+    body.taxonomy-mode #tree-vines .vine-fiddlehead-up {
+      animation: vine-fiddlehead-up 900ms cubic-bezier(.2,.82,.24,1) 760ms both;
+    }
+    body.taxonomy-mode #tree-vines .vine-fiddlehead-down {
+      animation: vine-fiddlehead-down 900ms cubic-bezier(.2,.82,.24,1) 760ms both;
+    }
+    body.taxonomy-mode #tree-vines .vine-fiddlehead .vine-floret {
+      animation: vine-floret-open 460ms cubic-bezier(.22,1.5,.4,1) 1190ms both;
+      transform-box: fill-box; transform-origin: center;
+    }
   }
   @keyframes vine-grow { from { stroke-dashoffset: 800; } to { stroke-dashoffset: 0; } }
   @keyframes vine-draw { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }
   @keyframes vine-leaf-in { from { opacity: 0; transform: scale(0.15); } to { opacity: 1; transform: scale(1); } }
   @keyframes vine-bud-in { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+  @keyframes vine-fiddlehead-up {
+    from { opacity: 0; transform: translateY(8px) scaleY(.08); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes vine-fiddlehead-down {
+    from { opacity: 0; transform: translateY(-8px) scaleY(.08); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes vine-floret-open {
+    from { opacity: 0; transform: scale(.1) rotate(-24deg); }
+    to { opacity: 1; transform: none; }
+  }
 
   @media (max-width: 760px) {
     #deeper-vines { transform:scale(.82) translateY(14px); transform-origin:left bottom; }
@@ -1794,6 +1829,16 @@
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-latin { font-size: 8.5px; }
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-meta { font-size: 8.5px; }
   .tx-lineage-action, .tx-rank-segment, .tx-rank-note { cursor: pointer; }
+  /* A <g role="button"> has a rectangular accessibility box even though the
+     visible control is a ring. Give pointer input the same geometry users see:
+     a transparent annular stroke on top of the label and band. */
+  .tx-lineage-hit {
+    fill: none; stroke: transparent; stroke-width: 24;
+    pointer-events: stroke;
+  }
+  .tx-lineage-label, .tx-lineage-band, .tx-lineage-band-edge {
+    pointer-events: none;
+  }
   .tx-lineage-action:focus { outline: none; }
   .tx-lineage-action:hover .tx-lineage-band,
   .tx-lineage-action:focus .tx-lineage-band {
@@ -1803,6 +1848,7 @@
   #taxonomy-svg.tx-wreath-compact .tx-lineage-action:focus .tx-lineage-band {
     stroke-width: 10;
   }
+  #taxonomy-svg.tx-wreath-compact .tx-lineage-hit { stroke-width: 14; }
   .tx-rank-center { fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2; }
   .tx-rank-center-label { fill: var(--ink); font-size: 17px; font-weight: 650; text-anchor: middle; }
   .tx-rank-center-meta { fill: var(--ink-dim); font-size: 10px; text-anchor: middle; }
@@ -2526,7 +2572,7 @@
     /* The mobile canvas starts as a readable hierarchy overview. Decoration
        recedes and the long desktop instruction block no longer consumes the
        lower quarter of the screen; the story strip carries that teaching job. */
-    body.taxonomy-mode #tree-vines { opacity: .1; }
+    body.taxonomy-mode #tree-vines { opacity: .42; }
     #tree-vines .tv-bl { left: -8px; bottom: 14px; height: min(38%, 230px); }
     #tree-vines .tv-tr { right: -6px; top: 18px; height: min(30%, 170px); }
     body.taxonomy-mode #taxonomy-legend-note { display: none; }
@@ -2979,22 +3025,42 @@
        corners (not the scrolling tree), non-interactive, unfurls on entry and
        is gated on prefers-reduced-motion. -->
   <div id="tree-vines" aria-hidden="true">
-    <svg class="tv-bl" viewBox="0 0 130 300" width="130" height="300" fill="none" preserveAspectRatio="xMinYMax meet">
-      <path class="vine-stem" d="M24 300 C8 250 58 232 36 182 C18 140 60 122 40 78 C28 50 50 36 42 12"
-        stroke="#5a9c4f" stroke-width="3.6" stroke-linecap="round"/>
-      <path class="vine-curl" d="M50 168 C68 164 70 182 54 184 C46 185 48 172 56 174" stroke="#6a9a4e" stroke-width="2" stroke-linecap="round"/>
-      <g class="vine-leaf vine-leaf-1" fill="#5a9c4f"><path d="M36 224 C24 216 20 230 30 240 C42 234 46 230 36 224 Z"/></g>
-      <g class="vine-leaf vine-leaf-2" fill="#7fc275"><path d="M42 176 C54 168 58 182 48 192 C36 186 32 182 42 176 Z"/></g>
-      <g class="vine-leaf vine-leaf-3" fill="#4f7a3a"><path d="M36 130 C24 122 20 136 30 146 C42 140 46 136 36 130 Z"/></g>
-      <g class="vine-leaf vine-leaf-4" fill="#7fc275"><path d="M44 88 C56 80 60 94 50 104 C38 98 34 94 44 88 Z"/></g>
-      <circle class="vine-bud" cx="42" cy="11" r="3.8" fill="#d8a657"/>
+    <svg class="tv-bl" viewBox="0 0 130 360" width="130" height="360" fill="none" preserveAspectRatio="xMinYMax meet">
+      <g transform="translate(0,60)">
+        <path class="vine-stem" d="M24 300 C8 250 58 232 36 182 C18 140 60 122 40 78 C28 50 50 36 42 12"
+          stroke="#5a9c4f" stroke-width="3.6" stroke-linecap="round"/>
+        <path class="vine-curl" d="M50 168 C68 164 70 182 54 184 C46 185 48 172 56 174" stroke="#6a9a4e" stroke-width="2" stroke-linecap="round"/>
+        <g class="vine-leaf vine-leaf-1" fill="#5a9c4f"><path d="M36 224 C24 216 20 230 30 240 C42 234 46 230 36 224 Z"/></g>
+        <g class="vine-leaf vine-leaf-2" fill="#7fc275"><path d="M42 176 C54 168 58 182 48 192 C36 186 32 182 42 176 Z"/></g>
+        <g class="vine-leaf vine-leaf-3" fill="#4f7a3a"><path d="M36 130 C24 122 20 136 30 146 C42 140 46 136 36 130 Z"/></g>
+        <g class="vine-leaf vine-leaf-4" fill="#7fc275"><path d="M44 88 C56 80 60 94 50 104 C38 98 34 94 44 88 Z"/></g>
+      </g>
+      <g class="vine-fiddlehead vine-fiddlehead-up">
+        <path class="vine-spire" d="M42 74 C40 63 45 51 42 36"/>
+        <ellipse class="vine-floret" cx="37" cy="61" rx="4.6" ry="2.8" transform="rotate(-24 37 61)"/>
+        <ellipse class="vine-floret" cx="47" cy="56" rx="4.8" ry="2.9" transform="rotate(27 47 56)"/>
+        <ellipse class="vine-floret" cx="37" cy="50" rx="4.3" ry="2.7" transform="rotate(-30 37 50)"/>
+        <ellipse class="vine-floret" cx="47" cy="44" rx="4.2" ry="2.6" transform="rotate(31 47 44)"/>
+        <circle class="vine-floret-heart" cx="42" cy="57" r="1.4"/>
+        <circle class="vine-floret-heart" cx="42" cy="46" r="1.25"/>
+        <path class="vine-head" d="M42 37 C39 27 44 17 53 18 C62 19 63 30 55 33 C49 35 45 31 47 27 C49 24 54 25 54 28"/>
+      </g>
     </svg>
-    <svg class="tv-tr" viewBox="0 0 110 190" width="110" height="190" fill="none" preserveAspectRatio="xMaxYMin meet">
+    <svg class="tv-tr" viewBox="0 0 110 250" width="110" height="250" fill="none" preserveAspectRatio="xMaxYMin meet">
       <path class="vine-stem" d="M88 0 C104 40 66 58 86 100 C100 132 72 148 90 184"
         stroke="#5a9c4f" stroke-width="3.2" stroke-linecap="round"/>
       <g class="vine-leaf vine-leaf-2" fill="#7fc275"><path d="M82 56 C70 50 66 64 76 72 C88 66 90 62 82 56 Z"/></g>
       <g class="vine-leaf vine-leaf-3" fill="#4f7a3a"><path d="M92 104 C104 98 106 112 96 118 C84 114 82 108 92 104 Z"/></g>
-      <circle class="vine-bud" cx="90" cy="186" r="3.4" fill="#d8a657"/>
+      <g class="vine-fiddlehead vine-fiddlehead-down">
+        <path class="vine-spire" d="M90 183 C88 196 94 207 90 219"/>
+        <ellipse class="vine-floret" cx="84" cy="196" rx="4.4" ry="2.7" transform="rotate(-28 84 196)"/>
+        <ellipse class="vine-floret" cx="95" cy="201" rx="4.6" ry="2.8" transform="rotate(26 95 201)"/>
+        <ellipse class="vine-floret" cx="84" cy="207" rx="4.1" ry="2.6" transform="rotate(-31 84 207)"/>
+        <ellipse class="vine-floret" cx="95" cy="212" rx="4" ry="2.5" transform="rotate(30 95 212)"/>
+        <circle class="vine-floret-heart" cx="90" cy="201" r="1.35"/>
+        <circle class="vine-floret-heart" cx="90" cy="212" r="1.2"/>
+        <path class="vine-head" d="M90 218 C92 229 86 240 77 238 C68 236 68 225 76 222 C82 220 86 224 84 228 C82 231 77 230 77 227"/>
+      </g>
     </svg>
   </div>
   <div id="taxonomy-search-wrap">
@@ -12752,6 +12818,7 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
       .attr("startOffset", "50%")
       .attr("text-anchor", "middle")
       .text(`KINGDOM · ${parent.data.name}`);
+    ancestor.append("circle").attr("class", "tx-lineage-hit").attr("r", parentRadius);
   }
 
   const arc = d3.arc();
@@ -12954,6 +13021,9 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
       .attr("href", `#${pathId}`)
       .attr("startOffset", "50%")
       .text(`${band.rank.toUpperCase()} · ${band.name}`);
+    bandGroup.append("circle")
+      .attr("class", "tx-lineage-hit")
+      .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
   });
 
   const points = leaves.map((leaf, i) => {
