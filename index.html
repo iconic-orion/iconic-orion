@@ -1734,20 +1734,38 @@
   .tx-node.tx-tasted text { fill: var(--ink); font-weight: 600; }
   #taxonomy-back-tree[hidden] { display: none; }
   #taxonomy-svg.taxonomy-wreath { margin: auto; }
-  .tx-wreath-ring { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 3 7; }
-  .tx-wreath-link { stroke: var(--line); stroke-width: 1; }
+  /* Growth rings: dormant wood, drawn solid rather than dashed so the whole
+     disc reads as a cut trunk instead of a target. Opaque throughout — this is
+     decorative structure, and per the layer budget decorative surfaces don't
+     get to spend alpha. Depth comes from stroke weight instead. */
+  .tx-ring { fill: none; stroke: #262b27; stroke-width: 1.5; }
+  .tx-ring-edge { stroke: #4a5a48; stroke-width: 2.5; }   /* the living edge */
   .tx-wreath-center-ring { fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2; }
-  .tx-wreath-center-name { fill: var(--ink); font-size: 18px; font-weight: 650; text-anchor: middle; }
-  .tx-wreath-center-meta { fill: var(--ink-dim); font-size: 11px; text-anchor: middle; }
+  .tx-wreath-center-name { fill: var(--ink); font-size: 17px; font-weight: 650; text-anchor: middle; }
+  /* Scientific name as caption under the common name — present, not primary. */
+  .tx-wreath-center-latin { fill: var(--ink-dim); font-size: 10.5px; font-style: italic; text-anchor: middle; }
+  .tx-wreath-center-meta { fill: var(--ink-dim); font-size: 10px; text-anchor: middle; }
   .tx-wreath-node { cursor: pointer; }
-  .tx-wreath-node circle { stroke: var(--bg); stroke-width: 2; }
+  .tx-leaf-blade { stroke: var(--bg); stroke-width: 1.25; stroke-linejoin: round; }
+  /* Midrib reads the leaf as a leaf rather than a petal. Dark on a coloured
+     blade, so it holds up against every aroma-group hue. */
+  .tx-leaf-midrib { stroke: rgba(12,16,12,.55); stroke-width: 1; fill: none; }
   .tx-wreath-node text {
     fill: var(--ink); font-size: 11px; font-weight: 550;
     paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round;
   }
   .tx-wreath-node:focus { outline: none; }
-  .tx-wreath-node:focus circle, .tx-wreath-node:hover circle { stroke: var(--accent); stroke-width: 3; }
-  .tx-wreath-node.selected circle { stroke: var(--ink); stroke-width: 3; }
+  .tx-wreath-node:focus .tx-leaf-blade,
+  .tx-wreath-node:hover .tx-leaf-blade { stroke: var(--accent); stroke-width: 2.5; }
+  .tx-wreath-node.selected .tx-leaf-blade { stroke: var(--ink); stroke-width: 2.5; }
+  /* A centred disc plus a label on both flanks cannot fit a small disc at
+     desktop type size — measured, the widest ("🍋 Meyer lemon") ran 100px and
+     overshot the viewBox by 11. Dropping ~1.5px of type buys back ~14px, which
+     clears it without shrinking the disc into uselessness.
+     Keyed on a class the renderer sets from the disc's real size rather than a
+     media query: iPad portrait is over 760px wide yet still only affords a
+     468px disc, so a viewport-width rule missed exactly the case that broke. */
+  #taxonomy-svg.tx-wreath-compact .tx-wreath-node text { font-size: 9.5px; stroke-width: 3px; }
   .tx-node.tx-dim text, .tx-node.tx-dim circle { opacity: 0.2; }
   .tx-node.tx-search-hit circle { stroke: var(--accent); stroke-width: 2; }
   /* Family detail page (taxonomy tree): the diagnostic sentence. */
@@ -8228,8 +8246,14 @@ function renderFamilyDetail(familyName) {
     : kingdom === "Fungi" ? "Fungal family" : "Plant family";
   detailPanel.innerHTML = `
     <button class="back-to-grid" type="button">← Back</button>
-    <h2><span class="detail-icon" aria-hidden="true">${helixGlyph(20)}</span> ${familyName}</h2>
-    <div class="compound-class">${kindLabel}${common ? ` · ${common}` : ""}</div>
+    <!-- Common name leads, scientific name is the caption under it. The Latin
+         is never dropped — it's the real term and the one the literature uses —
+         it just isn't the way in. Families with no common name in TAXON_COMMON
+         fall back to leading with the scientific name rather than getting an
+         invented English one; 40/40 families currently in use have one, but the
+         fallback keeps that from becoming a silent requirement. -->
+    <h2><span class="detail-icon" aria-hidden="true">${helixGlyph(20)}</span> ${common || familyName}</h2>
+    <div class="compound-class">${kindLabel}${common ? ` · <em>${familyName}</em>` : ""}</div>
     <div class="section">
       <div class="section-title">Where it sits</div>
       <div class="taxon-detail-label">${rankLine}</div>
@@ -12283,12 +12307,23 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   document.getElementById("taxonomy-expand-all").hidden = true;
   document.getElementById("taxonomy-collapse-all").hidden = true;
   document.getElementById("taxonomy-back-tree").hidden = false;
-  const natural = Math.max(320, Math.min(760, scrollEl.clientWidth - 20));
-  const size = natural;
+  // Size to the SMALLER of the two axes. Sizing on width alone let the disc
+  // overrun a short landscape viewport and clip its bottom leaves clean off —
+  // the notes were rendered, labelled, and focusable, just below the fold.
+  const size = Math.max(300, Math.min(760,
+    Math.min(scrollEl.clientWidth - 20, scrollEl.clientHeight - 20)));
   const cx = size / 2, cy = size / 2;
-  const radius = size * (isMobileViewport() ? .25 : (leaves.length > 10 ? .34 : .31));
+  // Compactness keys off the disc's ACTUAL rendered size, not the 760px
+  // viewport proxy. An iPad in portrait is "desktop" by that proxy but only
+  // affords a 468px disc, so it was drawing full-length labels ("Pomelo /
+  // pummelo") that overran the viewBox by ~33px. What decides whether a label
+  // fits is how big the circle is, so measure that instead.
+  const compact = size < 560;
+  // Radii pulled in from the old dot-on-ring values to buy back the ~36px the
+  // leaf blade plus its label now occupy outside the rim.
+  const radius = size * (compact ? .185 : (leaves.length > 10 ? .30 : .27));
   const centerRadius = Math.max(48, Math.min(72, size * .12));
-  svg.classed("taxonomy-wreath", true);
+  svg.classed("taxonomy-wreath", true).classed("tx-wreath-compact", compact);
   svg.selectAll("*").remove();
   svg.attr("width", size).attr("height", size).attr("viewBox", `0 0 ${size} ${size}`);
   svg.node().style.width = `${size}px`;
@@ -12299,8 +12334,26 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   document.getElementById("taxonomy-path-readout").textContent =
     `${familyNode.ancestors().reverse().map(d => d.data.name).join(" → ")} · family wheel bloom`;
 
-  svg.append("circle").attr("class", "tx-wreath-ring")
-    .attr("cx", cx).attr("cy", cy).attr("r", radius);
+  // Growth rings, not spokes. A line drawn from the hub to every note reads as
+  // branching, which is exactly what this view exists to stop doing at family
+  // scale. Concentric rings read as a trunk cross-section instead, and they
+  // carry the containment honestly - everything inside the rim belongs to this
+  // family, by enclosure rather than by a line you have to trace.
+  //
+  // Spacing is deliberately uneven. Evenly spaced rings read as a dartboard;
+  // real growth rings vary with the season that laid them down. The sequence is
+  // fixed rather than random so it never jitters between re-renders (this
+  // function re-runs on every recompute while the Tree is open).
+  const RING_STOPS = [0.07, 0.16, 0.22, 0.33, 0.41, 0.54, 0.64, 0.78, 0.89, 1];
+  const rings = svg.append("g").attr("class", "tx-rings");
+  RING_STOPS.forEach((t, i) => {
+    rings.append("circle")
+      // The last ring is the living edge the leaves attach to, so it reads
+      // heavier than the dormant wood inside it.
+      .attr("class", i === RING_STOPS.length - 1 ? "tx-ring tx-ring-edge" : "tx-ring")
+      .attr("cx", cx).attr("cy", cy)
+      .attr("r", centerRadius + (radius - centerRadius) * t);
+  });
 
   const points = leaves.map((leaf, i) => {
     const angle = -Math.PI / 2 + i * (Math.PI * 2 / leaves.length);
@@ -12311,17 +12364,16 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
     };
   });
 
-  svg.selectAll("line.tx-wreath-link").data(points, d => d.leaf.data.noteId)
-    .join("line").attr("class", "tx-wreath-link")
-    .attr("x1", d => cx + Math.cos(d.angle) * centerRadius)
-    .attr("y1", d => cy + Math.sin(d.angle) * centerRadius)
-    .attr("x2", d => d.x).attr("y2", d => d.y);
-
+  // No spoke layer: see the growth-ring note above.
   const center = svg.append("g").attr("transform", `translate(${cx},${cy})`);
   center.append("circle").attr("class", "tx-wreath-center-ring").attr("r", centerRadius);
-  center.append("text").attr("class", "tx-wreath-center-name").attr("y", -5).text(familyName);
-  center.append("text").attr("class", "tx-wreath-center-meta").attr("y", 15)
-    .text(`${common} · ${tasted ? `${tasted} of ` : ""}${leaves.length} note${leaves.length === 1 ? "" : "s"}`);
+  // Common name leads, scientific name sits under it as a caption. The Latin is
+  // never dropped - it is the real term and stays - it just isn't the way in.
+  center.append("text").attr("class", "tx-wreath-center-name").attr("y", -8)
+    .text(TAXON_COMMON[familyName] || familyName);
+  center.append("text").attr("class", "tx-wreath-center-latin").attr("y", 8).text(familyName);
+  center.append("text").attr("class", "tx-wreath-center-meta").attr("y", 24)
+    .text(`${tasted ? `${tasted} of ` : ""}${leaves.length} note${leaves.length === 1 ? "" : "s"}`);
 
   const chooseLeaf = leaf => {
     state.selectedNote = leaf.data.noteId;
@@ -12336,7 +12388,10 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
     .attr("transform", d => `translate(${d.x},${d.y})`)
     .attr("role", "button")
     .attr("tabindex", "0")
-    .attr("aria-label", d => `${d.leaf.data.name}, ${familyName} family`)
+    // Screen readers hear the same name sighted users read — the common one.
+    // Falls back to the scientific name where no common name exists rather
+    // than announcing a bare "family".
+    .attr("aria-label", d => `${d.leaf.data.name}, ${TAXON_COMMON[familyName] || familyName + " family"}`)
     .on("click", (event, d) => chooseLeaf(d.leaf))
     .on("keydown", (event, d) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -12344,23 +12399,45 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
         chooseLeaf(d.leaf);
       }
     });
-  node.append("circle")
-    .attr("r", d => hasAnyEntry(d.leaf.data.noteId) ? 9 : 7)
-    .attr("fill", d => groupColor(NOTE_BY_ID[d.leaf.data.noteId].group));
+  // Each note is a leaf on the living edge rather than a dot: the rings are the
+  // wood, the leaves are what this family actually puts out. Blade points
+  // radially outward, so the whole rim reads as foliage on a trunk.
+  //
+  // Colour carries the tasting, same as everywhere else: an untasted leaf is
+  // dormant foliage (the app's own vine green), a tasted one takes its
+  // aroma-group colour and grows longer. Deliberately NOT the dendrogram's grey
+  // for untasted - a wreath of grey leaves reads as dead rather than dormant -
+  // but the signal is identical: bigger and coloured means it's in your cup.
+  const leafLen = d => hasAnyEntry(d.leaf.data.noteId) ? 27 : 18;
+  const leafBlade = (len, wid) =>
+    `M0 0 C${(len * .28).toFixed(1)} ${-wid} ${(len * .72).toFixed(1)} ${-wid} ${len} 0`
+    + ` C${(len * .72).toFixed(1)} ${wid} ${(len * .28).toFixed(1)} ${wid} 0 0 Z`;
+  const blade = node.append("g")
+    .attr("class", "tx-leaf")
+    .attr("transform", d => `rotate(${(d.angle * 180 / Math.PI).toFixed(2)})`);
+  blade.append("path")
+    .attr("class", "tx-leaf-blade")
+    .attr("d", d => leafBlade(leafLen(d), hasAnyEntry(d.leaf.data.noteId) ? 9.5 : 6.5))
+    .attr("fill", d => hasAnyEntry(d.leaf.data.noteId)
+      ? groupColor(NOTE_BY_ID[d.leaf.data.noteId].group)
+      : "#41603c");
+  blade.append("path")
+    .attr("class", "tx-leaf-midrib")
+    .attr("d", d => `M0 0 L${(leafLen(d) - 3).toFixed(1)} 0`);
   node.append("text")
-    .attr("x", d => {
-      const c = Math.cos(d.angle);
-      return Math.abs(c) < .22 ? 0 : (c > 0 ? 13 : -13);
-    })
-    .attr("y", d => Math.sin(d.angle) < -.82 ? -14 : Math.sin(d.angle) > .82 ? 19 : 4)
+    // Pushed out past the leaf tip along its own radius, so the label clears the
+    // blade at every angle instead of only at the horizontal ones.
+    .attr("x", d => (Math.cos(d.angle) * (leafLen(d) + 9)).toFixed(1))
+    .attr("y", d => (Math.sin(d.angle) * (leafLen(d) + 9) + 4).toFixed(1))
     .attr("text-anchor", d => {
       const c = Math.cos(d.angle);
       return Math.abs(c) < .22 ? "middle" : (c > 0 ? "start" : "end");
     })
     .text(d => {
       const full = d.leaf.data.name;
-      const mobile = full.split(" / ")[0];
-      return `${noteIcon(d.leaf.data.noteId)} ${isMobileViewport() ? mobile : full}`;
+      // Drop the "/ alias" half on a small disc — "Peach / stonefruit" is the
+      // pair that overflows first. Keyed on disc size, not viewport.
+      return `${noteIcon(d.leaf.data.noteId)} ${compact ? full.split(" / ")[0] : full}`;
     });
   return true;
 }
