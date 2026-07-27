@@ -25,10 +25,26 @@ is always one click from the proof ("here's the actual exchange").
 ## Provenance
 
 These entries are reconstructed from the local Claude Code session transcripts for
-this project (14 sessions, **192 real prompts**, May 21 – Jun 12 2026), cross-checked
-against the git history so each session is tied to the commits, PRs, and tags it
-produced. Tool-result noise and interrupt markers were filtered out; the prompts
-themselves are verbatim. See [`TEMPLATE.md`](TEMPLATE.md) for the entry skeleton.
+this project, cross-checked against the git history so each session is tied to the
+commits, PRs, and tags it produced. Tool-result noise and interrupt markers were
+filtered out; the prompts themselves are verbatim. See [`TEMPLATE.md`](TEMPLATE.md)
+for the entry skeleton.
+
+**Current count (re-measured 2026-07-26): 26 sessions, 313 prompts, 17,220 words,
+2026-05-22 → 2026-07-27.**
+
+This replaces an earlier claim of *"14 sessions, 192 real prompts, May 21 – Jun 12
+2026,"* which had gone stale and was wrong in both directions: it overstated what
+was still verifiable from that window (only 5 of those sessions still have
+transcripts), and it understated the project, since 21 later sessions had no entry
+at all. Entries 14–37 close that gap.
+
+**[`PROVENANCE.md`](PROVENANCE.md) is required reading before citing any number
+here.** Not every entry is equally verifiable — the transcripts behind 12 of the
+13 original entries have since been deleted, so for those the file in
+[`raw/`](raw/) is no longer a receipt, it *is* the only record. That file defines
+the tiers, states the exact filter behind the counts so they can be re-derived,
+and names what is missing outright rather than estimating it.
 
 ---
 
