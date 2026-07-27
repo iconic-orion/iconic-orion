@@ -1690,6 +1690,10 @@
   .tx-node.tx-family circle { stroke: var(--accent); stroke-width: 1.5; }
   .tx-node.tx-family text { fill: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 2px; }
   .tx-node.tx-family:hover text { text-decoration-color: var(--accent); }
+  /* In the current tasting. Opaque emphasis only (brighter stroke + weight) —
+     the size and group-color of the dot itself carry the signal, set in JS. */
+  .tx-node.tx-tasted circle { stroke: var(--ink); stroke-width: 1.5; }
+  .tx-node.tx-tasted text { fill: var(--ink); font-weight: 600; }
   .tx-node.tx-dim text, .tx-node.tx-dim circle { opacity: 0.2; }
   .tx-node.tx-search-hit circle { stroke: var(--accent); stroke-width: 2; }
   /* Family detail page (taxonomy tree): the diagnostic sentence. */
@@ -7016,6 +7020,7 @@ function updateEdges() {
 //   intensity    : intensity_raw × threshold-tier perception multiplier
 //   confidence   : literature support — blend of (# active edges) and (peak active edge weight)
 let originsLoaded = false;  // set true once the Origins map has been built; declared early since recompute() below checks it
+let taxonomyTreeLoaded = false;  // same deal for the Tree — recompute() checks it, and INIT calls recompute() long before the tree code below is reached, so declaring it down there is a bootstrap-killing TDZ error
 
 function recompute() {
   compoundNodes.forEach(node => {
@@ -7096,6 +7101,13 @@ function recompute() {
   if (typeof renderCompass === "function") renderCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
+  // Keep the tree in step with the tasting, but only while it's the visible
+  // workspace: unlike refreshOriginMarkers (which just sets attributes), a
+  // tree render recomputes the whole d3 layout and measures the container, so
+  // running it on every slider tick from the wheel would be wasted work.
+  // Entering the tree always re-renders anyway (setWorkspace -> loadTaxonomyTree),
+  // so an off-screen tree can never go stale.
+  if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
   refreshGhostRows();
   announceResults();
 }
@@ -11101,7 +11113,7 @@ document.getElementById("origins-detail-close").addEventListener("click", () => 
 // pattern), not a pan/zoom map clone like Origins — 86 text-heavy leaf labels
 // would be illegible zoomed out far enough to fit a fixed canvas. The
 // container scrolls instead; expand/collapse is the "zoom level" control.
-let taxonomyTreeLoaded = false;
+// taxonomyTreeLoaded is declared up with originsLoaded, next to recompute().
 let taxTreeRoot = null;
 // TAX_DX widened from the original 22px now that labels render horizontally
 // instead of rotated — rotated text only needed sibling clearance for its
@@ -11116,6 +11128,14 @@ function countTaxonomyLeaves(d) {
   const kids = d.children || d._children;
   if (!kids) return 1;
   return kids.reduce((sum, k) => sum + countTaxonomyLeaves(k), 0);
+}
+// How many leaves under `d` are in the current tasting. Walks _children too,
+// so a collapsed Family still reports what's hidden inside it — otherwise
+// collapsing a branch would silently zero out its count.
+function countTastedLeaves(d) {
+  const kids = d.children || d._children;
+  if (!kids) return (d.data.noteId && hasAnyEntry(d.data.noteId)) ? 1 : 0;
+  return kids.reduce((sum, k) => sum + countTastedLeaves(k), 0);
 }
 function loadTaxonomyTree() {
   if (taxonomyTreeLoaded) { renderTaxonomyTree(); return; }
@@ -11362,12 +11382,34 @@ function renderTaxonomyTree() {
   // continuity between the tree and the rest of the app, per request.
   // Internal (Kingdom/Order/Family/bucket) nodes aren't real notes, so no
   // icon lookup applies to them.
-  const labelFor = d => d.data.noteId
-    ? `${noteIcon(d.data.noteId)} ${d.data.name}`
-    : `${d.data.name} (${countTaxonomyLeaves(d)})`;
+  // Internal nodes report how much of themselves you actually tasted, which is
+  // the whole point of wiring entries in here: it turns "Rutaceae (12)" — a
+  // fact about the dataset — into "Rutaceae (3 of 12 tasted)", a fact about
+  // YOUR cup. That's the answer to "which families does this tasting
+  // implicate," which is the question the tree's own caption ("Family is the
+  // chemistry clue") has always posed without being able to answer.
+  const labelFor = d => {
+    if (d.data.noteId) return `${noteIcon(d.data.noteId)} ${d.data.name}`;
+    const total = countTaxonomyLeaves(d);
+    const tasted = countTastedLeaves(d);
+    return tasted > 0 ? `${d.data.name} (${tasted} of ${total} tasted)`
+                      : `${d.data.name} (${total})`;
+  };
 
-  const nodeClass = d => d.data.noteId ? "tx-node tx-leaf"
-    : (TAXON_FAMILY_NAMES.has(d.data.name) ? "tx-node tx-internal tx-family" : "tx-node tx-internal");
+  // groupColor() reads a computed style off :root, so memoize per render —
+  // this runs once per leaf and there are ~120 of them.
+  const groupColorMemo = new Map();
+  const tastedLeafColor = noteId => {
+    const n = NOTE_BY_ID[noteId];
+    if (!n) return "var(--accent)";
+    if (!groupColorMemo.has(n.group)) groupColorMemo.set(n.group, groupColor(n.group));
+    return groupColorMemo.get(n.group);
+  };
+  const isTastedLeaf = d => !!d.data.noteId && hasAnyEntry(d.data.noteId);
+
+  const nodeClass = d => (d.data.noteId
+    ? `tx-node tx-leaf${isTastedLeaf(d) ? " tx-tasted" : ""}`
+    : (TAXON_FAMILY_NAMES.has(d.data.name) ? "tx-node tx-internal tx-family" : "tx-node tx-internal"));
   const node = svg.selectAll("g.tx-node").data(nodes, keyFor);
   const enter = node.enter().append("g")
     .attr("class", nodeClass)
@@ -11379,7 +11421,18 @@ function renderTaxonomyTree() {
   const merged = node.merge(enter);
   merged.attr("class", d => `${nodeClass(d)}${selectedPath.has(d) ? " tx-path" : ""}${d === selectedTarget ? " tx-selected" : ""}`);
   merged.attr("transform", d => `translate(${screenX(d)},${screenY(d)})`);
-  merged.select("circle").attr("fill", d => d._children ? "var(--accent)" : (d.children ? "var(--panel-2)" : "var(--ink-dim)"));
+  // A tasted leaf is bigger and carries its aroma-group color — the exact
+  // convention the Map already uses for "this note is in your tasting"
+  // (.origin-marker.active grows its dot; origin dots are group-colored), so
+  // the two geography/lineage workspaces now read the same way. Radius and hue
+  // are both unused channels here (fill = collapse state, stroke = family /
+  // path / selection, opacity = search dimming), and neither is alpha, so this
+  // adds no compositing layer to the wheel/tree/compass budget.
+  merged.select("circle")
+    .attr("r", d => isTastedLeaf(d) ? 8 : 5)
+    .attr("fill", d => d.data.noteId
+      ? (isTastedLeaf(d) ? tastedLeafColor(d.data.noteId) : "var(--ink-dim)")
+      : (d._children ? "var(--accent)" : (d.children ? "var(--panel-2)" : "var(--ink-dim)")));
   merged.select("text")
     .attr("x", 0)
     .attr("y", labelYFor)
