@@ -1732,6 +1732,23 @@
   #origins-detail-content .section-label { font-size: 10px; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--ink-dim); margin: 16px 0 4px; }
   #origins-detail-content .section-label:first-of-type { margin-top: 12px; }
+  /* Lineage section — the family bridge from taxonomy to geography. Opaque
+     throughout (no new translucent layers, per the layer budget); emphasis
+     comes from color and weight instead. */
+  #origins-detail-content .origin-lineage-path { font-size: 12px; line-height: 1.5;
+    color: var(--ink); margin: 0; }
+  #origins-detail-content .origin-lineage-note { font-size: 10.5px; line-height: 1.5;
+    color: var(--ink-dim); font-style: italic; margin: 6px 0 0; }
+  #origins-detail-content .origin-sibling-jump { background: none; border: 0;
+    padding: 3px 0; font: inherit; color: var(--accent); text-align: left;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  #origins-detail-content .origin-sibling-jump:hover { color: var(--ink); }
+  #origins-detail-content .origin-sibling-jump:focus-visible { outline: 2px solid var(--accent);
+    outline-offset: 2px; border-radius: 2px; }
+  /* Family member with no pin of its own — listed honestly, but visibly inert
+     so it never reads as a jump target that silently does nothing. */
+  #origins-detail-content .origin-sibling-nopin { font-style: italic; }
+  #origins-detail-content .origin-sibling-nopin::before { color: var(--ink-dim) !important; }
   #origins-detail-close {
     position: absolute; top: 4px; right: 4px;
     background: none; border: none; color: var(--ink-dim);
@@ -10627,6 +10644,72 @@ function openOriginDetail(note, origin) {
       list.appendChild(li);
     });
     content.append(label, list);
+  }
+
+  // Lineage -> geography, the last link of the thesis chain and the one this
+  // panel was missing: it had the note object in scope the whole time and
+  // never read `family`/`genus` off it. The family is the bridge - relatives
+  // often share aromatic pathways, which is why family is a chemistry clue.
+  // On the MAP the second half of that is the interesting part: where the
+  // relatives actually came from. Deliberately NOT claiming relatives share a
+  // geography (Rosaceae alone spans several continents); the sibling list just
+  // shows their real origins and lets the spread speak for itself.
+  // Pool is all of NOTES, not the visible set - subOf children are hidden from
+  // the wheel but are genuinely in the family, and pooling from the visible
+  // list is what crashed the wheel's equivalent section once before.
+  if (note.family) {
+    const siblings = notesWithFamily(note.family, NOTES).filter(m => m.id !== note.id);
+    const common = TAXON_COMMON[note.genus] || TAXON_COMMON[note.family] || "";
+
+    const lineageLabel = document.createElement("div");
+    lineageLabel.className = "section-label";
+    lineageLabel.textContent = "Lineage";
+
+    const pathLine = document.createElement("p");
+    pathLine.className = "origin-lineage-path";
+    const path = taxonPath(note).slice();
+    if (note.genus) path.push(note.genus);
+    pathLine.textContent = path.join(" › ") + (common ? ` — ${common}` : "");
+    content.append(lineageLabel, pathLine);
+
+    if (siblings.length) {
+      const framing = document.createElement("p");
+      framing.className = "origin-lineage-note";
+      framing.textContent = "Relatives often share aromatic pathways. Where each was first cultivated is a separate question — these are their own origins.";
+
+      const list = document.createElement("ul");
+      list.className = "origin-facts origin-lineage-siblings";
+      siblings.forEach(s => {
+        const li = document.createElement("li");
+        const sibOrigin = NOTE_ORIGINS[s.id];
+        if (sibOrigin) {
+          // Jump straight to the relative's own pin, so the family reads as a
+          // set of places rather than a list of names.
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "origin-sibling-jump";
+          btn.textContent = s.label;
+          btn.title = `Show ${s.label} on the map`;
+          btn.addEventListener("click", () => {
+            selectOriginNote(s.id);
+            openOriginDetail(s, sibOrigin);
+          });
+          li.append(btn, document.createTextNode(` · ${sibOrigin.region}`));
+        } else {
+          // In the family, but deliberately unplaced (generic/process notes
+          // carry no pin). Say so rather than omitting it or inventing a spot.
+          li.textContent = `${s.label} · no origin placed`;
+          li.className = "origin-sibling-nopin";
+        }
+        list.appendChild(li);
+      });
+      content.append(framing, list);
+    } else {
+      const p = document.createElement("p");
+      p.className = "no-source";
+      p.textContent = "No other note currently in the wheel shares this family.";
+      content.append(p);
+    }
   }
 
   const sourcesLabel = document.createElement("div");
