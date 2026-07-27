@@ -317,3 +317,28 @@ code paths, and drag masks this entire class of bug.
 
 - This follow-up remains Tree-only. It does not alter Claude's Map work or the
   untracked `.claude/session-handoff-thesis-systems.md` file.
+
+## Follow-up: note-centered zoom + one stable upward path (2026-07-27)
+
+- Changed family-leaf and rank-edge note activation from an aside-only update into
+  an explicit radial zoom. Clicking a flavor note now replaces the current disc with
+  a note-centered view carrying its real Family, Order, and Kingdom as named rings;
+  the existing note detail still updates in parallel.
+- Recast the single toolbar return control as consistent "up one level" navigation.
+  Its position does not move and its label follows the current scope:
+  `← Family` → `← Order` → `← Kingdom` → `← Full tree`.
+- The same path works with pointer and keyboard activation. Named lineage rings
+  remain available as direct shortcuts, but the toolbar now supplies one predictable
+  route instead of making users infer different return positions.
+- On compact phones, entering a note or family focus now leaves the detail sheet at
+  its peek state. The selected-note detail remains available by dragging the sheet
+  upward, while the wheel and all named rings stay unobstructed.
+- Verified Lemon leaf → note focus → Family → Order → Kingdom → full dendrogram at
+  1280 × 720. Verified Lemon leaf → note focus → Family at 360 × 760, including the
+  stationary toolbar position and peek-sheet behavior.
+
+### Coordination boundary
+
+- This pass remains scoped to Tree visualization/navigation. The concurrent
+  `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file were left untouched.
