@@ -777,6 +777,16 @@
   body.warp-active #svg { transform: translateY(-118vh) scale(1.18);
     transition: transform 760ms cubic-bezier(0.5,0,0.75,0.4); }
 
+  /* The strata overlay (z-index 300, opaque) fully covers all of these —
+     hiding them removes real compositing cost for zero visible loss, and
+     keeps the .prototype-watermark (z-index 100000) from punching through
+     the descent it has no reason to be visible during. */
+  body.warp-active header,
+  body.warp-active .tasting-tray,
+  body.warp-active #deeper-vines,
+  body.warp-active .prototype-watermark,
+  body.warp-active::before { opacity: 0; transition: opacity 150ms ease-out; }
+
   /* "Descent into the canopy" transition on Go Deeper switching on
      (playDeeperWarp()). Five rings, each a circle far bigger than any
      viewport, parked at scale(0.015) (a pinprick) and animated up to
@@ -810,21 +820,23 @@
   .warp-layer + .warp-layer::before { content: ""; position: absolute;
     left: 0; right: 0; top: 0; height: 1px;
     background: rgba(0,0,0,0.35); box-shadow: 0 1px 6px rgba(0,0,0,0.3); }
-  /* canopy — gold sun through green leaves, where the wheel just left */
+  /* canopy — gold sun through green leaves, where the wheel just left.
+     Stops are opaque, not translucent: the descent's color story lives in the
+     hues, not in seeing through to whatever else is compositing underneath. */
   .warp-layer-1 { background: linear-gradient(180deg,
-      rgba(216,166,87,0.62) 0%, rgba(168,190,110,0.7) 45%, rgba(127,194,117,0.78) 100%); }
+      #d8a657 0%, #a8be6e 45%, #7fc275 100%); }
   /* understory green */
   .warp-layer-2 { background: linear-gradient(180deg,
-      rgba(127,194,117,0.86) 0%, rgba(90,156,79,0.88) 50%, rgba(64,116,58,0.92) 100%); }
+      #7fc275 0%, #5a9c4f 50%, #40743a 100%); }
   /* bark / trunk */
   .warp-layer-3 { background: linear-gradient(180deg,
-      rgba(64,116,58,0.92) 0%, rgba(150,126,72,0.94) 40%, rgba(107,78,46,0.96) 100%); }
+      #40743a 0%, #967e48 40%, #6b4e2e 100%); }
   /* root tangle */
   .warp-layer-4 { background: linear-gradient(180deg,
-      rgba(107,78,46,0.96) 0%, rgba(74,54,32,0.97) 50%, rgba(40,30,18,0.98) 100%); }
+      #6b4e2e 0%, #4a3620 50%, #281e12 100%); }
   /* deep soil — the blackout that lands the mode switch */
   .warp-layer-5 { background: linear-gradient(180deg,
-      rgba(40,30,18,0.98) 0%, rgba(15,12,9,0.99) 45%, #000 80%, #000 100%); }
+      #281e12 0%, #0f0c09 45%, #000 80%, #000 100%); }
   .warp-roots { position: absolute; inset: 0; width: 100%; height: 100%; }
 
   /* ---- Go Deeper "vines" (ecobrutalism: the hard UI stays, the plant breaks
@@ -854,12 +866,15 @@
     filter: drop-shadow(0 0 5px rgba(217,196,135,.9)) drop-shadow(0 0 12px rgba(127,194,117,.55));
     transform: scale(1.08); }
 
+  /* Opaque plate, not a frosted one: the background gradient was already
+     ~90% opaque, so the backdrop-filter blur it carried was doing almost no
+     legibility work relative to its layer cost — dropped rather than tuned. */
   .depth-card { position: fixed; left: calc(var(--notes-pane-w) + 32px); bottom: 28px; z-index: 180;
     width: min(370px, calc(100% - 112px)); padding: 17px 18px 15px; overflow: hidden;
-    border: 1px solid rgba(151,205,174,.34); border-radius: 17px;
-    background: linear-gradient(145deg, rgba(15,25,23,.92), rgba(24,25,28,.9));
+    border: 1px solid #405448; border-radius: 17px;
+    background: linear-gradient(145deg, #0f1917, #18191c);
     box-shadow: 0 18px 55px rgba(0,0,0,.52), inset 0 1px rgba(255,255,255,.055);
-    backdrop-filter: blur(18px) saturate(1.12); transform-origin: left bottom;
+    transform-origin: left bottom;
     animation: depth-card-in .28s cubic-bezier(.2,.85,.25,1) both; }
   .depth-card[hidden] { display: none; }
   .depth-card::before { content:""; position:absolute; inset:-80% -45%; pointer-events:none;
@@ -1530,9 +1545,17 @@
     body.nudge-active #callout-toggle,
     body.nudge-active #aroma-compass { display: none; }
 
+    /* An expanded lap ribbon shows each layer's note count + delivery
+       conditions and can grow past its collapsed ~38px height — same
+       overlap risk as the nudge above, same fix: yield the band while it's
+       open rather than trying to guess a tall-enough static offset. */
+    .lap-rail.laps-open ~ #callout-toggle,
+    .lap-rail.laps-open ~ .wheel-hint { display: none; }
+
     /* Drop the context hint below the top-left "Show compound labels" toggle
-       (which is mobile-only) so the two never overlap; widen it to the wheel. */
-    .wheel-hint { top: 44px; max-width: calc(100% - 20px); }
+       (which is mobile-only, now at top:50px to clear the lap-rail ribbon above
+       it) so the two never overlap; widen it to the wheel. */
+    .wheel-hint { top: 78px; max-width: calc(100% - 20px); }
 
     /* The floating dots' labels (compound names in scent mode, note names in
        chemistry mode) are too long for a phone-width wheel and pile up
@@ -1577,10 +1600,12 @@
     body.organize-chemistry text.group-arc-label { display: none; }
 
     /* "Show compound labels" callout toggle: small control pinned to the top-left
-       of the wheel pane. Only renders on mobile where floating dot labels are hidden. */
+       of the wheel pane. Only renders on mobile where floating dot labels are hidden.
+       top:50px clears the lap-rail ribbon docked at top:6px (collapsed height ~38px) —
+       see the .lap-rail mobile rule below; the two were colliding at top:10px. */
     #callout-toggle {
       display: flex; align-items: center; gap: 5px;
-      position: absolute; top: 10px; left: 10px; z-index: 5;
+      position: absolute; top: 50px; left: 10px; z-index: 5;
       padding: 4px 8px;
       background: rgba(29, 27, 23, 0.55);
       border: 1px solid rgba(205, 200, 190, 0.22);
@@ -1955,8 +1980,14 @@
 
   @media (max-width: 760px) {
     :root { --bg: #0b0d0f; --panel: #12161a; --panel-2: #192025;
-      --ink: #f1eee7; --ink-dim: #9ba39f; --line: rgba(210, 226, 218, .12);
+      --ink: #f1eee7; --ink-dim: #9ba39f;
+      /* Opaque flatten of the old rgba(210,226,218,.12) against --bg — this was
+         the border color for nearly every element below 760px, so its alpha
+         was the single biggest contributor to mobile layer-stacking cost. */
+      --line: #232727;
       --accent: #d9b878; --accent-2: #83b8aa; }
+    html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+    body > header, body > main, body > aside, body > footer { min-width: 0; width: 100%; }
     body:not(.origins-mode):not(.taxonomy-mode) {
       grid-template-rows: auto 43svh auto;
       background: linear-gradient(180deg, #0a0d0f 0, #101519 52%, #0c1012 100%); }
@@ -2015,55 +2046,12 @@
     .mobile-sheet-readout { text-align: center; margin-top: 8px; color: var(--ink-dim); font-size: 11px; }
     .mobile-sheet-readout strong { color: var(--accent); font: 400 28px Georgia, serif; margin-right: 5px; }
     body.mobile-sheet-open #tasting-tray { opacity: 0; pointer-events: none; }
-  }
-  /* Mobile sensory study: atmosphere plus a stable thumb controller. */
-  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background: radial-gradient(circle at 78% 12%, rgba(121,174,160,.08), transparent 30%), radial-gradient(circle at 12% 70%, rgba(216,166,87,.055), transparent 34%); }
-  body > * { position: relative; }
-  header h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; letter-spacing: .075em; }
-  .mobile-scent-nav, .mobile-note-sheet { display: none; }
-  @media (max-width: 760px) {
-    :root { --bg:#0b0d0f; --panel:#12161a; --panel-2:#192025; --ink:#f1eee7; --ink-dim:#9ba39f; --line:rgba(210,226,218,.12); --accent:#d9b878; --accent-2:#83b8aa; }
-    html,body { width:100%; max-width:100%; overflow-x:hidden; }
-    body > header, body > main, body > aside, body > footer { min-width:0; width:100%; }
-    body:not(.origins-mode):not(.taxonomy-mode) { grid-template-rows:auto 43svh auto; background:linear-gradient(180deg,#0a0d0f 0,#101519 52%,#0c1012 100%); }
-    header { min-height:52px; padding-left:16px; border-color:rgba(214,230,222,.1); }
-    header h1 { font-size:16px; }
-    main.wheel { background:radial-gradient(circle at 50% 45%,rgba(110,189,171,.08),transparent 32%),radial-gradient(circle at 50% 50%,transparent 46%,rgba(216,166,87,.035) 70%,transparent 71%); }
-    aside.notes { padding:12px 12px 112px; background:rgba(15,19,22,.94); }
-    .wais-open-btn,.notes-search { min-height:46px; border-radius:14px; }
-    .notes-search { padding-left:15px; }
-    .mobile-scent-nav { display:flex; position:sticky; top:52px; z-index:45; gap:7px; overflow-x:auto; margin:0 -12px 10px; padding:10px 12px; scrollbar-width:none; background:linear-gradient(180deg,rgba(15,19,22,.98),rgba(15,19,22,.88)); backdrop-filter:blur(14px); }
-    .mobile-scent-nav::-webkit-scrollbar { display:none; }
-    .mobile-scent-nav button { flex:0 0 auto; min-height:38px; padding:0 13px; color:var(--ink-dim); background:rgba(255,255,255,.025); border:1px solid var(--line); border-radius:999px; font:600 10px/1 ui-sans-serif,system-ui; letter-spacing:.07em; text-transform:uppercase; }
-    .mobile-scent-nav button:active { color:var(--ink); border-color:var(--accent); }
-    .group-header { margin:17px 2px 8px; letter-spacing:.13em; }
-    .note-row { min-height:68px; margin:0 0 7px; padding:10px 11px; border:1px solid rgba(215,230,222,.075); border-radius:15px; background:linear-gradient(135deg,rgba(255,255,255,.032),rgba(255,255,255,.012)); }
-    .note-row:hover,.note-row:focus-within { border-color:rgba(217,184,120,.32); }
-    .note-row .note-label-text { font-size:13px; }
-    .note-row input[type=range] { width:min(58%,190px); min-height:28px; touch-action:pan-y; }
-    .note-row input[type=range]::-webkit-slider-thumb { width:24px; height:24px; margin-top:-10px; }
-    .note-row .val { width:34px; height:30px; border-radius:8px; }
-    #tasting-tray { bottom:10px !important; min-height:54px; border-radius:18px; padding:8px 10px; background:rgba(17,22,25,.86); border-color:rgba(217,184,120,.25); box-shadow:0 12px 38px rgba(0,0,0,.48); backdrop-filter:blur(18px); }
-    .tray-chip { min-height:36px; border-radius:11px; }
-    .mobile-note-sheet { display:block; position:fixed; left:8px; right:8px; bottom:calc(8px + env(safe-area-inset-bottom)); z-index:180; padding:14px; border:1px solid rgba(217,184,120,.3); border-radius:24px; background:rgba(16,21,24,.94); box-shadow:0 24px 70px rgba(0,0,0,.68); backdrop-filter:blur(24px) saturate(1.15); transform:translateY(calc(100% + 24px)); opacity:0; pointer-events:none; transition:transform .28s cubic-bezier(.22,.8,.25,1),opacity .2s; }
-    .mobile-note-sheet.open { transform:translateY(0); opacity:1; pointer-events:auto; }
-    .mobile-sheet-head { display:grid; grid-template-columns:1fr 44px; align-items:center; gap:8px; }
-    .mobile-sheet-kicker { color:var(--accent-2); text-transform:uppercase; letter-spacing:.14em; font-size:9px; margin-bottom:4px; }
-    .mobile-sheet-title { font:400 20px/1.2 Georgia,serif; }
-    .mobile-sheet-close { width:44px; height:44px; border-radius:50%; border:1px solid var(--line); background:rgba(255,255,255,.035); color:var(--ink); font-size:20px; }
-    .mobile-sheet-control { display:grid; grid-template-columns:48px 1fr 48px; gap:10px; align-items:center; margin-top:15px; }
-    .mobile-sheet-control button { height:48px; border-radius:15px; border:1px solid var(--line); color:var(--ink); background:rgba(255,255,255,.04); font-size:22px; }
-    #mobile-sheet-range { width:100%; accent-color:var(--accent); touch-action:none; }
-    .mobile-sheet-readout { text-align:center; margin-top:8px; color:var(--ink-dim); font-size:11px; }
-    .mobile-sheet-readout strong { color:var(--accent); font:400 28px Georgia,serif; margin-right:5px; }
-    body.mobile-sheet-open #tasting-tray { opacity:0; pointer-events:none; }
     /* Keep the maker's signature continuously present in portrait without
        competing with the bottom tasting tray or thumb controller. */
-    .site-footer { position:fixed; top:19px; right:58px; bottom:auto; left:auto;
-      z-index:101; width:auto !important; padding:0; border:0; background:transparent;
-      color:rgba(241,238,231,.48); font:400 9px/1 Georgia,"Times New Roman",serif;
-      letter-spacing:.055em; pointer-events:none; }
+    .site-footer { position: fixed; top: 19px; right: 58px; bottom: auto; left: auto;
+      z-index: 101; width: auto !important; padding: 0; border: 0; background: transparent;
+      color: rgba(241,238,231,.48); font: 400 9px/1 Georgia,"Times New Roman",serif;
+      letter-spacing: .055em; pointer-events: none; }
   }
 
   /* Lap rail — the tasting stopwatch. A narrow column pinned to the right edge
