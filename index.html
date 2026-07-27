@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -171,7 +171,7 @@
      unclickable for a while. This rule's own comment still read "Wheel | Map"
      — written when two buttons fit — and once Tree became the third, header
      compression clipped the group to 155px of a needed 217px at 1280px. Tree
-     rendered at x438-507 while the clip ended at 447, so its centre fell
+     rendered at x438-507 while the clip ended at 447, so its center fell
      outside and it never hit-tested. The no-shrink protection now lives on
      `.tabs` (see above), which covers this group and its siblings alike. */
   .workspace-tabs { border-color: var(--accent); }
@@ -1665,7 +1665,7 @@
   body.origins-mode aside.detail,
   body.origins-mode .pane-toggle { display: none !important; }
   body.origins-mode { grid-template-columns: 1fr; }
-  /* Wheel-only controls don't do anything on the map, so they're greyed out
+  /* Wheel-only controls don't do anything on the map, so they're grayed out
      (not hidden) as a signal they're inert here rather than missing. The
      workspace switch itself stays live — it's how you get back to the wheel. */
   body.origins-mode #view-tabs,
@@ -1757,7 +1757,7 @@
   .tx-wreath-center-meta { fill: var(--ink-dim); font-size: 10px; text-anchor: middle; }
   .tx-wreath-node { cursor: pointer; }
   .tx-leaf-blade { stroke: var(--bg); stroke-width: 1.25; stroke-linejoin: round; }
-  /* Midrib reads the leaf as a leaf rather than a petal. Dark on a coloured
+  /* Midrib reads the leaf as a leaf rather than a petal. Dark on a colored
      blade, so it holds up against every aroma-group hue. */
   .tx-leaf-midrib { stroke: rgba(12,16,12,.55); stroke-width: 1; fill: none; }
   .tx-wreath-node text {
@@ -1768,7 +1768,7 @@
   .tx-wreath-node:focus .tx-leaf-blade,
   .tx-wreath-node:hover .tx-leaf-blade { stroke: var(--accent); stroke-width: 2.5; }
   .tx-wreath-node.selected .tx-leaf-blade { stroke: var(--ink); stroke-width: 2.5; }
-  /* A centred disc plus a label on both flanks cannot fit a small disc at
+  /* A centered disc plus a label on both flanks cannot fit a small disc at
      desktop type size — measured, the widest ("🍋 Meyer lemon") ran 100px and
      overshot the viewBox by 11. Dropping ~1.5px of type buys back ~14px, which
      clears it without shrinking the disc into uselessness.
@@ -2060,16 +2060,16 @@
   #origins-reset-view:hover { border-color: var(--accent); color: var(--accent); }
   /* Sits directly under Reset view, same visual weight — both are map-view
      actions rather than data controls. */
-  #compass-centre-notes {
+  #compass-center-notes {
     position: absolute; top: 42px; right: 10px; z-index: 5;
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer;
     white-space: nowrap;
   }
-  #compass-centre-notes[hidden] { display: none; }
-  #compass-centre-notes:hover { border-color: var(--accent-2); color: var(--accent-2); }
-  #compass-centre-notes:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
-  #compass-centre-notes:disabled { opacity: 1; color: var(--ink-dim); border-color: var(--line);
+  #compass-center-notes[hidden] { display: none; }
+  #compass-center-notes:hover { border-color: var(--accent-2); color: var(--accent-2); }
+  #compass-center-notes:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  #compass-center-notes:disabled { opacity: 1; color: var(--ink-dim); border-color: var(--line);
     cursor: default; }
 
   #origins-map-controls {
@@ -2491,10 +2491,10 @@
       backdrop-filter: blur(3px); z-index: 40; }
     .lap-rail-head { flex: 0 0 auto; }
     #lap-save { font-size: 10px; padding: 5px 7px; white-space: nowrap; min-height: 30px; }
-    /* align-items:center is load-bearing. The rail centres the stack, so the
+    /* align-items:center is load-bearing. The rail centers the stack, so the
        stack sizes to its content; with the default `stretch` the chips then try
        to fill a container whose height is derived from them, and every chip
-       collapses to 0px. Centring makes chips size to their own content instead. */
+       collapses to 0px. Centering makes chips size to their own content instead. */
     .lap-stack { flex-direction: row; align-items: center; gap: 5px;
       max-height: none; overflow-x: auto; overflow-y: hidden; flex: 1; }
     .lap-chip { width: auto; flex: 0 0 auto; min-width: 78px;
@@ -2503,7 +2503,7 @@
     .lap-chip-cond { max-width: 96px; }
     /* Hidden on phones: the empty-state sentence made the no-laps strip TALLER
        (50px) than the populated collapsed one (40px), spending wheel space to
-       explain a button already labelled "＋ Save lap". */
+       explain a button already labeled "＋ Save lap". */
     .lap-empty { display: none; }
 
     /* Ribbon. Collapsed, a chip is just its number — the strip costs one row
@@ -2672,7 +2672,7 @@
        side" means the wheel's right edge — a viewport-fixed rail sat on top of the
        detail panel whenever it opened.
        Selecting a lap PREVIEWS it and never overwrites live work; branching is a
-       separate, labelled action. -->
+       separate, labeled action. -->
   <div id="lap-rail" class="lap-rail" aria-label="Tasting laps">
     <div class="lap-rail-head">
       <button type="button" id="lap-save" title="Freeze the current notes and conditions as a lap">＋ Save lap</button>
@@ -2853,13 +2853,13 @@
         <span id="origins-search-count"></span>
       </div>
       <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
-      <!-- Drops the bearing compass on the geographic centre of your tasting —
+      <!-- Drops the bearing compass on the geographic center of your tasting —
            the point its notes fan out from evenly. Lives out here rather than
            inside the compass because the compass is itself a <button> and
            cannot nest one. Only meaningful in the Origin lens, so it hides with
            the compass. -->
-      <button type="button" id="compass-centre-notes" hidden
-        title="Move the compass to the geographic centre of your tasting notes">◎ Centre on notes</button>
+      <button type="button" id="compass-center-notes" hidden
+        title="Move the compass to the geographic center of your tasting notes">◎ Center on notes</button>
       <div id="origins-map-controls">
         <div class="omc-pan">
           <button type="button" id="pan-up" aria-label="Pan up" title="Pan up">&#9650;</button>
@@ -3829,14 +3829,14 @@ const COMPOUND_CLASS_COLOR = {
   "aldehyde":          "#6ebdab",  // aqua
   "ketone":            "#ee665e",  // red
   "norisoprenoid":     "#d57bb4",  // orchid (was pale pink) — β-ionone is violet-scented
-  "phenol":            "#6096c3",  // blue (was grey) — smoky-medicinal
+  "phenol":            "#6096c3",  // blue (was gray) — smoky-medicinal
   "alcohol":           "#a584c2",  // soft purple (was sand) — earthy/mushroom
   "phenylpropene":     "#8fb56a",  // herb-green — anise/clove phenylpropanoids
   "pyranone":          "#d98f5c",  // caramel — maltol sweet Maillard ring
   "pyrroline":         "#c2693f",  // roast brown — 2-acetyl-1-pyrroline
   "acid":              "#9aa63d",  // olive — short-chain fatty acids (cheese)
   "haloanisole":       "#7d8a99",  // slate — musty chloroanisole faults
-  "sulfide":           "#5e9e8f",  // teal-grey — distinct from thiol (R-S-R, not R-SH); malt/cooked-vegetable
+  "sulfide":           "#5e9e8f",  // teal-gray — distinct from thiol (R-S-R, not R-SH); malt/cooked-vegetable
   "thiazole":          "#4a7a8c",  // steel-teal — tomato's 2-isobutylthiazole
   "isothiocyanate":    "#9c4a4a",  // brick red — mustard-oil pungency (wasabi, horseradish, cabbage family)
   "furanone":          "#b8860b"   // goldenrod — caramel-like furanone ring (HEMF), distinct from pyranone's maltol
@@ -4830,7 +4830,7 @@ const DELIVERY_CONDITIONS = [
     options: [
       { id: "sniff",  label: "Sniffed first", effect: "Orthonasal — you met the aroma before the liquid. Closest to how perfume is evaluated." },
       { id: "normal", label: "Normal sip",    effect: "A mix of both routes, whatever your breathing happened to do." },
-      { id: "exhale", label: "Deliberate exhale", effect: "Retronasal on purpose — the post-swallow breath out, where most of what people call flavour actually lives." },
+      { id: "exhale", label: "Deliberate exhale", effect: "Retronasal on purpose — the post-swallow breath out, where most of what people call flavor actually lives." },
       { id: "held",   label: "Breath held",   effect: "Little to no retronasal delivery. The compounds were there; the airflow that carries them was not. Not a mistake — just a condition worth recording." }
     ]
   }
@@ -6559,7 +6559,7 @@ function hasAnyActiveFloat() { return floatNodes().some(n => (n.score || 0) > 0)
 // instead of the old perpetual gentle simmer. Both the alphaTarget decision
 // below and the per-tick driftForce() consult this one predicate so they never
 // disagree. (Once user-toggleable via a "Freeze aroma bubbles" checkbox and a
-// reading-mode toggle; those options were removed in favour of the calm
+// reading-mode toggle; those options were removed in favor of the calm
 // default, leaving the drift/simmer path below dormant but intact.)
 function bubblesFrozen() { return state.readingMode; }
 function applyFreezeMode() {
@@ -9300,7 +9300,7 @@ function returnToLive() {
 
 // Branch: the previewed lap becomes the live tasting. The stash is dropped, so
 // this is the one path that discards unsaved work — and it takes an explicit
-// click on a labelled button to get here.
+// click on a labeled button to get here.
 function continueFromLap() {
   _liveStash = null;
   state.previewingLap = null;
@@ -9619,7 +9619,7 @@ document.getElementById("godeeper-toggle").addEventListener("click", () => {
 // bubblesFrozen(), which stays true because state.readingMode is pinned on in
 // the state defaults). This replaced a settings gear that held three opt-in
 // controls — a reading-mode toggle, a "freeze aroma bubbles" checkbox, and a
-// device-motion "jiggle" — all dropped in favour of just making the good state
+// device-motion "jiggle" — all dropped in favor of just making the good state
 // THE experience. state.readingMode remains the single flag the sim and CSS
 // read; it is simply never turned off. The body class + font are applied once
 // at init (end of script), where the sim and layout groups are ready.
@@ -10171,7 +10171,7 @@ function renderHowToUse() {
 
     <h3 id="use-views">Two views of the same thing</h3>
     <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail; click a note for its inverse — the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
-    <p>The <strong>Compounds pane</strong> (grey panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
+    <p>The <strong>Compounds pane</strong> (gray panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
     <p>The header's <strong>Organize</strong> toggle decides what the ring is built from: two views of the same note-to-compound web. The scoring never changes; only the layout and coloring do.</p>
@@ -10184,7 +10184,7 @@ function renderHowToUse() {
     <ul>
       <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
       <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
-      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated; <em>Tree</em> shows every note by real plant, fungus, animal, or process taxonomy. Wheel-only controls grey out when they do not apply.</li>
+      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated; <em>Tree</em> shows every note by real plant, fungus, animal, or process taxonomy. Wheel-only controls gray out when they do not apply.</li>
       <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel (the default). <em>Notes + Results</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
       <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
       <li><strong>Compass (header).</strong> Pops up a small draggable, resizable radar (drag its corner handle to scale everything proportionally) — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class (pick which via the dropdown) — that last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
@@ -10730,15 +10730,21 @@ function initialBearingDegrees(a, b) {
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function mapCompassTastingItems() {
+// Every note in the current tasting that has a mapped origin, strongest first.
+// Split out from mapCompassTastingItems so the compass's 8-mark display cap
+// doesn't silently become the sample the geography stats are computed from.
+function placedTastingNotes() {
   return NOTES.map(note => ({
     note,
     origin: NOTE_ORIGINS[note.id],
     total: INPUT_PHASES.reduce((sum, phase) => sum + (getEntry(note.id, phase) || 0), 0),
   }))
     .filter(item => item.origin && item.total > 0)
-    .sort((a, b) => b.total - a.total || a.note.label.localeCompare(b.note.label))
-    .slice(0, 8);
+    .sort((a, b) => b.total - a.total || a.note.label.localeCompare(b.note.label));
+}
+
+function mapCompassTastingItems() {
+  return placedTastingNotes().slice(0, 8);
 }
 
 function setMapCompassPosition(left, top) {
@@ -10795,17 +10801,17 @@ function compassCardinal(bearing) {
   return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(bearing / 45) % 8];
 }
 
-// Geographic centre of the notes the compass is currently pointing at — the
+// Geographic center of the notes the compass is currently pointing at — the
 // point they fan out from evenly.
 //
 // NOT a mean of lat/lon. Averaging longitude is wrong on a sphere: notes at
 // +170 and -170 are neighbours across the dateline, but their arithmetic mean
 // is 0, the opposite side of the planet. Correct method is the vector mean —
-// put every point on the unit sphere, average the 3D vectors, renormalise. Same
+// put every point on the unit sphere, average the 3D vectors, renormalize. Same
 // lat/lon-to-vector idiom as greatCircleMapPoints() above.
 //
 // Unweighted by intensity on purpose: this answers "where are my notes from,"
-// not "where is my palate weighted," and a centre that shifted when you nudged
+// not "where is my palate weighted," and a center that shifted when you nudged
 // a slider would be much harder to read.
 function tastingGeoCentroid(items) {
   if (!items || !items.length) return null;
@@ -10819,7 +10825,7 @@ function tastingGeoCentroid(items) {
   });
   x /= items.length; y /= items.length; z /= items.length;
   // Near-zero resultant means the points are spread so evenly (or so close to
-  // antipodal) that no centre is meaningful — e.g. two notes on opposite sides
+  // antipodal) that no center is meaningful — e.g. two notes on opposite sides
   // of the globe have a whole great circle of equally-valid midpoints. Say so
   // rather than picking one and implying it means something.
   const mag = Math.hypot(x, y, z);
@@ -10851,40 +10857,171 @@ function moveCompassToGeo(geo) {
   renderMapBearingCompass();
 }
 
-function centreCompassOnTasting() {
+// Eased fly-to. Interpolates the view's CENTER linearly but its width
+// GEOMETRICALLY (w = from * ratio^t): zoom is multiplicative, so a linear tween
+// on width starts fast and crawls at the end. Honors prefers-reduced-motion by
+// jumping straight to the destination — the point is arriving there, and this
+// app already gates its other motion the same way.
+function flyMapTo(target, onFrame, onDone) {
+  const from = { x: mapView.x, y: mapView.y, w: mapView.w, h: mapView.h };
+  const land = () => {
+    Object.assign(mapView, target);
+    applyMapView(); onFrame && onFrame(); onDone && onDone();
+  };
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return land();
+
+  const fromCx = from.x + from.w / 2, fromCy = from.y + from.h / 2;
+  const toCx = target.x + target.w / 2, toCy = target.y + target.h / 2;
+  const ratio = target.w / from.w;
+  const DURATION = 720;
+  const ease = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const start = performance.now();
+
+  // requestAnimationFrame does not fire while the tab is backgrounded or
+  // otherwise not compositing. Without a fallback the tween stalls on its first
+  // frame forever: no zoom, no panel, and the compass stranded mid-flight.
+  // The timer guarantees we always ARRIVE — whether or not anyone watched.
+  let landed = false;
+  const finish = () => { if (landed) return; landed = true; land(); };
+  const safety = setTimeout(finish, DURATION + 120);
+
+  (function step(now) {
+    if (landed) return;
+    const p = Math.min(1, (now - start) / DURATION);
+    if (p >= 1) { clearTimeout(safety); return finish(); }
+    const e = ease(p);
+    const w = from.w * Math.pow(ratio, e);
+    const h = w * (from.h / from.w);
+    mapView.w = w; mapView.h = h;
+    mapView.x = (fromCx + (toCx - fromCx) * e) - w / 2;
+    mapView.y = (fromCy + (toCy - fromCy) * e) - h / 2;
+    applyMapView();
+    onFrame && onFrame();
+    requestAnimationFrame(step);
+  })(start);
+}
+
+// Spread of a tasting around its centroid. Radius is the farthest single note;
+// span is the true diameter (widest pair), which is the more honest "how far
+// apart is this record" number — two notes on opposite sides of the centroid
+// are twice as far from each other as either is from the middle.
+function tastingGeoSpread(items, centroid) {
+  let radiusKm = 0, farthest = null;
+  items.forEach(it => {
+    const d = greatCircleDistanceKm(centroid, it.origin);
+    if (d > radiusKm) { radiusKm = d; farthest = it.note.label; }
+  });
+  let spanKm = 0, pair = null;
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const d = greatCircleDistanceKm(items[i].origin, items[j].origin);
+      if (d > spanKm) { spanKm = d; pair = [items[i].note.label, items[j].note.label]; }
+    }
+  }
+  // Counted from the origin records themselves, never inferred from
+  // coordinates. A lat/lon-to-continent classifier would be guessing at exactly
+  // the cases that are genuinely contested (Turkey, Egypt, the Caucasus), and a
+  // guess dressed as a count is the failure mode this project keeps catching.
+  const regions = new Set(items.map(i => i.origin.region).filter(Boolean));
+  const countries = new Set(items.map(i => i.origin.country).filter(Boolean));
+  return { radiusKm, farthest, spanKm, pair, regions: regions.size, countries: countries.size };
+}
+
+function openTastingGeographyPanel(items, centroid, spread, totalPlaced) {
+  const panel = document.getElementById("origins-detail-panel");
+  const content = document.getElementById("origins-detail-content");
+  content.innerHTML = "";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = "Where this tasting comes from";
+  const where = document.createElement("p");
+  where.className = "origin-region";
+  const latL = `${Math.abs(centroid.lat).toFixed(1)}°${centroid.lat >= 0 ? "N" : "S"}`;
+  const lonL = `${Math.abs(centroid.lon).toFixed(1)}°${centroid.lon >= 0 ? "E" : "W"}`;
+  where.textContent = `Geographic center · ${latL}, ${lonL}`;
+  content.append(h3, where);
+
+  const label = document.createElement("div");
+  label.className = "section-label";
+  label.textContent = "Spread";
+  const list = document.createElement("ul");
+  list.className = "origin-facts";
+  const km = n => `${Math.round(n).toLocaleString()} km`;
+  [
+    `${km(spread.radiusKm)} radius — ${spread.farthest} is the farthest note from the center.`,
+    spread.pair ? `${km(spread.spanKm)} across at its widest, between ${spread.pair[0]} and ${spread.pair[1]}.` : null,
+    `${spread.regions} distinct origin region${spread.regions === 1 ? "" : "s"}${
+      spread.countries ? ` across ${spread.countries} recorded ${spread.countries === 1 ? "country" : "countries"}` : ""}.`,
+    totalPlaced > items.length
+      ? `Centered on the ${items.length} strongest of your ${totalPlaced} placed notes.`
+      : `${items.length} placed note${items.length === 1 ? "" : "s"} in this record.`,
+    "Center is a vector mean on the sphere, so it stays correct across the dateline. Distances are great-circle between origin anchors, not travel or trade routes.",
+  ].filter(Boolean).forEach(t => {
+    const li = document.createElement("li");
+    li.textContent = t;
+    list.appendChild(li);
+  });
+  content.append(label, list);
+  panel.hidden = false;
+}
+
+function centerCompassOnTasting() {
   const items = mapCompassTastingItems();
   const centroid = tastingGeoCentroid(items);
-  const btn = document.getElementById("compass-centre-notes");
+  const btn = document.getElementById("compass-center-notes");
   if (!centroid) {
-    // Honest empty state: no notes placed, or no meaningful centre exists.
+    // Honest empty state: no notes placed, or no meaningful center exists.
     if (btn) btn.title = items.length
-      ? "These notes have no meaningful centre — they're spread near-antipodally."
+      ? "These notes have no meaningful center — they're spread near-antipodally."
       : "Add tasting notes with a mapped origin first.";
     return;
   }
-  moveCompassToGeo(centroid);
+
+  const spread = tastingGeoSpread(items, centroid);
+  const totalPlaced = placedTastingNotes().length;
+
+  // Fly in to ~5x. Fixed rather than fitted to the spread: fitting a globe-wide
+  // tasting would mean "zooming" to the view you already had, which reads as
+  // the button doing nothing. The panel carries the spread instead.
+  const [tx, ty] = latLonToXY(centroid.lat, centroid.lon);
+  const w = Math.max(MAP_MIN_W, SVG_W / 5);
+  const h = w * (SVG_H / SVG_W);
+  flyMapTo(
+    { x: tx - w / 2, y: ty - h / 2, w, h },
+    // Re-pin every frame: the compass is positioned in SCREEN space, so without
+    // this it would drift off the centroid as the map scales under it.
+    () => moveCompassToGeo(centroid),
+    () => {
+      // Order matters. Opening the panel resizes the map container, and the
+      // compass is positioned in SCREEN space — so a position that pointed at
+      // the centroid before the panel opened points somewhere else after it
+      // (measured: 8.35° of longitude out). Re-pin AFTER the panel is up;
+      // moveCompassToGeo reads geometry, which forces the reflow first.
+      openTastingGeographyPanel(items, centroid, spread, totalPlaced);
+      moveCompassToGeo(centroid);
+    });
 }
 
 function renderMapBearingCompass() {
   const compass = document.getElementById("map-bearing-compass");
-  const centreBtn = document.getElementById("compass-centre-notes");
+  const centerBtn = document.getElementById("compass-center-notes");
   const active = document.body.classList.contains("origins-mode") && state.geographyLens === "origin";
   compass.hidden = !active;
-  if (centreBtn) centreBtn.hidden = !active;
+  if (centerBtn) centerBtn.hidden = !active;
   if (!active) return;
   ensureMapCompassPosition();
   const anchor = mapCompassGeoAnchor();
   const items = mapCompassTastingItems();
 
-  // Centre-on-notes is only meaningful with placed notes that actually have a
-  // centre; disabled-with-a-reason beats a button that silently does nothing.
-  if (centreBtn) {
+  // Center-on-notes is only meaningful with placed notes that actually have a
+  // center; disabled-with-a-reason beats a button that silently does nothing.
+  if (centerBtn) {
     const centroid = tastingGeoCentroid(items);
-    centreBtn.disabled = !centroid;
-    centreBtn.title = centroid
-      ? "Move the compass to the geographic centre of your tasting notes"
+    centerBtn.disabled = !centroid;
+    centerBtn.title = centroid
+      ? "Move the compass to the geographic center of your tasting notes"
       : (items.length
-        ? "These notes have no meaningful centre — they're spread near-antipodally."
+        ? "These notes have no meaningful center — they're spread near-antipodally."
         : "Add tasting notes with a mapped origin first.");
   }
   const layer = document.getElementById("map-bearing-dynamic");
@@ -11055,7 +11192,7 @@ function wireMapZoom() {
     zoomMapAt(zoom, fx, fy);
   }, { passive: false });
   document.getElementById("origins-reset-view").addEventListener("click", resetMapView);
-  document.getElementById("compass-centre-notes").addEventListener("click", centreCompassOnTasting);
+  document.getElementById("compass-center-notes").addEventListener("click", centerCompassOnTasting);
   document.getElementById("zoom-in").addEventListener("click", () => zoomMapAt(0.8, 0.5, 0.5));
   document.getElementById("zoom-out").addEventListener("click", () => zoomMapAt(1 / 0.8, 0.5, 0.5));
   document.getElementById("pan-up").addEventListener("click", () => panMapBy(0, -0.25));
@@ -12431,7 +12568,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   document.getElementById("taxonomy-back-tree").hidden = false;
   // Size to the SMALLER of the two axes. Sizing on width alone let the disc
   // overrun a short landscape viewport and clip its bottom leaves clean off —
-  // the notes were rendered, labelled, and focusable, just below the fold.
+  // the notes were rendered, labeled, and focusable, just below the fold.
   const size = Math.max(300, Math.min(760,
     Math.min(scrollEl.clientWidth - 20, scrollEl.clientHeight - 20)));
   const cx = size / 2, cy = size / 2;
@@ -12573,11 +12710,11 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   // wood, the leaves are what this family actually puts out. Blade points
   // radially outward, so the whole rim reads as foliage on a trunk.
   //
-  // Colour carries the tasting, same as everywhere else: an untasted leaf is
+  // Color carries the tasting, same as everywhere else: an untasted leaf is
   // dormant foliage (the app's own vine green), a tasted one takes its
-  // aroma-group colour and grows longer. Deliberately NOT the dendrogram's grey
-  // for untasted - a wreath of grey leaves reads as dead rather than dormant -
-  // but the signal is identical: bigger and coloured means it's in your cup.
+  // aroma-group color and grows longer. Deliberately NOT the dendrogram's gray
+  // for untasted - a wreath of gray leaves reads as dead rather than dormant -
+  // but the signal is identical: bigger and colored means it's in your cup.
   const leafLen = d => hasAnyEntry(d.leaf.data.noteId) ? 27 : 18;
   const leafLabelGap = compact ? 6 : 9;
   const leafBlade = (len, wid) =>
@@ -12695,7 +12832,7 @@ function renderTaxonomyTree() {
   const labelYFor = d => (d.data.noteId ? LEAF_OFFSET : INTERNAL_OFFSET) * dirOf.get(d);
   const labelBaselineFor = d => dirOf.get(d) < 0 ? "alphabetic" : "hanging";
 
-  // Horizontal SIDE margins so the leftmost / rightmost leaf labels — centred
+  // Horizontal SIDE margins so the leftmost / rightmost leaf labels — centered
   // on their node, so each extends ~half a label-width past it — aren't
   // clipped at the canvas edges (the "notes on the far edges get cut off"
   // fix). Vertical TOP/BOTTOM margins were declared at the top of this
@@ -13069,7 +13206,7 @@ document.getElementById("taxonomy-back-tree").addEventListener("click", () => {
     // defaults to wheel-only; user can opt in notes/compounds via checkboxes.
     // "More informative" = full content with compound bars and map readout.
     const showLabels = !stunning;
-    // Both modes honour the checkbox; rendering differs (pills vs bars).
+    // Both modes honor the checkbox; rendering differs (pills vs bars).
     const compsShown = opts.showCompounds ? comps : [];
     // Stunning never shows the map (it's an informative detail).
     const contentBottom = showMapSection ? footerTop - 230 : footerTop;
@@ -13354,7 +13491,7 @@ document.getElementById("taxonomy-back-tree").addEventListener("click", () => {
   }
 
   // Per-compound checklist, ordered by prominence (confidence). All checked by
-  // default — uncheck down to a favourite few, or leave them all for the full
+  // default — uncheck down to a favorite few, or leave them all for the full
   // aroma soup. Rebuilt each time the modal opens (the tasting can't change
   // while it's open).
   const compListEl = document.getElementById("share-compound-list");
