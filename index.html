@@ -664,7 +664,7 @@
   .taxon-badge { cursor: pointer; margin-left: 4px; font-size: 11px; opacity: 0.8;
     display: inline-flex; align-items: center; transition: opacity 0.15s; }
   .taxon-badge:hover { opacity: 1; }
-  .helix-glyph { vertical-align: -2px; }
+  .helix-glyph { vertical-align: -2px; display: inline-block; flex: 0 0 auto; }
 
   /* Varietal disclosure toggle: expands a parent note's subOf children
      (mint -> peppermint/spearmint/wintergreen) into their own rows, scoreable
@@ -1350,6 +1350,12 @@
   .taxon-sibling-list .view-note { cursor: pointer; color: var(--ink);
     border-bottom: 1px dotted var(--ink-dim); }
   .taxon-sibling-list .view-note:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .taxon-sibling-list button.view-note, aside.detail button.view-cpd {
+    appearance: none; background: transparent; padding: 0; font: inherit;
+    text-align: left; border: 0; border-bottom: 1px dotted var(--ink-dim); }
+  .taxon-sibling-list button.view-note:focus-visible,
+  aside.detail button.view-cpd:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
   .taxon-mismatch { font-style: italic; }
   /* Cereal Go-Deeper table: the six grains collapse to one "Cereal" slider
      (their raw aroma chemistry is genuinely too similar to justify six rows
@@ -1756,6 +1762,8 @@
     background: var(--bg); }
   #taxonomy-search-wrap input[type=search] { flex: 1; max-width: 280px; }
   #taxonomy-search-wrap button { font-size: 11px; padding: 4px 8px; }
+  #taxonomy-search-count { font-size: 11px; line-height: 1.35; color: var(--ink-dim); }
+  #taxonomy-search-count.tx-search-opened { color: var(--accent); font-weight: 700; }
   .tx-zoom { flex-direction: row !important; margin-left: auto; }
   .tx-zoom button { width: 24px; height: 24px; padding: 0 !important; font-size: 14px !important; }
   #taxonomy-tree-scroll { flex: 1; overflow: auto; padding: 16px; position: relative; z-index: 1; }
@@ -1938,6 +1946,9 @@
     fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2;
   }
   .tx-note-focus-icon { font-size: 38px; text-anchor: middle; }
+  .tx-note-focus-icon.tx-cranberry-icon {
+    filter: sepia(1) saturate(8) hue-rotate(310deg) brightness(.62) contrast(1.55);
+  }
   .tx-note-focus-name {
     fill: var(--ink); font-size: 22px; font-weight: 650; text-anchor: middle;
   }
@@ -2692,37 +2703,48 @@
     header .brand { position: absolute; top: 9px; left: calc(16px + env(safe-area-inset-left));
       min-width: 0; max-width: calc(100% - 136px); }
     header h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #godeeper-toggle.header-center-btn { position: absolute; top: 10px;
-      right: calc(52px + env(safe-area-inset-right)); width: 78px; height: 36px;
+    #godeeper-toggle.header-center-btn { position: absolute; top: 6px;
+      right: calc(56px + env(safe-area-inset-right)); width: 84px; height: 44px;
       margin: 0; padding: 0 8px; font-size: 10.5px; white-space: nowrap; }
-    #hud-toggle { top: 10px; right: calc(10px + env(safe-area-inset-right));
-      width: 36px; height: 36px; }
+    #hud-toggle { top: 6px; right: calc(6px + env(safe-area-inset-right));
+      width: 44px; height: 44px; }
     .site-footer { top: 34px; left: calc(17px + env(safe-area-inset-left)); right: auto;
       font-size: 8px; letter-spacing: .07em; color: rgba(241,238,231,.42); }
     header.hud-open .hud-extra { top: 56px; max-height: calc(100svh - 56px);
       padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
 
     body.taxonomy-mode { --taxonomy-sheet-h: 42svh; }
-    body.taxonomy-mode.sheet-peek { --taxonomy-sheet-h: 112px; }
+    body.taxonomy-mode.sheet-peek { --taxonomy-sheet-h: 56px; }
     body.taxonomy-mode.sheet-full { --taxonomy-sheet-h: calc(100svh - 136px); }
     body.taxonomy-mode:not(.detail-hidden) aside.detail {
       left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
       height: var(--taxonomy-sheet-h); max-height: none; padding: 28px 14px 18px;
       overflow-y: auto; overscroll-behavior: contain; border-radius: 18px 18px 12px 12px;
       transition: height .24s cubic-bezier(.22,.8,.25,1); }
+    body.taxonomy-mode.sheet-peek aside.detail {
+      padding: 0; overflow: hidden; }
+    body.taxonomy-mode.sheet-peek aside.detail > * { display: none; }
     body.taxonomy-mode.sheet-dragging aside.detail { transition: none; user-select: none; }
     body.taxonomy-mode:not(.detail-hidden) #taxonomy-sheet-handle {
       display: flex; position: fixed; left: 50%;
       bottom: calc(8px + env(safe-area-inset-bottom) + var(--taxonomy-sheet-h) - 20px);
-      transform: translateX(-50%); width: 84px; height: 44px; z-index: 62;
-      align-items: center; justify-content: center; padding: 0; border: 0;
-      background: transparent; touch-action: none; cursor: ns-resize; }
-    #taxonomy-sheet-handle::before { content: ""; width: 38px; height: 5px;
-      border-radius: 999px; background: rgba(241,238,231,.42);
-      box-shadow: 0 0 0 8px rgba(18,16,20,.72); }
+      transform: translateX(-50%); width: 132px; height: 44px; z-index: 62;
+      align-items: center; justify-content: center; gap: 7px; padding: 0 10px;
+      border: 1px solid var(--line); border-radius: 999px;
+      color: var(--ink); background: rgba(18,16,20,.94);
+      box-shadow: 0 5px 18px rgba(0,0,0,.4); touch-action: none; cursor: ns-resize; }
+    .taxonomy-sheet-grip { width: 32px; height: 5px; flex: 0 0 auto;
+      border-radius: 999px; background: rgba(241,238,231,.42); }
+    #taxonomy-sheet-label { min-width: 0; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; color: var(--ink-dim); font-size: 9px;
+      letter-spacing: .05em; text-transform: uppercase; }
     .taxonomy-story { display: block; padding: 9px 12px; font-size: 10.5px; }
     .taxonomy-story strong { display: block; margin-bottom: 2px; }
     #taxonomy-search-wrap { padding: 8px 10px; }
+    #taxonomy-search { min-height: 44px; padding: 8px 10px; font-size: 16px; }
+    #taxonomy-search-count { flex: 1 1 100%; min-height: 16px; }
+    #taxonomy-search-wrap > button { min-height: 44px; }
+    #taxonomy-search-wrap .tx-zoom button { width: 44px; min-width: 44px; min-height: 44px; }
     #taxonomy-tree-scroll { padding: 10px; }
     /* The mobile canvas starts as a readable hierarchy overview. Decoration
        recedes and the long desktop instruction block no longer consumes the
@@ -3220,8 +3242,9 @@
     </svg>
   </div>
   <div id="taxonomy-search-wrap">
-    <input type="search" id="taxonomy-search" placeholder="Search notes…" autocomplete="off" />
-    <span id="taxonomy-search-count"></span>
+    <input type="search" id="taxonomy-search" placeholder="Search notes…" autocomplete="off"
+      aria-describedby="taxonomy-search-count" />
+    <span id="taxonomy-search-count" role="status" aria-live="polite" aria-atomic="true"></span>
     <button type="button" id="taxonomy-view-toggle">View branches</button>
     <button type="button" id="taxonomy-expand-all">Expand all</button>
     <button type="button" id="taxonomy-collapse-all">Collapse to kingdoms</button>
@@ -3240,7 +3263,10 @@
   </div>
   <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. Circles are the primary path: choose a ring or wedge to move inward, choose a note to focus it, and use the one top control to move back out. “View branches” is an optional organization diagram. “Process / not a single organism” and “(multiple families)” remain honest non-phylogenetic buckets, not invented taxa.</p>
 </div>
-<button type="button" id="taxonomy-sheet-handle" aria-label="Resize Tree detail panel" aria-valuetext="Half height" title="Drag to resize detail; tap to change height"></button>
+<button type="button" id="taxonomy-sheet-handle" aria-label="Resize Tree detail panel" aria-valuetext="Half height" title="Drag to resize detail; tap to change height">
+  <span class="taxonomy-sheet-grip" aria-hidden="true"></span>
+  <span id="taxonomy-sheet-label">Details</span>
+</button>
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
 </aside>
@@ -5857,7 +5883,7 @@ function noteIcon(n) {
 // visual language) instead of looking like a stray lab icon. h = pixel height.
 function helixGlyph(h) {
   const w = Math.round(h * 0.75);
-  return `<svg class="helix-glyph" viewBox="0 0 12 16" width="${w}" height="${h}" aria-hidden="true" fill="none">`
+  return `<svg class="helix-glyph" viewBox="0 0 12 16" width="${w}" height="${h}" style="width:${w}px;height:${h}px" aria-hidden="true" fill="none">`
     + `<path d="M6 1C10.5 3.6 10.5 6 6 8C1.5 10 1.5 12.4 6 15" stroke="#5a9c4f" stroke-width="1.4" stroke-linecap="round"/>`
     + `<path d="M6 1C1.5 3.6 1.5 6 6 8C10.5 10 10.5 12.4 6 15" stroke="#d8a657" stroke-width="1.4" stroke-linecap="round"/>`
     + `<path d="M3 4.7H9M3 11.3H9" stroke="#8a6a3a" stroke-width="1" stroke-linecap="round"/>`
@@ -7468,6 +7494,15 @@ function renderCompoundFloats() {
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
     })
+    .on("keydown", (e, d) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      state.selectedCompound = d.id;
+      state.selectedNote = null;
+      ensureDetailVisible();
+      renderDetail();
+      gComps.selectAll("g.compound").classed("selected", x => x.id === state.selectedCompound);
+    })
     // Dragging pins the dot in place (fx/fy stay set after release) so a
     // manually-organized layout survives later sim restarts instead of the
     // collide/target forces sweeping it back into the pack. Double-click/tap
@@ -7495,6 +7530,10 @@ function renderCompoundFloats() {
 
   const merged = sel.merge(enter)
     .attr("transform", d => `translate(${d.x},${d.y})`)
+    .attr("role", "button")
+    .attr("tabindex", "0")
+    .attr("aria-label", d =>
+      `${d.label}, aroma compound, ${Math.round(Math.min(1, d.score || 0) * 100)}% evidence. Open details.`)
     .classed("selected", d => d.id === state.selectedCompound);
 
   // Class-glyph molecule token: a class-colored ring (sized by score) with the
@@ -8665,10 +8704,25 @@ function renderDetail() {
   // selected), or the default grid. Note/compound take priority — they
   // self-clear selectedFamily on entry (see their bodies) so a stale family
   // can't linger under them; family is only reached when neither is set.
+  detailPanel.scrollTop = 0;
   if (state.selectedNote) renderNoteDetail(state.selectedNote);
   else if (state.selectedCompound) renderCompoundDetail(state.selectedCompound);
   else if (state.selectedFamily) renderFamilyDetail(state.selectedFamily);
   else renderAnalysisGrid();
+  detailPanel.scrollTop = 0;
+  updateTaxonomySheetLabel();
+}
+
+function updateTaxonomySheetLabel() {
+  const labelEl = document.getElementById("taxonomy-sheet-label");
+  const handle = document.getElementById("taxonomy-sheet-handle");
+  if (!labelEl || !handle) return;
+  const label = state.selectedNote ? NOTE_BY_ID[state.selectedNote]?.label
+    : state.selectedCompound ? CPD_BY_ID[state.selectedCompound]?.label
+    : state.selectedFamily ? (TAXON_COMMON[state.selectedFamily] || state.selectedFamily)
+    : "Details";
+  labelEl.textContent = label || "Details";
+  handle.setAttribute("aria-label", `Resize Tree detail panel: ${label || "Details"}`);
 }
 
 // Plant-family page for the taxonomy tree: common name, where it sits in the
@@ -8712,7 +8766,7 @@ function renderFamilyDetail(familyName) {
     <div class="section">
       <div class="section-title">Notes we support here (${members.length})</div>
       <ul class="taxon-sibling-list">
-        ${members.map(m => `<li><span class="detail-icon" aria-hidden="true">${noteIcon(m)}</span> <span class="note-name view-note" data-note="${m.id}" title="Open this note's detail">${m.label}</span> <span style="font-size:10px; color:var(--ink-dim);">· ${GROUP_BY_ID[m.group].label}</span></li>`).join("")}
+        ${members.map(m => `<li><span class="detail-icon" aria-hidden="true">${noteIcon(m)}</span> <button type="button" class="note-name view-note" data-note="${m.id}" title="Open this note's detail">${m.label}</button> <span style="font-size:10px; color:var(--ink-dim);">· ${GROUP_BY_ID[m.group].label}</span></li>`).join("")}
       </ul>
     </div>
   `;
@@ -8793,7 +8847,7 @@ function renderNoteDetail(noteId) {
       <div class="section-title">Plant taxonomy</div>
       <div class="taxon-detail-label">${label}${common ? ` <span class="taxon-common">(${common})</span>` : ""}</div>
       ${siblings.length > 0
-        ? `<ul class="taxon-sibling-list">${siblings.map(s => `<li><span class="note-name view-note" data-note="${s.id}" title="Switch to this note's detail">${s.label}</span> <span style="font-size:10px; color:var(--ink-dim);">· ${GROUP_BY_ID[s.group].label}</span></li>`).join("")}</ul>`
+        ? `<ul class="taxon-sibling-list">${siblings.map(s => `<li><button type="button" class="note-name view-note" data-note="${s.id}" title="Switch to this note's detail">${s.label}</button> <span style="font-size:10px; color:var(--ink-dim);">· ${GROUP_BY_ID[s.group].label}</span></li>`).join("")}</ul>`
         : `<div class="cite">No other note currently in the wheel shares this family.</div>`}
     </div>`;
   }
@@ -8819,7 +8873,7 @@ function renderNoteDetail(noteId) {
                 ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
                 : `<span class="cite">${e.cite}${citeReviewBadge(null, e.cite)}</span>`;
               return `<li>
-                <span class="note-name view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}${commonTag(cpd)}</span>
+                <button type="button" class="note-name view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}${commonTag(cpd)}</button>
                 <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
                 <span style="font-size:10px; color:var(--ink-dim); display:block; margin-top:1px;">${cpd.class} · thr ${cpd.threshold}</span>
                 ${citeHtml}
@@ -8841,7 +8895,7 @@ function renderNoteDetail(noteId) {
             <tr>
               <td>${r.note.label}</td>
               <td>${r.cpd
-                ? `<span class="note-name view-cpd${commonClass(r.cpd)}" data-cpd="${r.cpd.id}" title="Switch to this compound's detail">${r.cpd.label}</span>
+                ? `<button type="button" class="note-name view-cpd${commonClass(r.cpd)}" data-cpd="${r.cpd.id}" title="Switch to this compound's detail">${r.cpd.label}</button>
                    <div class="cereal-table-blurb">${r.cpd.note}</div>`
                 : `<span class="cereal-table-none">${r.note.noStandoutNote || `Shares ${n.label}'s base profile above — no literature-confirmed standout compound yet.`}</span>`}
                 ${r.note.family && n.family && r.note.family !== n.family
@@ -9056,11 +9110,22 @@ function renderAnalysisGrid() {
     `;
 
     detailPanel.querySelectorAll("[data-cpd]").forEach(el => {
-      el.addEventListener("click", () => {
+      const activate = () => {
         state.selectedCompound = el.dataset.cpd;
         state.selectedNote = null;
         renderDetail();
         gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
+      };
+      if (el.tagName !== "BUTTON" && el.tagName !== "A") {
+        el.setAttribute("role", "button");
+        el.setAttribute("tabindex", "0");
+      }
+      el.setAttribute("aria-label", `Open ${CPD_BY_ID[el.dataset.cpd]?.label || "compound"} details`);
+      el.addEventListener("click", activate);
+      el.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        activate();
       });
     });
     return;
@@ -9163,11 +9228,22 @@ function renderAnalysisGrid() {
   // Wire all compound-target clicks (cards in section 2, compact rows in
   // section 3, arrow targets in section 1) → select that compound.
   detailPanel.querySelectorAll("[data-cpd]").forEach(el => {
-    el.addEventListener("click", () => {
+    const activate = () => {
       state.selectedCompound = el.dataset.cpd;
       state.selectedNote = null;
       renderDetail();
       gComps.selectAll("g.compound").classed("selected", d => d.id === state.selectedCompound);
+    };
+    if (el.tagName !== "BUTTON" && el.tagName !== "A") {
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+    }
+    el.setAttribute("aria-label", `Open ${CPD_BY_ID[el.dataset.cpd]?.label || "compound"} details`);
+    el.addEventListener("click", activate);
+    el.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      activate();
     });
   });
 }
@@ -12636,7 +12712,11 @@ function buildOriginMarkers() {
         g.dataset.spiderAngle = spiderAngle;
         g.dataset.spiderOrbitPx = spiderOrbitPx;
       }
-      g.setAttribute("aria-label", note.label);
+      g.setAttribute("role", "button");
+      g.setAttribute("tabindex", "0");
+      g.setAttribute("aria-label", origin.country
+        ? `${note.label}: ${origin.region}, ${origin.country}. Open origin details.`
+        : `${note.label}: ${origin.region}. Open origin details.`);
 
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.classList.add("origin-leader");
@@ -12703,7 +12783,7 @@ function buildOriginMarkers() {
       if (icon) g.appendChild(icon);
       g.appendChild(text);
 
-      g.addEventListener("click", () => {
+      const activateMarker = () => {
         // Selecting a marker is a non-destructive VIEW action — it never removes
         // the note (that surprised users: clicking an entered note deleted it and
         // it vanished under "only my tasting"). A not-yet-entered note is added,
@@ -12718,6 +12798,12 @@ function buildOriginMarkers() {
         }
         selectOriginNote(note.id);
         openOriginDetail(note, origin);
+      };
+      g.addEventListener("click", activateMarker);
+      g.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        activateMarker();
       });
 
       svg.appendChild(g);
@@ -12907,7 +12993,7 @@ function showTaxonomyDetail() {
 const taxonomySheetHandle = document.getElementById("taxonomy-sheet-handle");
 const TAXONOMY_SHEET_SNAPS = ["peek", "half", "full"];
 function taxonomySheetHeightFor(snap) {
-  if (snap === "peek") return 112;
+  if (snap === "peek") return 56;
   if (snap === "full") return Math.max(260, window.innerHeight - 136);
   return Math.max(240, window.innerHeight * 0.42);
 }
@@ -12966,7 +13052,7 @@ window.addEventListener("resize", () => {
     if (!dragging) return;
     const delta = startY - e.clientY;
     if (Math.abs(delta) > 4) moved = true;
-    const height = Math.max(112, Math.min(window.innerHeight - 96, startHeight + delta));
+    const height = Math.max(56, Math.min(window.innerHeight - 96, startHeight + delta));
     document.body.style.setProperty("--taxonomy-sheet-h", `${height}px`);
     detailPanel.style.height = `${height}px`;
   });
@@ -13843,7 +13929,9 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
   const center = plot.append("g").attr("transform", `translate(${cx},${cy})`);
   center.append("circle").attr("class", "tx-note-focus-halo").attr("r", centerRadius)
     .attr("stroke", groupColor(noteData.group));
-  center.append("text").attr("class", "tx-note-focus-icon").attr("y", compact ? -16 : -24)
+  center.append("text")
+    .attr("class", `tx-note-focus-icon${noteId === "cranberry" ? " tx-cranberry-icon" : ""}`)
+    .attr("y", compact ? -16 : -24)
     .text(noteIcon(noteId));
   center.append("text").attr("class", "tx-note-focus-name").attr("y", compact ? 11 : 15)
     .text(compact ? noteNode.data.name.split(" / ")[0] : noteNode.data.name);
@@ -14217,6 +14305,8 @@ function renderTaxonomyTree() {
     .attr("d", link);
 
   const onNodeClick = (e, d) => {
+    if (e.type !== "click" && e.key !== "Enter" && e.key !== " ") return;
+    if (e.type !== "click") e.preventDefault();
     if (d.data.noteId) {
       state.selectedNote = d.data.noteId;
       state.selectedCompound = null;
@@ -14285,13 +14375,18 @@ function renderTaxonomyTree() {
   const enter = node.enter().append("g")
     .attr("class", nodeClass)
     .attr("transform", d => `translate(${screenX(d)},${screenY(d)})`)
-    .on("click", onNodeClick);
+    .on("click keydown", onNodeClick);
   enter.append("circle").attr("r", 5);
   enter.append("text");
 
   const merged = node.merge(enter);
   merged.attr("class", d => `${nodeClass(d)}${selectedPath.has(d) ? " tx-path" : ""}${d === selectedTarget ? " tx-selected" : ""}`);
   merged.attr("transform", d => `translate(${screenX(d)},${screenY(d)})`);
+  merged.attr("role", "button")
+    .attr("tabindex", "0")
+    .attr("aria-label", d => d.data.noteId
+      ? `Open flavor note ${d.data.name}`
+      : `${TAXON_FAMILY_NAMES.has(d.data.name) ? "family" : d.depth === 1 ? "kingdom" : "order"} ${d.data.name}, ${countTaxonomyLeaves(d)} note${countTaxonomyLeaves(d) === 1 ? "" : "s"}`);
   // A tasted leaf is bigger and carries its aroma-group color — the exact
   // convention the Map already uses for "this note is in your tasting"
   // (.origin-marker.active grows its dot; origin dots are group-colored), so
@@ -14337,32 +14432,60 @@ function allTaxonomyDescendants(d, out) {
   (d.children || d._children || []).forEach(c => allTaxonomyDescendants(c, out));
   return out;
 }
+function taxonomySearchMatches(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return allTaxonomyDescendants(taxTreeRoot, []).filter(d =>
+    d.data.noteId && d.data.name.toLowerCase().includes(q));
+}
 function applyTaxonomySearch(query) {
   const q = query.trim().toLowerCase();
   const countEl = document.getElementById("taxonomy-search-count");
+  countEl.classList.remove("tx-search-opened");
   if (!q) {
     renderTaxonomyTree();
     d3.selectAll("#taxonomy-svg .tx-node").classed("tx-dim", false).classed("tx-search-hit", false);
     countEl.textContent = "";
     return;
   }
-  let hits = 0;
-  allTaxonomyDescendants(taxTreeRoot, []).forEach(d => {
-    if (d.data.noteId && d.data.name.toLowerCase().includes(q)) {
-      hits++;
-      for (let p = d.parent; p; p = p.parent) {
-        if (p._children) { p.children = p._children; p._children = null; }
-      }
+  const matches = taxonomySearchMatches(q);
+  matches.forEach(d => {
+    for (let p = d.parent; p; p = p.parent) {
+      if (p._children) { p.children = p._children; p._children = null; }
     }
   });
   renderTaxonomyTree();
+  let firstHitEl = null;
   d3.selectAll("#taxonomy-svg .tx-node").each(function(d) {
     const isHit = !!d.data.noteId && d.data.name.toLowerCase().includes(q);
+    if (isHit && !firstHitEl) firstHitEl = this;
     d3.select(this).classed("tx-search-hit", isHit).classed("tx-dim", !!d.data.noteId && !isHit);
   });
-  countEl.textContent = hits === 0 ? "No matches" : `${hits} match${hits === 1 ? "" : "es"}`;
+  if (firstHitEl && matches.length === 1 && state.taxonomyView === "branches") {
+    const scrollEl = document.getElementById("taxonomy-tree-scroll");
+    const nodeRect = firstHitEl.getBoundingClientRect();
+    const scrollRect = scrollEl.getBoundingClientRect();
+    scrollEl.scrollLeft += nodeRect.left - scrollRect.left - (scrollEl.clientWidth - nodeRect.width) / 2;
+    scrollEl.scrollTop += nodeRect.top - scrollRect.top - (scrollEl.clientHeight - nodeRect.height) / 2;
+  }
+  countEl.textContent = matches.length === 0 ? "No matches"
+    : `${matches.length} match${matches.length === 1 ? " · Enter to open" : "es"}`;
 }
-document.getElementById("taxonomy-search").addEventListener("input", e => applyTaxonomySearch(e.target.value));
+const taxonomySearchEl = document.getElementById("taxonomy-search");
+taxonomySearchEl.addEventListener("input", e => applyTaxonomySearch(e.target.value));
+taxonomySearchEl.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const q = e.currentTarget.value.trim().toLowerCase();
+  const matches = taxonomySearchMatches(q);
+  const target = matches.find(d => d.data.name.toLowerCase() === q)
+    || (matches.length === 1 ? matches[0] : null);
+  if (!target) return;
+  e.preventDefault();
+  setTaxonomyFocus("note", target.data.name, target.data.noteId);
+  const countEl = document.getElementById("taxonomy-search-count");
+  countEl.textContent = `Opened ${target.data.name} - lineage and details updated`;
+  countEl.classList.add("tx-search-opened");
+});
 document.getElementById("taxonomy-view-toggle").addEventListener("click", () => {
   state.taxonomyView = state.taxonomyView === "branches" ? "circles" : "branches";
   state.taxonomyFocus = null;

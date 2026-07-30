@@ -389,6 +389,79 @@ code paths, and drag masks this entire class of bug.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Follow-up: compact-phone detail hierarchy + interaction accessibility (2026-07-30)
+
+- Reduced the Tree detail sheet's real minimized snap from 112px to 56px. The
+  minimized state hides the detail body and exposes one 44px, keyboard-operable
+  handle labeled with the current Family, Note, or Compound, so the Tree regains
+  the bottom of the viewport without losing selection.
+- Reset the Tree detail panel to its heading whenever its content changes. Switching
+  Family â†’ Note no longer inherits a mid-document scroll position.
+- Fixed the family-page helix at its source: the app-wide
+  `svg { width:100%; height:100% }` rule was overriding the generated glyph's width
+  and height. The glyph now carries explicit inline pixel dimensions; Rosaceae
+  renders it at 15 Ã— 20 instead of filling the sheet.
+- Converted Family and taxonomy-sibling links into native buttons with visible
+  focus treatment. Literature compound links are native buttons, and generated
+  compound-library rows receive role, label, focus, and Enter/Space activation.
+- Made Scent-wheel compound tokens and Origin-map markers named, focusable SVG
+  buttons with Enter/Space activation. Optional branch-view Tree nodes now expose
+  the same semantic contract already used by the circular Tree.
+- Tree search now reports `1 match Â· Enter to open`. Enter opens an exact or sole
+  match in the circular Note focus, preserving the lineage readout and minimized
+  detail access. A sole match in optional branch view is also centered in its
+  scroll viewport.
+- Raised the compact HUD's Go Deeper and menu targets to 44px, plus the Tree search
+  field and zoom/toolbar controls, without adding horizontal document overflow.
+
+### Verification
+
+- Chrome viewport simulation at **360 Ã— 740 CSS px** (Galaxy S8+ class), not a
+  physical device or social in-app browser.
+- Confirmed the Wheel produces 17 focusable/named compound buttons from the
+  Ethiopian coffee sample; Enter on Limonene opens its compound detail.
+- Confirmed Tree search is 44px high, zoom buttons are 44 Ã— 44, Raspberry reports
+  one actionable match, and Enter opens
+  `Plantae â†’ Rosales â†’ Rosaceae â†’ Raspberry Â· note focus`.
+- Confirmed Rosaceae minimizes to exactly 56px, preserves the selected family,
+  expands to the half-height snap, starts at scrollTop 0, and renders the helix at
+  15 Ã— 20 with lineage and diagnostic copy immediately visible.
+- Confirmed Raspberry opens from the Family page at scrollTop 0 and exposes its
+  three literature compounds as native buttons.
+- Confirmed Origin markers expose role/button, tabindex, and region-aware accessible
+  names. Chrome's automation layer timed out trying to send a keyboard press to an
+  SVG marker, so the new key handler is code-reviewed but that one input path is not
+  claimed as browser-verified.
+- Inline script compilation, `git diff --check`, and browser console checks pass;
+  no warnings or errors were reported.
+
+### Approval boundary
+
+- The proposed cross-workspace Insights inbox was not started. It requires a new
+  shared notification model (tip lifecycle, generated-inference provenance,
+  persistence/read state, and Wheel/Map/Tree deep links) rather than a small overlay
+  adjustment, so it is being held for explicit architecture approval.
+
+### Coordination boundary
+
+- The pre-existing `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file were left untouched.
+
+## Follow-up: Tree search activation feedback + Cranberry treatment (2026-07-30)
+
+- Reproduced the reported Cranberry search behavior at 360 × 740: Enter correctly
+  opened the note disc, lineage, and minimized detail handle, but the result line
+  incorrectly remained `1 match · Enter to open`.
+- The search result line is now a polite live status. After activation it changes
+  to `Opened Cranberry - lineage and details updated` and receives a visible accent
+  treatment; editing the query restores ordinary match-count behavior.
+- The focused Cranberry Tree graphic keeps the berry emoji geometry but applies a
+  Cranberry-only dark-crimson treatment with lighter ruby highlights. Other berry
+  icons are unchanged.
+- Reverified the complete keyboard path in Chrome at 360 × 740. The final state
+  exposes the Cranberry lineage, Cranberry sheet handle, activation status, and
+  scoped crimson icon filter. Inline scripts compile and `git diff --check` passes.
+
 ## Follow-up: collapsed regional map glyphs (2026-07-29)
 
 - Replaced the always-open colored boxes used for crowded map regions with one
