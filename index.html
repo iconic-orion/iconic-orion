@@ -2381,6 +2381,16 @@
   .ol-filter input[type=checkbox] { accent-color: var(--accent); cursor: pointer;
     margin: 0; width: 12px; height: 12px; flex-shrink: 0; }
   .ol-filter .ol-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ol-clear-tasting {
+    min-height: 32px; padding: 5px 10px;
+    background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px;
+    font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .ol-clear-tasting:hover:not(:disabled),
+  .ol-clear-tasting:focus-visible { border-color: var(--accent); color: var(--accent); }
+  .ol-clear-tasting:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ol-clear-tasting:disabled { opacity: 0.42; cursor: default; }
   .ol-toggle-all { color: var(--accent); cursor: pointer; white-space: nowrap;
     user-select: none; }
   .ol-toggle-all:hover { text-decoration: underline; }
@@ -3153,9 +3163,10 @@
         <input type="checkbox" id="origins-only-tasting">
         Only notes in my tasting
       </label>
+      <button type="button" class="ol-clear-tasting" id="origins-clear-tasting">Clear tasting</button>
       <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
       <span class="ol-sep">·</span>
-      <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every group off so you can switch on just the ones you want (click again to turn all back on)">toggle all</span>
+      <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every flavor group off so you can switch on just the ones you want (click again to turn all back on)">toggle groups</span>
       <span id="origins-group-filters"></span>
       <span class="ol-sep">·</span>
       <span class="ol-note">Pre-Columbian Exchange framing. Click markers to select notes.</span>
@@ -7946,6 +7957,7 @@ function recompute() {
   if (inChemistry()) drawCompoundAnchors(); else drawNotes();
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
+  updateOriginsClearTasting();     // map-local bulk clear mirrors the same live input count
 
   // One-time-per-input-change work the tick used to redo every frame:
   // re-derive each float's home, rebuild the float set + styles, and
@@ -12185,6 +12197,28 @@ function updateOriginsFilterEmpty() {
     !(state.originsOnlyTasting && !NOTES.some(n => hasAnyEntry(n.id)));
 }
 
+function updateOriginsClearTasting() {
+  const btn = document.getElementById("origins-clear-tasting");
+  if (!btn) return;
+  const noteCount = new Set(Array.from(state.entries.keys(), key => key.split(":")[0])).size;
+  btn.disabled = noteCount === 0;
+  btn.textContent = noteCount ? `Clear tasting · ${noteCount}` : "Clear tasting";
+  btn.setAttribute("aria-label", noteCount
+    ? `Clear all ${noteCount} tasting note${noteCount === 1 ? "" : "s"}`
+    : "No tasting notes to clear");
+}
+
+function clearOriginsTasting() {
+  if (state.entries.size === 0) return;
+  state.selectedOriginNote = null;
+  state.expandedOriginCluster = null;
+  document.getElementById("origins-detail-panel").hidden = true;
+  setNotes([]);
+  // recompute() refreshes existing markers. Under this filter the correct set
+  // is now empty, so perform the full filtered rebuild as well.
+  if (originsLoaded && state.originsOnlyTasting) rebuildOriginMarkers();
+}
+
 // The map legend's visibility checkboxes: one per flavor group (colored dot +
 // name, all checked by default) plus the "only my tasting" master filter.
 // These write the map-local state.origins* fields — never state.hiddenGroups,
@@ -12230,6 +12264,8 @@ function buildOriginsLegendFilters() {
     state.originsOnlyTasting = e.target.checked;
     rebuildOriginMarkers();
   });
+  document.getElementById("origins-clear-tasting").addEventListener("click", clearOriginsTasting);
+  updateOriginsClearTasting();
 }
 buildOriginsLegendFilters();
 

@@ -426,6 +426,22 @@ code paths, and drag masks this entire class of bug.
   `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Follow-up: map-local clear tasting action (2026-07-29)
+
+- Added a dedicated `Clear tasting · N` button beside `Only notes in my tasting`
+  in the Origin legend. It reports the number of distinct entered notes, disables
+  itself when the tasting is empty, and has a count-aware accessible label.
+- Clearing removes every committed phase of every note and resets their slider
+  values through the existing `setNotes([])` bulk path. It also closes the open
+  origin detail, clears the selected marker, and collapses any regional bloom
+  while preserving map zoom, filters, and the selected geography lens.
+- If `Only notes in my tasting` is active, clearing performs the necessary full
+  marker rebuild so the filtered map becomes honestly empty instead of retaining
+  stale markers.
+- Renamed the nearby map-visibility link from `toggle all` to `toggle groups` so
+  it no longer reads like a tasting-data action.
+- Static verification: the inline script compiles and `git diff --check` passes.
+
 ## Follow-up: family recognition bridges become first-class notes (2026-07-29)
 
 - Added all seven human-approved continuity notes: Lychee, Cardamom, Walnut,
