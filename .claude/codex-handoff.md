@@ -434,3 +434,33 @@ code paths, and drag masks this entire class of bug.
 - This pass changes only Tree pointer handling and its handoff record. The concurrent
   `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
+## Follow-up: species lineage hitboxes + functional-language threshold (2026-07-29)
+
+- Individual biological note discs now carry three concentric lineage controls:
+  Family and Kingdom are always directly clickable; Order is clickable only when
+  the represented dataset contains more than one Family inside that Order.
+- A one-Family Order remains named for context but is darkened and removed from the
+  tab/click path. Moving up from its Family skips the redundant Order view and goes
+  directly to Kingdom. The same rule is applied to the Family wreath's named Order
+  ring and top Up control.
+- The exact multi-Family Orders represented by the current notes are Sapindales
+  (3 Families), plus Poales, Asparagales, Lamiales, Solanales, Myrtales, Fagales,
+  Malpighiales, and Zingiberales (2 each). The other 20 represented Orders currently
+  contain one Family and therefore use the inactive/skip behavior.
+- Separated cross-lineage functional words from biological descent in the Plantae
+  disc with a soft gray transition annulus labeled `FUNCTIONAL WORDS · NOT LINEAGE`.
+  Berry, Green, and Anise now occupy that threshold instead of being mixed into the
+  same living edge as taxonomically placed notes.
+- A focused functional word gets its own gray fog boundary. Where the data provides
+  concrete examples, the outer ring becomes clickable Family sectors rather than a
+  false parent: Berry spans Rosaceae/Rosales, Ericaceae/Ericales,
+  Grossulariaceae/Saxifragales, and Lythraceae/Myrtales. Its outer Kingdom ring
+  returns directly to Plantae.
+- Per the human's request, this final additive pass was not browser-tested; they
+  are checking it in their own live tab. `git diff --check` passes.
+
+### Coordination boundary
+
+- This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.

@@ -1830,6 +1830,7 @@
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-latin { font-size: 8.5px; }
   #taxonomy-svg.tx-wreath-compact .tx-wreath-center-meta { font-size: 8.5px; }
   .tx-lineage-action, .tx-rank-segment, .tx-rank-note { cursor: pointer; }
+  .tx-lineage-inactive { cursor: default; }
   /* A <g role="button"> has a rectangular accessibility box even though the
      visible control is a ring. Give pointer input the same geometry users see:
      a transparent annular stroke on top of the label and band. */
@@ -1844,6 +1845,17 @@
   .tx-lineage-action:hover .tx-lineage-band,
   .tx-lineage-action:focus .tx-lineage-band {
     stroke: var(--accent); stroke-width: 18;
+  }
+  .tx-lineage-inactive .tx-lineage-band,
+  .tx-lineage-inactive .tx-lineage-band-edge,
+  .tx-lineage-inactive .tx-note-lineage-ring,
+  .tx-lineage-inactive .tx-note-lineage-edge {
+    stroke: #151816;
+  }
+  .tx-lineage-inactive .tx-lineage-label,
+  .tx-lineage-inactive .tx-note-lineage-label {
+    fill: #555b55;
+    stroke: #151816;
   }
   #taxonomy-svg.tx-wreath-compact .tx-lineage-action:hover .tx-lineage-band,
   #taxonomy-svg.tx-wreath-compact .tx-lineage-action:focus .tx-lineage-band {
@@ -1886,6 +1898,39 @@
   .tx-rank-note:hover circle, .tx-rank-note:focus circle {
     stroke: var(--ink); stroke-width: 3;
   }
+  /* Functional aroma words can span several unrelated plant lineages. A
+     soft gray threshold keeps those terms visibly attached to Plantae without
+     pretending the attachment is descent. */
+  .tx-functional-fog {
+    fill: none; stroke: rgba(142, 146, 143, .34); stroke-width: 18;
+    filter: blur(3px); pointer-events: none;
+  }
+  .tx-functional-fog-edge {
+    fill: none; stroke: #6d736e; stroke-width: 1; stroke-dasharray: 2 5;
+    pointer-events: none;
+  }
+  .tx-functional-note circle { stroke: #a6aaa7; stroke-width: 1.5; }
+  .tx-functional-note .tx-rank-label { fill: #d4d6d4; stroke: #242725; }
+  .tx-functional-family { cursor: pointer; }
+  .tx-functional-family path {
+    fill: #303331; stroke: #777d78; stroke-width: 1;
+    transition: fill .14s ease, stroke .14s ease;
+  }
+  .tx-functional-family:hover path,
+  .tx-functional-family:focus path {
+    fill: #414743; stroke: var(--accent);
+  }
+  .tx-functional-family:focus { outline: none; }
+  .tx-functional-family-label {
+    fill: var(--ink); font-size: 8px; font-weight: 650; text-anchor: middle;
+    dominant-baseline: middle; paint-order: stroke; stroke: #303331;
+    stroke-width: 2px; pointer-events: none;
+  }
+  .tx-functional-barrier-label {
+    fill: #a8ada9; font-size: 7px; font-weight: 650; letter-spacing: .09em;
+    text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 3px;
+    pointer-events: none;
+  }
   .tx-note-focus-plot {
     transform-origin: center; animation: tx-note-focus-in .28s cubic-bezier(.2,.82,.24,1) both;
   }
@@ -1902,6 +1947,19 @@
   }
   .tx-note-lineage-ring { fill: none; stroke: var(--panel-2); stroke-width: 14; }
   .tx-note-lineage-edge { fill: none; stroke: var(--line); stroke-width: 1; }
+  .tx-note-lineage-action { cursor: pointer; }
+  .tx-note-lineage-hit {
+    fill: none; stroke: transparent; stroke-width: 22px;
+    pointer-events: stroke;
+  }
+  .tx-note-lineage-ring, .tx-note-lineage-edge, .tx-note-lineage-label {
+    pointer-events: none;
+  }
+  .tx-note-lineage-action:focus { outline: none; }
+  .tx-note-lineage-action:hover .tx-note-lineage-ring,
+  .tx-note-lineage-action:focus .tx-note-lineage-ring {
+    stroke: var(--accent); stroke-width: 16;
+  }
   .tx-note-lineage-label {
     fill: var(--ink); font-size: 9px; font-weight: 650; letter-spacing: .045em;
     paint-order: stroke; stroke: var(--panel-2); stroke-width: 3px;
@@ -1909,6 +1967,11 @@
   #taxonomy-svg.tx-wreath-compact .tx-note-focus-icon { font-size: 28px; }
   #taxonomy-svg.tx-wreath-compact .tx-note-focus-name { font-size: 16px; }
   #taxonomy-svg.tx-wreath-compact .tx-note-lineage-ring { stroke-width: 10; }
+  #taxonomy-svg.tx-wreath-compact .tx-note-lineage-hit { stroke-width: 14px; }
+  #taxonomy-svg.tx-wreath-compact .tx-note-lineage-action:hover .tx-note-lineage-ring,
+  #taxonomy-svg.tx-wreath-compact .tx-note-lineage-action:focus .tx-note-lineage-ring {
+    stroke-width: 12;
+  }
   #taxonomy-svg.tx-wreath-compact .tx-note-lineage-label { font-size: 7.5px; stroke-width: 2px; }
   #taxonomy-svg.tx-wreath-compact .tx-root-category-icon { font-size: 22px; }
   #taxonomy-svg.tx-wreath-compact .tx-root-category-name { font-size: 14px; stroke-width: 2px; }
@@ -12756,6 +12819,31 @@ function taxonomyLeafCount(node) {
   return allTaxonomyDescendants(node, []).filter(d => d.data.noteId).length;
 }
 
+function taxonomyOrderFamilies(orderNode) {
+  return taxonomyChildren(orderNode)
+    .filter(node => TAXON_FAMILY_NAMES.has(node.data.name));
+}
+
+function taxonomyOrderIsInformative(orderNode) {
+  return taxonomyOrderFamilies(orderNode).length > 1;
+}
+
+function taxonomyFunctionalFamilies(noteId) {
+  const byFamily = new Map();
+  NOTES.filter(note => note.subOf === noteId && note.family).forEach(note => {
+    if (!byFamily.has(note.family)) {
+      byFamily.set(note.family, {
+        family: note.family,
+        order: note.order || "unplaced order",
+        notes: [],
+      });
+    }
+    byFamily.get(note.family).notes.push(note);
+  });
+  return [...byFamily.values()].sort((a, b) =>
+    b.notes.length - a.notes.length || a.family.localeCompare(b.family));
+}
+
 function taxonomyByMostNotes(nodes) {
   return [...nodes].sort((a, b) =>
     taxonomyLeafCount(b) - taxonomyLeafCount(a)
@@ -12826,6 +12914,11 @@ function taxonomyUpOneLevel() {
     return;
   }
   if (state.taxonomyFocus.rank === "note" && focusNode.parent) {
+    const noteData = NOTE_BY_ID[focusNode.data.noteId];
+    if (noteData?.taxonBucket === "umbrella" && focusNode.parent.parent) {
+      setTaxonomyFocus("kingdom", focusNode.parent.parent.data.name);
+      return;
+    }
     const parentRank = TAXON_FAMILY_NAMES.has(focusNode.parent.data.name)
       ? "family"
       : focusNode.parent.data.name === "Process / not a single organism"
@@ -12835,7 +12928,12 @@ function taxonomyUpOneLevel() {
     return;
   }
   if (state.taxonomyFocus.rank === "family" && focusNode.parent) {
-    setTaxonomyFocus("order", focusNode.parent.data.name);
+    const orderNode = focusNode.parent;
+    if (taxonomyOrderIsInformative(orderNode)) {
+      setTaxonomyFocus("order", orderNode.data.name);
+    } else if (orderNode.parent) {
+      setTaxonomyFocus("kingdom", orderNode.parent.data.name);
+    }
     return;
   }
   if (state.taxonomyFocus.rank === "order" && focusNode.parent) {
@@ -13024,10 +13122,14 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
   const excludedChildren = rank === "kingdom"
     ? rawChildren.filter(node => !children.includes(node))
     : [];
+  const functionalNodes = excludedChildren.filter(node =>
+    node.data.name === "(multiple families)");
+  const functionalNotes = functionalNodes.flatMap(node =>
+    allTaxonomyDescendants(node, []).filter(d => d.data.noteId));
   const looseNotes = rank === "kingdom"
     ? [
       ...topChildren.filter(d => d.data.noteId),
-      ...excludedChildren.flatMap(node =>
+      ...excludedChildren.filter(node => !functionalNodes.includes(node)).flatMap(node =>
         allTaxonomyDescendants(node, []).filter(d => d.data.noteId)),
     ]
     : topChildren.filter(d => d.data.noteId);
@@ -13046,6 +13148,7 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
     ...children.flatMap(node =>
       allTaxonomyDescendants(node, []).filter(d => d.data.noteId)),
     ...looseNotes,
+    ...functionalNotes,
   ];
   const parent = focusNode.parent;
   const path = focusNode.ancestors().reverse().map(d => d.data.name).join(" → ");
@@ -13161,6 +13264,8 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
       angle: (i + .5) * (Math.PI * 2 / Math.max(1, looseNotes.length)),
     });
   });
+  const biologicalNoteRadius = rank === "kingdom" && functionalNotes.length
+    ? outerRadius - 12 : outerRadius;
   const note = plot.append("g").attr("class", "tx-rank-notes")
     .selectAll("g").data(noteMarks).join("g")
     .attr("class", "tx-rank-note")
@@ -13168,7 +13273,7 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
     .attr("aria-label", d => `Open flavor note ${d.leaf.data.name}`)
     .attr("transform", d => {
       const ux = Math.sin(d.angle), uy = -Math.cos(d.angle);
-      return `translate(${ux * outerRadius},${uy * outerRadius})`;
+      return `translate(${ux * biologicalNoteRadius},${uy * biologicalNoteRadius})`;
     })
     .on("click keydown", (event, d) =>
       activateTaxonomyTarget(event, () =>
@@ -13193,6 +13298,50 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
       })
       .text(d => compact ? d.leaf.data.name.split(" / ")[0] : d.leaf.data.name);
   }
+  if (rank === "kingdom" && functionalNotes.length) {
+    const functionalRadius = outerRadius + (compact ? 5 : 8);
+    plot.append("circle").attr("class", "tx-functional-fog")
+      .attr("r", outerRadius - 1);
+    plot.append("circle").attr("class", "tx-functional-fog-edge")
+      .attr("r", outerRadius - 10);
+    plot.append("circle").attr("class", "tx-functional-fog-edge")
+      .attr("r", outerRadius + 7);
+    plot.append("text").attr("class", "tx-functional-barrier-label")
+      .attr("y", -outerRadius + 1)
+      .text("FUNCTIONAL WORDS · NOT LINEAGE");
+    const functionalMarks = functionalNotes.map((leaf, i) => ({
+      leaf,
+      angle: (i + .5) * (Math.PI * 2 / functionalNotes.length),
+    }));
+    const functional = plot.append("g").attr("class", "tx-functional-notes")
+      .selectAll("g").data(functionalMarks).join("g")
+      .attr("class", "tx-rank-note tx-functional-note")
+      .attr("role", "button").attr("tabindex", "0")
+      .attr("aria-label", d =>
+        `Open functional flavor term ${d.leaf.data.name}; this term crosses unrelated plant lineages`)
+      .attr("transform", d => {
+        const ux = Math.sin(d.angle), uy = -Math.cos(d.angle);
+        return `translate(${ux * functionalRadius},${uy * functionalRadius})`;
+      })
+      .on("click keydown", (event, d) =>
+        activateTaxonomyTarget(event, () => focusTaxonomyNoteNode(d.leaf)));
+    functional.append("circle").attr("r", compact ? 5 : 6)
+      .attr("fill", d => groupColor(NOTE_BY_ID[d.leaf.data.noteId].group));
+    functional.append("text").attr("class", "tx-rank-label")
+      .attr("x", d => {
+        const ux = Math.sin(d.angle);
+        return ux > .18 ? 12 : ux < -.18 ? -12 : 0;
+      })
+      .attr("y", d => {
+        const uy = -Math.cos(d.angle);
+        return uy > .18 ? 13 : uy < -.18 ? -10 : 3;
+      })
+      .attr("text-anchor", d => {
+        const ux = Math.sin(d.angle);
+        return ux > .18 ? "start" : ux < -.18 ? "end" : "middle";
+      })
+      .text(d => d.leaf.data.name);
+  }
   return true;
 }
 
@@ -13201,15 +13350,21 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
   const noteData = NOTE_BY_ID[noteId];
   const parentNode = noteNode.parent;
   const isFamilyPlaced = !!parentNode && TAXON_FAMILY_NAMES.has(parentNode.data.name);
+  const isFunctional = noteData?.taxonBucket === "umbrella";
   const familyNode = isFamilyPlaced ? parentNode : null;
   const orderNode = familyNode?.parent || null;
-  const kingdomNode = orderNode?.parent || (!isFamilyPlaced ? parentNode : null);
+  const kingdomNode = orderNode?.parent
+    || (isFunctional ? parentNode?.parent : (!isFamilyPlaced ? parentNode : null));
   if (!noteData || !parentNode || (isFamilyPlaced && (!orderNode || !kingdomNode))) return false;
+  const orderIsInformative = isFamilyPlaced && taxonomyOrderIsInformative(orderNode);
+  const representedFamilyCount = isFamilyPlaced ? taxonomyOrderFamilies(orderNode).length : 0;
+  const functionalFamilies = isFunctional ? taxonomyFunctionalFamilies(noteId) : [];
 
   document.getElementById("taxonomy-expand-all").hidden = true;
   document.getElementById("taxonomy-collapse-all").hidden = true;
   setTaxonomyUpControl(isFamilyPlaced
     ? "Family"
+    : isFunctional ? "Kingdom"
     : parentNode.data.name === "Process / not a single organism" ? "Process" : parentNode.data.name);
 
   const size = Math.max(300, Math.min(760,
@@ -13221,16 +13376,25 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
   const ringGap = (outerRadius - centerRadius) / 3;
   const lineage = isFamilyPlaced
     ? [
-      { rank: "Family", name: familyNode.data.name, radius: centerRadius + ringGap, arc: "top" },
-      { rank: "Order", name: orderNode.data.name, radius: centerRadius + ringGap * 2, arc: "bottom" },
-      { rank: "Kingdom", name: kingdomNode.data.name, radius: outerRadius, arc: "top" },
+      {
+        rank: "Family", name: familyNode.data.name,
+        radius: centerRadius + ringGap, arc: "top", active: true,
+      },
+      {
+        rank: "Order", name: orderNode.data.name,
+        radius: centerRadius + ringGap * 2, arc: "bottom",
+        active: orderIsInformative, familyCount: representedFamilyCount,
+      },
+      {
+        rank: "Kingdom", name: kingdomNode.data.name,
+        radius: outerRadius, arc: "top", active: true,
+      },
     ]
     : [{
       rank: parentNode.data.name === "Process / not a single organism" ? "Group" : "Kingdom",
       name: parentNode.data.name === "Process / not a single organism"
-        ? "Process / non-organism" : parentNode.data.name,
-      radius: outerRadius,
-      arc: "top",
+        ? "Process / non-organism" : kingdomNode.data.name,
+      radius: outerRadius, arc: "top", active: true,
     }];
 
   svg.classed("taxonomy-wreath", true).classed("tx-wreath-compact", compact);
@@ -13240,6 +13404,8 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
     .attr("aria-label",
       isFamilyPlaced
         ? `${noteNode.data.name} flavor note. Family ${familyNode.data.name}, order ${orderNode.data.name}, kingdom ${kingdomNode.data.name}.`
+        : isFunctional
+          ? `${noteNode.data.name} is a functional flavor term spanning ${functionalFamilies.length} represented plant families rather than a taxonomic lineage.`
         : `${noteNode.data.name} flavor note in ${parentNode.data.name}. No Order or Family placement is represented.`);
   svg.node().style.width = `${size}px`;
   svg.node().style.height = `${size}px`;
@@ -13247,14 +13413,30 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
   document.getElementById("taxonomy-path-readout").textContent =
     isFamilyPlaced
       ? `${kingdomNode.data.name} → ${orderNode.data.name} → ${familyNode.data.name} → ${noteNode.data.name} · note focus`
+      : isFunctional
+        ? `${kingdomNode.data.name} ⇢ functional language ⇢ ${noteNode.data.name} · crosses ${functionalFamilies.length} families`
       : `${parentNode.data.name} → ${noteNode.data.name} · note focus`;
 
   const defs = svg.append("defs");
   const plot = svg.append("g").attr("class", "tx-note-focus-plot");
   lineage.forEach((band, i) => {
-    plot.append("circle").attr("class", "tx-note-lineage-ring")
+    const bandGroup = plot.append("g")
+      .attr("class", band.active
+        ? "tx-note-lineage-action"
+        : "tx-lineage-inactive")
+      .attr("role", band.active ? "button" : "img")
+      .attr("tabindex", band.active ? "0" : null)
+      .attr("aria-label", band.active
+        ? `Zoom out to ${band.rank.toLowerCase()} ${band.name}`
+        : `Order ${band.name} has only ${band.familyCount} represented family, so navigation skips directly to kingdom`);
+    if (band.active) {
+      bandGroup.on("click keydown", event =>
+        activateTaxonomyTarget(event, () =>
+          setTaxonomyFocus(band.rank.toLowerCase(), band.name)));
+    }
+    bandGroup.append("circle").attr("class", "tx-note-lineage-ring")
       .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
-    plot.append("circle").attr("class", "tx-note-lineage-edge")
+    bandGroup.append("circle").attr("class", "tx-note-lineage-edge")
       .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
     const left = cx - band.radius, right = cx + band.radius;
     const pathId = `tx-note-lineage-${i}`;
@@ -13262,14 +13444,70 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
       .attr("d", band.arc === "top"
         ? `M${left},${cy} A${band.radius},${band.radius} 0 0 1 ${right},${cy}`
         : `M${left},${cy} A${band.radius},${band.radius} 0 0 0 ${right},${cy}`);
-    plot.append("text").attr("class", "tx-note-lineage-label")
+    bandGroup.append("text").attr("class", "tx-note-lineage-label")
       .attr("aria-hidden", "true")
       .append("textPath")
       .attr("href", `#${pathId}`)
       .attr("startOffset", "50%")
       .attr("text-anchor", "middle")
       .text(`${band.rank.toUpperCase()} · ${band.name}`);
+    if (band.active) {
+      bandGroup.append("circle").attr("class", "tx-note-lineage-hit")
+        .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
+    }
   });
+
+  if (isFunctional) {
+    const fogRadius = centerRadius + (outerRadius - centerRadius) * .33;
+    const familyInner = fogRadius + (compact ? 14 : 20);
+    const familyOuter = outerRadius - (compact ? 13 : 18);
+    plot.append("circle").attr("class", "tx-functional-fog")
+      .attr("cx", cx).attr("cy", cy).attr("r", fogRadius);
+    plot.append("circle").attr("class", "tx-functional-fog-edge")
+      .attr("cx", cx).attr("cy", cy).attr("r", fogRadius + (compact ? 7 : 10));
+    const fogPathId = "tx-functional-barrier-path";
+    defs.append("path").attr("id", fogPathId)
+      .attr("d", `M${cx - fogRadius},${cy} A${fogRadius},${fogRadius} 0 0 1 ${cx + fogRadius},${cy}`);
+    plot.append("text").attr("class", "tx-functional-barrier-label")
+      .attr("aria-hidden", "true")
+      .append("textPath")
+      .attr("href", `#${fogPathId}`)
+      .attr("startOffset", "50%")
+      .text("FUNCTIONAL WORD · CROSSES LINEAGES");
+    if (functionalFamilies.length) {
+      const familyArc = d3.arc();
+      const familySegments = functionalFamilies.map((family, i) => ({
+        family,
+        start: i * Math.PI * 2 / functionalFamilies.length,
+        end: (i + 1) * Math.PI * 2 / functionalFamilies.length,
+      }));
+      const familyGroups = plot.append("g").attr("class", "tx-functional-family-ring")
+        .attr("transform", `translate(${cx},${cy})`)
+        .selectAll("g").data(familySegments).join("g")
+        .attr("class", "tx-functional-family")
+        .attr("role", "button").attr("tabindex", "0")
+        .attr("aria-label", d =>
+          `Open family ${d.family.family}, order ${d.family.order}; ${d.family.notes.length} ${noteNode.data.name.toLowerCase()} example${d.family.notes.length === 1 ? "" : "s"}`)
+        .on("click keydown", (event, d) =>
+          activateTaxonomyTarget(event, () =>
+            setTaxonomyFocus("family", d.family.family)));
+      familyGroups.append("path").attr("d", d => familyArc({
+        innerRadius: familyInner,
+        outerRadius: familyOuter,
+        startAngle: d.start + .025,
+        endAngle: d.end - .025,
+      }));
+      const labelRadius = (familyInner + familyOuter) / 2;
+      familyGroups.append("text").attr("class", "tx-functional-family-label")
+        .attr("transform", d => {
+          const angle = (d.start + d.end) / 2;
+          return `translate(${Math.sin(angle) * labelRadius},${-Math.cos(angle) * labelRadius})`;
+        })
+        .text(d => compact && d.family.family.length > 14
+          ? d.family.family.replace("aceae", ".")
+          : d.family.family);
+    }
+  }
 
   const center = plot.append("g").attr("transform", `translate(${cx},${cy})`);
   center.append("circle").attr("class", "tx-note-focus-halo").attr("r", centerRadius)
@@ -13279,7 +13517,9 @@ function renderTaxonomyNoteDisc(svg, scrollEl, noteNode) {
   center.append("text").attr("class", "tx-note-focus-name").attr("y", compact ? 11 : 15)
     .text(compact ? noteNode.data.name.split(" / ")[0] : noteNode.data.name);
   center.append("text").attr("class", "tx-note-focus-meta").attr("y", compact ? 28 : 38)
-    .text(`${noteData.group} · flavor note`);
+    .text(isFunctional
+      ? `${functionalFamilies.length || "cross-lineage"} families · functional term`
+      : `${noteData.group} · flavor note`);
   return true;
 }
 
@@ -13292,7 +13532,9 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
 
   document.getElementById("taxonomy-expand-all").hidden = true;
   document.getElementById("taxonomy-collapse-all").hidden = true;
-  setTaxonomyUpControl("Order");
+  const orderNode = familyNode.parent;
+  const orderIsInformative = taxonomyOrderIsInformative(orderNode);
+  setTaxonomyUpControl(orderIsInformative ? "Order" : "Kingdom");
   // Size to the SMALLER of the two axes. Sizing on width alone let the disc
   // overrun a short landscape viewport and clip its bottom leaves clean off —
   // the notes were rendered, labeled, and focusable, just below the fold.
@@ -13361,20 +13603,34 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   // Kingdom → Order → Family lineage without leaving the disc.
   const lineageSpan = radius - centerRadius;
   const lineageBands = [
-    { rank: "Order", name: orderName, radius: centerRadius + lineageSpan * .38, arc: "top" },
-    { rank: "Kingdom", name: kingdomName, radius: centerRadius + lineageSpan * .74, arc: "bottom" },
+    {
+      rank: "Order", name: orderName,
+      radius: centerRadius + lineageSpan * .38, arc: "top",
+      active: orderIsInformative,
+      familyCount: taxonomyOrderFamilies(orderNode).length,
+    },
+    {
+      rank: "Kingdom", name: kingdomName,
+      radius: centerRadius + lineageSpan * .74, arc: "bottom",
+      active: true,
+    },
   ];
   const lineage = svg.append("g").attr("class", "tx-lineage-rings");
   const defs = svg.append("defs");
   lineageBands.forEach((band, i) => {
     const pathId = `tx-lineage-${i}`;
     const bandGroup = lineage.append("g")
-      .attr("class", "tx-lineage-action")
-      .attr("role", "button").attr("tabindex", "0")
-      .attr("aria-label", `Zoom out to ${band.rank.toLowerCase()} ${band.name}`)
-      .on("click keydown", event =>
+      .attr("class", band.active ? "tx-lineage-action" : "tx-lineage-inactive")
+      .attr("role", band.active ? "button" : "img")
+      .attr("tabindex", band.active ? "0" : null)
+      .attr("aria-label", band.active
+        ? `Zoom out to ${band.rank.toLowerCase()} ${band.name}`
+        : `Order ${band.name} has only ${band.familyCount} represented family, so navigation skips directly to kingdom`);
+    if (band.active) {
+      bandGroup.on("click keydown", event =>
         activateTaxonomyTarget(event, () =>
           setTaxonomyFocus(band.rank.toLowerCase(), band.name)));
+    }
     bandGroup.append("circle")
       .attr("class", "tx-lineage-band")
       .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
@@ -13394,9 +13650,11 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
       .attr("href", `#${pathId}`)
       .attr("startOffset", "50%")
       .text(`${band.rank.toUpperCase()} · ${band.name}`);
-    bandGroup.append("circle")
-      .attr("class", "tx-lineage-hit")
-      .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
+    if (band.active) {
+      bandGroup.append("circle")
+        .attr("class", "tx-lineage-hit")
+        .attr("cx", cx).attr("cy", cy).attr("r", band.radius);
+    }
   });
 
   const points = leaves.map((leaf, i) => {
