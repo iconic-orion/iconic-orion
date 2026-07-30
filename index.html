@@ -2117,10 +2117,44 @@
   .origin-label {
     font-size: 11px; fill: var(--ink);
     paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
-    pointer-events: none;
+    pointer-events: none; -webkit-user-select: none; user-select: none;
   }
   .origin-marker.active .origin-label { font-weight: 700; fill: var(--accent); }
-  .origin-cluster-box { fill: var(--panel-2); fill-opacity: 0.85; stroke: var(--line); stroke-width: 0.5; }
+  /* Crowded regions collapse to one honest map glyph. The count is the only
+     persistent label; selecting it fans the member notes back out with an
+     individual leader ending at each individual name. */
+  .origin-region-cluster { cursor: pointer; outline: none; }
+  .origin-cluster-hit { fill: transparent; pointer-events: all; }
+  .origin-cluster-dot {
+    fill: var(--panel-2); stroke: var(--accent); stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+  .origin-region-cluster.active .origin-cluster-dot { fill: var(--accent); }
+  .origin-region-cluster.dimmed { opacity: 0.3; }
+  .origin-region-cluster.expanded .origin-cluster-dot {
+    fill: var(--bg); stroke: #fff; stroke-dasharray: 3 2;
+  }
+  .origin-region-cluster:focus-visible .origin-cluster-dot {
+    stroke: #fff; stroke-width: 3;
+  }
+  .origin-cluster-count,
+  .origin-cluster-summary {
+    fill: var(--ink); font-weight: 750; text-anchor: middle;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px;
+    stroke-linejoin: round; pointer-events: none;
+  }
+  .origin-cluster-count { dominant-baseline: central; }
+  .origin-cluster-summary { font-weight: 650; }
+  .origin-cluster-member .origin-leader { opacity: 0.9; }
+  .origin-cluster-member .origin-dot {
+    stroke: var(--bg); stroke-width: 2; vector-effect: non-scaling-stroke;
+  }
+  .origin-cluster-member-icon {
+    fill: #fff; text-anchor: middle; dominant-baseline: central;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 2px;
+    pointer-events: none;
+  }
+  .origin-spider-label { font-weight: 700; }
 
   /* Search-hit ring sits on top of the marker's own active/dimmed state
      (set via inline opacity in JS so it overrides the entry-selection
@@ -2376,8 +2410,7 @@
     #geography-pilot-picker { top: 84px; }
     #geography-pilot-picker button { min-height: 28px; padding: 0 8px; }
     body.origins-mode #markers-svg .origin-leader,
-    body.origins-mode #markers-svg .origin-label,
-    body.origins-mode #markers-svg .origin-cluster-box {
+    body.origins-mode #markers-svg .origin-label {
       opacity: 0;
     }
     body.origins-mode #markers-svg .origin-marker.active .origin-leader,
@@ -2386,6 +2419,9 @@
     body.origins-mode #markers-svg .origin-marker.selected .origin-label,
     body.origins-mode #markers-svg .origin-marker.search-hit .origin-leader,
     body.origins-mode #markers-svg .origin-marker.search-hit .origin-label {
+      opacity: 1;
+    }
+    body.origins-mode #markers-svg .origin-marker.origin-cluster-member .origin-label {
       opacity: 1;
     }
     body.origins-mode #markers-svg .geo-production-leader,
@@ -5965,6 +6001,7 @@ const state = {
   originsOnlyTasting: false,        // true: only markers for notes you've entered
   originsHiddenGroups: new Set(),   // group ids unchecked in the map legend
   selectedOriginNote: null,         // map: note whose detail is open — highlighted (spinning ring + white), not an entry change
+  expandedOriginCluster: null,      // map: crowded-region glyph currently expanded into its member notes
   geographyLens: "origin",          // "origin" | "production" | "traditions"; only one mark system renders at once
   geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the tasting
   mapCompassPos: null,              // {left,top} in map-wrap CSS pixels; null chooses a responsive default
@@ -11590,7 +11627,7 @@ function wireMapZoom() {
     if (e.button !== 0) return;
     // Buttons and markers handle their own clicks; capturing the pointer
     // here would retarget their click event to `wrap` and swallow it.
-    if (e.target.closest("button, .origin-marker")) return;
+    if (e.target.closest("button, .origin-marker, .origin-region-cluster")) return;
     dragging = true; dragMoved = false;
     startX = e.clientX; startY = e.clientY;
     startView = { x: mapView.x, y: mapView.y };
@@ -11628,8 +11665,10 @@ function applyOriginsSearch(query) {
   const q = query.trim().toLowerCase();
   const countEl = document.getElementById("origins-search-count");
   const markers = document.querySelectorAll("#markers-svg .origin-marker");
+  const clusters = document.querySelectorAll("#markers-svg .origin-region-cluster");
   if (!q) {
     markers.forEach(g => { g.style.opacity = ""; g.classList.remove("search-hit"); });
+    clusters.forEach(g => { g.style.opacity = ""; g.classList.remove("search-hit"); });
     countEl.textContent = "";
     return;
   }
@@ -11640,6 +11679,19 @@ function applyOriginsSearch(query) {
     g.classList.toggle("search-hit", !!match);
     g.style.opacity = match ? "" : "0.12";
     if (match) hits++;
+  });
+  clusters.forEach(g => {
+    const memberIds = (g.dataset.noteIds || "").split("|").filter(Boolean);
+    const matches = memberIds.filter(id => {
+      const note = NOTE_BY_ID[id];
+      return note && note.label.toLowerCase().includes(q);
+    });
+    const match = matches.length > 0;
+    g.classList.toggle("search-hit", match);
+    g.style.opacity = match ? "" : "0.12";
+    // Expanded members were already counted individually above. A collapsed
+    // region still reports the real number of matching notes inside its glyph.
+    if (g.dataset.expanded !== "true") hits += matches.length;
   });
   countEl.textContent = hits === 0 ? "No matches" : `${hits} match${hits === 1 ? "" : "es"}`;
 }
@@ -12273,10 +12325,10 @@ function layoutOriginLabelDirections(items) {
   return dirIndex;
 }
 
-// Notes whose dots fall within CLUSTER_R of each other share one label
-// anchor and one background box, with each note still keeping its own dot
-// and its own leader line back to that shared box — this is what keeps e.g.
-// a dozen Mediterranean notes from rendering a dozen overlapping labels.
+// Notes whose dots fall within CLUSTER_R of each other collapse into one
+// regional glyph. Expanding that glyph reveals the individual dots and sends
+// each leader to its own label row, making membership explicit instead of
+// presenting an ambiguous always-open box of nearby names.
 const CLUSTER_R = 14;
 
 function clusterOriginItems(items, radius) {
@@ -12437,21 +12489,6 @@ function openOriginDetail(note, origin) {
   panel.hidden = false;
 }
 
-// Cycled by cluster (not by aroma group, which the dots/leaders/text already
-// use) so two clusters sitting next to each other read as visibly separate
-// groups. Pastel + low alpha keeps it a quiet grouping cue rather than a
-// second competing color-coding system on top of the existing one.
-const CLUSTER_PALETTE = [
-  { fill: "rgba(123,175,212,0.22)", stroke: "rgba(123,175,212,0.65)" },  // sky blue
-  { fill: "rgba(143,217,182,0.22)", stroke: "rgba(143,217,182,0.65)" },  // mint
-  { fill: "rgba(195,166,224,0.22)", stroke: "rgba(195,166,224,0.65)" },  // lavender
-  { fill: "rgba(242,184,128,0.22)", stroke: "rgba(242,184,128,0.65)" },  // peach
-  { fill: "rgba(229,160,184,0.22)", stroke: "rgba(229,160,184,0.65)" },  // rose
-  { fill: "rgba(232,221,138,0.22)", stroke: "rgba(232,221,138,0.65)" },  // lemon
-  { fill: "rgba(127,205,196,0.22)", stroke: "rgba(127,205,196,0.65)" },  // teal
-  { fill: "rgba(229,148,136,0.22)", stroke: "rgba(229,148,136,0.65)" },  // coral
-];
-
 function buildOriginMarkers() {
   const svg = document.getElementById("markers-svg");
   svg.innerHTML = "";
@@ -12473,30 +12510,106 @@ function buildOriginMarkers() {
   const clusters = clusterOriginItems(items, CLUSTER_R);
   const dirIndex = layoutOriginLabelDirections(clusters);
   const LABEL_LINE_H = 13;
-  let clusterColorIndex = 0;
 
   clusters.forEach(cluster => {
+    const isCluster = cluster.members.length > 1;
+    const isExpanded = isCluster && state.expandedOriginCluster === cluster.id;
+
+    if (isCluster) {
+      const regionGlyph = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      regionGlyph.classList.add("origin-region-cluster");
+      if (isExpanded) regionGlyph.classList.add("expanded");
+      regionGlyph.dataset.clusterId = cluster.id;
+      regionGlyph.dataset.noteIds = cluster.members.map(m => m.note.id).join("|");
+      regionGlyph.dataset.expanded = String(isExpanded);
+      regionGlyph.dataset.x = cluster.x;
+      regionGlyph.dataset.y = cluster.y;
+      regionGlyph.setAttribute("role", "button");
+      regionGlyph.setAttribute("tabindex", "0");
+      regionGlyph.setAttribute("aria-expanded", String(isExpanded));
+      regionGlyph.setAttribute("aria-label",
+        `${cluster.members.length} nearby origin notes: ${cluster.members.map(m => m.note.label).join(", ")}. ${isExpanded ? "Collapse" : "Expand"} region.`);
+
+      const regionTitle = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      regionTitle.textContent = cluster.members.map(m => `${m.note.label}: ${m.origin.region}`).join(" · ");
+
+      const regionDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      regionDot.classList.add("origin-cluster-dot");
+      regionDot.setAttribute("cx", cluster.x);
+      regionDot.setAttribute("cy", cluster.y);
+
+      const regionHit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      regionHit.classList.add("origin-cluster-hit");
+      regionHit.setAttribute("cx", cluster.x);
+      regionHit.setAttribute("cy", cluster.y);
+
+      const count = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      count.classList.add("origin-cluster-count");
+      count.textContent = cluster.members.length;
+
+      const summary = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      summary.classList.add("origin-cluster-summary");
+      summary.textContent = isExpanded ? "close" : "notes";
+
+      const toggle = () => {
+        state.expandedOriginCluster = isExpanded ? null : cluster.id;
+        rebuildOriginMarkers();
+      };
+      regionGlyph.addEventListener("click", toggle);
+      regionGlyph.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle();
+        }
+      });
+      regionGlyph.append(regionTitle, regionHit, regionDot, count, summary);
+      svg.appendChild(regionGlyph);
+
+      if (!isExpanded) return;
+    }
+
     const dir = ORIGIN_DIRS[dirIndex.get(cluster.id)];
     const lx = cluster.x + dir.dx * LEADER_LEN, ly = cluster.y + dir.dy * LEADER_LEN;
     const anchor = dir.dx > 0.3 ? "start" : dir.dx < -0.3 ? "end" : "middle";
     const baseTy = ly + (dir.dy > 0.3 ? 10 : dir.dy < -0.3 ? -3 : 4);
     const tx = lx + (dir.dx > 0.3 ? 3 : dir.dx < -0.3 ? -3 : 0);
 
-    const texts = [];
     cluster.members.forEach(({ id, note, origin, x, y }, i) => {
       const color = groupColor(note.group);
       const ty = baseTy + i * LABEL_LINE_H;
+      let spiderAngle = null, spiderOrbitPx = null;
+      if (isCluster) {
+        const total = cluster.members.length;
+        const innerCount = Math.min(8, total);
+        const onOuterRing = total > 8 && i >= innerCount;
+        const ringCount = onOuterRing ? total - innerCount : innerCount;
+        const ringIndex = onOuterRing ? i - innerCount : i;
+        const angleOffset = onOuterRing ? Math.PI / Math.max(1, ringCount) : 0;
+        spiderAngle = -Math.PI / 2 + angleOffset + (ringIndex / ringCount) * Math.PI * 2;
+        spiderOrbitPx = onOuterRing ? 144 : 82;
+      }
 
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.classList.add("origin-marker");
+      if (isCluster) g.classList.add("origin-cluster-member");
       g.dataset.note = note.id;
+      if (isCluster) {
+        g.dataset.clusterId = cluster.id;
+        g.dataset.clusterX = cluster.x;
+        g.dataset.clusterY = cluster.y;
+        g.dataset.spiderAngle = spiderAngle;
+        g.dataset.spiderOrbitPx = spiderOrbitPx;
+      }
       g.setAttribute("aria-label", note.label);
 
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.classList.add("origin-leader");
       if (origin.certainty === "approximate") line.classList.add("dashed");
-      line.setAttribute("x1", x); line.setAttribute("y1", y);
-      line.setAttribute("x2", lx); line.setAttribute("y2", ly);
+      line.setAttribute("x1", isCluster ? cluster.x : x);
+      line.setAttribute("y1", isCluster ? cluster.y : y);
+      const lineEndX = isCluster ? cluster.x : lx;
+      const lineEndY = isCluster ? cluster.y : ly;
+      line.setAttribute("x2", lineEndX); line.setAttribute("y2", lineEndY);
       line.setAttribute("stroke", color);
       // Keeps the line's screen-pixel thickness constant across zoom levels
       // (the browser handles this natively; only fill-based geometry like
@@ -12505,7 +12618,8 @@ function buildOriginMarkers() {
 
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.classList.add("origin-dot");
-      circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+      circle.setAttribute("cx", isCluster ? cluster.x : x);
+      circle.setAttribute("cy", isCluster ? cluster.y : y);
       circle.setAttribute("r", 5);
       circle.setAttribute("fill", color);
 
@@ -12514,24 +12628,32 @@ function buildOriginMarkers() {
       // refreshOriginMarkers().
       const selectRing = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       selectRing.classList.add("origin-select-ring");
-      selectRing.setAttribute("cx", x); selectRing.setAttribute("cy", y);
+      selectRing.setAttribute("cx", isCluster ? cluster.x : x);
+      selectRing.setAttribute("cy", isCluster ? cluster.y : y);
       selectRing.setAttribute("r", 9);
 
-      // Position is stored as a LOCAL offset from the cluster anchor (lx,ly),
-      // not an absolute coordinate. refreshOriginMarkers() reapplies
-      // translate(lx,ly) scale(k) on every zoom change, which scales the
-      // text's offset-from-anchor, its line spacing, and its glyph size all
-      // together — otherwise (as shipped first) only font-size was rescaled
-      // and the box/line-spacing stayed fixed in user-units, so at high zoom
-      // the box visibly outgrew its own text.
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.classList.add("origin-label");
-      text.dataset.lx = lx; text.dataset.ly = ly;
-      text.dataset.localX = tx - lx; text.dataset.localY = ty - ly;
-      text.setAttribute("text-anchor", anchor);
+      if (isCluster) {
+        text.classList.add("origin-spider-label");
+      } else {
+        // Singleton label placement stays as a local offset from its anchor so
+        // refreshOriginMarkers() can preserve a constant on-screen size.
+        text.dataset.lx = lx; text.dataset.ly = ly;
+        text.dataset.localX = tx - lx; text.dataset.localY = ty - ly;
+        text.setAttribute("text-anchor", anchor);
+      }
       text.setAttribute("fill", color);
-      text.textContent = origin.country ? `${note.label} (${origin.country})` : note.label;
-      texts.push(text);
+      text.textContent = isCluster
+        ? note.label
+        : (origin.country ? `${note.label} (${origin.country})` : note.label);
+
+      let icon = null;
+      if (isCluster) {
+        icon = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        icon.classList.add("origin-cluster-member-icon");
+        icon.textContent = noteIcon(note);
+      }
 
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
       title.textContent = origin.country
@@ -12542,6 +12664,7 @@ function buildOriginMarkers() {
       g.appendChild(line);
       g.appendChild(circle);
       g.appendChild(selectRing);
+      if (icon) g.appendChild(icon);
       g.appendChild(text);
 
       g.addEventListener("click", () => {
@@ -12563,33 +12686,6 @@ function buildOriginMarkers() {
 
       svg.appendChild(g);
     });
-
-    // Shared background box for clusters of 2+, sized from the longest
-    // label so it visually reads as one group rather than separate floating
-    // labels — inserted after the fact so it can sit behind the text it
-    // belongs to without a second measurement pass. Measured from the real
-    // rendered text (the members loop above already appended these to the
-    // live SVG) rather than a character-count estimate, which ran wide and
-    // left a visible gap between the box edge and the text it was sizing.
-    if (cluster.members.length > 1) {
-      const longest = Math.max(...texts.map(t => t.getBBox().width));
-      const boxW = longest + 10;
-      const boxH = cluster.members.length * LABEL_LINE_H + 6;
-      const boxX = anchor === "start" ? tx - 5 : anchor === "end" ? tx - longest - 5 : tx - boxW / 2;
-      const boxY = baseTy - 10;
-      const palette = CLUSTER_PALETTE[clusterColorIndex % CLUSTER_PALETTE.length];
-      clusterColorIndex++;
-      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      rect.classList.add("origin-cluster-box");
-      rect.dataset.lx = lx; rect.dataset.ly = ly;
-      rect.dataset.localX = boxX - lx; rect.dataset.localY = boxY - ly;
-      rect.setAttribute("width", boxW);
-      rect.setAttribute("height", boxH);
-      rect.setAttribute("rx", 3);
-      rect.style.fill = palette.fill;
-      rect.style.stroke = palette.stroke;
-      svg.insertBefore(rect, texts[0].closest("g"));
-    }
   });
 
   refreshOriginMarkers();
@@ -12604,6 +12700,29 @@ function refreshOriginMarkers() {
   }
   const pxPerUnit = mapPxPerUnit();
   const anyActive = NOTES.some(n => hasAnyEntry(n.id));
+  svg.querySelectorAll(".origin-region-cluster").forEach(g => {
+    const memberIds = (g.dataset.noteIds || "").split("|").filter(Boolean);
+    const active = memberIds.some(hasAnyEntry);
+    g.classList.toggle("active", active);
+    g.classList.toggle("dimmed", anyActive && !active);
+    const x = +g.dataset.x, y = +g.dataset.y;
+    const hit = g.querySelector(".origin-cluster-hit");
+    const dot = g.querySelector(".origin-cluster-dot");
+    const count = g.querySelector(".origin-cluster-count");
+    const summary = g.querySelector(".origin-cluster-summary");
+    if (hit) hit.setAttribute("r", 20 / pxPerUnit);
+    if (dot) dot.setAttribute("r", (active ? 11 : 10) / pxPerUnit);
+    if (count) {
+      count.setAttribute("x", x);
+      count.setAttribute("y", y);
+      count.setAttribute("font-size", 10 / pxPerUnit);
+    }
+    if (summary) {
+      summary.setAttribute("x", x);
+      summary.setAttribute("y", y + 22 / pxPerUnit);
+      summary.setAttribute("font-size", 10 / pxPerUnit);
+    }
+  });
   svg.querySelectorAll(".origin-marker").forEach(g => {
     const noteId = g.dataset.note;
     const active = hasAnyEntry(noteId);
@@ -12618,17 +12737,60 @@ function refreshOriginMarkers() {
     if (ring) ring.setAttribute("r", active ? (MARKER_ACTIVE_R + 3) : (MARKER_BASE_R + 3) / pxPerUnit);
   });
 
-  // Labels and cluster boxes are stored as a local offset from their anchor
+  // Labels are stored as a local offset from their anchor
   // (data-lx/ly, data-local-x/y) so this single transform can scale their
-  // distance-from-anchor, their glyph size, and (for the box) their width/
-  // height all together — keeping the box sized to its own text at any zoom
-  // *and* at any actual container size (a phone's map pane is much narrower
-  // than a desktop one, so the same zoom level needs a bigger correction).
+  // distance-from-anchor, line spacing, and glyph size together at any zoom
+  // and actual container size (a phone's map pane is much narrower than a
+  // desktop one, so the same zoom level needs a bigger correction).
   const k = labelFontSizeUserUnits(pxPerUnit) / LABEL_BASE_PX;
-  svg.querySelectorAll(".origin-label, .origin-cluster-box").forEach(el => {
+  svg.querySelectorAll(".origin-label:not(.origin-spider-label)").forEach(el => {
     const lx = +el.dataset.lx, ly = +el.dataset.ly;
     const lox = +el.dataset.localX, loy = +el.dataset.localY;
     el.setAttribute("transform", `translate(${lx} ${ly}) scale(${k}) translate(${lox} ${loy})`);
+  });
+  // Expanded regions become a literal radial bloom: one short, non-crossing
+  // spoke per note, ending at a colored circular satellite with the name set
+  // immediately outside it. Geometry is expressed in screen pixels then
+  // converted to map units so the bloom remains usable through zoom.
+  svg.querySelectorAll(".origin-cluster-member").forEach(g => {
+    const cx = +g.dataset.clusterX, cy = +g.dataset.clusterY;
+    const angle = +g.dataset.spiderAngle;
+    const ux = Math.cos(angle), uy = Math.sin(angle);
+    const orbit = +g.dataset.spiderOrbitPx / pxPerUnit;
+    const sx = cx + ux * orbit, sy = cy + uy * orbit;
+    const dot = g.querySelector(".origin-dot");
+    const ring = g.querySelector(".origin-select-ring");
+    const line = g.querySelector(".origin-leader");
+    const icon = g.querySelector(".origin-cluster-member-icon");
+    const label = g.querySelector(".origin-spider-label");
+
+    if (line) {
+      line.setAttribute("x1", cx + ux * 13 / pxPerUnit);
+      line.setAttribute("y1", cy + uy * 13 / pxPerUnit);
+      line.setAttribute("x2", sx - ux * 17 / pxPerUnit);
+      line.setAttribute("y2", sy - uy * 17 / pxPerUnit);
+    }
+    if (dot) {
+      dot.setAttribute("cx", sx); dot.setAttribute("cy", sy);
+      dot.setAttribute("r", 15 / pxPerUnit);
+      dot.style.setProperty("r", `${15 / pxPerUnit}px`);
+    }
+    if (ring) {
+      ring.setAttribute("cx", sx); ring.setAttribute("cy", sy);
+      ring.setAttribute("r", 19 / pxPerUnit);
+    }
+    if (icon) {
+      icon.setAttribute("x", sx); icon.setAttribute("y", sy);
+      icon.setAttribute("font-size", 14 / pxPerUnit);
+    }
+    if (label) {
+      const nearlyVertical = Math.abs(ux) < 0.25;
+      label.setAttribute("text-anchor", nearlyVertical ? "middle" : (ux > 0 ? "start" : "end"));
+      label.setAttribute("dominant-baseline", "central");
+      label.setAttribute("x", sx + (nearlyVertical ? 0 : ux * 23 / pxPerUnit));
+      label.setAttribute("y", sy + (nearlyVertical ? uy * 25 / pxPerUnit : uy * 10 / pxPerUnit));
+      label.style.fontSize = `${12 / pxPerUnit}px`;
+    }
   });
   // Selection highlight is re-applied here so it survives zoom refreshes and
   // full marker rebuilds (both call refreshOriginMarkers at the end).
@@ -12639,6 +12801,12 @@ function refreshOriginMarkers() {
 // Selecting a marker highlights it (spinning ring + white dot/label) and opens
 // its detail; it does not change the tasting entries. Deselecting reverts.
 function selectOriginNote(id) {
+  const collapsedCluster = Array.from(document.querySelectorAll("#markers-svg .origin-region-cluster"))
+    .find(g => g.dataset.expanded !== "true" && (g.dataset.noteIds || "").split("|").includes(id));
+  if (collapsedCluster) {
+    state.expandedOriginCluster = collapsedCluster.dataset.clusterId;
+    rebuildOriginMarkers();
+  }
   state.selectedOriginNote = id;
   applyOriginSelection();
 }

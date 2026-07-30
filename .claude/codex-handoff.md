@@ -389,6 +389,43 @@ code paths, and drag masks this entire class of bug.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Follow-up: collapsed regional map glyphs (2026-07-29)
+
+- Replaced the always-open colored boxes used for crowded map regions with one
+  count-bearing circular glyph per region cluster. The resting map no longer
+  presents a block of names whose ownership is unclear.
+- Clicking or keyboard-activating the regional circle expands just that cluster.
+  After direct screenshot feedback rejected even an unboxed stacked word list,
+  the expanded state became a radial spider bloom: every member is its own
+  colored circular satellite with an ingredient icon, its name immediately
+  outside the circle, and one short hub-to-satellite spoke. There is no rectangle,
+  shared label anchor, stacked word object, or crossed leader geometry. Activating
+  the center circle again collapses it.
+- The cluster glyph reports its member-note count, accessible expanded state, and
+  full member list. Active-tasting dimming, search-hit behavior, map filtering,
+  selection restoration, and sibling-origin jumps all understand collapsed
+  clusters. Selecting a hidden member programmatically expands its cluster first.
+- Added the new cluster glyph to the map pan-handler exclusion boundary. This is
+  required because pointer capture on the map canvas otherwise retargets and
+  swallows the cluster click—the same failure mode previously fixed for ordinary
+  origin markers and taxonomy controls.
+- Mobile keeps ordinary labels quiet but explicitly reveals every satellite label
+  inside an expanded cluster. Clusters above eight members use a staggered second
+  orbit. Circle size, count, summary, satellites, icons, labels, and spoke endpoints
+  are recomputed with zoom so the interaction remains legible rather than scaling
+  into tiny map geometry.
+- Static verification: the single inline script compiles and `git diff --check`
+  passes. The in-app browser control surface rejected DOM inspection of the open
+  `file://` URL under its URL policy, so no visual/browser interaction result is
+  claimed; the human will verify after refreshing their local tab.
+
+### Coordination boundary
+
+- This pass changes the origin-marker presentation only. It does not alter origin
+  data, production/tradition lenses, or the wheel and taxonomy views. The concurrent
+  `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
 ## Follow-up: family recognition bridges become first-class notes (2026-07-29)
 
 - Added all seven human-approved continuity notes: Lychee, Cardamom, Walnut,
