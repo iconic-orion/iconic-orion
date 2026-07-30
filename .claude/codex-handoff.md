@@ -389,6 +389,40 @@ code paths, and drag masks this entire class of bug.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Follow-up: family recognition bridges become first-class notes (2026-07-29)
+
+- Added all seven human-approved continuity notes: Lychee, Cardamom, Walnut,
+  Bay leaf, Olive, Lilac, and Beet / beetroot. Each is a top-level wheel note
+  with a real genus, Family, Order, icon, descriptor vocabulary, chemistry
+  edges, full aroma-literature reference, and a Map origin marker.
+- The additions turn six previously single-note Families into visible pairings:
+  Maple ↔ Lychee (Sapindaceae), Ginger ↔ Cardamom (Zingiberaceae),
+  Pecan ↔ Walnut (Juglandaceae), Cinnamon ↔ Bay leaf (Lauraceae),
+  Jasmine ↔ Lilac ↔ Olive (Oleaceae), and Quinoa ↔ Beet (Amaranthaceae).
+- Rewrote those six Family diagnostics around the familiar plant parts that make
+  the relationship memorable: maple sap / lychee fruit, ginger rhizome /
+  cardamom pod, cinnamon bark / bay leaf, flowers / olive fruit, quinoa seed /
+  beet root, and the two husked nuts.
+- Reused supported chemistry wherever the literature allowed. Added only two
+  genuinely necessary compounds: α-terpinyl acetate for cardamom and bay leaf,
+  and (2E,4E,6Z)-nona-2,4,6-trienal, which combines with sotolon to reconstruct
+  walnut aroma.
+- Added full references and citation mappings for Feng et al. (2018), Mishra et
+  al. (2022), Miao & Weng (2009), Stübner & Steinhaus (2023), Zhou et al.
+  (2019), Gecer (2022), and Freidig & Goldman (2014).
+- Static integrity check: 127 unique Notes, 94 Compounds, and 262 Edges; no
+  duplicate Note or Compound ids; no Edge points to a missing Note or Compound;
+  the inline script compiles and `git diff --check` passes.
+
+### Coordination boundary
+
+- After the human confirmed Claude was inactive, this pass also supplied minimal,
+  explicitly approximate origin markers for the new notes (and Gardenia) so the
+  shared note records do not become dead ends in Map view. It does not change the
+  separate three-note geography pilot, production data, or tradition lenses.
+- The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
 ## Follow-up: Gardenia as the Coffee-family recognition bridge (2026-07-29)
 
 - Added Gardenia as a first-class Floral note rather than an explanatory name that

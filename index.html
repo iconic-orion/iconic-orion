@@ -3438,6 +3438,7 @@ const NOTES = [
   { id: "pineapple",   label: "Pineapple",          group: "fruity",   common: true,  genus: "Ananas", family: "Bromeliaceae", order: "Poales" },
   { id: "cherry",      label: "Cherry",             group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "mango",       label: "Mango",              group: "fruity",   common: false, genus: "Mangifera", family: "Anacardiaceae", order: "Sapindales" },
+  { id: "lychee",      label: "Lychee",              group: "fruity",   common: true,  genus: "Litchi", family: "Sapindaceae", order: "Sapindales" },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false, genus: "Passiflora", family: "Passifloraceae", order: "Malpighiales" },
   { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true,  genus: "Vitis", family: "Vitaceae", order: "Vitales" },
   { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
@@ -3457,6 +3458,7 @@ const NOTES = [
   { id: "rose",        label: "Rose",               group: "floral",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "gardenia",    label: "Gardenia",           group: "floral",   common: true,  genus: "Gardenia", family: "Rubiaceae", order: "Gentianales" },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true,  family: "Oleaceae", order: "Lamiales" },
+  { id: "lilac",       label: "Lilac",               group: "floral",   common: true,  genus: "Syringa", family: "Oleaceae", order: "Lamiales" },
   // Orange blossom is literally the flower of the orange tree — botanically
   // Rutaceae/Citrus/Sapindales, nothing like jasmine's Oleaceae/Lamiales. Its
   // subOf: "jasmine" here is a flavor-table grouping (it's compared against
@@ -3512,6 +3514,8 @@ const NOTES = [
   { id: "licorice",    label: "Licorice",           group: "spice",    common: true,  subOf: "anise", genus: "Glycyrrhiza", family: "Fabaceae", order: "Fabales",
     noStandoutNote: "Licorice root's own signature compound, glycyrrhizin, is a sweet TASTE compound (a saponin), not an aroma one. The smell people associate with black licorice is conventionally anise oil's anethole — the same compound Anise is built on — added as flavoring rather than something inherent to Glycyrrhiza itself." },
   { id: "ginger",      label: "Ginger",             group: "spice",    common: true,  genus: "Zingiber", family: "Zingiberaceae", order: "Zingiberales" },
+  { id: "cardamom",    label: "Cardamom",           group: "spice",    common: true,  genus: "Elettaria", family: "Zingiberaceae", order: "Zingiberales" },
+  { id: "bayleaf",     label: "Bay leaf",           group: "spice",    common: true,  genus: "Laurus", family: "Lauraceae", order: "Laurales" },
   // nutty
   { id: "almond",      label: "Almond",             group: "nutty",    common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "hazelnut",    label: "Hazelnut",           group: "nutty",    common: false, genus: "Corylus", family: "Betulaceae", order: "Fagales" },
@@ -3519,6 +3523,7 @@ const NOTES = [
   { id: "coconut",     label: "Coconut",            group: "nutty",    common: true,  genus: "Cocos", family: "Arecaceae", order: "Arecales" },
   { id: "pistachio",   label: "Pistachio",          group: "nutty",    common: true,  genus: "Pistacia", family: "Anacardiaceae", order: "Sapindales" },
   { id: "pecan",       label: "Pecan",              group: "nutty",    common: true,  genus: "Carya", family: "Juglandaceae", order: "Fagales" },
+  { id: "walnut",      label: "Walnut",              group: "nutty",    common: true,  genus: "Juglans", family: "Juglandaceae", order: "Fagales" },
   // earthy
   // The note's own label calls out cedar specifically, so "Woody / cedar"
   // anchors to genus Cedrus rather than the umbrella bucket — same family
@@ -3578,6 +3583,8 @@ const NOTES = [
   { id: "garlic",      label: "Garlic",             group: "vegetal",  common: true,  genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
   { id: "celery",      label: "Celery",             group: "vegetal",  common: true,  genus: "Apium", family: "Apiaceae", order: "Apiales" },
   { id: "carrot",      label: "Carrot",             group: "vegetal",  common: true,  genus: "Daucus", family: "Apiaceae", order: "Apiales" },
+  { id: "beet",        label: "Beet / beetroot",     group: "vegetal",  common: true,  genus: "Beta", family: "Amaranthaceae", order: "Caryophyllales" },
+  { id: "olive",       label: "Olive",               group: "vegetal",  common: true,  genus: "Olea", family: "Oleaceae", order: "Lamiales" },
   { id: "tomato",      label: "Tomato",             group: "vegetal",  common: true,  genus: "Solanum", family: "Solanaceae", order: "Solanales" },
   { id: "arugula",     label: "Arugula",            group: "vegetal",  common: true,  genus: "Eruca", family: "Brassicaceae", order: "Brassicales" },
   { id: "lettuce",     label: "Lettuce",            group: "vegetal",  common: true,  genus: "Lactuca", family: "Asteraceae", order: "Asterales" },
@@ -3639,6 +3646,7 @@ const COMPOUNDS = [
   { id: "etbut",         label: "Ethyl butanoate",   class: "ester",     commonName: "ethyl butyrate", threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Pineapple-apple fruity ester." },
   { id: "ethex",         label: "Ethyl hexanoate",   class: "ester",     commonName: "ethyl caproate", threshold: "low",      specificity: "shared",    thresholdSrc: "~1 ppb (Buttery 1981).", note: "Berry-apple ester; fermentation." },
   { id: "iaac",          label: "Isoamyl acetate",   class: "ester",     commonName: "banana oil", threshold: "low",      specificity: "signature", thresholdSrc: "~2 ppb (Buttery 1981).", note: "Banana ester; yeast fermentation." },
+  { id: "terpinylacetate", label: "α-Terpinyl acetate", class: "ester",  threshold: "medium",   specificity: "signature", thresholdSrc: "61.65–68.19% of dried small-cardamom essential oil, its dominant constituent (Mishra et al. 2022).", note: "Cardamom's sweet-spicy, woody ester; paired with cooling 1,8-cineole." },
   // lactones
   { id: "gdecal",        label: "γ-Decalactone",     class: "lactone",   threshold: "low",      specificity: "shared",    thresholdSrc: "~11 ppb (Schwab et al. 2008).", note: "Peach-coconut lactone; also mango." },
   { id: "gddecal",       label: "γ-Dodecalactone",   class: "lactone",   threshold: "low",      specificity: "signature", thresholdSrc: "Identified as a key odor-active compound by OAV in plum (Pino & Quijano 2012).", note: "A longer-chain cousin of peach's γ-decalactone — same lactone family, but the bigger ring reads less coconutty and more specifically plum-like." },
@@ -3648,6 +3656,7 @@ const COMPOUNDS = [
   // aldehydes
   { id: "vanillin",      label: "Vanillin",          class: "phenolic-aldehyde", threshold: "low",      specificity: "signature", thresholdSrc: "~20–50 ppb (Buttery 1981).", note: "Vanilla principal odorant; oak-extracted in spirits." },
   { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
+  { id: "walnuttrienal", label: "(2E,4E,6Z)-Nona-2,4,6-trienal", class: "aldehyde", threshold: "low", specificity: "signature", thresholdSrc: "One of the two key walnut odorants established by recombination and omission experiments (Stübner & Steinhaus 2023).", note: "Oatmeal-like alone; with sotolon it becomes unmistakably walnut-like." },
   { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
   { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; the beer and coffee staling marker. Also a high-impact aldehyde in raw millet and fresh cranberry, where the same waxy-cardboard edge is just part of the native smell rather than a sign of age." },
   { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
@@ -3784,6 +3793,10 @@ const EDGES = [
   { note: "mango",       cpd: "myrcene",   w: 0.65, cite: "Pino & Mesa 2006 (mango monoterpene profile)." },
   { note: "mango",       cpd: "gdecal",    w: 0.55, cite: "Pino & Mesa 2006 (ripe-mango lactones)." },
   { note: "mango",       cpd: "iaac",      w: 0.30, cite: "Pino & Mesa 2006." },
+  { note: "lychee",      cpd: "geraniol",  w: 0.90, cite: "Feng et al. 2018 (geraniol, FD 512, a key lychee aroma-active compound)." },
+  { note: "lychee",      cpd: "furaneol",  w: 0.70, cite: "Feng et al. 2018 (furaneol among lychee's high-FD aroma-active compounds)." },
+  { note: "lychee",      cpd: "linalool",  w: 0.60, cite: "Feng et al. 2018 (linalool among lychee's aroma-active compounds)." },
+  { note: "lychee",      cpd: "methional", w: 0.50, cite: "Feng et al. 2018 (methional had the highest flavor-dilution factor, FD 1024)." },
   { note: "passionfruit",cpd: "mh3",       w: 0.90, cite: "Tominaga et al. 1998; Engel & Tressl 1991 (3-MH/3-MHA in passionfruit)." },
   { note: "passionfruit",cpd: "mmp4",      w: 0.55, cite: "Tominaga et al. 2000 (4MMP also found in passionfruit)." },
   { note: "passionfruit",cpd: "ethex",     w: 0.45, cite: "Engel & Tressl 1991 (passionfruit esters)." },
@@ -3800,6 +3813,9 @@ const EDGES = [
   { note: "gardenia",      cpd: "methylsalicylate", w: 0.30, cite: "Cai et al. 2025 (methyl salicylate, 1.623 ng·g⁻¹·h⁻¹, in Gardenia jasminoides flower headspace)." },
   { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
   { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
+  { note: "lilac",         cpd: "linalool",   w: 0.90, cite: "Gecer 2022 (linalool, 26.34%, the largest constituent of Syringa vulgaris flower oil)." },
+  { note: "lilac",         cpd: "geraniol",   w: 0.55, cite: "Gecer 2022 (trans-geraniol, 9.83%, in Syringa vulgaris flower oil)." },
+  { note: "lilac",         cpd: "bisabolol",  w: 0.30, cite: "Gecer 2022 (α-bisabolol, 4.50%, in Syringa vulgaris flower oil)." },
   { note: "orangeblossom", cpd: "linalool",   w: 0.60, cite: "Jabalpurwala, Smoot & Rouseff 2009 (linalool among citrus blossom volatiles' major components)." },
   { note: "orangeblossom", cpd: "methanthr",  w: 0.55, cite: "Jabalpurwala, Smoot & Rouseff 2009 (methyl anthranilate identified across citrus blossom headspace volatiles)." },
   { note: "honeysuckle",   cpd: "linalool",   w: 0.55, cite: "Schlotzhauer, Pair & Horvat 1996 (linalool among Japanese honeysuckle's floral volatiles)." },
@@ -3855,6 +3871,12 @@ const EDGES = [
   { note: "ginger",   cpd: "geranial",    w: 0.85, cite: "Pang et al. 2017 (AEDA, fresh-ginger top odorant)." },
   { note: "ginger",   cpd: "zingiberene", w: 0.60, cite: "Most-abundant sesquiterpene in fresh ginger oil GC-MS profiles." },
   { note: "ginger",   cpd: "linalool",    w: 0.35, cite: "Pang et al. 2017 (linalool among highest-FD raw-ginger odorants)." },
+  { note: "cardamom", cpd: "terpinylacetate", w: 0.95, cite: "Mishra et al. 2022 (α-terpinyl acetate, 61.65–68.19%, dominant in dried small-cardamom oil)." },
+  { note: "cardamom", cpd: "cineole",         w: 0.80, cite: "Mishra et al. 2022 (1,8-cineole, 7.23–11.76%, a major dried-cardamom volatile)." },
+  { note: "bayleaf",  cpd: "cineole",         w: 0.90, cite: "Miao & Weng 2009 (1,8-cineole among the principal bay-leaf aroma contributors by OAV)." },
+  { note: "bayleaf",  cpd: "terpinylacetate", w: 0.60, cite: "Miao & Weng 2009 (α-terpinyl acetate among the principal bay-leaf aroma contributors by OAV)." },
+  { note: "bayleaf",  cpd: "linalool",        w: 0.35, cite: "Miao & Weng 2009 (linalool among bay-leaf aroma contributors)." },
+  { note: "bayleaf",  cpd: "eugenol",         w: 0.25, cite: "Miao & Weng 2009 (eugenol among bay-leaf aroma contributors)." },
 
   // Nutty
   { note: "almond",   cpd: "benzald",  w: 0.90, cite: "Ohloff 1994 (bitter-almond)." },
@@ -3867,6 +3889,8 @@ const EDGES = [
   { note: "pistachio", cpd: "myrcene", w: 0.55, cite: "Aceña et al. 2011 (β-myrcene, key raw-pistachio odorant)." },
   { note: "pistachio", cpd: "edmpyr",  w: 0.75, cite: "Aceña et al. 2011 (2-ethyl-3,5-dimethylpyrazine, roasted Kerman pistachio, FD 1024)." },
   { note: "pecan",    cpd: "hexanal",  w: 0.70, cite: "Gong, Kerrihard & Pegg 2018 (HS-SPME-GC-MS, raw Georgia pecans)." },
+  { note: "walnut",   cpd: "walnuttrienal", w: 0.95, cite: "Stübner & Steinhaus 2023 (key walnut odorant confirmed by recombination and omission experiments)." },
+  { note: "walnut",   cpd: "sotolon",       w: 0.90, cite: "Stübner & Steinhaus 2023 (with nona-2,4,6-trienal, reconstructs characteristic walnut aroma)." },
 
   // Earthy
   { note: "woody",      cpd: "bcaryo",   w: 0.70, cite: "Jirovetz et al. 2002." },
@@ -4023,6 +4047,9 @@ const EDGES = [
   { note: "garlic",     cpd: "diallyldisulfide", w: 0.90, cite: "Block 1985-era organosulfur chemistry; allicin's primary breakdown product, garlic's character compound." },
   { note: "celery",     cpd: "butylphthalide", w: 0.90, cite: "Kurobayashi, Kouno, Fujita, Morimitsu & Kubota 2006 (3-n-butylphthalide, celery's character-impact phthalide)." },
   { note: "carrot",     cpd: "carotol",   w: 0.80, cite: "Sieniawska, Świątek, Rajtar, Kozioł, Polz-Dacewicz & Skalicka-Woźniak 2016 (carotol, main constituent of carrot seed oil)." },
+  { note: "beet",       cpd: "geosmin",   w: 0.95, cite: "Freidig & Goldman 2014 (geosmin production in beet is cultivar-specific and carries its characteristic earthy aroma)." },
+  { note: "olive",      cpd: "hexanal",   w: 0.80, cite: "Zhou et al. 2019 (hexanal was a common key aroma compound across 15 extra-virgin olive oils)." },
+  { note: "olive",      cpd: "hex2enal",  w: 0.75, cite: "Zhou et al. 2019 ((E)-2-hexenal was a common key aroma compound across 15 extra-virgin olive oils)." },
   { note: "tomato",     cpd: "isobutylthiazole", w: 0.80, cite: "Petro-Turza 1987 (2-isobutylthiazole, a tomato-specific marker compound)." },
   { note: "tomato",     cpd: "bdam",      w: 0.45, cite: "Petro-Turza 1987 (β-damascenone among ripe-tomato's major volatiles)." },
   // The COOKED tomato register. Raw tomato reads green and vine-like — that's
@@ -4116,11 +4143,13 @@ const COMPOUND_ORIGINS = {
   etbut:         "Pineapple, apple, strawberry, banana. A fruity ester produced when yeast eats sugar: the smell of fruit slightly past ripe.",
   ethex:         "Berry, apple, pineapple. A heavier fermentation ester, jammier than ethyl butanoate.",
   iaac:          "Banana (where it IS the banana smell), pear, banana-flavored candy. The signature ester of yeast fermentation.",
+  terpinylacetate: "Cardamom seed pods, where it is the dominant essential-oil constituent; also bay leaf. It supplies the warm, sweet-spicy body beneath 1,8-cineole's cooler lift.",
   gdecal:        "Peach, apricot, mango, ripe stonefruit, dairy. The soft fuzzy-peach quality on the back of your throat.",
   gddecal:       "Plum, where it's one of the key odor-active compounds by odor activity value. The same lactone family as peach's γ-decalactone, just a longer carbon chain — less coconut-creamy, more specifically plum.",
   gnonal:        "Coconut and creamy dessert notes. Part of the 'oak lactone' family that builds up slowly in barrel-aged liquids, giving aged whisky, oak-aged vinegars, and any liquid that's spent time in oak a creamy-coconut undertone that wasn't there at the start.",
   ddecal:        "Virgin coconut oil's own headspace — the lactone raw coconut actually carries. Milder and less 'coconut-flavor-extract' than γ-decalactone/γ-nonalactone, the louder lactones flavorists reach for instead.",
   sotolon:       "Maple syrup, fenugreek seed, curry blends, lovage. Same molecule across utterly different sources: the principal smell of maple syrup IS the principal smell of fenugreek seed.",
+  walnuttrienal: "Walnuts, where this oatmeal-like aldehyde combines with sotolon to create the characteristic walnut aroma. Neither molecule reconstructs the full identity as clearly on its own.",
   vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging, a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
   cinnamald:     "Cinnamon bark: over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon, what most US grocery 'cinnamon' actually is).",
   hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells, released the instant a leaf is torn. Also the dominant raw-grain aldehyde across wheat, rice, oats, barley, millet, and quinoa alike — most of why uncooked cereals smell so similar to each other.",
@@ -4283,6 +4312,8 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Long assumed to be a single domestication in South Asia roughly 4000 years ago. Recent genomic research found no clear center of diversity in India, with higher unique diversity in Southeast Asian cultivars.",
                   modernNote: "The simple \"one origin in India\" story does not hold up under genomic scrutiny. At least two distinct gene pools, Indian and Southeast Asian, contribute to cultivated mango today.",
                   citeKeys: ["warschefsky2019mango"] },
+  lychee:       { region: "Southern China", lat: 23, lon: 113, certainty: "approximate",
+                  modernNote: "Lychee has been cultivated in southern China for millennia; its long human history makes a single wild-to-domesticated origin point difficult to isolate." },
   passionfruit: { region: "Brazil / South America", lat: -22, lon: -47, certainty: "known" },
   // Cucumber and Watermelon are real, distinct species (Cucumis sativus,
   // Citrullus lanatus) with their own well-documented origin points, unlike
@@ -4294,7 +4325,9 @@ const NOTE_ORIGINS = {
                   modernNote: "Domesticated for its water and food value over 4000 years ago; the modern sweet dessert watermelon didn't emerge until cultivars spread to the Mediterranean roughly 2000 years ago. Its closest wild relative grows in West Africa, with early domesticated populations also found in Sudan." },
   // floral
   rose:         { region: "Persia / Central Asia",      lat: 33,  lon: 54,   certainty: "approximate" },
+  gardenia:     { region: "East Asia (southern China)", lat: 25,  lon: 112,  certainty: "approximate" },
   jasmine:      { region: "South Asia",                 lat: 23,  lon: 78,   certainty: "approximate" },
+  lilac:        { region: "Balkan Peninsula",            lat: 42,  lon: 22,   certainty: "approximate" },
   orangeblossom:{ region: "South-central China (Nanling mountains)", lat: 27, lon: 110, certainty: "approximate",
                   modernNote: "The flower of the same tree as the orange note — sweet orange's native range, not a separate origin story." },
   honeysuckle:  { region: "East Asia (Japan / Korea / China)", lat: 36, lon: 128, certainty: "approximate",
@@ -4361,6 +4394,8 @@ const NOTE_ORIGINS = {
   anise:        { region: "Eastern Mediterranean",      lat: 35,  lon: 36,   certainty: "approximate" },
   ginger:       { region: "Maritime Southeast Asia", lat: 1, lon: 110, certainty: "approximate",
                   modernNote: "Ginger has no known wild population — it survives only in cultivation, kept going for millennia by replanting rhizome cuttings rather than seed. That total dependency on people makes its deep origin point unusually hard to pin to a single place or date." },
+  cardamom:     { region: "Western Ghats, India", lat: 10, lon: 76, certainty: "known", country: "India" },
+  bayleaf:      { region: "Mediterranean basin", lat: 38, lon: 20, certainty: "approximate" },
   // nutty
   almond:       { region: "Iran / Central Asia", lat: 36, lon: 56, certainty: "known",
                   cultivationDate: "Genetic evidence points to initial domestication roughly 5000 years ago in Central or Western Asia.",
@@ -4386,6 +4421,8 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Pecans were a significant wild food source across their native range for at least 8,000 years. Formal cultivar development — grafting named varieties onto seedling stock — only began in 19th-century Louisiana.",
                   modernNote: "Pecan is one of the few major tree nuts domesticated mostly in the historical record rather than prehistory: closer to hazelnut's pattern of long wild harvesting capped by a comparatively recent, well-documented push into formal cultivation.",
                   citeKeys: ["hall2000pecan"] },
+  walnut:       { region: "Central Asia / Iranian Plateau", lat: 38, lon: 68, certainty: "approximate",
+                  modernNote: "Walnut's broad native range and movement along ancient trade routes make its cultivation history a network rather than a single clean origin point." },
   // earthy
   bellpepper:   { region: "Mesoamerica", lat: 20, lon: -100, certainty: "known", country: "Mexico",
                   cultivationDate: "Starch microfossils place Capsicum domestication and dispersal across the Americas by at least 6000 years before present.",
@@ -4450,6 +4487,10 @@ const NOTE_ORIGINS = {
   celery:       { region: "Mediterranean basin", lat: 38, lon: 15, certainty: "approximate" },
   carrot:       { region: "Afghanistan / Central Asia", lat: 34, lon: 67, certainty: "approximate",
                   modernNote: "Wild carrot's primary center of diversity is in this region; the familiar orange carrot is a much later European selection — most wild and early domesticated carrots were purple or yellow." },
+  beet:         { region: "Mediterranean basin", lat: 37, lon: 18, certainty: "approximate",
+                  modernNote: "Modern table beet descends from sea beet, a coastal plant also ancestral to chard and sugar beet; the swollen root is a selected form, not a wild starting condition." },
+  olive:        { region: "Eastern Mediterranean", lat: 35, lon: 34, certainty: "approximate",
+                  modernNote: "Olive domestication involved repeated exchange with local wild olives across the Mediterranean, so one point is a useful center of gravity rather than the whole story." },
   tomato:       { region: "Mesoamerica", lat: 19, lon: -99, certainty: "approximate", country: "Mexico",
                   modernNote: "The tomato's wild ancestor is South American (Andean Peru/Ecuador), but most genomic evidence points to actual domestication into the large-fruited cultivated tomato happening later, in Mesoamerica." },
   arugula:      { region: "Mediterranean basin", lat: 38, lon: 14, certainty: "approximate" },
@@ -4947,6 +4988,61 @@ const REFERENCES = {
     title: "Contribution of 2-methyl-3-furanthiol to the cooked meat-like aroma of fermented soy sauce.",
     journal: "Bioscience, Biotechnology, and Biochemistry",
     volume: "81", issue: "1", pages: "168–172"
+  },
+  "feng2018lychee": {
+    authors: "Feng, S., Huang, M., Crane, J.H., & Wang, Y.",
+    year: 2018,
+    title: "Characterization of key aroma-active compounds in lychee (Litchi chinensis Sonn.).",
+    journal: "Journal of Food and Drug Analysis",
+    volume: "26", issue: "2", pages: "497–503",
+    doi: "10.1016/j.jfda.2017.07.013"
+  },
+  "mishra2022cardamom": {
+    authors: "Mishra, S., Sanwal, N., Sharma, N., & Sahu, J.K.",
+    year: 2022,
+    title: "Multivariate analysis of chemometric based aroma dynamics in small cardamom (Elettaria cardamomum Maton) during drying.",
+    journal: "Journal of Food Science and Technology",
+    volume: "59", issue: "12", pages: "4761–4771",
+    doi: "10.1007/s13197-022-05560-8"
+  },
+  "miao2009bayleaf": {
+    authors: "Miao, G.-L., & Weng, X.-C.",
+    year: 2009,
+    title: "Preliminary Analysis of Volatile Compounds of Bay Leaves.",
+    journal: "Journal of Shanghai University (Natural Science Edition)",
+    volume: "15", issue: "3", pages: "326–330"
+  },
+  "stubner2023walnut": {
+    authors: "Stübner, C.A., & Steinhaus, M.",
+    year: 2023,
+    title: "Sotolon and (2E,4E,6Z)-Nona-2,4,6-trienal Are the Key Compounds in the Aroma of Walnuts.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "71", issue: "18", pages: "7099–7108",
+    doi: "10.1021/acs.jafc.3c01002"
+  },
+  "zhou2019olive": {
+    authors: "Zhou, Q., Liu, S., Liu, Y., & Song, H.",
+    year: 2019,
+    title: "Comparative Analysis of Volatiles of 15 Brands of Extra-Virgin Olive Oils Using Solid-Phase Micro-Extraction and Solvent-Assisted Flavor Evaporation.",
+    journal: "Molecules",
+    volume: "24", issue: "8", pages: "1512",
+    doi: "10.3390/molecules24081512"
+  },
+  "gecer2022lilac": {
+    authors: "Gecer, E.N.",
+    year: 2022,
+    title: "Chemical Constituents of Essential Oil of Syringa vulgaris L. Flowers.",
+    journal: "Turkish Journal of Agriculture - Food Science and Technology",
+    volume: "10", issue: "6", pages: "1108–1111",
+    doi: "10.24925/turjaf.v10i6.1108-1111.5165"
+  },
+  "freidig2014beet": {
+    authors: "Freidig, A.K., & Goldman, I.L.",
+    year: 2014,
+    title: "Geosmin (2β,6α-dimethylbicyclo[4.4.0]decan-1β-ol) production associated with Beta vulgaris ssp. vulgaris is cultivar specific.",
+    journal: "Journal of Agricultural and Food Chemistry",
+    volume: "62", issue: "9", pages: "2031–2036",
+    doi: "10.1021/jf4047336"
   }
 };
 
@@ -5005,7 +5101,14 @@ const CITE_TO_REF = [
   ["Jirovetz, Smith & Buchbauer 2002", "jirovetz2002arugula"],
   ["Sultana, Savage, McNeil, Porter & Clark 2003", "sultana2003wasabi"],
   ["Kumazawa, Kaneko & Nishimura 2013", "kumazawa2013miso"],
-  ["Meng, Kitagawa, Imamura, Katayama, Obata & Sugawara 2017", "meng2017soysauce"]
+  ["Meng, Kitagawa, Imamura, Katayama, Obata & Sugawara 2017", "meng2017soysauce"],
+  ["Feng et al. 2018", "feng2018lychee"],
+  ["Mishra et al. 2022", "mishra2022cardamom"],
+  ["Miao & Weng 2009", "miao2009bayleaf"],
+  ["Stübner & Steinhaus 2023", "stubner2023walnut"],
+  ["Zhou et al. 2019", "zhou2019olive"],
+  ["Gecer 2022", "gecer2022lilac"],
+  ["Freidig & Goldman 2014", "freidig2014beet"]
 ];
 
 function refForCite(citeString) {
@@ -5292,7 +5395,7 @@ function formatOriginRef(ref) {
 // subset of NOTES ids. Add/edit freely as the note set grows.
 const WAIS_DESCRIPTORS = [
   { category: "Fruity", entries: [
-    { word: "fruity",            notes: ["berry", "apple", "stonefruit", "banana", "mango", "passionfruit", "cherry", "pineapple"] },
+    { word: "fruity",            notes: ["berry", "apple", "stonefruit", "banana", "mango", "lychee", "passionfruit", "cherry", "pineapple"] },
     { word: "citrusy",           notes: ["lemon", "orange", "grapefruit"] },
     { word: "lime",              notes: ["lemon"] },
     { word: "yuzu",              notes: ["lemon"] },
@@ -5325,8 +5428,8 @@ const WAIS_DESCRIPTORS = [
     { word: "peach",             notes: ["stonefruit"] },
     { word: "apricot",           notes: ["stonefruit"] },
     { word: "nectarine",         notes: ["stonefruit"] },
-    { word: "tropical",          notes: ["mango", "passionfruit", "banana", "pineapple"] },
-    { word: "lychee",            notes: ["rose"] },
+    { word: "tropical",          notes: ["mango", "lychee", "passionfruit", "banana", "pineapple"] },
+    { word: "lychee",             notes: ["lychee", "rose"] },
     { word: "overripe fruit",    notes: ["berry", "stonefruit", "apple", "banana", "mango", "cherry"] },
     { word: "dried fruit",       notes: ["stonefruit", "berry", "apple", "mango", "cherry"] },
     { word: "raisin",            notes: ["winey", "stonefruit"] },
@@ -5337,8 +5440,9 @@ const WAIS_DESCRIPTORS = [
     { word: "fruitcake",         notes: ["winey", "stonefruit", "honey", "vanilla"] }
   ]},
   { category: "Floral", entries: [
-    { word: "floral",            notes: ["rose", "gardenia", "jasmine", "lavender", "chamomile", "violet"] },
+    { word: "floral",            notes: ["rose", "gardenia", "jasmine", "lilac", "lavender", "chamomile", "violet"] },
     { word: "gardenia",          notes: ["gardenia"] },
+    { word: "lilac",             notes: ["lilac"] },
     { word: "tea rose",          notes: ["rose", "jasmine"] },
     { word: "orange blossom",    notes: ["jasmine"] },
     { word: "honeysuckle",       notes: ["jasmine"] }
@@ -5354,8 +5458,9 @@ const WAIS_DESCRIPTORS = [
     { word: "peppermint",        notes: ["mint"] },
     { word: "spearmint / chewing gum mint", notes: ["mint"] },
     { word: "wintergreen / medicated balm", notes: ["mint"] },
-    { word: "beetroot",          notes: ["mushroom"] },
-    { word: "olive",             notes: ["green", "bellpepper"] },
+    { word: "beetroot",          notes: ["beet"] },
+    { word: "olive",             notes: ["olive"] },
+    { word: "bay leaf",           notes: ["bayleaf"] },
     { word: "green bean",        notes: ["green", "bellpepper"] },
     { word: "artichoke",         notes: ["green", "mushroom"] },
     { word: "fresh",             notes: ["lemon", "lavender", "pine", "mint"] }
@@ -5386,23 +5491,25 @@ const WAIS_DESCRIPTORS = [
     { word: "tutti frutti",      notes: ["cherry", "pineapple", "banana", "orange", "berry"] }
   ]},
   { category: "Nutty / Cocoa", entries: [
-    { word: "nutty",             notes: ["almond", "hazelnut", "peanut", "pistachio", "pecan"] },
+    { word: "nutty",             notes: ["almond", "hazelnut", "peanut", "pistachio", "pecan", "walnut"] },
     { word: "cocoa nib",         notes: ["chocolate", "coffee"] },
     { word: "dark chocolate",    notes: ["chocolate", "coffee", "burnt"] },
     { word: "milk chocolate",    notes: ["chocolate", "vanilla", "honey"] },
     { word: "coconut",           notes: ["coconut"] },
     { word: "pistachio",         notes: ["pistachio"] },
-    { word: "pecan",             notes: ["pecan"] }
+    { word: "pecan",             notes: ["pecan"] },
+    { word: "walnut",            notes: ["walnut"] }
   ]},
   { category: "Roast / Spice", entries: [
     { word: "roasty",            notes: ["coffee", "toast", "smoky", "burnt"] },
     { word: "burnt / charred",   notes: ["smoky", "burnt"] },
     { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
     { word: "toasted grain",     notes: ["toast", "yeasty", "cereal"] },
-    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise", "ginger"] },
+    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise", "ginger", "cardamom", "bayleaf"] },
     { word: "medicinal",         notes: ["clove", "anise"] },
     { word: "gingery",           notes: ["ginger"] },
     { word: "candied ginger / ginger ale", notes: ["ginger"] },
+    { word: "cardamom",          notes: ["cardamom"] },
     { word: "popcorn",           notes: ["popcorn"] },
     { word: "fresh bread",       notes: ["popcorn", "toast", "yeasty"] },
     { word: "basmati / jasmine rice", notes: ["cereal", "popcorn"] },
@@ -5437,6 +5544,8 @@ const WAIS_DESCRIPTORS = [
     { word: "garlic",            notes: ["garlic"] },
     { word: "celery",            notes: ["celery"] },
     { word: "carrot",            notes: ["carrot"] },
+    { word: "beet / beetroot",   notes: ["beet"] },
+    { word: "olive",             notes: ["olive"] },
     { word: "tomato vine / leaf", notes: ["tomato", "green"] },
     { word: "arugula / peppery greens", notes: ["arugula"] },
     { word: "lettuce",           notes: ["lettuce"] },
@@ -5631,7 +5740,8 @@ const GROUP_BY_ID= Object.fromEntries(GROUPS.map(g => [g.id, g]));
 const COMPOUND_ICON = {
   limonene: "🍋", linalool: "🪻", apinene: "🌲", linalylacetate: "🪻", bisabolol: "🌼",
   ibmp: "🫑", edmpyr: "☕", dempyr: "☕", fft: "☕",
-  etbut: "🍍", iaac: "🍌", gdecal: "🍑", gnonal: "🥥", ddecal: "🥥", sotolon: "🍁",
+  etbut: "🍍", iaac: "🍌", terpinylacetate: "🫘", gdecal: "🍑", gnonal: "🥥", ddecal: "🥥", sotolon: "🍁",
+  walnuttrienal: "🌰",
   e2non: "📦", phenylacet: "🍯", diacetyl: "🧈", bdam: "🌹",
   octen3ol: "🍄", furaneol: "🍓", methanthr: "🍇", pearester: "🍐",
   nonadienal: "🥒", nonadienal36: "🍉", nonadienylac: "🍈", e2mta: "🍈",
@@ -5660,18 +5770,18 @@ const NOTE_ICONS = {
   berry:"🫐", cranberry:"🫐", redcurrant:"🫐", cassis:"🫐", pomegranate:"🫐",
   raspberry:"🫐", strawberry:"🍓", blueberry:"🫐", blackberry:"🫐",
   stonefruit:"🍑", peach:"🍑", plum:"🍑", apple:"🍎", banana:"🍌", pineapple:"🍍",
-  cherry:"🍒", mango:"🥭", grape:"🍇",
+  cherry:"🍒", mango:"🥭", lychee:"🍒", grape:"🍇",
   melon:"🍈", cucumber:"🥒", melonrind:"🍈", watermelon:"🍉", honeydew:"🍈", cantaloupe:"🍈",
   // Floral
-  rose:"🌹", gardenia:"🌼", jasmine:"🌼", orangeblossom:"🌼", honeysuckle:"🌼",
+  rose:"🌹", gardenia:"🌼", jasmine:"🌼", lilac:"🪻", orangeblossom:"🌼", honeysuckle:"🌼",
   lavender:"🪻", sage:"🌿", thyme:"🌿", chamomile:"🌼", violet:"🌸",
   // Roasted — coffee, breads, grains
   coffee:"☕", toast:"🍞", smoky:"💨", burnt:"🔥", popcorn:"🍿",
   cereal:"🌾", rice:"🍚", wheat:"🌾", barley:"🌾", oats:"🌾", millet:"🌾", quinoa:"🌾",
   // Spice
-  clove:"🧂", cinnamon:"🧂", pepper:"🌶️", anise:"🧂", ginger:"🫚",
+  clove:"🧂", cinnamon:"🧂", pepper:"🌶️", anise:"🧂", ginger:"🫚", cardamom:"🫘", bayleaf:"🌿",
   // Nutty
-  almond:"🌰", hazelnut:"🌰", peanut:"🥜", coconut:"🥥", pistachio:"🥜", pecan:"🌰",
+  almond:"🌰", hazelnut:"🌰", peanut:"🥜", coconut:"🥥", pistachio:"🥜", pecan:"🌰", walnut:"🌰",
   // Earthy — wood, fungus, green, mint, tobacco
   woody:"🪵", pine:"🌲", eucalyptus:"🌿", mushroom:"🍄", green:"🍃", bellpepper:"🫑",
   mint:"🌿", peppermint:"🌿", spearmint:"🌿", wintergreen:"🌿", tobacco:"🍂",
@@ -5682,7 +5792,7 @@ const NOTE_ICONS = {
   sweaty:"🧦", musty:"🍂", skunky:"🦨", miso:"🍜", soysauce:"🍶",
   // Vegetal
   onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
-  garlic:"🧄", celery:"🥬", carrot:"🥕", tomato:"🍅", arugula:"🥬",
+  garlic:"🧄", celery:"🥬", carrot:"🥕", beet:"🫜", olive:"🫒", tomato:"🍅", arugula:"🥬",
   lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
   brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
 };
@@ -6118,30 +6228,30 @@ const TAXON_COMMON = {
 const FAMILY_INFO = {
   Rutaceae: "Aromatic trees and shrubs whose leaves are dotted with translucent oil glands — hold a leaf to the light and you see them — releasing citrus and resin scents when crushed; flowers are typically 4–5 parted around a prominent nectar disk.",
   Anacardiaceae: "Trees and shrubs with resin canals in the bark, many producing skin-irritating phenolic sap (poison ivy, mango skin, cashew shell); small flowers give a usually single-seeded drupe.",
-  Sapindaceae: "Woody plants, often with compound leaves and saponin-rich tissues that lather in water; includes the maples (paired winged samaras) and lychee.",
+  Sapindaceae: "Woody plants, often with compound leaves and saponin-rich tissues that lather in water. This wheel links two startlingly different products of the family: maple's concentrated sap and lychee's perfumed fruit.",
   Ericaceae: "Shrubs of acidic, nutrient-poor soils that partner with mycorrhizal fungi; urn- or bell-shaped flowers and often leathery evergreen leaves.",
   Grossulariaceae: "Shrubs of the single genus Ribes, frequently spiny, with palmately lobed leaves and small berries that keep the dried flower remnant at the tip.",
   Lythraceae: "Herbs to trees, often with 4-angled stems and flower petals that are crumpled in bud; includes pomegranate and crape myrtle.",
   Myrtaceae: "Aromatic evergreens with oil-gland-dotted leaves (eucalyptus, clove, guava) and flowers built from a showy brush of many stamens.",
   Rosaceae: "The temperate orchard family — 5-petalled flowers with many stamens set on a floral cup (hypanthium); includes apple, cherry, almond, strawberry, and rose.",
   Musaceae: "Giant herbs, not true trees: the 'trunk' is a pseudostem of tightly rolled leaf bases, topped by huge leaves and a pendant flower spike that becomes seedless bananas.",
-  Zingiberaceae: "Aromatic rhizomatous herbs with two-ranked leaves and a single fertile stamen; the pungent, spicy scent (ginger, turmeric, cardamom) lives in the rhizome.",
+  Zingiberaceae: "Aromatic rhizomatous herbs with two-ranked leaves and a single fertile stamen. Ginger's familiar aroma comes from the rhizome; cardamom brings the same family's perfume through its seed pods.",
   Bromeliaceae: "Mostly rosette-forming monocots, many of them epiphytes, with water-trapping leaf cups and absorptive surface scales; pineapple is the notable terrestrial, fleshy-fruited member.",
   Poaceae: "The grasses — hollow jointed stems (culms), narrow parallel-veined leaves, and wind-pollinated flowers packed in spikelets; includes every cereal grain plus sugarcane.",
   Passifloraceae: "Climbing vines that grip by tendrils, with intricate flowers ringed by a fringed corona; the fruit is a many-seeded berry (passionfruit).",
   Violaceae: "Herbs with frequently heart-shaped leaves and bilaterally symmetric 5-petalled flowers whose lowest petal is drawn back into a spur.",
   Vitaceae: "Climbing vines with tendrils borne opposite the leaves and swollen stem nodes; small flowers give the familiar clustered berries (grapes).",
   Cucurbitaceae: "Sprawling or climbing vines with coiled tendrils and palmately lobed leaves, usually bearing separate male and female flowers; the fruit is a hard-rinded pepo (melon, cucumber, squash).",
-  Oleaceae: "Woody plants with usually opposite leaves and 4-lobed fused flowers, very often fragrant — jasmine, lilac, and olive.",
+  Oleaceae: "Woody plants with usually opposite leaves and 4-lobed fused flowers. Jasmine and lilac make the family's floral perfume obvious; olive reveals that a familiar savory fruit grows on the same branch of the tree.",
   Lamiaceae: "Square stems, opposite leaves, and two-lipped flowers; the aromatic oils sit in glandular leaf hairs (mint, basil, lavender, sage).",
   Caprifoliaceae: "Often twining shrubs and vines with opposite leaves and tubular, frequently fragrant, nectar-rich flowers.",
   Asteraceae: "The composites — what reads as one flower is a head of many tiny florets on a shared disk; one of the largest plant families (chamomile, sunflower, lettuce).",
   Rubiaceae: "Woody or herbaceous flowering plants with opposite leaves joined by stipules and tubular 4–5 lobed flowers; gardenia makes the family relationship visible, while a coffee “bean” is actually the seed inside this family’s red coffee cherry.",
-  Amaranthaceae: "Often weedy herbs of salty or disturbed ground, with small dry wind-pollinated flowers; includes beet, spinach, and quinoa.",
-  Lauraceae: "Aromatic evergreen trees and shrubs with oil cells throughout the tissue (crush a leaf) and flower parts in threes; includes bay laurel, cinnamon, and avocado.",
+  Amaranthaceae: "Often weedy herbs of salty or disturbed ground, with small dry wind-pollinated flowers. Quinoa is the seed and beet is the swollen root of two members of this same family; spinach is another close relative.",
+  Lauraceae: "Aromatic evergreen trees and shrubs with oil cells throughout the tissue and flower parts in threes. Bay leaf is the leaf and cinnamon is the bark of close family relatives — two pantry spices drawn from different plant parts.",
   Piperaceae: "Aromatic plants with swollen stem nodes and tiny flowers packed on a fleshy spike; black pepper's pungency is in the dried fruit.",
   Betulaceae: "Wind-pollinated trees and shrubs that bear catkins; includes birch, alder, and the hazelnut.",
-  Juglandaceae: "Aromatic trees with pinnately compound leaves and catkins; the nut sits inside a husk (walnut, pecan).",
+  Juglandaceae: "Aromatic trees with pinnately compound leaves and catkins; their nuts sit inside fleshy husks. Walnut and pecan are not just neighboring flavor ideas but close botanical relatives with distinct aroma chemistry.",
   Fabaceae: "Nitrogen-fixing plants (root nodules), usually with compound leaves and a pod (legume) as the fruit; flowers are often pea-shaped. Includes peanut and licorice.",
   Arecaceae: "Monocot 'trees' with an unbranched trunk crowned by large fan- or feather-shaped fronds; includes the coconut palm.",
   Pinaceae: "Resinous conifers with needle leaves and woody seed cones; the pine/resin scent is their terpene-rich sap.",
