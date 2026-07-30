@@ -3455,6 +3455,7 @@ const NOTES = [
   { id: "cantaloupe",  label: "Cantaloupe",         group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true,  family: "Rosaceae", order: "Rosales" },
+  { id: "gardenia",    label: "Gardenia",           group: "floral",   common: true,  genus: "Gardenia", family: "Rubiaceae", order: "Gentianales" },
   { id: "jasmine",     label: "Jasmine",            group: "floral",   common: true,  family: "Oleaceae", order: "Lamiales" },
   // Orange blossom is literally the flower of the orange tree — botanically
   // Rutaceae/Citrus/Sapindales, nothing like jasmine's Oleaceae/Lamiales. Its
@@ -3617,7 +3618,7 @@ const NOTES = [
 const COMPOUNDS = [
   // terpenes
   { id: "limonene",      label: "Limonene",          class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~10 ppb in water (Buettner & Schieberle 1999).", note: "Major citrus-peel monoterpene." },
-  { id: "linalool",      label: "Linalool",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~0.6–6 ppb (Buttery 1981).", note: "Floral-citrus monoterpenoid; abundant in coffee, lavender, chamomile." },
+  { id: "linalool",      label: "Linalool",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~0.6–6 ppb (Buttery 1981).", note: "Floral-citrus monoterpenoid; abundant in gardenia, coffee, lavender, and chamomile." },
   { id: "myrcene",       label: "Myrcene",           class: "terpene",   threshold: "medium",   specificity: "shared",    thresholdSrc: "~13–15 ppb (Buttery 1981).", note: "Earthy/resinous monoterpene; mango, hops, cannabis." },
   { id: "geraniol",      label: "Geraniol",          class: "terpene",   threshold: "low",      specificity: "shared",    thresholdSrc: "~3.2 ppb (Buttery 1981).", note: "Rose-like monoterpenoid." },
   { id: "bcaryo",        label: "β-Caryophyllene",   class: "terpene",   threshold: "high",     specificity: "shared",    thresholdSrc: "~64 ppb (Jirovetz et al. 2002).", note: "Woody-spicy sesquiterpene; pepper." },
@@ -3791,6 +3792,12 @@ const EDGES = [
   { note: "rose",          cpd: "geraniol",   w: 0.90, cite: "Ohloff 1994 (Scent & Chemistry)." },
   { note: "rose",          cpd: "linalool",   w: 0.55, cite: "Ohloff 1994." },
   { note: "rose",          cpd: "bdam",       w: 0.70, cite: "Sefton et al. 2011 (β-damascenone, named for Rosa damascena, the Damask rose)." },
+  // Gardenia's flower headspace makes the Coffee-family relationship sensory,
+  // not merely taxonomic: the same Rubiaceae family contains this white flower
+  // and Coffea, whose familiar "bean" is the seed inside a coffee cherry.
+  { note: "gardenia",      cpd: "linalool",   w: 0.90, cite: "Cai et al. 2025 (linalool, 19.024 ng·g⁻¹·h⁻¹, among gardenia's highest-emission floral volatiles)." },
+  { note: "gardenia",      cpd: "bcaryo",     w: 0.45, cite: "Cai et al. 2025 (β-caryophyllene, 3.096 ng·g⁻¹·h⁻¹, in Gardenia jasminoides flower headspace)." },
+  { note: "gardenia",      cpd: "methylsalicylate", w: 0.30, cite: "Cai et al. 2025 (methyl salicylate, 1.623 ng·g⁻¹·h⁻¹, in Gardenia jasminoides flower headspace)." },
   { note: "jasmine",       cpd: "linalool",   w: 0.65, cite: "Flament 2002." },
   { note: "jasmine",       cpd: "phenylacet", w: 0.55, cite: "Czerny et al. 1999 (Strecker aldehydes)." },
   { note: "orangeblossom", cpd: "linalool",   w: 0.60, cite: "Jabalpurwala, Smoot & Rouseff 2009 (linalool among citrus blossom volatiles' major components)." },
@@ -4091,7 +4098,7 @@ const CLASSES = CLASS_ORDER.map(id => ({ id, label: CLASS_SHORT[id] || id, color
 // than molecular formula or biosynthetic pathway. Keyed by compound id.
 const COMPOUND_ORIGINS = {
   limonene:      "Citrus peels (lemon, orange, grapefruit) where it dominates: the smell you release when you zest a lemon or scratch an orange. Also pine needles, dill, caraway, hops.",
-  linalool:      "Lavender (≈30% of lavender oil), coriander seed (≈60–80% of its essential oil), green coffee beans, chamomile, basil, mint, ginger, citrus peel oils. One of the most widespread floral monoterpenes in nature.",
+  linalool:      "Gardenia flowers, lavender (≈30% of lavender oil), coriander seed (≈60–80% of its essential oil), green coffee beans, chamomile, basil, mint, ginger, citrus peel oils. One of the most widespread floral monoterpenes in nature.",
   myrcene:       "Hops (the resinous-mango note in IPAs), ripe mango, raw pistachio kernels, hemp, lemongrass, thyme, parsley, bay. Same molecule across all of them.",
   geraniol:      "Rose petals, geranium leaves, palmarosa, citronella (the candle), lemongrass, lemon, bay, ginger. The same compound makes rose smell like rose and citronella repel mosquitoes.",
   bcaryo:        "Black pepper (where it drives the woody-spicy bite), clove, hops, hemp, basil, cinnamon, rosemary, oregano, copaiba balsam.",
@@ -4835,6 +4842,14 @@ const REFERENCES = {
     journal: "Phytochemistry",
     volume: "70", issue: "11", pages: "1428–1434"
   },
+  "cai2025gardenia": {
+    authors: "Cai, Y., Chen, H., Zhang, X., Bu, W., & Ning, W.",
+    year: 2025,
+    title: "Benefits of Gardenia jasminoides Ellis’s floral volatile components on human emotions and moods.",
+    journal: "Scientific Reports",
+    volume: "15", pages: "4194",
+    doi: "10.1038/s41598-024-84190-w"
+  },
   "schlotzhauer1996honeysuckle": {
     authors: "Schlotzhauer, W.S., Pair, S.D., & Horvat, R.J.",
     year: 1996,
@@ -4976,6 +4991,7 @@ const CITE_TO_REF = [
   ["Perry et al. 1999",           "perry1999sage"],
   ["Stahl-Biskup & Sáez, eds., 2002", "stahlbiskup2002thyme"],
   ["Jabalpurwala, Smoot & Rouseff 2009", "jabalpurwala2009citrusblossom"],
+  ["Cai et al. 2025", "cai2025gardenia"],
   ["Schlotzhauer, Pair & Horvat 1996", "schlotzhauer1996honeysuckle"],
   ["Pino & Quijano 2012", "pino2012plum"],
   ["Genthner 2010", "genthner2010watermelon"],
@@ -5321,7 +5337,8 @@ const WAIS_DESCRIPTORS = [
     { word: "fruitcake",         notes: ["winey", "stonefruit", "honey", "vanilla"] }
   ]},
   { category: "Floral", entries: [
-    { word: "floral",            notes: ["rose", "jasmine", "lavender", "chamomile", "violet"] },
+    { word: "floral",            notes: ["rose", "gardenia", "jasmine", "lavender", "chamomile", "violet"] },
+    { word: "gardenia",          notes: ["gardenia"] },
     { word: "tea rose",          notes: ["rose", "jasmine"] },
     { word: "orange blossom",    notes: ["jasmine"] },
     { word: "honeysuckle",       notes: ["jasmine"] }
@@ -5646,7 +5663,7 @@ const NOTE_ICONS = {
   cherry:"🍒", mango:"🥭", grape:"🍇",
   melon:"🍈", cucumber:"🥒", melonrind:"🍈", watermelon:"🍉", honeydew:"🍈", cantaloupe:"🍈",
   // Floral
-  rose:"🌹", jasmine:"🌼", orangeblossom:"🌼", honeysuckle:"🌼",
+  rose:"🌹", gardenia:"🌼", jasmine:"🌼", orangeblossom:"🌼", honeysuckle:"🌼",
   lavender:"🪻", sage:"🌿", thyme:"🌿", chamomile:"🌼", violet:"🌸",
   // Roasted — coffee, breads, grains
   coffee:"☕", toast:"🍞", smoky:"💨", burnt:"🔥", popcorn:"🍿",
@@ -6119,7 +6136,7 @@ const FAMILY_INFO = {
   Lamiaceae: "Square stems, opposite leaves, and two-lipped flowers; the aromatic oils sit in glandular leaf hairs (mint, basil, lavender, sage).",
   Caprifoliaceae: "Often twining shrubs and vines with opposite leaves and tubular, frequently fragrant, nectar-rich flowers.",
   Asteraceae: "The composites — what reads as one flower is a head of many tiny florets on a shared disk; one of the largest plant families (chamomile, sunflower, lettuce).",
-  Rubiaceae: "Woody or herbaceous plants with opposite leaves joined by stipules between them and tubular 4–5 lobed flowers; includes coffee and gardenia.",
+  Rubiaceae: "Woody or herbaceous flowering plants with opposite leaves joined by stipules and tubular 4–5 lobed flowers; gardenia makes the family relationship visible, while a coffee “bean” is actually the seed inside this family’s red coffee cherry.",
   Amaranthaceae: "Often weedy herbs of salty or disturbed ground, with small dry wind-pollinated flowers; includes beet, spinach, and quinoa.",
   Lauraceae: "Aromatic evergreen trees and shrubs with oil cells throughout the tissue (crush a leaf) and flower parts in threes; includes bay laurel, cinnamon, and avocado.",
   Piperaceae: "Aromatic plants with swollen stem nodes and tiny flowers packed on a fleshy spike; black pepper's pungency is in the dried fruit.",

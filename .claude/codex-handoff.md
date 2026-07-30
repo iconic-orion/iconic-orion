@@ -389,6 +389,35 @@ code paths, and drag masks this entire class of bug.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Follow-up: Gardenia as the Coffee-family recognition bridge (2026-07-29)
+
+- Added Gardenia as a first-class Floral note rather than an explanatory name that
+  appears only in Rubiaceae copy. It is placed at
+  Plantae → Gentianales → Rubiaceae alongside Coffee / roast, so the Family disc
+  now demonstrates the relationship with two supported notes.
+- Gardenia uses three compounds already present in the library and measured in
+  fresh `Gardenia jasminoides` flower headspace: linalool, β-caryophyllene, and
+  methyl salicylate. Added the full Cai et al. (2025) Scientific Reports reference
+  and citation mapping; also added Gardenia to the note icon map and the
+  “What am I smelling?” floral vocabulary.
+- Rewrote the Rubiaceae diagnostic around the intended recognition bridge:
+  gardenia makes the flowering family visible, while the coffee “bean” is the seed
+  inside that family's red coffee cherry.
+- Audited every Family with only one supported note against its diagnostic copy.
+  The strongest analogous continuity candidates are Lychee ↔ Maple (Sapindaceae),
+  Cardamom ↔ Ginger (Zingiberaceae), Walnut ↔ Pecan (Juglandaceae), Bay leaf ↔
+  Cinnamon (Lauraceae), Olive or Lilac ↔ Jasmine (Oleaceae), and Beet ↔ Quinoa
+  (Amaranthaceae). These are findings only, not silently added scope.
+- Static integrity check: 120 unique note records; Gardenia has three resolved
+  edges; no Edge points to a missing Note or Compound; `git diff --check` passes.
+
+### Coordination boundary
+
+- Gardenia work changes only the wheel/taxonomy data and this handoff. No Map origin
+  record was added while Claude owns Map work. The concurrent `CLAUDE.md`
+  modification and untracked `.claude/session-handoff-thesis-systems.md` remain
+  untouched.
+
 ## Follow-up: all four overview wedges act; every radial label stays upright (2026-07-27)
 
 - Removed the special non-interactive treatment from Process. All four overview
