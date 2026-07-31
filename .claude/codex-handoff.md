@@ -389,6 +389,86 @@ code paths, and drag masks this entire class of bug.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Follow-up: optional reading layers + localized Order sprouts (2026-07-31)
+
+- Added a prominent `Visibility` disclosure at the Tree's upper-left. It is a
+  native keyboard-operable details/checkbox control, and its four layers can be
+  combined freely: lineage landmarks, scientific Order names, flavor pictures,
+  and cultivation-origin pips.
+- Scientific Order names are off by default. The uncluttered default retains the
+  hex collectors and recognition pictures plus high-level lineage landmarks such
+  as Early superrosids. Portrait Order rows retain familiar example names while
+  the scientific Order name remains optional.
+- Expanded cultivation-origin color keys into the disclosure so their meaning is
+  available exactly where that layer is toggled. The compact summary always lists
+  the layers currently visible.
+- Replaced global-fan placement for descendants of a selected desktop Order with a
+  local sprout. The selected hex stays anchored; Families open in a tight row 132px
+  above it; each Family's notes use a small maximum-five-column canopy immediately
+  above. Sibling Orders and their spokes recede to 34%/28% opacity, the viewport
+  recenters, and the selected branch receives a modest 1.28x zoom.
+- Mobile continues its focused progression: Plantae's clade-grouped directory opens
+  an Order disc containing only its Family choices; individual notes are not shown
+  until the next taxonomic choice.
+
+### Verification
+
+- 1280-class landscape browser: default Plantae view renders 29 Order collectors
+  with scientific names hidden, landmark captions visible, pictures/origin pips
+  visible, and the summary `landmarks · pictures · origins`. Toggling Order names
+  updates the SVG and summary without closing the multi-layer menu.
+- Fagales drill-in renders two Families and three notes locally: Families are 200px
+  apart, all descendants remain within 124px horizontally of the selected Order,
+  and the note canopy is 220px deep rather than spanning the full canvas.
+- 360 × 760 browser: the visibility disclosure fits the viewport with 44px options;
+  Plantae shows 28 cards with Order names hidden, 28 right-ended collectors, and
+  seven lineage headings. Poales opens a two-Family focused disc with zero note
+  buttons at that stage.
+- Inline script parsing and `git diff --check` pass. No physical kiosk/device claim
+  is made.
+
+### Coordination boundary
+
+- This follow-up changes `index.html` plus this tracked handoff. The unrelated
+  untracked `.claude/session-handoff-thesis-systems.md` remains untouched.
+
+## Follow-up: progressive Tree default + intentional Order placement (2026-07-31)
+
+- Made Kingdom overview the standard Tree entry state. Go Deeper now owns the
+  intentionally dense all-notes state, while `All notes` and `Kingdom overview`
+  remain explicit reversible controls.
+- Kingdom activation now stops at Orders on every viewport; Order activation is
+  the first point that reveals Families and notes. This removes the reported
+  Plantae → notes jump.
+- Replaced alphabetical/aesthetic Plantae Order placement with represented APG IV
+  high-level lineage groups. Desktop Branches uses labeled clade hubs and real
+  branch spokes; placement is explicitly labeled as lineage, not age.
+- Kept geography independent from descent. Order collectors display colored pips
+  aggregated from the app's existing cultivation-origin records; UI copy explicitly
+  says these are not evolutionary ranges.
+- Rebuilt portrait Plantae as a clade-grouped reading directory. At 360 × 760 it is
+  one spacious Order row per line; each hexagonal note collector sits at the right
+  end of its label, and selecting it opens the Order/Family layer rather than a note.
+  Wider portrait kiosks progressively gain two or three columns. Landscape retains
+  the branching form with a wider fan and the same right-ended collector grammar.
+
+### Verification
+
+- In-app browser at 360 × 760: verified five-node Kingdom overview; Plantae opens
+  28 biological Order cards in seven labeled lineage sections; 28 right-aligned
+  hex collectors and 44 cultivation-origin pips render; Vitales opens a one-Family
+  Order view with zero note buttons.
+- In-app browser at 1280 × 820: verified Kingdom overview, Plantae's 29 visible
+  Order joints, seven clade hubs, zero Families/notes before Order activation, and
+  automatic centering of the wider landscape branch canvas.
+- Inline script parses successfully with the bundled Node runtime and
+  `git diff --check` passes. No physical kiosk/device claim is made.
+
+### Coordination boundary
+
+- This pass changes `index.html` plus this tracked handoff. The unrelated untracked
+  `.claude/session-handoff-thesis-systems.md` remains untouched.
+
 ## Human artistic direction for Claude's next Tree pass (verbatim, 2026-07-30)
 
 The human explicitly wants Claude to have room to interpret this rather than merely

@@ -1759,7 +1759,6 @@
   body.taxonomy-mode #view-tabs,
   body.taxonomy-mode #organize-tabs,
   body.taxonomy-mode #compass-toggle,
-  body.taxonomy-mode #godeeper-toggle,
   body.taxonomy-mode .hud-vdivider {
     opacity: 0.4; pointer-events: none;
   }
@@ -1844,6 +1843,16 @@
   .tx-order-leader { display: none; stroke: #45564a; stroke-width: 1.25; stroke-dasharray: 1.5 2.5; }
   .tx-order-samples { display: none; fill: var(--ink); font-size: 7px;
     text-anchor: middle; pointer-events: none; stroke-width: 2px; }
+  .tx-order-geo { display: none; pointer-events: none; }
+  .tx-node.tx-order .tx-order-geo { display: block; }
+  .tx-order-geo circle { stroke: var(--bg); stroke-width: 1.25; }
+  .tx-lineage-branch { fill: #536a58; stroke: none; }
+  .tx-lineage-branch.tx-path { fill: var(--accent); }
+  .tx-lineage-hub { fill: #24332a; stroke: #8ca18e; stroke-width: 1.5;
+    vector-effect: non-scaling-stroke; }
+  .tx-clade-label { fill: var(--accent-2); font-size: 10.5px; font-weight: 700;
+    letter-spacing: .035em; paint-order: stroke; stroke: var(--bg); stroke-width: 3px;
+    stroke-linejoin: round; pointer-events: none; }
   .tx-node.tx-order .tx-node-core { display: none; }
   .tx-node.tx-order .tx-order-hex,
   .tx-node.tx-order .tx-order-hex-core,
@@ -1861,6 +1870,8 @@
   .tx-node.tx-order-context .tx-order-hex { fill: #202e26; stroke: #66796b; }
   .tx-node.tx-order-context .tx-order-label-block { fill: #121a15; stroke: #3f5144; }
   .tx-node.tx-order-context text { fill: #b8c0b9; }
+  .tx-node.tx-order-context { opacity: .34; }
+  .tx-lineage-branch.tx-order-context { opacity: .28; }
   .tx-family-bud { display: none; fill: #41603c; stroke: #8aa080; stroke-width: 1.5; }
   /* The midrib is what stops a Family reading as a generic blob — it's the
      one line that makes the shape legible as foliage at 9px. */
@@ -2050,9 +2061,17 @@
   .tx-mobile-order-card:focus rect { fill: color-mix(in srgb, var(--panel-2) 82%, var(--accent));
     stroke: var(--accent); }
   .tx-mobile-order-card:focus { outline: none; }
-  .tx-mobile-order-name { fill: var(--ink); font-size: 11px; font-weight: 700; }
-  .tx-mobile-order-meta { fill: var(--ink-dim); font-size: 8.5px; }
+  .tx-mobile-clade-title { fill: var(--accent-2); font-size: 10px; font-weight: 750;
+    letter-spacing: .055em; }
+  .tx-mobile-clade-rule { stroke: #506257; stroke-width: 1; }
+  .tx-mobile-order-name { fill: var(--ink); font-size: 12px; font-weight: 700; }
+  .tx-mobile-order-meta { fill: var(--ink-dim); font-size: 9px; }
   .tx-mobile-order-sample { fill: var(--ink); font-size: 9.5px; pointer-events: none; }
+  .tx-mobile-order-collector path { fill: #263b30; stroke: #8ea594; stroke-width: 2;
+    vector-effect: non-scaling-stroke; }
+  .tx-mobile-order-collector text { fill: var(--ink); font-size: 8px; text-anchor: middle;
+    dominant-baseline: middle; pointer-events: none; }
+  .tx-mobile-order-geo circle { stroke: var(--panel-2); stroke-width: 1; }
   .tx-mobile-functional-heading { fill: #a6aaa7; font-size: 8px; font-weight: 700;
     letter-spacing: .08em; }
   .tx-mobile-functional-card { cursor: pointer; }
@@ -2883,6 +2902,44 @@
     color: var(--ink-dim); font-size: 11px; line-height: 1.4; position: relative; z-index: 3; }
   .taxonomy-story strong { color: var(--accent-2); font-weight: 600; white-space: nowrap; }
   #taxonomy-path-readout { color: var(--ink); }
+  .taxonomy-encoding-key { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 12px;
+    padding: 7px 14px; border-bottom: 1px solid var(--line); background: var(--bg);
+    color: var(--ink-dim); font-size: 9.5px; line-height: 1.35; position: relative; z-index: 8; }
+  .taxonomy-encoding-key a { color: var(--accent-2); }
+  .taxonomy-layer-legend { position: relative; flex: 0 0 auto; }
+  .taxonomy-layer-legend summary { display: grid; grid-template-columns: auto auto auto;
+    align-items: center; gap: 7px; min-height: 44px; padding: 6px 10px;
+    border: 1px solid #708a78; border-radius: 8px; background: #1b2821;
+    color: var(--ink); cursor: pointer; list-style: none; box-shadow: 0 3px 12px rgba(0,0,0,.25); }
+  .taxonomy-layer-legend summary::-webkit-details-marker { display: none; }
+  .taxonomy-layer-legend summary::after { content: "▾"; color: var(--accent-2); font-size: 12px; }
+  .taxonomy-layer-legend[open] summary { border-color: var(--accent); background: #23362b; }
+  .taxonomy-layer-legend[open] summary::after { content: "▴"; }
+  .taxonomy-layer-summary-title { color: var(--accent-2); font-size: 10px; font-weight: 750;
+    letter-spacing: .08em; text-transform: uppercase; }
+  #taxonomy-layer-summary { max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+    color: var(--ink-dim); font-size: 9px; white-space: nowrap; }
+  .taxonomy-layer-panel { position: absolute; top: calc(100% + 6px); left: 0;
+    width: min(310px, calc(100vw - 28px)); padding: 10px;
+    border: 1px solid #708a78; border-radius: 10px; background: rgba(18,27,22,.98);
+    box-shadow: 0 14px 34px rgba(0,0,0,.48); z-index: 30; }
+  .taxonomy-layer-panel fieldset { display: grid; gap: 3px; margin: 0; padding: 0; border: 0; }
+  .taxonomy-layer-panel legend { padding: 0 4px 7px; color: var(--ink-dim);
+    font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+  .taxonomy-layer-option { display: grid; grid-template-columns: 22px minmax(0,1fr);
+    align-items: center; column-gap: 9px; min-height: 40px; padding: 4px 7px;
+    border-radius: 7px; color: var(--ink); cursor: pointer; }
+  .taxonomy-layer-option:hover { background: rgba(125,174,163,.1); }
+  .taxonomy-layer-option input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+  .taxonomy-layer-option span { display: grid; gap: 1px; }
+  .taxonomy-layer-option strong { font-size: 11px; font-weight: 650; }
+  .taxonomy-layer-option small { color: var(--ink-dim); font-size: 9px; line-height: 1.3; }
+  .taxonomy-layer-origin-key { display: flex; flex-wrap: wrap; gap: 5px 9px;
+    margin-top: 8px; padding: 8px 7px 2px; border-top: 1px solid var(--line); }
+  .taxonomy-encoding-copy { min-width: 180px; flex: 1 1 280px; }
+  .taxonomy-geo-key { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .taxonomy-geo-key i { width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+    background: var(--geo-color); box-shadow: 0 0 0 1px var(--bg); }
   /* The selected lineage lights up as sapwood. It used to also thicken each
      limb, which fought the taper — the ribbon geometry already carries rank,
      so the highlight only needs to carry hue. */
@@ -2891,6 +2948,17 @@
   .tx-node.tx-path .tx-family-bud,
   .tx-node.tx-path .tx-order-hex { stroke: var(--accent); stroke-width: 2.5; }
   .tx-node.tx-selected .tx-node-core { fill: var(--accent); stroke: #fff3d8; stroke-width: 3; }
+  #taxonomy-svg.tx-hide-lineage-landmarks .tx-clade-label,
+  #taxonomy-svg.tx-hide-lineage-landmarks .tx-mobile-clade-title { display: none; }
+  #taxonomy-svg.tx-hide-order-names .tx-node.tx-order .tx-order-label-block,
+  #taxonomy-svg.tx-hide-order-names .tx-node.tx-order .tx-order-leader,
+  #taxonomy-svg.tx-hide-order-names .tx-node.tx-order .tx-node-label,
+  #taxonomy-svg.tx-hide-order-names .tx-mobile-order-name,
+  #taxonomy-svg.tx-hide-order-names .tx-rank-segment.order .tx-rank-label { display: none; }
+  #taxonomy-svg.tx-hide-flavor-pictures .tx-order-samples,
+  #taxonomy-svg.tx-hide-flavor-pictures .tx-mobile-order-collector text { display: none; }
+  #taxonomy-svg.tx-hide-origin-pips .tx-order-geo,
+  #taxonomy-svg.tx-hide-origin-pips .tx-mobile-order-geo { display: none; }
   #taxonomy-sheet-handle { display: none; }
 
   @media (max-width: 760px) {
@@ -2936,6 +3004,14 @@
       letter-spacing: .05em; text-transform: uppercase; }
     .taxonomy-story { display: block; padding: 9px 12px; font-size: 10.5px; }
     .taxonomy-story strong { display: block; margin-bottom: 2px; }
+    .taxonomy-encoding-key { align-items: stretch; padding: 7px 10px; gap: 6px 8px; font-size: 10px; }
+    .taxonomy-layer-legend { width: 100%; }
+    .taxonomy-layer-legend summary { width: 100%; grid-template-columns: auto minmax(0,1fr) auto;
+      box-sizing: border-box; }
+    .taxonomy-layer-panel { width: 100%; box-sizing: border-box; }
+    .taxonomy-layer-option { min-height: 44px; }
+    .taxonomy-encoding-copy { padding: 0 3px; }
+    .tx-clade-label { font-size: 9.5px; }
     #taxonomy-search-wrap { padding: 8px 10px; }
     #taxonomy-search { min-height: 44px; padding: 8px 10px; font-size: 16px; }
     #taxonomy-search-count { flex: 1 1 100%; min-height: 16px; }
@@ -3488,10 +3564,47 @@
     <strong>Flavor notes are the fruit.</strong>
     <span id="taxonomy-path-readout">Choose a note to trace its connected lineage and the structures its relatives tend to share.</span>
   </div>
+  <div class="taxonomy-encoding-key" aria-label="How to read the branch diagram">
+    <details class="taxonomy-layer-legend" id="taxonomy-layer-legend">
+      <summary>
+        <span class="taxonomy-layer-summary-title">Visibility</span>
+        <span id="taxonomy-layer-summary">Landmarks · pictures · origins</span>
+      </summary>
+      <div class="taxonomy-layer-panel">
+        <fieldset>
+          <legend>Show any combination</legend>
+          <label class="taxonomy-layer-option">
+            <input type="checkbox" data-taxonomy-layer="lineageLandmarks" checked />
+            <span><strong>Lineage landmarks</strong><small>Clade names such as Early superrosids</small></span>
+          </label>
+          <label class="taxonomy-layer-option">
+            <input type="checkbox" data-taxonomy-layer="orderNames" />
+            <span><strong>Scientific Order names</strong><small>Vitales, Poales, Sapindales, and others</small></span>
+          </label>
+          <label class="taxonomy-layer-option">
+            <input type="checkbox" data-taxonomy-layer="flavorPictures" checked />
+            <span><strong>Flavor pictures</strong><small>Recognition icons inside each hex collector</small></span>
+          </label>
+          <label class="taxonomy-layer-option">
+            <input type="checkbox" data-taxonomy-layer="originPips" checked />
+            <span><strong>Cultivation-origin pips</strong><small>A separate geography layer, not ancestry</small></span>
+          </label>
+        </fieldset>
+        <div class="taxonomy-layer-origin-key" aria-label="Cultivation-origin colors">
+          <span class="taxonomy-geo-key"><i style="--geo-color:#e48b5d"></i>Americas</span>
+          <span class="taxonomy-geo-key"><i style="--geo-color:#d4ad58"></i>Africa</span>
+          <span class="taxonomy-geo-key"><i style="--geo-color:#9c91cf"></i>Europe / West Asia</span>
+          <span class="taxonomy-geo-key"><i style="--geo-color:#6db9a5"></i>South / East Asia</span>
+          <span class="taxonomy-geo-key"><i style="--geo-color:#6e9ed1"></i>Oceania</span>
+        </div>
+      </div>
+    </details>
+    <span class="taxonomy-encoding-copy"><strong>Placement:</strong> represented <a href="https://fcefyn.unc.edu.ar/documents/3968/2016.APGIV_.An-update-of-the-Angiosperm-Phylogeny-Group.pdf" target="_blank" rel="noopener">APG IV lineage</a>, not age. Order names are an optional reading layer.</span>
+  </div>
   <div id="taxonomy-tree-scroll">
     <svg id="taxonomy-svg"></svg>
   </div>
-  <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by real Kingdom → Order → Family. Circles are the primary path: choose a ring or wedge to move inward, choose a note to focus it, and use the one top control to move back out. “View branches” is an optional organization diagram. “Process / not a single organism” and “(multiple families)” remain honest non-phylogenetic buckets, not invented taxa.</p>
+  <p id="taxonomy-legend-note">Every flavor note in the wheel, organized by Kingdom → Order → Family. In Branches, represented plant Orders gather under high-level APG IV lineage groups; vertical position does not encode when a lineage appeared. Colored pips summarize this project’s mapped cultivation origins, not evolutionary range. “Process / not a single organism” and “(multiple families)” remain honest non-phylogenetic buckets, not invented taxa.</p>
 </div>
 <button type="button" id="taxonomy-sheet-handle" aria-label="Resize Tree detail panel" aria-valuetext="Half height" title="Drag to resize detail; tap to change height">
   <span class="taxonomy-sheet-grip" aria-hidden="true"></span>
@@ -6251,7 +6364,7 @@ const state = {
   selectedCompound: null,
   selectedNote: null,       // when set, analysis pane shows the inverse view: compounds this note links to
   selectedFamily: null,     // when set (via a taxonomy-tree family node), the detail pane shows that plant family's page
-  taxonomyView: "circles",  // circles are primary; the dendrogram is an optional organization view
+  taxonomyView: "branches", // categorized overview by default; Go Deeper grows the full atlas
   taxonomyFocus: null,      // {rank:"kingdom"|"bucket"|"order"|"family"|"note", name, noteId?}; radial Tree drill-down
   hoveredNote: null,
   hoveredCompound: null,
@@ -6596,6 +6709,35 @@ function taxonClusterLabel(members) {
 // families — see CLAUDE.md for the case-by-case reasoning. Every NOTES entry
 // (including subOf children, which the wheel/map/panel hide) resolves to
 // exactly one path here, so the tree can show all of them.
+// Order placement is not alphabetical and not a timeline. It follows the
+// represented high-level seed-plant clades in APG IV so proximity has a
+// defensible meaning. Within the large rosid/asterid blocks, named subclades
+// determine the sequence before the layout engine gets to make aesthetic
+// spacing decisions.
+const PLANT_ORDER_LINEAGE_GROUPS = [
+  { id: "gymnosperms", label: "Gymnosperms · conifers", shortLabel: "Gymnosperms", labelDy: -24,
+    orders: ["Pinales"] },
+  { id: "magnoliids", label: "Magnoliids", labelDy: 0,
+    orders: ["Laurales", "Piperales"] },
+  { id: "monocots", label: "Monocots", labelDy: 24,
+    orders: ["Alismatales", "Asparagales", "Dioscoreales", "Arecales", "Poales", "Zingiberales"] },
+  { id: "superrosids-early", label: "Superrosids · early branch", shortLabel: "Early superrosids",
+    orders: ["Saxifragales"] },
+  { id: "rosids", label: "Rosids · Vitales, fabids, malvids", shortLabel: "Rosids · Vitales + fabids + malvids",
+    orders: ["Vitales", "Fabales", "Fagales", "Rosales", "Cucurbitales",
+      "Malpighiales", "Brassicales", "Malvales", "Myrtales", "Sapindales"] },
+  { id: "superasterids-early", label: "Superasterids · early branch", shortLabel: "Early superasterids",
+    orders: ["Caryophyllales"] },
+  { id: "asterids", label: "Asterids · Ericales, lamiids, campanulids", shortLabel: "Asterids · lamiids + campanulids",
+    orders: ["Ericales", "Gentianales", "Lamiales", "Solanales", "Apiales", "Asterales", "Dipsacales"] },
+];
+const PLANT_ORDER_LINEAGE = new Map();
+PLANT_ORDER_LINEAGE_GROUPS.forEach((group, groupIndex) =>
+  group.orders.forEach((order, orderIndex) =>
+    PLANT_ORDER_LINEAGE.set(order, { ...group, groupIndex, orderIndex })));
+const PLANT_ORDER_SEQUENCE = new Map(
+  [...PLANT_ORDER_LINEAGE.keys()].map((order, index) => [order, index]));
+
 function taxonPath(note) {
   if (note.taxonBucket === "process") return ["Process / not a single organism"];
   if (note.taxonBucket === "umbrella") return ["Plantae", "(multiple families)"];
@@ -6629,6 +6771,19 @@ function buildTaxonomyTreeData() {
     });
     parent.children.push({ name: note.label, noteId: note.id, children: null });
   });
+  const plantae = root.children.find(node => node.name === "Plantae");
+  if (plantae) {
+    plantae.children.sort((a, b) => {
+      const ai = PLANT_ORDER_SEQUENCE.get(a.name);
+      const bi = PLANT_ORDER_SEQUENCE.get(b.name);
+      if (ai !== undefined || bi !== undefined) {
+        if (ai === undefined) return 1;
+        if (bi === undefined) return -1;
+        return ai - bi;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }
   return root;
 }
 function isCompoundVisible(cpdId) {
@@ -10556,6 +10711,12 @@ function setGoDeeper(on) {
   const wasOn = state.goDeeper;
   state.goDeeper = !!on;
   document.body.classList.toggle("go-deeper", state.goDeeper);
+  // Tree follows the same progressive-disclosure contract as the rest of the
+  // app: ordinary mode starts with readable Kingdom choices; Go Deeper grows
+  // the complete all-notes atlas.
+  if (wasOn !== state.goDeeper && taxonomyTreeLoaded && taxTreeRoot) {
+    applyTaxonomyDepthDefault();
+  }
   // Switching Go Deeper OFF: re-sync the slider working values to the
   // existing null-phase entries so the slider faithfully represents the
   // committed state. In default mode, slider IS the entry.
@@ -13659,21 +13820,10 @@ function countTastedLeaves(d) {
 }
 function loadTaxonomyTree() {
   if (taxonomyTreeLoaded) { renderTaxonomyTree(); return; }
-  // Starts fully expanded (d3.hierarchy already populates every .children by
-  // default — no collapse pass needed) so every flavor note is visible and
-  // reachable without an expand-all click first; Collapse to kingdoms is
-  // still there for anyone who wants the compact overview instead.
+  // Build once, then let the app's disclosure mode choose the first frame.
   taxTreeRoot = d3.hierarchy(buildTaxonomyTreeData());
-  // Compact phones enter through the connected overview rather than a wall
-  // of 100+ leaves. Each kingdom can be opened deliberately; desktop keeps
-  // the fully expanded atlas. This is a layout choice, not a data reduction.
-  if (isMobileViewport()) {
-    taxTreeRoot.descendants().forEach(d => {
-      if (d.depth >= 1 && d.children) { d._children = d.children; d.children = null; }
-    });
-  }
   taxonomyTreeLoaded = true;
-  renderTaxonomyTree();
+  applyTaxonomyDepthDefault();
 }
 // Zoom scales the SVG's rendered CSS box while the viewBox/coordinate system
 // stays fixed — unlike a CSS transform, this is real layout size, so the
@@ -13681,6 +13831,33 @@ function loadTaxonomyTree() {
 // its scrollable area correctly as you zoom, same as zooming any image.
 let taxonomyZoom = 1;
 const TAX_ZOOM_MIN = 0.15, TAX_ZOOM_MAX = 3;
+const taxonomyLayerVisibility = {
+  lineageLandmarks: true,
+  orderNames: false,
+  flavorPictures: true,
+  originPips: true,
+};
+const TAXONOMY_LAYER_CLASS = {
+  lineageLandmarks: "tx-hide-lineage-landmarks",
+  orderNames: "tx-hide-order-names",
+  flavorPictures: "tx-hide-flavor-pictures",
+  originPips: "tx-hide-origin-pips",
+};
+function applyTaxonomyLayerVisibility(svg) {
+  Object.entries(TAXONOMY_LAYER_CLASS).forEach(([layer, className]) =>
+    svg.classed(className, !taxonomyLayerVisibility[layer]));
+}
+function updateTaxonomyLayerSummary() {
+  const summary = document.getElementById("taxonomy-layer-summary");
+  if (!summary) return;
+  const shown = [
+    taxonomyLayerVisibility.lineageLandmarks && "landmarks",
+    taxonomyLayerVisibility.orderNames && "Order names",
+    taxonomyLayerVisibility.flavorPictures && "pictures",
+    taxonomyLayerVisibility.originPips && "origins",
+  ].filter(Boolean);
+  summary.textContent = shown.length ? shown.join(" · ") : "structure only";
+}
 // Push the SVG's current natural size (set by renderTaxonomyTree in the width/
 // height ATTRS) out to its rendered CSS box at the current zoom.
 function applyTaxonomyZoomSize() {
@@ -13768,6 +13945,39 @@ function taxonomyChildren(node) {
   return node ? (node.children || node._children || []) : [];
 }
 
+// Geography is deliberately a second channel, never a branch. These pips use
+// the cultivation-origin records already mapped in the Origins workspace.
+// They do not claim that relatives evolved in the same place.
+const TAXONOMY_GEO_REGIONS = [
+  { id: "americas", label: "Americas", color: "#e48b5d" },
+  { id: "africa", label: "Africa", color: "#d4ad58" },
+  { id: "europe-west-asia", label: "Europe / West Asia", color: "#9c91cf" },
+  { id: "south-east-asia", label: "South / East Asia", color: "#6db9a5" },
+  { id: "oceania", label: "Oceania", color: "#6e9ed1" },
+];
+const TAXONOMY_GEO_BY_ID = new Map(TAXONOMY_GEO_REGIONS.map(region => [region.id, region]));
+function taxonomyOriginRegion(origin) {
+  if (!origin) return null;
+  if (origin.lon < -30) return "americas";
+  if (origin.lon > 110 && origin.lat < -10) return "oceania";
+  if (origin.lon >= 45) return "south-east-asia";
+  if (origin.lat < 30 && origin.lon >= -20 && origin.lon < 55) return "africa";
+  return "europe-west-asia";
+}
+function taxonomyNodeOriginRegions(node) {
+  const counts = new Map();
+  allTaxonomyDescendants(node, []).forEach(descendant => {
+    if (!descendant.data.noteId) return;
+    const region = taxonomyOriginRegion(NOTE_ORIGINS[descendant.data.noteId]);
+    if (region) counts.set(region, (counts.get(region) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1]
+      || TAXONOMY_GEO_REGIONS.findIndex(region => region.id === a[0])
+        - TAXONOMY_GEO_REGIONS.findIndex(region => region.id === b[0]))
+    .map(([id, count]) => ({ ...TAXONOMY_GEO_BY_ID.get(id), count }));
+}
+
 function taxonomyBranchRank(d) {
   if (!d || d.depth === 0) return "root";
   if (d.data.noteId) return "note";
@@ -13795,38 +14005,70 @@ function expandTaxonomySubtree(d) {
   (d.children || []).forEach(expandTaxonomySubtree);
 }
 
+function applyTaxonomyDepthDefault() {
+  if (!taxTreeRoot) return;
+  state.taxonomyView = "branches";
+  state.taxonomyFocus = null;
+  state.selectedFamily = null;
+  state.selectedNote = null;
+  taxonomyBranchFocusNode = null;
+  taxonomyBranchFocusNeedsCenter = false;
+  taxonomyZoom = 1;
+
+  if (state.goDeeper) {
+    expandTaxonomySubtree(taxTreeRoot);
+  } else {
+    taxonomyChildren(taxTreeRoot).forEach(collapseTaxonomyNode);
+  }
+  renderTaxonomyTree();
+}
+
 // Mobile Branches uses focus, not destructive-feeling toggles. Kingdoms remain
 // visible as roots; choosing one exposes its Order joints. Choosing an Order
 // grows that one branch through Families to flavor-note fruit while its sibling
 // Orders remain visible as context.
 function focusTaxonomyBranchKingdom(kingdom) {
+  if (useTaxonomyOrderDirectory()) {
+    state.taxonomyView = "circles";
+    state.taxonomyFocus = { rank: "kingdom", name: kingdom.data.name };
+    state.selectedFamily = null;
+    state.selectedNote = null;
+    taxonomyBranchFocusNode = null;
+    taxonomyBranchFocusNeedsCenter = false;
+    taxonomyZoom = 1;
+    return;
+  }
   taxonomyChildren(taxTreeRoot).forEach(candidate => {
     if (candidate === kingdom) {
       expandTaxonomyNode(candidate);
-      if (isMobileViewport()) {
-        (candidate.children || []).forEach(child => {
-          if (!child.data.noteId) collapseTaxonomyNode(child);
-        });
-      }
-    } else if (isMobileViewport()) {
+      // A Kingdom click reveals only its immediate Order layer. Descendant
+      // Families and notes remain held behind the Order the visitor chooses.
+      // Apply this on landscape too—the hierarchy must not disappear merely
+      // because the kiosk has more horizontal room.
+      (candidate.children || []).forEach(child => {
+        if (!child.data.noteId) collapseTaxonomyNode(child);
+      });
+    } else {
       collapseTaxonomyNode(candidate);
     }
   });
+  taxonomyZoom = 1;
   taxonomyBranchFocusNode = kingdom;
   taxonomyBranchFocusNeedsCenter = true;
 }
 
 function focusTaxonomyBranchOrder(order) {
   const kingdom = order.parent;
-  if (isMobileViewport() && kingdom) {
+  if (kingdom) {
     focusTaxonomyBranchKingdom(kingdom);
     (kingdom.children || []).forEach(candidate => {
       if (candidate === order) expandTaxonomySubtree(candidate);
-      else collapseTaxonomyNode(candidate);
+      else if (!candidate.data.noteId) collapseTaxonomyNode(candidate);
     });
   } else {
     expandTaxonomySubtree(order);
   }
+  taxonomyZoom = isMobileViewport() ? 1 : 1.28;
   taxonomyBranchFocusNode = order;
   taxonomyBranchFocusNeedsCenter = true;
 }
@@ -14144,6 +14386,10 @@ function compactTaxonomySampleLabel(note, maxLength = 17) {
   return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
 }
 
+function useTaxonomyOrderDirectory() {
+  return isMobileViewport() || window.innerHeight > window.innerWidth;
+}
+
 // A phone cannot explain Plantae by drawing Orders, Families, and ~100 note
 // marks at once. This directory shows one card per Order, with just two familiar
 // examples as recognition cues. Choosing an Order reveals Families; choosing a
@@ -14151,16 +14397,49 @@ function compactTaxonomySampleLabel(note, maxLength = 17) {
 function renderTaxonomyMobileKingdomOrders(
   svg, scrollEl, focusNode, orders, functionalNotes, looseNotes, notes, path
 ) {
-  // The scroll surface has 16px padding on both sides and gains a native
-  // vertical scrollbar for this directory; reserve both so it never creates a
-  // second, sideways scroll axis on a phone.
-  const width = Math.max(300, scrollEl.clientWidth - 48);
-  const side = 8, gap = 8, columns = 2, cardHeight = 80, headerHeight = 74;
-  const cardWidth = (width - side * 2 - gap) / columns;
-  const rows = Math.ceil(orders.length / columns);
+  // Portrait is a reading surface, not a compressed diagram. Orders become
+  // generous rows grouped by clade; the hexagonal collector sits at the right
+  // end of each row so name -> branch endpoint reads in one direction.
+  const width = Math.max(300, Math.min(920, scrollEl.clientWidth - 48));
+  const side = 8, gap = 8;
+  const columns = width < 520 ? 1 : width < 820 ? 2 : 3;
+  const cardHeight = 68, headerHeight = 74, cladeHeaderHeight = 30;
+  const cardWidth = (width - side * 2 - gap * (columns - 1)) / columns;
   const loose = [...looseNotes, ...functionalNotes];
   const functionalHeight = loose.length ? 86 : 0;
-  const height = headerHeight + rows * (cardHeight + gap) + functionalHeight + 12;
+
+  const byName = new Map(orders.map(order => [order.data.name, order]));
+  const grouped = focusNode.data.name === "Plantae"
+    ? PLANT_ORDER_LINEAGE_GROUPS.map(group => ({
+      ...group,
+      orders: group.orders.map(name => byName.get(name)).filter(Boolean),
+    })).filter(group => group.orders.length)
+    : [{ id: focusNode.data.name.toLowerCase(), label: `${focusNode.data.name} orders`, orders }];
+  const represented = new Set(grouped.flatMap(group => group.orders));
+  const ungrouped = orders.filter(order => !represented.has(order));
+  if (ungrouped.length) grouped.push({ id: "other", label: "Other represented orders", orders: ungrouped });
+
+  let cursorY = headerHeight;
+  const cardData = [];
+  grouped.forEach(group => {
+    group.y = cursorY;
+    cursorY += cladeHeaderHeight;
+    group.orders.forEach((order, index) => {
+      const column = index % columns, row = Math.floor(index / columns);
+      cardData.push({
+        group,
+        order,
+        x: side + column * (cardWidth + gap),
+        y: cursorY + row * (cardHeight + gap),
+        samples: taxonomyRepresentativeNotes(order, 2),
+        count: taxonomyLeafCount(order),
+        families: taxonomyOrderFamilies(order).length,
+        regions: taxonomyNodeOriginRegions(order),
+      });
+    });
+    cursorY += Math.ceil(group.orders.length / columns) * (cardHeight + gap) + 10;
+  });
+  const height = cursorY + functionalHeight + 12;
 
   svg.classed("taxonomy-wreath", false)
     .classed("tx-wreath-compact", false)
@@ -14191,82 +14470,60 @@ function renderTaxonomyMobileKingdomOrders(
     .attr("x", width - side - 12).attr("y", 45).attr("text-anchor", "end")
     .text("Choose an order → families");
 
+  const cladeHeadings = svg.append("g").selectAll("g")
+    .data(grouped).join("g")
+    .attr("transform", d => `translate(${side},${d.y})`);
+  cladeHeadings.append("text").attr("class", "tx-mobile-clade-title")
+    .attr("x", 0).attr("y", 18).text(d => d.label);
+  cladeHeadings.append("line").attr("class", "tx-mobile-clade-rule")
+    .attr("x1", 0).attr("x2", width - side * 2).attr("y1", 27).attr("y2", 27);
+
   const cards = svg.append("g").selectAll("g")
-    .data(orders.map(order => {
-      const familyNodes = taxonomyOrderFamilies(order);
-      const soleFamily = familyNodes.length === 1 ? familyNodes[0] : null;
-      return {
-        order,
-        familyNodes,
-        soleFamily,
-        samples: taxonomyRepresentativeNotes(order, 2),
-        count: taxonomyLeafCount(order),
-        families: familyNodes.length,
-      };
-    }))
+    .data(cardData)
     .join("g")
     .attr("class", "tx-mobile-order-card")
     .attr("role", "button").attr("tabindex", "0")
-    .attr("transform", (d, i) => {
-      const column = i % columns, row = Math.floor(i / columns);
-      return `translate(${side + column * (cardWidth + gap)},${headerHeight + row * (cardHeight + gap)})`;
-    })
+    .attr("transform", d => `translate(${d.x},${d.y})`)
     .attr("aria-label", d => {
-      const familyName = d.soleFamily
-        ? (TAXON_COMMON[d.soleFamily.data.name] || d.soleFamily.data.name) : null;
-      const branch = familyName
-        ? `${familyName}, Order ${d.order.data.name}`
-        : `Order ${d.order.data.name}, ${d.families} families`;
-      return `${branch}, ${d.count} ${d.count === 1 ? "note" : "notes"}. `
+      const origins = d.regions.map(region => region.label);
+      return `Order ${d.order.data.name}. Lineage group: ${d.group.label}. `
+        + `${d.families} ${d.families === 1 ? "family" : "families"}; `
+        + `${d.count} ${d.count === 1 ? "note" : "notes"}. `
+        + `${origins.length ? `Mapped cultivation origins: ${origins.join(", ")}. ` : ""}`
         + `Examples: ${d.samples.map(note => note.label).join(", ")}.`;
     })
     .on("click keydown", (event, d) =>
-      activateTaxonomyTarget(event, () => d.soleFamily
-        ? setTaxonomyFocus("family", d.soleFamily.data.name)
-        : setTaxonomyFocus("order", d.order.data.name)));
+      activateTaxonomyTarget(event, () => setTaxonomyFocus("order", d.order.data.name)));
 
   cards.append("rect").attr("width", cardWidth).attr("height", cardHeight).attr("rx", 9);
-  const cardPrimaryLabel = d => d.soleFamily
-    ? (TAXON_COMMON[d.soleFamily.data.name] || d.soleFamily.data.name)
-    : d.order.data.name;
-  const cardWrapsFamily = d =>
-    !!d.soleFamily && cardPrimaryLabel(d).length > 20
-    && /\s+family$/i.test(cardPrimaryLabel(d));
   cards.append("text").attr("class", "tx-mobile-order-name")
-    .attr("x", 10)
-    .each(function(d) {
-      const label = cardPrimaryLabel(d);
-      const text = d3.select(this);
-      if (cardWrapsFamily(d)) {
-        text.append("tspan").attr("x", 10).attr("y", 15)
-          .text(label.replace(/\s+family$/i, ""));
-        text.append("tspan").attr("x", 10).attr("y", 27).text("family");
-      } else {
-        text.attr("y", 18)
-          .text(label.length > 20 ? `${label.slice(0, 19)}…` : label);
-      }
-    });
+    .attr("x", 11).attr("y", 20)
+    .text(d => d.order.data.name.length > 24
+      ? `${d.order.data.name.slice(0, 23)}…` : d.order.data.name);
   cards.append("text").attr("class", "tx-mobile-order-meta")
-    .attr("x", 10).attr("y", d => cardWrapsFamily(d) ? 40 : 32)
-    .text(d => d.soleFamily
-      ? `(${d.order.data.name}) · ${d.count} ${d.count === 1 ? "note" : "notes"}`
-      : `${d.families} families · ${d.count} ${d.count === 1 ? "note" : "notes"}`);
-  cards.append("title").text(d => {
-    const familyName = d.soleFamily
-      ? (TAXON_COMMON[d.soleFamily.data.name] || d.soleFamily.data.name) : null;
-    return familyName ? `${familyName} (${d.order.data.name})` : d.order.data.name;
-  });
-  cards.each(function(d) {
-    const group = d3.select(this);
-    d.samples.forEach((note, i) => {
-      group.append("text").attr("class", "tx-mobile-order-sample")
-        .attr("x", 10).attr("y", (cardWrapsFamily(d) ? 55 : 51) + i * (cardWrapsFamily(d) ? 15 : 17))
-        .text(`${noteIcon(note)} ${compactTaxonomySampleLabel(note)}`);
+    .attr("x", 11).attr("y", taxonomyLayerVisibility.orderNames ? 37 : 22)
+    .text(d => `${d.families} ${d.families === 1 ? "family" : "families"} · ${d.count} ${d.count === 1 ? "note" : "notes"}`);
+  cards.append("text").attr("class", "tx-mobile-order-sample")
+    .attr("x", 11).attr("y", taxonomyLayerVisibility.orderNames ? 55 : 43)
+    .text(d => d.samples[0] ? compactTaxonomySampleLabel(d.samples[0], 22) : "No example yet");
+  cards.append("title").text(d => `${d.order.data.name} · ${d.group.label}`);
+
+  const collector = cards.append("g").attr("class", "tx-mobile-order-collector")
+    .attr("transform", `translate(${cardWidth - 31},31)`);
+  collector.append("path")
+    .attr("d", "M0,-20 L17,-10 L17,10 L0,20 L-17,10 L-17,-10 Z");
+  collector.append("text").attr("y", 1)
+    .text(d => d.samples.map(note => noteIcon(note)).join(" "));
+  cards.append("g").attr("class", "tx-mobile-order-geo")
+    .attr("transform", `translate(${cardWidth - 31},58)`)
+    .each(function(d) {
+      d3.select(this).selectAll("circle").data(d.regions, region => region.id).join("circle")
+        .attr("cx", (region, i) => (i - (d.regions.length - 1) / 2) * 7)
+        .attr("cy", 0).attr("r", 3).attr("fill", region => region.color);
     });
-  });
 
   if (loose.length) {
-    const sectionY = headerHeight + rows * (cardHeight + gap) + 4;
+    const sectionY = cursorY + 4;
     svg.append("text").attr("class", "tx-mobile-functional-heading")
       .attr("x", side).attr("y", sectionY + 10)
       .text("CROSS-FAMILY FLAVOR WORDS · NOT LINEAGE");
@@ -14296,6 +14553,16 @@ function renderTaxonomyMobileKingdomOrders(
 function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
   const topChildren = taxonomyChildren(focusNode);
   const rawChildren = taxonomyByMostNotes(topChildren.filter(d => !d.data.noteId));
+  if (rank === "kingdom" && focusNode.data.name === "Plantae") {
+    rawChildren.sort((a, b) => {
+      const ai = PLANT_ORDER_SEQUENCE.get(a.data.name);
+      const bi = PLANT_ORDER_SEQUENCE.get(b.data.name);
+      if (ai === undefined && bi === undefined) return a.data.name.localeCompare(b.data.name);
+      if (ai === undefined) return 1;
+      if (bi === undefined) return -1;
+      return ai - bi;
+    });
+  }
   // Plantae also contains the explicitly non-taxonomic "(multiple families)"
   // bucket. Keep it in the full tree, but do not mislabel it as an Order in
   // the biological drill-down.
@@ -14336,7 +14603,7 @@ function renderTaxonomyRankDisc(svg, scrollEl, focusNode, rank) {
   ];
   const parent = focusNode.parent;
   const path = focusNode.ancestors().reverse().map(d => d.data.name).join(" → ");
-  if (rank === "kingdom" && isMobileViewport()) {
+  if (rank === "kingdom" && useTaxonomyOrderDirectory()) {
     return renderTaxonomyMobileKingdomOrders(
       svg, scrollEl, focusNode, children, functionalNotes, looseNotes, notes, path);
   }
@@ -15053,6 +15320,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
 
 function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
+  applyTaxonomyLayerVisibility(svg);
   svg.classed("tx-mobile-order-directory", false);
   const scrollEl = document.getElementById("taxonomy-tree-scroll");
   const wasWreath = svg.classed("taxonomy-wreath");
@@ -15066,6 +15334,14 @@ function renderTaxonomyTree() {
   const branchView = state.taxonomyView === "branches";
   viewToggle.textContent = branchView ? "View circles" : "View branches";
   viewToggle.setAttribute("aria-pressed", branchView ? "true" : "false");
+  const allNotesShown = branchView && !allTaxonomyDescendants(taxTreeRoot, [])
+    .some(d => d._children);
+  const kingdomOverviewShown = branchView && taxonomyChildren(taxTreeRoot)
+    .every(d => !d.children);
+  document.getElementById("taxonomy-expand-all")
+    .setAttribute("aria-pressed", allNotesShown ? "true" : "false");
+  document.getElementById("taxonomy-collapse-all")
+    .setAttribute("aria-pressed", kingdomOverviewShown ? "true" : "false");
   const focusNode = taxonomyFocusNode(state.taxonomyFocus);
   if (focusNode) {
     if (state.taxonomyFocus.rank === "bucket"
@@ -15226,7 +15502,7 @@ function renderTaxonomyTree() {
   // clipped at the canvas edges (the "notes on the far edges get cut off"
   // fix). Vertical TOP/BOTTOM margins were declared at the top of this
   // function (the depth-spacing calc needs them).
-  const SIDE_MARGIN = mobileKingdomOverview ? 36 : 95;
+  const SIDE_MARGIN = mobileKingdomOverview ? 36 : 150;
   const overviewWidth = mobileKingdomOverview
     ? Math.max(304, (scrollEl.clientWidth || 344) - 16) : 0;
   const overviewHeight = mobileKingdomOverview ? Math.max(380, (scrollEl.clientHeight || 430) - 12) : 0;
@@ -15296,9 +15572,12 @@ function renderTaxonomyTree() {
     arr.forEach((d, i) => fanProgress.set(d, n <= 1 ? 0.5 : i / (n - 1)));
   });
   const FAN_HALF_SWEEP = (compactSway ? 48 : 60) * Math.PI / 180;
+  const landscapeOrderRadius = Math.max(340,
+    Math.min(460, (scrollEl.clientWidth || 960) * .44));
   const FAN_RADIUS = compactSway
     ? { order: 80, family: 122, note: 162 }
-    : { order: 178, family: 268, note: 352 };
+    : { order: landscapeOrderRadius, family: landscapeOrderRadius + 125,
+      note: landscapeOrderRadius + 250 };
   // A band's height comes from its own population, not a fixed row height:
   // consecutive same-rank nodes step FAN_VSTEP apart as they climb, so more
   // siblings buy more vertical room automatically instead of more width.
@@ -15347,8 +15626,46 @@ function renderTaxonomyTree() {
     const rank = taxonomyBranchRank(d);
     return fanBandBottom.get(rank) - fanClimb(d) * fanBandH.get(rank);
   };
-  const screenX = d => underPlantae(d) ? fanScreenX(d) : legacyScreenX(d);
-  const screenY = d => underPlantae(d) ? fanScreenY(d) : legacyScreenY(d);
+  const baseScreenX = d => underPlantae(d) ? fanScreenX(d) : legacyScreenX(d);
+  const baseScreenY = d => underPlantae(d) ? fanScreenY(d) : legacyScreenY(d);
+
+  // Once an Order is chosen, its descendants stop participating in the global
+  // all-Orders fan. A two-Family branch should not inherit the full 900px fan
+  // sweep and throw one Family to each edge of the canvas. Keep the selected
+  // hex as the anchor, sprout Families immediately above it, and arrange each
+  // Family's notes in a small local canopy. Sibling Orders remain as dim
+  // context, but the precise level now occupies less space than the overview.
+  const localBranchX = new Map(), localBranchY = new Map();
+  const focusedOrderForLayout = taxonomyBranchFocusNode
+    && taxonomyBranchRank(taxonomyBranchFocusNode) === "order"
+    && nodes.includes(taxonomyBranchFocusNode) ? taxonomyBranchFocusNode : null;
+  if (focusedOrderForLayout) {
+    const anchorX = baseScreenX(focusedOrderForLayout);
+    const anchorY = baseScreenY(focusedOrderForLayout);
+    const families = taxonomyChildren(focusedOrderForLayout)
+      .filter(node => taxonomyBranchRank(node) === "family");
+    const familySpan = Math.min(440, Math.max(0, (families.length - 1) * 200));
+    const familyY = anchorY - 132;
+    families.forEach((family, familyIndex) => {
+      const familyX = families.length === 1 ? anchorX
+        : anchorX - familySpan / 2 + familyIndex * (familySpan / (families.length - 1));
+      localBranchX.set(family, familyX);
+      localBranchY.set(family, familyY);
+
+      const notes = taxonomyChildren(family).filter(node => node.data.noteId);
+      const perRow = Math.min(5, Math.max(1, notes.length));
+      const noteGap = notes.length > 8 ? 40 : 48;
+      notes.forEach((note, noteIndex) => {
+        const row = Math.floor(noteIndex / perRow);
+        const column = noteIndex % perRow;
+        const rowCount = Math.min(perRow, notes.length - row * perRow);
+        localBranchX.set(note, familyX + (column - (rowCount - 1) / 2) * noteGap);
+        localBranchY.set(note, familyY - 88 - row * 56);
+      });
+    });
+  }
+  const screenX = d => localBranchX.get(d) ?? baseScreenX(d);
+  const screenY = d => localBranchY.get(d) ?? baseScreenY(d);
 
   // The fan bounds Order-joint spacing to single-digit pixels once there are
   // ~30 of them (radius x sin(sweep) is fixed regardless of population), but
@@ -15417,7 +15734,8 @@ function renderTaxonomyTree() {
     const items = nodes.filter(d => LABEL_SPEC[taxonomyBranchRank(d)])
       .map(d => {
         const rank = taxonomyBranchRank(d);
-        return { d, x: screenX(d), y: screenY(d), dir: dirOf.get(d) || -1, ...LABEL_SPEC[rank] };
+        return { d, x: screenX(d) + (rank === "order" ? -74 : 0),
+          y: screenY(d), dir: dirOf.get(d) || -1, ...LABEL_SPEC[rank] };
       })
       .sort((a, b) => a.x - b.x);
     const placed = [];
@@ -15455,6 +15773,7 @@ function renderTaxonomyTree() {
     const ys = nodes.map(screenY);
     orderNodesForPlates.forEach(item => {
       const y = item.y + (plateNudge.get(item.d) || 0);
+      xs.push(item.x - 136, item.x + 24);
       ys.push(y - 66, y + 66);
     });
     nodes.filter(d => taxonomyBranchRank(d) === "family" || taxonomyBranchRank(d) === "note")
@@ -15496,8 +15815,10 @@ function renderTaxonomyTree() {
   if (pathReadout && !selectedTarget && visibleBranchFocus) {
     if (taxonomyBranchRank(visibleBranchFocus) === "order") {
       const families = taxonomyOrderFamilies(visibleBranchFocus).length;
+      const lineage = PLANT_ORDER_LINEAGE.get(visibleBranchFocus.data.name);
       pathReadout.textContent =
         `${visibleBranchFocus.parent?.data.name || "Kingdom"} → ${visibleBranchFocus.data.name}`
+        + `${lineage ? ` · ${lineage.label}` : ""}`
         + ` · ${families} ${families === 1 ? "family" : "families"}`
         + ` · ${countTaxonomyLeaves(visibleBranchFocus)} notes · choose a Family or flavor note`;
     } else {
@@ -15507,8 +15828,9 @@ function renderTaxonomyTree() {
         + ` · choose an Order to grow its branch`;
     }
   } else if (pathReadout && !selectedTarget) {
-    pathReadout.textContent =
-      "Choose a Kingdom root, then an Order joint, to grow Families and flavor notes upward.";
+    pathReadout.textContent = state.goDeeper
+      ? `All ${NOTES.length} flavor notes · use Kingdom overview whenever you want the calmer categorized view.`
+      : "Choose a Kingdom root, then an Order joint, to grow Families and flavor notes upward.";
   }
 
   // Explicit paint-order layers. The joins below run at different times and
@@ -15516,15 +15838,15 @@ function renderTaxonomyTree() {
   // limb that enters on a later render paints ON TOP of nodes that entered
   // earlier. That was survivable when links were 1.5px hairlines; a 26px-wide
   // trunk ribbon painting over a Kingdom node is not.
-  if (svg.select("g.tx-layer-links").empty()) {
-    svg.append("g").attr("class", "tx-layer-links");
-    svg.append("g").attr("class", "tx-layer-grain");
-    svg.append("g").attr("class", "tx-layer-nodes");
-  }
+  if (svg.select("g.tx-layer-links").empty()) svg.append("g").attr("class", "tx-layer-links");
+  if (svg.select("g.tx-layer-lineage").empty()) svg.append("g").attr("class", "tx-layer-lineage");
+  if (svg.select("g.tx-layer-grain").empty()) svg.append("g").attr("class", "tx-layer-grain");
+  if (svg.select("g.tx-layer-nodes").empty()) svg.append("g").attr("class", "tx-layer-nodes");
   const linkLayer = svg.select("g.tx-layer-links");
+  const lineageLayer = svg.select("g.tx-layer-lineage");
   const grainLayer = svg.select("g.tx-layer-grain");
   const nodeLayer = svg.select("g.tx-layer-nodes");
-  linkLayer.lower(); grainLayer.raise(); nodeLayer.raise();
+  linkLayer.lower(); lineageLayer.raise(); grainLayer.raise(); nodeLayer.raise();
 
   // Half-width of a limb where it leaves its parent and where it meets its
   // child. Plantae is deliberately far heavier than its siblings: it holds 111
@@ -15553,12 +15875,17 @@ function renderTaxonomyTree() {
     const span = Math.abs(sy - ty);
     return { sx, sy, tx, ty, bend: Math.min(span * .5, Math.max(14, span * .45)) };
   };
-  const branchLink = d => {
-    const { sx, sy, tx, ty, bend } = limbEdges(d);
-    const [w0, w1] = limbWidth(d);
+  const ribbonPath = (sx, sy, tx, ty, w0, w1) => {
+    const span = Math.abs(sy - ty);
+    const bend = Math.min(span * .5, Math.max(14, span * .45));
     return `M${sx - w0},${sy} C${sx - w0},${sy - bend} ${tx - w1},${ty + bend} ${tx - w1},${ty}`
       + ` L${tx + w1},${ty}`
       + ` C${tx + w1},${ty + bend} ${sx + w0},${sy - bend} ${sx + w0},${sy} Z`;
+  };
+  const branchLink = d => {
+    const { sx, sy, tx, ty } = limbEdges(d);
+    const [w0, w1] = limbWidth(d);
+    return ribbonPath(sx, sy, tx, ty, w0, w1);
   };
   // Grain runs at fractions of the limb's own half-width, so it tapers with
   // the trunk instead of staying parallel like printed rules.
@@ -15573,7 +15900,55 @@ function renderTaxonomyTree() {
     .flatMap(link => [-0.46, 0.08, 0.5].map((k, i) => ({ link, k, key: `${keyFor(link.target)}:g${i}` })));
   grainLayer.selectAll("path.tx-grain").data(grainData, g => g.key)
     .join("path").attr("class", "tx-grain").attr("d", trunkGrain);
-  linkLayer.selectAll("path.tx-link").data(links, d => keyFor(d.target))
+
+  // Plantae's Orders are not a decorative matrix. Their stable sequence is
+  // APG-informed, and these virtual hubs expose the high-level lineage groups
+  // that sequence represents. The navigation hierarchy remains
+  // Kingdom -> Order -> Family; only the explanatory branch topology gains
+  // the clade joints. Geography stays on the Order nodes as a separate channel.
+  const orderNodesByName = new Map(nodes
+    .filter(d => d.parent === plantaeNode && taxonomyBranchRank(d) === "order")
+    .map(d => [d.data.name, d]));
+  const lineageGroups = plantaeNode ? PLANT_ORDER_LINEAGE_GROUPS.map(group => {
+    const orders = group.orders.map(name => orderNodesByName.get(name)).filter(Boolean);
+    if (!orders.length) return null;
+    const meanX = orders.reduce((sum, d) => sum + screenX(d), 0) / orders.length;
+    const meanY = orders.reduce((sum, d) => sum + screenY(d), 0) / orders.length;
+    const rootY = screenY(plantaeNode);
+    return { ...group, orders, x: meanX, y: rootY + (meanY - rootY) * .46 };
+  }).filter(Boolean) : [];
+  const groupedOrders = new Set(lineageGroups.flatMap(group => group.orders));
+  const regularLinks = links.filter(link => !(link.source === plantaeNode && groupedOrders.has(link.target)));
+  const lineageBranches = lineageGroups.flatMap(group => [
+    { key: `${group.id}:trunk`, group, target: null,
+      d: ribbonPath(screenX(plantaeNode), screenY(plantaeNode), group.x, group.y, 7.5, 4.5) },
+    ...group.orders.map(order => ({ key: `${group.id}:${keyFor(order)}`, group, target: order,
+      d: ribbonPath(group.x, group.y, screenX(order), screenY(order), 4, 2.8) })),
+  ]);
+  lineageLayer.selectAll("path.tx-lineage-branch")
+    .data(lineageBranches, d => d.key)
+    .join("path")
+    .attr("class", d => `tx-lineage-branch${d.target && selectedPath.has(d.target) ? " tx-path" : ""}`
+      + `${visibleBranchFocus && taxonomyBranchRank(visibleBranchFocus) === "order"
+        && d.target && taxonomyBranchRank(d.target) === "order"
+        && d.target !== visibleBranchFocus ? " tx-order-context" : ""}`)
+    .attr("d", d => d.d);
+  lineageLayer.selectAll("path.tx-lineage-hub")
+    .data(lineageGroups, d => d.id)
+    .join("path")
+    .attr("class", "tx-lineage-hub")
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .attr("d", "M0,-7 L6,-3.5 L6,3.5 L0,7 L-6,3.5 L-6,-3.5 Z");
+  lineageLayer.selectAll("text.tx-clade-label")
+    .data(lineageGroups, d => d.id)
+    .join("text")
+    .attr("class", "tx-clade-label")
+    .attr("x", d => d.x + 14)
+    .attr("y", d => d.y + 3 + (d.labelDy || 0))
+    .attr("text-anchor", "start")
+    .text(d => d.shortLabel || d.label);
+
+  linkLayer.selectAll("path.tx-link").data(regularLinks, d => keyFor(d.target))
     .join("path")
     .attr("class", d => {
       const rank = taxonomyBranchRank(d.target);
@@ -15701,6 +16076,7 @@ function renderTaxonomyTree() {
   // language as its joint instead of being a generic rounded rect.
   enter.append("path").attr("class", "tx-order-label-block");
   enter.append("text").attr("class", "tx-order-samples");
+  enter.append("g").attr("class", "tx-order-geo");
   enter.append("path").attr("class", "tx-human-glyph")
     .attr("d", "M0,-18 a5,5 0 1,0 .1,0 M0,-8 L0,9 M-10,-1 L0,3 L10,-2 M0,9 L-8,21 M0,9 L8,21");
   enter.append("path").attr("class", "tx-fungi-rootlets")
@@ -15726,7 +16102,11 @@ function renderTaxonomyTree() {
         return `Focus kingdom ${d.data.name}, ${total} note${total === 1 ? "" : "s"}`;
       }
       if (rank === "order") {
-        return `Grow order ${d.data.name} into its families and ${total} flavor note${total === 1 ? "" : "s"}`;
+        const lineage = PLANT_ORDER_LINEAGE.get(d.data.name);
+        const origins = taxonomyNodeOriginRegions(d).map(region => region.label);
+        return `Grow order ${d.data.name} into its families and ${total} flavor note${total === 1 ? "" : "s"}.`
+          + `${lineage ? ` Lineage group: ${lineage.label}.` : ""}`
+          + `${origins.length ? ` Mapped cultivation origins: ${origins.join(", ")}.` : " No mapped cultivation origin."}`;
       }
       return `Open family ${TAXON_COMMON[d.data.name] || d.data.name}, ${d.data.name}, ${total} note${total === 1 ? "" : "s"}`;
     });
@@ -15762,23 +16142,34 @@ function renderTaxonomyTree() {
     .attr("transform", d => `rotate(${(dirOf.get(d) || 1) * -15})`);
   merged.select(".tx-order-label-block")
     .attr("d", d => {
-      const w = 112, h = 24, x = -56, c = 8;
+      const w = 112, h = 24, x = -130, c = 8;
       const y = (dirOf.get(d) < 0 ? -60 : 36) + (plateNudge.get(d) || 0);
       return `M${x + c},${y} L${x + w - c},${y} L${x + w},${y + h / 2}`
         + ` L${x + w - c},${y + h} L${x + c},${y + h} L${x},${y + h / 2} Z`;
     });
   merged.select(".tx-order-leader")
-    .attr("y1", d => dirOf.get(d) < 0 ? -14 : 14)
+    .attr("x1", -13).attr("x2", -18).attr("y1", 0)
     .attr("y2", d => {
       const y = (dirOf.get(d) < 0 ? -60 : 36) + (plateNudge.get(d) || 0);
-      return dirOf.get(d) < 0 ? y + 24 : y;
+      return y + 12;
     });
   merged.select(".tx-order-samples")
     .attr("y", 3)
     .text(d => taxonomyBranchRank(d) === "order"
       ? taxonomyRepresentativeNotes(d, 2).map(note => noteIcon(note)).join(" ") : "");
+  merged.select(".tx-order-geo").each(function(d) {
+    const regions = taxonomyBranchRank(d) === "order" ? taxonomyNodeOriginRegions(d) : [];
+    const geo = d3.select(this);
+    geo.selectAll("circle").data(regions, region => region.id).join("circle")
+      .attr("cx", (region, i) => (i - (regions.length - 1) / 2) * 7.5)
+      .attr("cy", 20)
+      .attr("r", 3.2)
+      .attr("fill", region => region.color);
+    geo.selectAll("title").data(regions.length ? [regions] : []).join("title")
+      .text(items => `Mapped cultivation origins: ${items.map(region => `${region.label} (${region.count})`).join(", ")}`);
+  });
   merged.select(".tx-node-label")
-    .attr("x", 0)
+    .attr("x", d => taxonomyBranchRank(d) === "order" ? -74 : 0)
     .attr("y", d => {
       const rank = taxonomyBranchRank(d);
       if (rank === "order") return (dirOf.get(d) < 0 ? -44 : 52) + (plateNudge.get(d) || 0);
@@ -15798,11 +16189,11 @@ function renderTaxonomyTree() {
     .text(labelFor);
 
   node.exit().remove();
-  if (isMobileViewport() && taxonomyBranchFocusNeedsCenter && visibleBranchFocus) {
+  if (taxonomyBranchFocusNeedsCenter && visibleBranchFocus) {
     taxonomyBranchFocusNeedsCenter = false;
     window.requestAnimationFrame(() => {
-      const x = screenX(visibleBranchFocus) * taxonomyZoom;
-      const y = screenY(visibleBranchFocus) * taxonomyZoom;
+      const x = (screenX(visibleBranchFocus) - viewMinX) * taxonomyZoom;
+      const y = (screenY(visibleBranchFocus) - viewMinY) * taxonomyZoom;
       scrollEl.scrollTo({
         left: Math.max(0, x - scrollEl.clientWidth / 2),
         top: Math.max(0, y - scrollEl.clientHeight * .62),
@@ -15999,9 +16390,22 @@ document.getElementById("taxonomy-view-toggle").addEventListener("click", () => 
   taxonomyBranchFocusNode = null;
   renderTaxonomyTree();
 });
+document.getElementById("taxonomy-expand-all").textContent = "All notes";
+document.getElementById("taxonomy-expand-all").setAttribute("aria-label", "Show all flavor notes");
 document.getElementById("taxonomy-expand-all").addEventListener("click", expandAllTaxonomy);
 document.getElementById("taxonomy-collapse-all").addEventListener("click", collapseTaxonomyToKingdoms);
 document.getElementById("taxonomy-back-tree").addEventListener("click", taxonomyUpOneLevel);
+document.querySelectorAll("[data-taxonomy-layer]").forEach(input => {
+  input.checked = !!taxonomyLayerVisibility[input.dataset.taxonomyLayer];
+  input.addEventListener("change", () => {
+    taxonomyLayerVisibility[input.dataset.taxonomyLayer] = input.checked;
+    updateTaxonomyLayerSummary();
+    if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) {
+      renderTaxonomyTree();
+    }
+  });
+});
+updateTaxonomyLayerSummary();
 
 // refreshOriginMarkers() is called from recompute() whenever originsLoaded is true.
 
