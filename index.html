@@ -1804,13 +1804,22 @@
      not typographic loudness: Orders are strong hexagonal growth joints,
      Families are smaller leaf-buds on finer stems, and flavor notes are the
      bright fruiting bodies at the canopy. */
-  .tx-link { fill: none; stroke: #36443a; stroke-width: 1.5; stroke-linejoin: round;
-    stroke-linecap: round; }
-  .tx-link.tx-link-kingdom { stroke: #708775; stroke-width: 5; }
-  .tx-link.tx-link-order { stroke: #607565; stroke-width: 3.5; }
-  .tx-link.tx-link-family { stroke: #4d6352; stroke-width: 2.25; }
-  .tx-link.tx-link-note { stroke: #3d5042; stroke-width: 1.35; }
-  .tx-link.tx-branch-grown { stroke: var(--accent-2); }
+  /* Limbs are closed tapered silhouettes, not stroked lines: wide where they
+     leave the parent, narrow where they meet the child, swept as cubics so a
+     branch bends out of its parent instead of turning a corner. Rank reads
+     from the taper itself, which costs no color, no alpha and no extra
+     element — a stroke can only ever be one width along its whole length,
+     which is exactly what made the old diagram read as wiring. */
+  .tx-link { fill: #3a4a3d; stroke: none; }
+  .tx-link.tx-link-kingdom { fill: #75876f; }
+  .tx-link.tx-link-order { fill: #63765f; }
+  .tx-link.tx-link-family { fill: #4e6350; }
+  .tx-link.tx-link-note { fill: #3f5342; }
+  .tx-link.tx-branch-grown { fill: var(--accent-2); }
+  /* Heartwood striations, drawn only down the Plantae trunk — the one limb
+     broad enough to show grain. They follow the same cubic as the silhouette
+     at fractions of its half-width, so they taper with it. */
+  .tx-grain { fill: none; stroke: #708368; stroke-width: 1.1; stroke-linecap: round; }
   .tx-node { cursor: pointer; }
   .tx-node text { font-size: 12px; cursor: pointer; fill: var(--ink);
     paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
@@ -1823,24 +1832,43 @@
     letter-spacing: .035em; }
   .tx-order-hex { display: none; fill: #263b30; stroke: #8ea594; stroke-width: 2.25;
     vector-effect: non-scaling-stroke; transition: fill .15s ease, stroke .15s ease; }
+  /* A second hexagon inside the first: the joint reads as cut wood with a
+     growth ring, which is what makes an Order feel like a structural nodule
+     you grow THROUGH rather than a button you press. */
+  .tx-order-hex-core { display: none; fill: none; stroke: #55705e; stroke-width: 1.25;
+    vector-effect: non-scaling-stroke; transition: stroke .15s ease; }
   .tx-order-label-block { display: none; fill: #17221b; stroke: #526758; stroke-width: 1; }
+  /* Crowded Order joints can push their plate well clear of the hex to dodge
+     a neighbour; without this a displaced plate reads as an orphaned label
+     rather than that joint's own name. */
+  .tx-order-leader { display: none; stroke: #45564a; stroke-width: 1.25; stroke-dasharray: 1.5 2.5; }
   .tx-order-samples { display: none; fill: var(--ink); font-size: 7px;
     text-anchor: middle; pointer-events: none; stroke-width: 2px; }
   .tx-node.tx-order .tx-node-core { display: none; }
   .tx-node.tx-order .tx-order-hex,
+  .tx-node.tx-order .tx-order-hex-core,
   .tx-node.tx-order .tx-order-label-block,
+  .tx-node.tx-order .tx-order-leader,
   .tx-node.tx-order .tx-order-samples { display: block; }
   .tx-node.tx-order text.tx-node-label { fill: #f1eee7; font-size: 10px;
     font-style: normal; font-weight: 700; letter-spacing: .02em; }
   .tx-node.tx-order:hover .tx-order-hex,
   .tx-node.tx-order:focus .tx-order-hex,
   .tx-node.tx-branch-focus .tx-order-hex { fill: #395644; stroke: var(--accent); stroke-width: 3; }
+  .tx-node.tx-order:hover .tx-order-hex-core,
+  .tx-node.tx-order:focus .tx-order-hex-core,
+  .tx-node.tx-branch-focus .tx-order-hex-core { stroke: var(--accent-2); }
   .tx-node.tx-order-context .tx-order-hex { fill: #202e26; stroke: #66796b; }
   .tx-node.tx-order-context .tx-order-label-block { fill: #121a15; stroke: #3f5144; }
   .tx-node.tx-order-context text { fill: #b8c0b9; }
   .tx-family-bud { display: none; fill: #41603c; stroke: #8aa080; stroke-width: 1.5; }
+  /* The midrib is what stops a Family reading as a generic blob — it's the
+     one line that makes the shape legible as foliage at 9px. */
+  .tx-family-midrib { display: none; fill: none; stroke: #22331f; stroke-width: 1;
+    stroke-linecap: round; }
   .tx-node.tx-family .tx-node-core { display: none; }
-  .tx-node.tx-family .tx-family-bud { display: block; }
+  .tx-node.tx-family .tx-family-bud,
+  .tx-node.tx-family .tx-family-midrib { display: block; }
   .tx-node.tx-family text { fill: var(--ink); font-size: 9.5px; font-style: normal;
     font-weight: 550; text-decoration: none; }
   .tx-node.tx-family:hover .tx-family-bud,
@@ -1848,6 +1876,22 @@
   .tx-node.tx-leaf .tx-node-core { cursor: pointer; fill: var(--ink-dim);
     stroke: var(--bg); stroke-width: 2; }
   .tx-node.tx-leaf text { font-size: 11px; font-weight: 650; }
+  /* A fruit in this canopy is a note you actually tasted. The specular dot is
+     what turns a flat disc into something ripe and picked-looking; untasted
+     notes keep their aroma-group hue but stay matte and smaller, so the
+     canopy shows your tasting at a glance instead of an even field of dots.
+     Solid fill, no alpha — the highlight is a shape, not a wash. */
+  .tx-fruit-gloss { display: none; fill: #f3f8ef; pointer-events: none; stroke: none; }
+  .tx-node.tx-tasted .tx-fruit-gloss { display: block; }
+  /* The search-hit and selected-path rules below both target bare `circle`,
+     which would otherwise ring the highlight dot and turn the sheen into a
+     second, smaller node. Three classes beats two-classes-plus-a-type, so
+     these win on specificity regardless of where they sit in the file. */
+  .tx-node.tx-search-hit .tx-fruit-gloss,
+  .tx-node.tx-path .tx-fruit-gloss { stroke: none; }
+  /* Root flare: the trunk spreading into ground at the base of the diagram. */
+  .tx-root-flare { display: none; fill: #2c3b30; }
+  .tx-node.tx-root .tx-root-flare { display: block; }
   .tx-human-glyph, .tx-fungi-rootlets { display: none; fill: none;
     stroke: var(--ink-dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .tx-node.tx-animalia .tx-human-glyph,
@@ -1855,8 +1899,10 @@
   .tx-node.tx-animalia .tx-node-core { display: none; }
   .tx-node.tx-animalia text { fill: #c9cec9; }
   .tx-node.tx-process .tx-node-core { fill: #202520; stroke: #6d756d; }
-  .tx-link.tx-link-plantae { stroke: #86a98b; stroke-width: 7; }
-  .tx-link.tx-link-fungi { stroke: #53634e; stroke-width: 3; }
+  /* Silvery olive bark for the dominant trunk, so Plantae reads as the limb
+     everything else is attached to rather than one branch among four. */
+  .tx-link.tx-link-plantae { fill: #8b9d85; }
+  .tx-link.tx-link-fungi { fill: #57674f; }
   .tx-link.tx-link-process { display: none; }
   .tx-node:focus { outline: none; }
   /* Family nodes open a detail page on click (not collapse) — a faint accent
@@ -2837,11 +2883,10 @@
     color: var(--ink-dim); font-size: 11px; line-height: 1.4; position: relative; z-index: 3; }
   .taxonomy-story strong { color: var(--accent-2); font-weight: 600; white-space: nowrap; }
   #taxonomy-path-readout { color: var(--ink); }
-  .tx-link.tx-path { stroke: var(--accent); opacity: .98; }
-  .tx-link.tx-link-kingdom.tx-path { stroke-width: 5.5; }
-  .tx-link.tx-link-order.tx-path { stroke-width: 4.5; }
-  .tx-link.tx-link-family.tx-path { stroke-width: 3.25; }
-  .tx-link.tx-link-note.tx-path { stroke-width: 2.5; }
+  /* The selected lineage lights up as sapwood. It used to also thicken each
+     limb, which fought the taper — the ribbon geometry already carries rank,
+     so the highlight only needs to carry hue. */
+  .tx-link.tx-path { fill: var(--accent); }
   .tx-node.tx-path .tx-node-core,
   .tx-node.tx-path .tx-family-bud,
   .tx-node.tx-path .tx-order-hex { stroke: var(--accent); stroke-width: 2.5; }
@@ -2904,7 +2949,10 @@
     #tree-vines .tv-bl { left: -8px; bottom: 14px; height: min(38%, 230px); }
     #tree-vines .tv-tr { right: -6px; top: 18px; height: min(30%, 170px); }
     body.taxonomy-mode #taxonomy-legend-note { display: none; }
-    .tx-link { stroke: rgba(233,230,223,.34); stroke-width: 2; }
+    /* No mobile link override. A flat translucent grey here used to repaint
+       every limb the same width and color on the canonical viewport, throwing
+       away the whole rank hierarchy exactly where it matters most — and
+       spending an alpha layer to do it. The rank fills carry through now. */
     .tx-node text { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
   }
 
@@ -15041,7 +15089,10 @@ function renderTaxonomyTree() {
   document.getElementById("taxonomy-back-tree").hidden = true;
   // Vertical margins (declared up here because the depth-spacing calc below
   // needs them); SIDE_MARGIN stays near its use further down.
-  const TOP_MARGIN = 44, BOTTOM_MARGIN = 44;
+  // TOP_MARGIN clears the tallest thing that can sit at the top row. That is
+  // an Order's label plate, which reaches PLATE_FAR (60px) above its joint —
+  // at 44 the topmost plates were clipping off the canvas.
+  const TOP_MARGIN = 68, BOTTOM_MARGIN = 44;
 
   // Stretch the per-depth vertical spacing so the whole tree FILLS the
   // container height instead of sitting in the top slice with dead space
@@ -15068,9 +15119,9 @@ function renderTaxonomyTree() {
   // The compact overview has only a handful of top-level siblings; tightening
   // their spread lets the complete connected root fit at 360px with no
   // mandatory horizontal scroll. Expanded branches can still overflow/pan.
-  // Order hexagons use a three-step vertical cadence on phones; 72px sibling
-  // spacing lets the staggered label blocks interlock like an olive branch
-  // without becoming a horizontal wall of touching text.
+  // Order hexagons ride a golden-angle cadence (see the spiral block below);
+  // this sibling spacing lets their swayed label blocks interlock like an
+  // olive branch without becoming a horizontal wall of touching text.
   const mobileKingdomOverview = isMobileViewport()
     && taxTreeRoot.descendants().every(d => d.depth <= 1);
   const layoutDX = isMobileViewport() ? (mobileKingdomOverview ? 90 : 94) : TAX_DX;
@@ -15112,15 +15163,62 @@ function renderTaxonomyTree() {
     row.sort((a, b) => a.x - b.x);
     row.forEach((d, i) => dirOf.set(d, i % 2 === 0 ? -1 : 1));
   });
-  const orderYOffset = new Map();
+  // Order joints follow a phyllotactic rhythm instead of a flat row or a
+  // repeating sawtooth. Each successive joint advances by the golden angle;
+  // its height is the sine of that advance and its sideways nudge the cosine.
+  // Two things fall out of that. The sequence never repeats over the length of
+  // a branch — a 5-step sawtooth visibly tiles once a Kingdom has 29 Orders,
+  // which reads as corrugation rather than growth — and the paired sine/cosine
+  // is what separates a spiral from a stagger: joints don't just alternate up
+  // and down, they appear to wind around an implied trunk axis. It's the 2D
+  // reading of an olive's ascent. The hexagons spin with the same phase, so no
+  // two joints present the same face; 60° is a hexagon's symmetry period, so
+  // every rotation still lands flush.
+  const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+  const orderYOffset = new Map(), orderXOffset = new Map(), orderSpin = new Map();
   const orderRows = [...byDepth.values()].flat()
     .filter(d => taxonomyBranchRank(d) === "order")
     .sort((a, b) => a.x - b.x);
-  const mobileOrderSway = isMobileViewport() && orderRows.length ? 76 : 0;
+  const compactSway = isMobileViewport();
+  const orderSway = orderRows.length ? (compactSway ? 74 : 34) : 0;
+  // A free-running sway can slide two Order label plates into each other. The
+  // plates alternate above/below their joint, so a pair only clashes when the
+  // sway carries the lower joint's upper plate into the higher joint's lower
+  // plate — measured, that happens whenever neighbours within a plate-width
+  // differ vertically by roughly one plate gap. Rather than shrink the sway
+  // until it can't happen (which flattens the spiral back into a row), place
+  // the joints left to right and pull any one that clashes back toward its
+  // neighbour until its plate clears. Almost every joint keeps its spiral
+  // value; only the few that would collide get moved, and matching a
+  // neighbour's offset exactly always clears, so the walk terminates.
+  const PLATE_NEAR = 36, PLATE_FAR = 60, PLATE_W = 112;
+  const plateBand = (y, dir) => dir < 0
+    ? [y - PLATE_FAR, y - PLATE_NEAR] : [y + PLATE_NEAR, y + PLATE_FAR];
+  const platesClash = (a, b) => {
+    if (Math.abs(a.x - b.x) >= PLATE_W) return false;
+    const [aLo, aHi] = plateBand(a.y, a.dir), [bLo, bHi] = plateBand(b.y, b.dir);
+    return aLo < bHi && bLo < aHi;
+  };
+  const placedPlates = [];
   orderRows.forEach((d, i) => {
-    orderYOffset.set(d, isMobileViewport() ? [-72, -36, 0, 36, 72][i % 5] : 0);
+    const phase = i * GOLDEN_ANGLE;
+    orderSpin.set(d, (i * 137.507) % 60);
+    orderXOffset.set(d, Math.round(Math.cos(phase) * (compactSway ? 5 : 9)));
+    const spiral = Math.round(Math.sin(phase) * orderSway);
+    const x = d.x + orderXOffset.get(d);
+    const dir = dirOf.get(d) || -1;
+    const clamp = y => Math.max(-orderSway, Math.min(orderSway, Math.round(y)));
+    let chosen = spiral;
+    for (let step = 0; step <= orderSway * 2 + 4; step += 4) {
+      const candidates = step === 0 ? [spiral] : [spiral - step, spiral + step];
+      const fit = candidates
+        .map(clamp)
+        .find(y => !placedPlates.some(p => platesClash({ x, y, dir }, p)));
+      if (fit !== undefined) { chosen = fit; break; }
+    }
+    orderYOffset.set(d, chosen);
+    placedPlates.push({ x, y: chosen, dir });
   });
-  const labelYFor = d => (d.data.noteId ? LEAF_OFFSET : INTERNAL_OFFSET) * dirOf.get(d);
   const labelBaselineFor = d => dirOf.get(d) < 0 ? "alphabetic" : "hanging";
 
   // Horizontal SIDE margins so the leftmost / rightmost leaf labels — centered
@@ -15142,13 +15240,237 @@ function renderTaxonomyTree() {
     if (d.data.name.startsWith("Process /")) return [overviewWidth - 88, overviewHeight - 215];
     return null;
   };
-  const screenX = d => overviewPosition(d)?.[0] ?? (d.x - minX + SIDE_MARGIN);
-  const screenY = d => overviewPosition(d)?.[1]
-    ?? ((maxY - d.y) + TOP_MARGIN + mobileOrderSway + (orderYOffset.get(d) || 0));
-  const width = mobileKingdomOverview ? overviewWidth : maxX - minX + 2 * SIDE_MARGIN;
-  const height = mobileKingdomOverview ? overviewHeight
-    : maxY + TOP_MARGIN + BOTTOM_MARGIN + mobileOrderSway * 2;
-  svg.attr("width", width).attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+  // d3 centers a parent on the midpoint of its children, which puts the root
+  // halfway between Plantae and Animalia and makes the trunk arrive at Plantae
+  // on a long diagonal — four equal limbs of a candelabra. Re-seat the root at
+  // its children's CENTER OF MASS instead, weighted by how many notes each
+  // kingdom actually holds. Plantae carries 111 of 127, so the base lands
+  // almost directly beneath it: the trunk rises, and Fungi, Animalia and
+  // Process read as smaller limbs leaving that trunk near the ground. The
+  // weighting is the honest one — the tree is thickest where the data is.
+  let rootXShift = 0;
+  if (!mobileKingdomOverview && (taxTreeRoot.children || []).length > 1) {
+    let weight = 0, moment = 0;
+    taxTreeRoot.children.forEach(c => {
+      const w = Math.max(1, countTaxonomyLeaves(c));
+      weight += w; moment += w * c.x;
+    });
+    if (weight) rootXShift = moment / weight - taxTreeRoot.x;
+  }
+  const legacyScreenX = d => overviewPosition(d)?.[0]
+    ?? (d.x - minX + SIDE_MARGIN + (orderXOffset.get(d) || 0)
+      + (d === taxTreeRoot ? rootXShift : 0));
+  const legacyScreenY = d => overviewPosition(d)?.[1]
+    ?? ((maxY - d.y) + TOP_MARGIN + orderSway + (orderYOffset.get(d) || 0));
+
+  // The row-per-rank layout above is honest and uncrowded for Kingdoms (only
+  // 4 of them) but breaks down for Plantae's own Orders/Families/Notes — a
+  // 29-item row at fixed per-sibling spacing runs ~2500px wide while the
+  // canvas stays only 4 rows tall: a strip too wide to read and too short to
+  // use the screen it's given. Below, Plantae's descendants ONLY (the other
+  // Kingdoms are small enough that a row was never the problem) get a second
+  // pass: one more sibling no longer means one more slot in an
+  // ever-widening row — it means a finer step around a FAN held to a fixed
+  // angular sweep, climbing a band whose height grows with the crowd instead
+  // of the width growing with it. Canvas width stays bounded by
+  // radius x sin(sweep) no matter the population; height grows to fit the
+  // population instead of being clamped to whatever the viewport allowed.
+  const plantaeNode = nodes.find(d => taxonomyBranchRank(d) === "kingdom" && d.data.name === "Plantae");
+  const underPlantae = d => !!plantaeNode && d !== plantaeNode && d.ancestors().includes(plantaeNode);
+  // Grouped by RANK, not raw d3 depth — Process's notes sit one depth
+  // shallower than Plantae's (no Order/Family level between them), so a
+  // depth-keyed row would strand them alongside Orders instead of alongside
+  // other notes. Sort order is d3's own x, which already keeps each subtree
+  // contiguous and crossing-free — the fan reuses that ordering as its
+  // angular sequence rather than re-deriving it.
+  const fanByRank = new Map();
+  nodes.filter(underPlantae).forEach(d => {
+    const rank = taxonomyBranchRank(d);
+    if (!fanByRank.has(rank)) fanByRank.set(rank, []);
+    fanByRank.get(rank).push(d);
+  });
+  fanByRank.forEach(arr => arr.sort((a, b) => a.x - b.x));
+  const fanProgress = new Map();
+  fanByRank.forEach(arr => {
+    const n = arr.length;
+    arr.forEach((d, i) => fanProgress.set(d, n <= 1 ? 0.5 : i / (n - 1)));
+  });
+  const FAN_HALF_SWEEP = (compactSway ? 48 : 60) * Math.PI / 180;
+  const FAN_RADIUS = compactSway
+    ? { order: 80, family: 122, note: 162 }
+    : { order: 178, family: 268, note: 352 };
+  // A band's height comes from its own population, not a fixed row height:
+  // consecutive same-rank nodes step FAN_VSTEP apart as they climb, so more
+  // siblings buy more vertical room automatically instead of more width.
+  // Mobile's narrower sweep packs plates far tighter than desktop's (measured:
+  // 29 Orders across 118px on phone vs. 308px on desktop) — a crowded rank
+  // needs proportionally more natural climb per sibling and headroom before
+  // the fixed band cap kicks in, or the repair pass below runs out of room.
+  const FAN_VSTEP = compactSway ? 27 : 19;
+  // A generous MIN band height was the actual cause of a real bug: a 2-family
+  // Order (e.g. Poales — Bromeliaceae, Poaceae) has only ONE step between
+  // siblings, so that whole floor got spent on a single hop — Poaceae landed
+  // at the very top of the band in one jump, well clear of its only
+  // neighbour, reading as "shot to the top" rather than climbing into place.
+  // The floor now only guards against a literal zero-height band; population
+  // (via FAN_VSTEP/FAN_BAND_MAX) does the real sizing.
+  const FAN_BAND_MIN = 26;
+  const FAN_BAND_MAX = compactSway ? 1500 : 960;
+  const FAN_GAP = compactSway ? 52 : 68;
+  const fanBandH = new Map();
+  fanByRank.forEach((arr, rank) => {
+    fanBandH.set(rank, Math.max(FAN_BAND_MIN, Math.min(FAN_BAND_MAX, (arr.length - 1) * FAN_VSTEP)));
+  });
+  const fanAngle = d => -FAN_HALF_SWEEP + fanProgress.get(d) * (2 * FAN_HALF_SWEEP);
+  // Climb is eased, not linear: raising progress to a power keeps most of a
+  // row's early members near the band floor — spreading out laterally, fan-
+  // like, staying roughly level with their neighbours — and reserves the
+  // steep climb for the last stretch, so a row resolves into a tightening
+  // curl at its end rather than a straight diagonal ramp the whole way.
+  const FAN_CLIMB_POWER = 2.6;
+  const fanClimb = d => Math.pow(fanProgress.get(d), FAN_CLIMB_POWER);
+  // Bands stack bottom-up starting just above Plantae's own joint, in
+  // Order/Family/Note order, and only for ranks actually present — a
+  // freshly-grown Order has no Family or Note band yet.
+  const FAN_RANK_SEQ = ["order", "family", "note"];
+  const fanBandBottom = new Map();
+  let fanCursorY = plantaeNode ? legacyScreenY(plantaeNode) - FAN_GAP : 0;
+  FAN_RANK_SEQ.forEach(rank => {
+    if (!fanByRank.has(rank)) return;
+    const h = fanBandH.get(rank);
+    fanBandBottom.set(rank, fanCursorY);
+    fanCursorY -= (h + FAN_GAP);
+  });
+  const fanCenterX = plantaeNode ? legacyScreenX(plantaeNode) : 0;
+  const fanScreenX = d => fanCenterX + FAN_RADIUS[taxonomyBranchRank(d)] * Math.sin(fanAngle(d));
+  const fanScreenY = d => {
+    const rank = taxonomyBranchRank(d);
+    return fanBandBottom.get(rank) - fanClimb(d) * fanBandH.get(rank);
+  };
+  const screenX = d => underPlantae(d) ? fanScreenX(d) : legacyScreenX(d);
+  const screenY = d => underPlantae(d) ? fanScreenY(d) : legacyScreenY(d);
+
+  // The fan bounds Order-joint spacing to single-digit pixels once there are
+  // ~30 of them (radius x sin(sweep) is fixed regardless of population), but
+  // each Order's label plate is 112px wide — far wider than the gap between
+  // neighbours. The same collision-repair strategy used for the old flat row
+  // applies again here, just reseated on the ACTUAL rendered pixel positions
+  // instead of tree-x. It only ever moves where a plate's LABEL renders,
+  // never the joint itself — the branch still meets the joint at its true
+  // fan position.
+  const PLATE_ORDER_NUDGE_MAX = compactSway ? 760 : 360;
+  // A downward-pointing plate on a low-progress (near-band-bottom) Order sits
+  // close to the fixed labels below it — Plantae's own Kingdom label, and
+  // (once nudged far enough hunting for a sibling-clear slot) potentially the
+  // root's "ALL FLAVOR NOTES" further down still. Both go into the repair
+  // search below as real obstacles, not just sibling plates. x-extents are
+  // generous guesses around their measured widths rather than a DOM read,
+  // since neither label has rendered yet this pass.
+  const fixedLabelObstacles = [];
+  const rootNodeForFan = nodes.find(d => taxonomyBranchRank(d) === "root");
+  if (rootNodeForFan) {
+    const rx = legacyScreenX(rootNodeForFan), ry = legacyScreenY(rootNodeForFan);
+    fixedLabelObstacles.push({ x1: rx - 90, x2: rx + 90, y1: ry - 30, y2: ry - 6 });
+  }
+  nodes.filter(d => taxonomyBranchRank(d) === "kingdom").forEach(k => {
+    const kx = legacyScreenX(k), ky = legacyScreenY(k);
+    const above = mobileKingdomOverview || k.data.name.startsWith("Process /");
+    fixedLabelObstacles.push(above
+      ? { x1: kx - 80, x2: kx + 80, y1: ky - 38, y2: ky - 6 }
+      : { x1: kx - 80, x2: kx + 80, y1: ky + 10, y2: ky + 42 });
+  });
+  const rectOverlapsPlate = (rect, cand) => {
+    const near = cand.near ?? PLATE_NEAR, far = cand.far ?? PLATE_FAR;
+    const [lo, hi] = cand.dir < 0 ? [cand.y - far, cand.y - near] : [cand.y + near, cand.y + far];
+    const halfW = (cand.width ?? 112) / 2;
+    return cand.x - halfW < rect.x2 && rect.x1 < cand.x + halfW && lo < rect.y2 && rect.y1 < hi;
+  };
+  // One shared repair pass across ALL three ranks' labels, not three separate
+  // ones. Splitting them by rank missed the case that actually matters most —
+  // an Order's plate and the very next Family's text sit in adjacent bands
+  // only FAN_GAP apart, so they can collide with each other even though
+  // neither rank collides with itself. Each item carries its own footprint
+  // (Order's real 112px plate vs. a family/note text line's much smaller
+  // one), but every item is checked against every OTHER already-placed item
+  // regardless of rank.
+  // Widths are worst-case guesses, not measurements (the labels haven't
+  // rendered yet this pass) — measured against the actual DOM afterward, the
+  // longest real note label ("Popcorn / fresh bread") ran 131px against an
+  // initial 95px guess, which is exactly why one still collided. near/far
+  // must match the REAL offset formula used below (LEAF_OFFSET=16 /
+  // INTERNAL_OFFSET=15, ~15px text height) — Order's happened to already
+  // match its plate geometry exactly, which is why only family/note produced
+  // 2px near-miss collisions the repair pass should have caught outright.
+  const LABEL_SPEC = {
+    order: { width: 112, near: 36, far: 60, maxNudge: PLATE_ORDER_NUDGE_MAX },
+    family: { width: 165, near: INTERNAL_OFFSET, far: INTERNAL_OFFSET + 16, maxNudge: compactSway ? 340 : 200 },
+    note: { width: 165, near: LEAF_OFFSET, far: LEAF_OFFSET + 16, maxNudge: compactSway ? 340 : 200 },
+  };
+  const labelNudge = new Map();
+  {
+    const band = (y, dir, near, far) => dir < 0 ? [y - far, y - near] : [y + near, y + far];
+    const clash = (a, b) => {
+      if (Math.abs(a.x - b.x) >= (a.width + b.width) / 2) return false;
+      const [aLo, aHi] = band(a.y, a.dir, a.near, a.far), [bLo, bHi] = band(b.y, b.dir, b.near, b.far);
+      return aLo < bHi && bLo < aHi;
+    };
+    const items = nodes.filter(d => LABEL_SPEC[taxonomyBranchRank(d)])
+      .map(d => {
+        const rank = taxonomyBranchRank(d);
+        return { d, x: screenX(d), y: screenY(d), dir: dirOf.get(d) || -1, ...LABEL_SPEC[rank] };
+      })
+      .sort((a, b) => a.x - b.x);
+    const placed = [];
+    items.forEach(item => {
+      let chosen = 0;
+      for (let step = 0; step <= item.maxNudge; step += 4) {
+        const candidates = step === 0 ? [0] : [-step, step];
+        const fit = candidates.find(dy => {
+          const cand = { ...item, y: item.y + dy };
+          return !placed.some(p => clash(cand, p))
+            && !fixedLabelObstacles.some(rect => rectOverlapsPlate(rect, cand));
+        });
+        if (fit !== undefined) { chosen = fit; break; }
+      }
+      labelNudge.set(item.d, chosen);
+      placed.push({ ...item, y: item.y + chosen });
+    });
+  }
+  const plateNudge = labelNudge;
+  const orderNodesForPlates = nodes.filter(d => taxonomyBranchRank(d) === "order")
+    .map(d => ({ d, x: screenX(d), y: screenY(d), dir: dirOf.get(d) || -1 }));
+  const labelYFor = d => (d.data.noteId ? LEAF_OFFSET : INTERNAL_OFFSET) * dirOf.get(d)
+    + (labelNudge.get(d) || 0);
+
+  // Width/height and the viewBox origin now come from the ACTUAL rendered
+  // extent (legacy Kingdom rows plus the fan, including nudged Order plates)
+  // instead of an analytic formula, so the canvas always exactly fits
+  // whatever mix of content is currently visible with no separate
+  // bookkeeping to keep in sync as either side changes shape.
+  let width, height, viewMinX = 0, viewMinY = 0;
+  if (mobileKingdomOverview) {
+    width = overviewWidth; height = overviewHeight;
+  } else {
+    const xs = nodes.map(screenX);
+    const ys = nodes.map(screenY);
+    orderNodesForPlates.forEach(item => {
+      const y = item.y + (plateNudge.get(item.d) || 0);
+      ys.push(y - 66, y + 66);
+    });
+    nodes.filter(d => taxonomyBranchRank(d) === "family" || taxonomyBranchRank(d) === "note")
+      .forEach(d => {
+        const nudge = labelNudge.get(d);
+        if (nudge) ys.push(screenY(d) + nudge - 28, screenY(d) + nudge + 28);
+      });
+    const boundsMinX = Math.min(...xs), boundsMaxX = Math.max(...xs);
+    const boundsMinY = Math.min(...ys), boundsMaxY = Math.max(...ys);
+    viewMinX = boundsMinX - SIDE_MARGIN;
+    viewMinY = boundsMinY - TOP_MARGIN;
+    width = (boundsMaxX - boundsMinX) + 2 * SIDE_MARGIN;
+    height = (boundsMaxY - boundsMinY) + TOP_MARGIN + BOTTOM_MARGIN;
+  }
+  svg.attr("width", width).attr("height", height)
+    .attr("viewBox", `${viewMinX} ${viewMinY} ${width} ${height}`);
   // Re-apply the current zoom's CSS box size — the width/height attrs above
   // just got reset to the natural (unzoomed) size for this render.
   svg.node().style.width = (width * taxonomyZoom) + "px";
@@ -15189,14 +15511,69 @@ function renderTaxonomyTree() {
       "Choose a Kingdom root, then an Order joint, to grow Families and flavor notes upward.";
   }
 
-  const branchLink = d => {
+  // Explicit paint-order layers. The joins below run at different times and
+  // d3 appends entering elements at the end of their parent, so without this a
+  // limb that enters on a later render paints ON TOP of nodes that entered
+  // earlier. That was survivable when links were 1.5px hairlines; a 26px-wide
+  // trunk ribbon painting over a Kingdom node is not.
+  if (svg.select("g.tx-layer-links").empty()) {
+    svg.append("g").attr("class", "tx-layer-links");
+    svg.append("g").attr("class", "tx-layer-grain");
+    svg.append("g").attr("class", "tx-layer-nodes");
+  }
+  const linkLayer = svg.select("g.tx-layer-links");
+  const grainLayer = svg.select("g.tx-layer-grain");
+  const nodeLayer = svg.select("g.tx-layer-nodes");
+  linkLayer.lower(); grainLayer.raise(); nodeLayer.raise();
+
+  // Half-width of a limb where it leaves its parent and where it meets its
+  // child. Plantae is deliberately far heavier than its siblings: it holds 111
+  // of the notes, so it should look like the trunk and the others like limbs
+  // off the same base, rather than four equal branches of a candelabra.
+  const LIMB_WIDTH = { order: [5, 3.2], family: [3, 1.9], note: [1.8, 1] };
+  const limbWidth = d => {
+    const rank = taxonomyBranchRank(d.target);
+    if (rank === "kingdom") {
+      if (d.target.data.name === "Plantae") return [13, 8.5];
+      if (d.target.data.name === "Fungi") return [5, 3.4];
+      return [4, 2.8];
+    }
+    return LIMB_WIDTH[rank] || LIMB_WIDTH.note;
+  };
+  // Both edges of the ribbon are cubics whose control points sit straight
+  // above the parent and straight below the child, so a limb leaves and
+  // arrives vertically and does all its sideways travel in the middle. That's
+  // the difference between a branch and an elbow connector.
+  const limbEdges = d => {
     const sx = screenX(d.source), sy = screenY(d.source);
     const tx = screenX(d.target), ty = screenY(d.target);
-    const span = Math.max(24, Math.abs(sy - ty));
-    const stem = Math.min(34, span * .22);
-    return `M${sx},${sy} L${sx},${sy - stem} L${tx},${ty + stem} L${tx},${ty}`;
+    // Clamped to half the rise. Past that the two control points cross each
+    // other and the limb gains an S-inflection — it stops reading as a branch
+    // leaning toward its child and starts looking like a hook.
+    const span = Math.abs(sy - ty);
+    return { sx, sy, tx, ty, bend: Math.min(span * .5, Math.max(14, span * .45)) };
   };
-  svg.selectAll("path.tx-link").data(links, d => keyFor(d.target))
+  const branchLink = d => {
+    const { sx, sy, tx, ty, bend } = limbEdges(d);
+    const [w0, w1] = limbWidth(d);
+    return `M${sx - w0},${sy} C${sx - w0},${sy - bend} ${tx - w1},${ty + bend} ${tx - w1},${ty}`
+      + ` L${tx + w1},${ty}`
+      + ` C${tx + w1},${ty + bend} ${sx + w0},${sy - bend} ${sx + w0},${sy} Z`;
+  };
+  // Grain runs at fractions of the limb's own half-width, so it tapers with
+  // the trunk instead of staying parallel like printed rules.
+  const trunkGrain = g => {
+    const { sx, sy, tx, ty, bend } = limbEdges(g.link);
+    const [w0, w1] = limbWidth(g.link);
+    return `M${sx + w0 * g.k},${sy}`
+      + ` C${sx + w0 * g.k},${sy - bend} ${tx + w1 * g.k},${ty + bend} ${tx + w1 * g.k},${ty}`;
+  };
+  const grainData = links
+    .filter(d => taxonomyBranchRank(d.target) === "kingdom" && d.target.data.name === "Plantae")
+    .flatMap(link => [-0.46, 0.08, 0.5].map((k, i) => ({ link, k, key: `${keyFor(link.target)}:g${i}` })));
+  grainLayer.selectAll("path.tx-grain").data(grainData, g => g.key)
+    .join("path").attr("class", "tx-grain").attr("d", trunkGrain);
+  linkLayer.selectAll("path.tx-link").data(links, d => keyFor(d.target))
     .join("path")
     .attr("class", d => {
       const rank = taxonomyBranchRank(d.target);
@@ -15299,18 +15676,30 @@ function renderTaxonomyTree() {
     return `tx-node tx-${rank}${rank === "note" ? " tx-leaf" : ""}${subjectClass}`
       + `${d.data.noteId && isTastedLeaf(d) ? " tx-tasted" : ""}`;
   };
-  const node = svg.selectAll("g.tx-node").data(nodes, keyFor);
+  const node = nodeLayer.selectAll("g.tx-node").data(nodes, keyFor);
   const enter = node.enter().append("g")
     .attr("class", nodeClass)
     .attr("transform", d => `translate(${screenX(d)},${screenY(d)})`)
     .on("click keydown", onNodeClick);
+  // Painted back-to-front within the node: flare behind the core, specular
+  // highlight in front of it.
+  enter.append("path").attr("class", "tx-root-flare")
+    .attr("d", "M-36,12 C-19,11 -10,3 0,-10 C10,3 19,11 36,12 C17,18 -17,18 -36,12 Z");
   enter.append("circle").attr("class", "tx-node-core");
+  enter.append("circle").attr("class", "tx-fruit-gloss");
   enter.append("path").attr("class", "tx-order-hex")
     .attr("d", "M0,-15 L13,-7.5 L13,7.5 L0,15 L-13,7.5 L-13,-7.5 Z");
+  enter.append("path").attr("class", "tx-order-hex-core")
+    .attr("d", "M0,-8.7 L7.5,-4.35 L7.5,4.35 L0,8.7 L-7.5,4.35 L-7.5,-4.35 Z");
+  // A pointed blade rather than the old symmetrical lens — a Family is the
+  // quirky twig-and-leaflet stage between an Order's structure and a note.
   enter.append("path").attr("class", "tx-family-bud")
-    .attr("d", "M0,-9 C8,-6 8,6 0,9 C-8,6 -8,-6 0,-9 Z");
-  enter.append("rect").attr("class", "tx-order-label-block")
-    .attr("x", -68).attr("width", 136).attr("height", 24).attr("rx", 7);
+    .attr("d", "M0,-11 C7,-6 7.5,4 0,10 C-7.5,4 -7,-6 0,-11 Z");
+  enter.append("path").attr("class", "tx-family-midrib").attr("d", "M0,-8.5 L0,7.5");
+  enter.append("line").attr("class", "tx-order-leader").attr("x1", 0).attr("x2", 0);
+  // Hexagon-ended block, so the Order's label plate speaks the same geometric
+  // language as its joint instead of being a generic rounded rect.
+  enter.append("path").attr("class", "tx-order-label-block");
   enter.append("text").attr("class", "tx-order-samples");
   enter.append("path").attr("class", "tx-human-glyph")
     .attr("d", "M0,-18 a5,5 0 1,0 .1,0 M0,-8 L0,9 M-10,-1 L0,3 L10,-2 M0,9 L-8,21 M0,9 L8,21");
@@ -15352,13 +15741,38 @@ function renderTaxonomyTree() {
     .attr("r", d => {
       const rank = taxonomyBranchRank(d);
       return rank === "kingdom" ? 12 : rank === "root" ? 7
-        : isTastedLeaf(d) ? 8 : 6;
+        : isTastedLeaf(d) ? 9 : 5.5;
     })
     .attr("fill", d => d.data.noteId ? tastedLeafColor(d.data.noteId) : null);
+  // Offset up-left, the conventional light direction, and sized against the
+  // tasted radius so it reads as sheen rather than as a second dot.
+  merged.select(".tx-fruit-gloss")
+    .attr("cx", -2.9).attr("cy", -3.1).attr("r", 2.2);
+  // Both hexagons share the joint's spiral phase so the whole nodule presents
+  // one face; the label plate stays upright and unrotated so type never tilts.
+  // .select() propagates the parent's datum to the child; .selectAll() would
+  // not, leaving d undefined here.
+  merged.select(".tx-order-hex")
+    .attr("transform", d => `rotate(${orderSpin.get(d) || 0})`);
+  merged.select(".tx-order-hex-core")
+    .attr("transform", d => `rotate(${orderSpin.get(d) || 0})`);
+  merged.select(".tx-family-bud")
+    .attr("transform", d => `rotate(${(dirOf.get(d) || 1) * -15})`);
+  merged.select(".tx-family-midrib")
+    .attr("transform", d => `rotate(${(dirOf.get(d) || 1) * -15})`);
   merged.select(".tx-order-label-block")
-    .attr("x", -56)
-    .attr("width", 112)
-    .attr("y", d => dirOf.get(d) < 0 ? -47 : 23);
+    .attr("d", d => {
+      const w = 112, h = 24, x = -56, c = 8;
+      const y = (dirOf.get(d) < 0 ? -60 : 36) + (plateNudge.get(d) || 0);
+      return `M${x + c},${y} L${x + w - c},${y} L${x + w},${y + h / 2}`
+        + ` L${x + w - c},${y + h} L${x + c},${y + h} L${x},${y + h / 2} Z`;
+    });
+  merged.select(".tx-order-leader")
+    .attr("y1", d => dirOf.get(d) < 0 ? -14 : 14)
+    .attr("y2", d => {
+      const y = (dirOf.get(d) < 0 ? -60 : 36) + (plateNudge.get(d) || 0);
+      return dirOf.get(d) < 0 ? y + 24 : y;
+    });
   merged.select(".tx-order-samples")
     .attr("y", 3)
     .text(d => taxonomyBranchRank(d) === "order"
@@ -15367,7 +15781,7 @@ function renderTaxonomyTree() {
     .attr("x", 0)
     .attr("y", d => {
       const rank = taxonomyBranchRank(d);
-      if (rank === "order") return dirOf.get(d) < 0 ? -31 : 39;
+      if (rank === "order") return (dirOf.get(d) < 0 ? -44 : 52) + (plateNudge.get(d) || 0);
       if (rank === "kingdom") {
         return mobileKingdomOverview || d.data.name.startsWith("Process /") ? -18 : 22;
       }
