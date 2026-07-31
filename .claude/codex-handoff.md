@@ -389,6 +389,267 @@ code paths, and drag masks this entire class of bug.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file remain untouched.
 
+## Human artistic direction for Claude's next Tree pass (verbatim, 2026-07-30)
+
+The human explicitly wants Claude to have room to interpret this rather than merely
+polish the current implementation. The present Branches renderer is a functional
+first pass, not a locked visual specification. Their words:
+
+> "so it initially was vertical but feedback from my test users said they liked the
+> symbology of vertical reading more"
+
+They immediately clarified which visualization that direction applies to:
+
+> "i meant that the trees diagram with kingdom at bottom and individual notes at top"
+
+Their fuller art and interaction direction:
+
+> "Ah on the tree branch diagram, it is odd that families are bolded and underlined
+> whereas the orderes are greyed and yet the order layer has the ability to completely
+> ciollapse its entire branch so easily. that doesn't feel right when the flavor notes
+> are the stars and the orders provide context. users should not be able to collapse
+> any kingdoms, just focus on specific ones. the order needs a stronger glyph and block
+> motif to show the lineage of the order and what it broadly represents. these are
+> nodes between where we precisely diffentiate to another order once therei s family so
+> to speak. this needs to be more visually poignant with how we render these branches
+> with perhaps more of a hexagonal render where it is still a tree but think olive tree
+> where it is hexagonal spiral going up so try to make that render on this 2d space
+> where the orders are the first nocdules in the kingfdoms and they represent great
+> many nuances that we zoom to with the families that are more like those more quirky
+> twig-like branches or stem-like structures that become more leaf-like or leaflets or
+> pines or something in-between to where we get that tree's innate fruiting body in
+> either a conifer or a seed or flower or a spore or something else. i want to see it
+> thoughtfully artistically rendered in a geometrically pleasing and thoughtful design
+> making intentional encouragement for users to explore up the branch/down the rabbit
+> hole/ zooming in, so to speak."
+
+They then clarified the ecological composition and relative visual weight:
+
+> "people will be spending the most time in plantae which will be the main part of the
+> tree. fungus will be concnetrated in the roots of tree and not an organism will be
+> placed next to the tree separately or nearby a small stick-figure humanoid
+> representing humanity"
+
+### Feature logic Claude should preserve while exploring
+
+- The spatial reading is bottom-up: Kingdom/root context at the bottom, individual
+  flavor notes at the top. The ascent itself should communicate progressively finer
+  differentiation.
+- Flavor notes are the stars and terminal fruiting bodies. Orders provide broad
+  lineage context; Families are the finer, stranger twig/stem/leaflet transition
+  between an Order and its notes.
+- Kingdoms are persistent roots, not disposable disclosure rows. A user may focus a
+  Kingdom, but clicking it must not make that Kingdom disappear or collapse the
+  entire conceptual world beneath them without an explicit overview/reset action.
+- Orders need stronger glyphs and a structural block/nodule motif than Families.
+  Selecting an Order should feel like growing into or zooming through a major joint,
+  not toggling an ordinary accordion row.
+- The visual metaphor is a geometrically composed living tree, especially an
+  olive-like ascending/spiraling rhythm translated into 2D. It need not be a literal
+  botanical illustration. Claude has latitude to invent a clearer hexagonal,
+  branching, spatial, or zoom-based grammar if it better creates the desired pull
+  "up the branch / down the rabbit hole."
+- Plantae should own most of the visual and interaction space because it is where
+  users will spend most of their time. Fungi belongs concentrated around the roots.
+  Animalia/humanity can be represented by a small humanoid marker. Process /
+  not-a-single-organism is contextual and should sit separately beside the tree,
+  near the human marker, rather than masquerading as an equal biological limb.
+- The current hex joints, rootlet glyph, human glyph, detached Process node, and
+  staggered Order canopy are proposals, not requirements. Preserve the ontology and
+  interaction logic above; feel free to replace their rendering with a more
+  beautiful, coherent, surprising solution.
+
+### Request to Claude
+
+Take a real art-direction pass. The human specifically said they want to see what
+Claude can "throw at this." Prefer a strong compositional idea over incremental CSS
+polish, while keeping the feature logic and mobile legibility intact.
+
+## Follow-up: Branches as a rooted, focusable living tree (2026-07-30)
+
+- Reworked the mobile Branches grammar so Kingdom and Order nodes are focus/grow
+  actions instead of collapse toggles. Repeating a Kingdom or Order action never
+  removes that lineage; `Kingdom overview` is now the explicit reset control.
+- Plantae is the dominant central trunk. Fungi sits low as a compact rootlet
+  cluster. Animalia is represented by a small human figure, while
+  `Process / not a single organism` is a detached contextual node beside it rather
+  than a falsely equivalent biological branch.
+- Orders now use hexagonal growth joints, paired representative-note glyphs,
+  angular branch geometry, and a five-step vertical cadence on phones. When one
+  Order is grown, sibling Orders remain as quieter context rather than disappearing.
+- Families use finer bud/stem motifs without the former bold-underlined emphasis.
+  Flavor notes are explicitly framed as the fruit, inherit their aroma-group color,
+  and remain the terminal interactive stars of the lineage.
+- Added mobile overview coordinates that keep the rooted composition in one
+  viewport and shorten the non-organism label to `Process` while preserving the
+  full accessible name.
+- Browser-verified at 360 × 760: four-root overview, keyboard focus of Plantae,
+  29 visible Plantae Order joints, Poales growth to 2 Families and 10 flavor notes,
+  repeated Poales activation retaining the grown branch, and repeated Kingdom
+  focus retaining its Orders. `git diff --check` passes.
+
+### Coordination boundary
+
+- This pass remains Tree-only. The concurrent user-owned `CLAUDE.md` modification
+  and untracked `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
+## Follow-up: live flavor-note search dropdowns (2026-07-30)
+
+- Tree search now shows every matching note in a dropdown directly beneath the
+  field while the user types, instead of reporting only an unexplained count.
+- Extended the same dropdown component to the Wheel/Notes search and Origins Map
+  search so every flavor-note search surface shares one interaction language.
+- Each result names the note, its aroma group, and its taxonomic family. Group-color
+  dots preserve the wheel's existing visual language.
+- Results are clickable and support Arrow Up/Down, Enter, and Escape. The search
+  field exposes combobox/listbox state for assistive technology.
+- Exact note-id matches rank first, so `grape` shows `Grape / concord` before
+  `Grapefruit`; pressing Enter on that query opens Grape directly.
+- Notes search includes collapsed varietal children and expands/opens the selected
+  note. Map search lists only currently eligible notes with origin placements and
+  opens the chosen map marker plus its origin detail.
+
+### Verification
+
+- In-app browser viewport simulation at **360 x 760 CSS px**, not a physical
+  device or social in-app browser.
+- Confirmed `grape` reports two matches and lists `Grape / concord` and
+  `Grapefruit`, with correct Fruity-group and Family metadata.
+- Confirmed pointer selection and Arrow Down + Enter selection update the lineage
+  and note detail. Confirmed exact-match Enter opens `Grape / concord`.
+- At 360 x 760 the field/dropdown are 340px wide, result targets are 46px high,
+  and the document has no horizontal overflow.
+- Follow-up drawing-order fix raises the search toolbar above the later lineage
+  strip. Reproduced with `gra` at 360 x 760: all five result cards paint above
+  the story and Tree canvas, including through the overlapping region.
+- Reverified all three searches at 360 x 760: Notes `cranberry` opens the collapsed
+  varietal's mobile intensity sheet; Map `gra` lists Grapefruit and Pomegranate,
+  and keyboard selection opens Grapefruit's marker/detail; Tree `grape` retains
+  its two correctly ordered matches.
+- Browser console reported no warnings or errors; `git diff --check` passes.
+
+### Coordination boundary
+
+- This pass changes only flavor-note search presentation/activation and this handoff.
+  The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
+## Follow-up: Save lap menu + exact-view links (2026-07-30)
+
+- Changed the direct `Save lap` button into an accessible pulldown labeled
+  `Save or share tasting`. Its menu describes the local action as
+  `Save a snapshot in this session` and adds a
+  visible, read-only exact-view URL with a one-tap Copy action.
+- The exact-view payload preserves committed entries including ortho/retro phase
+  keys, uncommitted slider positions, delivery conditions, pane and organization
+  modes, Go Deeper state, active workspace, current note/compound/family focus,
+  Tree/Map focus, filters, and expanded varietal rows.
+- Existing Share-card URLs remain backward-compatible and separate. Opening an
+  exact-view URL uses the new payload; opening an older `?t=` URL continues through
+  the original aggregate-tasting hydrator.
+- The menu disables only `Save a snapshot in this session` when the tasting is empty; sharing the
+  empty/current view remains available. It closes after saving, on outside click,
+  and on Escape.
+- Moved the entire save/share control out of the wheel overlay and into the global
+  header utility group. On compact phones it is the final item in the hamburger
+  tray, beneath Feedback; its expanded panel participates in the tray's scrollable
+  flow instead of drawing over the wheel. On desktop it remains an inline header
+  utility and is available from Wheel, Map, and Tree.
+- The wheel's snapshot rail now contains history only and stays absent until the
+  first snapshot exists.
+
+### Verification
+
+- In-app browser viewport simulation at **360 x 760 CSS px**, not a physical
+  device or social in-app browser.
+- Confirmed the pulldown stays within the viewport, has no horizontal overflow,
+  and exposes correct menu, menuitem, expanded, status, and link-field semantics.
+- Confirmed at 360 x 760 that `Save or share tasting` is the hamburger tray's final
+  DOM and visual item, its expanded panel remains contained by the tray, and the
+  empty snapshot rail consumes no wheel space.
+- Confirmed the control remains available in Tree and generates an exact-view URL
+  there without horizontal overflow.
+- Confirmed an Ethiopian coffee tasting enables `Save a snapshot in this session`,
+  creates `Lap 1`, closes both the pulldown and mobile HUD, and reveals the saved
+  snapshot rail.
+- Confirmed Copy reports `Link copied`. Opened the generated 683-character URL in
+  a fresh tab and verified Coffee / roast restored to 7, Berry to 6, and the
+  Wheel + Notes pane configuration restored with no browser warnings/errors.
+
+### Coordination boundary
+
+- This pass changes the lap control, exact-view URL hydration, and this handoff.
+  The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
+## Follow-up: progressive mobile Plantae hierarchy (2026-07-30)
+
+- Replaced the overloaded compact-phone Plantae disc, which drew Orders, Families,
+  and all 111 plant note marks simultaneously, with a two-column Order directory.
+  Each card shows only two recognizable example notes; the directory contains 28
+  Order-level branches and preserves the separate cross-family flavor-word section.
+- Multi-family cards lead to an Order disc containing Family slivers only. Individual
+  note marks no longer appear at the Order level; they appear after choosing a Family.
+- Each mobile Family sliver now carries a representative emoji, its common Family
+  name, and its Latin Family name on the same sector. Poales, for example, reads as
+  `🔥 Grass family / Poaceae` versus `🍍 Bromeliad family / Bromeliaceae`.
+- Single-family Orders lead with the Family common name and put the Order in
+  parentheses, for example `Laurel family` with `(Laurales)`. Because there is no
+  meaningful fork, these cards open the Family's notes directly rather than forcing
+  a one-sliver intermediate screen.
+- Long Family names wrap inside their cards instead of truncating away `family`.
+  The desktop radial Kingdom and Order views are unchanged.
+
+### Verification
+
+- In-app browser viewport simulation at **360 x 760 CSS px**, not a physical
+  device or social in-app browser.
+- Confirmed Plantae renders 28 Order cards, zero individual note marks, and no
+  horizontal scroll. Each card exposes its examples and lineage in its accessible
+  name.
+- Confirmed Poales opens two Family slivers with both common and Latin names and
+  no note rim; Bromeliaceae then opens its one-note Family wreath.
+- Confirmed the single-family `Laurel family (Laurales)` card opens Lauraceae's
+  two-note wreath directly and returns to Kingdom.
+
+### Coordination boundary
+
+- This pass changes only the compact-phone circular taxonomy hierarchy and this
+  handoff. The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
+## Follow-up: label-aware mobile Family-circle sizing (2026-07-30)
+
+- Replaced the compact Family wreath's fixed 21.5%-of-canvas radius with a
+  label-aware radius that uses the widest safe circle for each Family's actual
+  note names and emoji.
+- Decoupled the portrait-phone canvas height from its width. Sparse Families can
+  now use nearly the full horizontal diameter while the SVG grows vertically to
+  hold top/bottom labels, rather than shrinking the circle to fit a square.
+- Crowded Families deterministically place their longest labels nearest the
+  vertical axis and shorter labels near the horizontal edges. This preserves
+  every note while allowing a materially larger ring.
+- Desktop and mobile-landscape Family sizing remain on the existing square,
+  smaller-axis behavior.
+
+### Verification
+
+- In-app browser viewport simulation at **360 x 760 CSS px**, not a physical
+  device or social in-app browser.
+- Lauraceae's two-note living edge expanded from a 235px to a 297px diameter in
+  a 313px-wide SVG (94.9% width), with 9px top/bottom label clearance and no
+  horizontal scrolling.
+- Rutaceae's 11-note ring expanded from 120px before label-order optimization to
+  about 186px afterward; its closest label remains 10px from the SVG edge.
+- Rosaceae's 10-note layout keeps 9.6px minimum label clearance with no horizontal
+  scrolling. At 1280 x 720, the existing 461px square desktop wreath is unchanged.
+
+### Coordination boundary
+
+- This pass changes only Family-circle layout on compact portrait viewports and
+  this handoff. The concurrent `CLAUDE.md` modification and untracked
+  `.claude/session-handoff-thesis-systems.md` file remain untouched.
+
 ## Follow-up: compact-phone detail hierarchy + interaction accessibility (2026-07-30)
 
 - Reduced the Tree detail sheet's real minimized snap from 112px to 56px. The
