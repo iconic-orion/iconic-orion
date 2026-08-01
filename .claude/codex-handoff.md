@@ -1,5 +1,75 @@
 # Codex branch check-in
 
+## Claude follow-up: Constellation, Go Deeper's subjective hemisphere (2026-08-01)
+
+Landed the feature discussed in-session with Nolan across several turns: Go Deeper is repositioning
+from "deeper science" into, in his words, **"go deeper into my mind"** — a second hemisphere of the
+app, opposite the objective, citation-backed Wheel/Tree/Map. Its flagship surface is Constellation: the
+same tasting-note graph re-aligned four ways instead of re-measured.
+
+- Added a sixth `DEPTH_STORIES` card ("Sixth lens · the maker's mind" / "Go deeper into my mind"),
+  `actionType: "constellation"`, wired into the existing `#depth-card-action` dispatch alongside
+  `chemistry`/`tree`/`map`.
+- Built `#constellation-overlay`: a dedicated full-screen view (not a `#workspace-tabs` entry — that
+  row is explicitly the three objective instruments, per its own title attribute), opened/closed via
+  `openConstellation()`/`closeConstellation()` following the existing `openInfo()`/`openShare()`
+  pattern, with its own Escape-key listener (matching this file's convention of one listener per
+  overlay rather than a shared one).
+- Four lenses, all computed live from the app's real `NOTES`/`COMPOUNDS`/`EDGES`/`NOTE_ORIGINS`/
+  `GUIDE_MOUTH` (127 notes, 94 compounds, 262 edges, 93 origins as of this pass) — no curated sample,
+  no hardcoded counts:
+  - **Chemistry** — angle = weighted mean of shared-compound angle, radius = total edge weight.
+    Compound-class sectors (alphabetical, enumerated from live data) double as the legend.
+  - **Taxonomy** — reuses the app's own `taxonPath(note)` (did not reimplement kingdom/lineage
+    logic) for a Kingdom → Order → Family → Note radial partition, dashed spokes wherever a note's
+    real data skips a rank.
+  - **Geography** — plain equirectangular projection of real `NOTE_ORIGINS` coordinates. Notes with
+    no recorded origin (34 of 127) never get a guessed position.
+  - **Embodied** — X (orthonasal/retronasal) only exists once a note is tagged *this session*
+    (matches `PHASES` being a per-entry tag, not an intrinsic note property); Y (cooling/warming)
+    reads the app's real `GUIDE_MOUTH` tags. Untagged notes don't get crammed into the canvas —
+    see below.
+  - **Compound story**: every compound's detail panel carries a live-computed verdict — "signature"
+    (all carriers share one lineage) vs. "convergent" (carriers span multiple unrelated orders) —
+    plus a **Trace on Taxonomy** action that dims everything except that compound's real carriers.
+    At full scale this surfaces real, previously-undisplayed findings, e.g. Linalool: 9 unrelated
+    orders, 11 families — which agrees with the compound's own pre-existing `specificity: "shared"`
+    field, shown alongside as a cross-check.
+- **Scale fix mid-build, not in the original sketch**: at the full 127-note graph, Embodied's
+  "untagged" pool starts at all 127 notes and Geography's "no origin" pool is 34 — both would have
+  overflowed a fixed in-canvas grid designed against a 28-note prototype sample. Replaced the SVG
+  dot-grid tray with an HTML, keyboard-accessible, scrollable chip strip below the stage instead;
+  clicking a chip does the same thing clicking its star would (tag it in Embodied, select it in
+  Geography). Verified this renders and scrolls correctly with all 127 untagged chips present.
+- **Real bug found and fixed during verification, not left for later**: the Trace-on-Taxonomy button
+  called `cxSwitchLens()` with an argument in the wrong position, silently clearing the trace state
+  it had just set — caption showed the plain Taxonomy caption instead of "Tracing Linalool — 9
+  orders · 11 families," even though the dimming happened to look right via a different code path.
+  Fixed by removing the dead unused `force` parameter entirely rather than just reordering, so the
+  same class of positional-argument bug can't recur.
+- CSS reuses the app's real tokens throughout (`--accent`, `--accent-2`, `--grp-*`, `--panel`,
+  `--line`) — no duplicate palette. Follows the file's dominant single 760px breakpoint (not a
+  second threshold) and the `.depth-card`'s own documented "opaque plate, not frosted" choice for
+  the overlay chrome. Detail panel is self-contained rather than reusing the shared `renderDetail()`/
+  `aside.detail` singleton — that panel is shared DOM state, and mutating `state.selectedNote`/
+  `selectedCompound` from inside a full-screen overlay would leak into the Wheel/Tree view sitting
+  behind it once the overlay closes.
+
+### Verification
+
+- In-app browser at 1280×800 and the 360×760 reference viewport. Opened via the real Sixth-lens
+  depth-card action end to end; confirmed 221 star groups (127 notes + 94 compounds), correct live
+  badge counts per lens, Geography's 34-chip and Embodied's full 127-chip tray, tagging Mint as
+  "ortho" moving it live into the plot at the exact formula-predicted coordinate, and the Linalool
+  trace producing the correct dimmed count and caption after the argument-order fix.
+- Confirmed no regression: closing Constellation returns cleanly; Wheel note activation, Tree
+  workspace, and Map workspace all still function normally afterward.
+- Browser console reported no errors at any point. `git diff --check` passes.
+- Not yet done: a physical-device/social-in-app-browser check, and Chemistry's density at the full
+  262-edge scale hasn't had a dedicated visual pass beyond the existing min-weight-edge toggle — the
+  original design spec already flagged this as a real, deferred risk at full scale, not new to this
+  pass.
+
 ## Check-in: one-handed mobile tasting study — working tree
 
 Date: 2026-07-11  

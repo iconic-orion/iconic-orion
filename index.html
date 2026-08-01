@@ -951,6 +951,143 @@
   @keyframes depth-card-in { from { opacity:0; transform:translate(-8px,8px) scale(.96); } to { opacity:1; transform:none; } }
   @keyframes depth-shimmer { 0%,55% { transform:translateX(-45%) rotate(6deg); } 85%,100% { transform:translateX(45%) rotate(6deg); } }
 
+  /* Constellation — Go Deeper's subjective hemisphere. Same graph, four
+     re-readings. Full-bleed opaque plate (matches the depth-card's own
+     documented "opaque plate, not frosted" choice above) rather than a
+     centered .info-overlay dialog — this is its own space, not a form. */
+  .constellation-overlay { position: fixed; inset: 0; z-index: 220; background: var(--bg);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .constellation-overlay[hidden] { display: none; }
+  .cx-masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--line); flex: none; }
+  .cx-eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); font-weight: 600; }
+  .cx-masthead h2 { font: 400 26px/1.15 Georgia, "Times New Roman", serif; margin: 4px 0 0; color: var(--ink); }
+  .cx-close { background: transparent; border: none; color: var(--ink-dim); font-size: 20px; cursor: pointer;
+    padding: 6px 8px; line-height: 1; min-width: 44px; min-height: 44px; }
+  .cx-close:hover { color: var(--accent); }
+
+  .cx-console { flex: 1; display: grid; grid-template-columns: 64px 1fr 260px; min-height: 0; }
+  @media (max-width: 760px) {
+    .cx-console { grid-template-columns: 1fr; grid-template-rows: 1fr auto auto; }
+    .cx-dock { order: 3; }
+    .cx-side { order: 2; border-left: none; border-top: 1px solid var(--line); max-height: 34vh; overflow-y: auto; }
+    .cx-stage-wrap { order: 1; min-height: 0; }
+  }
+
+  .cx-dock { display: flex; flex-direction: column; gap: 6px; padding: 10px 6px;
+    border-right: 1px solid var(--line); background: var(--panel); overflow-y: auto; }
+  .cx-lens-btn { display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 4px 8px; border-radius: 6px; border: 1px solid transparent; background: transparent;
+    color: var(--ink-dim); cursor: pointer; font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase;
+    min-height: 44px; flex: 1; }
+  .cx-lens-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+  .cx-lens-btn:hover { color: var(--ink); background: var(--panel-2); }
+  .cx-lens-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+  .cx-lens-btn[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+  .cx-lens-select-wrap { display: none; padding: 8px 10px; width: 100%; }
+  .cx-lens-select-wrap label { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-dim); display: block; margin-bottom: 4px; }
+  .cx-lens-select-wrap select { width: 100%; min-height: 44px; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; font-size: 14px; }
+  @media (max-width: 760px) {
+    .cx-dock { flex-direction: row; border-right: none; border-top: 1px solid var(--line); }
+    .cx-dock .cx-lens-btn { display: none; }
+    .cx-lens-select-wrap { display: block; }
+  }
+
+  .cx-stage-wrap { position: relative; background: var(--bg); min-width: 0;
+    display: flex; flex-direction: column; overflow-y: auto; }
+  .cx-stage-frame { position: relative; width: 100%; aspect-ratio: 900 / 680; flex: none; }
+  .cx-stage { width: 100%; height: 100%; display: block; }
+  .cx-tray { flex: none; padding: 8px 14px 12px; border-top: 1px solid var(--line); }
+  .cx-tray[hidden] { display: none; }
+  .cx-tray-label { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 6px; }
+  .cx-tray-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; }
+  .cx-tray-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px 5px 7px;
+    border-radius: 20px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-dim);
+    font-size: 11.5px; cursor: pointer; min-height: 28px; }
+  .cx-tray-chip:hover { color: var(--ink); border-color: var(--accent-2); }
+  .cx-tray-chip:focus-visible { outline: 2px solid var(--accent-2); }
+  .cx-tray-chip i { width: 7px; height: 7px; border-radius: 50%; flex: none; font-style: normal; }
+  .cx-caption-line { position: absolute; top: 10px; left: 14px; right: 14px;
+    font-size: 12.5px; color: var(--ink-dim); pointer-events: none; }
+  .cx-caption-line b { color: var(--accent-2); font-weight: 600; }
+  .cx-badge { position: absolute; top: 10px; right: 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums;
+    font-size: 11px; color: var(--ink-dim); background: rgba(0,0,0,.35); border: 1px solid var(--line);
+    border-radius: 20px; padding: 3px 10px; }
+  @media (max-width: 760px) {
+    .cx-badge { position: static; margin: 6px 14px 0; display: inline-block; }
+    .cx-caption-line { position: static; margin: 6px 14px 0; }
+  }
+  .cx-floating-label { position: absolute; pointer-events: none; transform: translate(-50%, -130%);
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px;
+    font-size: 12px; white-space: nowrap; color: var(--ink); box-shadow: 0 4px 14px rgba(0,0,0,.4);
+    opacity: 0; transition: opacity .12s ease; z-index: 5; }
+  .cx-floating-label.show { opacity: 1; }
+  .cx-floating-label .cx-fl-group { color: var(--ink-dim); font-size: 10.5px; margin-left: 5px; }
+  .cx-legend-plate { position: absolute; left: 14px; bottom: 12px; max-width: 320px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .cx-legend-plate summary { cursor: pointer; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--accent-2); list-style: none; display: flex; align-items: center; gap: 6px; }
+  .cx-legend-plate summary::-webkit-details-marker { display: none; }
+  .cx-legend-plate summary::before { content: "▸"; font-size: 9px; transition: transform .15s; }
+  .cx-legend-plate[open] summary::before { transform: rotate(90deg); }
+  .cx-legend-body { font-size: 12px; color: var(--ink-dim); margin-top: 8px; display: grid; gap: 5px;
+    max-height: 30vh; overflow-y: auto; }
+  .cx-legend-toggle-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .cx-legend-toggle-row input { accent-color: var(--accent); }
+
+  .cx-side { border-left: 1px solid var(--line); background: var(--panel); padding: 16px; overflow-y: auto; font-size: 13px; }
+  .cx-side .cx-empty { color: var(--ink-dim); font-size: 12.5px; padding-top: 10px; }
+  .cx-side h3 { font: 400 20px/1.2 Georgia, "Times New Roman", serif; margin: 0; color: var(--ink); }
+  .cx-grp-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: .05em; }
+  .cx-grp-dot { width: 9px; height: 9px; border-radius: 50%; }
+  .cx-lineage { color: var(--ink-dim); font-size: 12.5px; line-height: 1.5; margin-top: 10px; }
+  .cx-lineage .cx-rank { color: var(--ink-dim); opacity: .7; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 2px; }
+  .cx-origin { font-size: 12px; color: var(--ink-dim); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
+  .cx-origin .cx-coord { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; color: var(--accent-2); }
+  .cx-caveat { font-size: 11px; color: var(--warn); margin-top: 4px; }
+  .cx-cpd-list { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; display: grid; gap: 6px; }
+  .cx-cpd-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
+  .cx-cpd-name { color: var(--ink); }
+  .cx-cpd-cls { color: var(--ink-dim); font-size: 10.5px; text-transform: uppercase; margin-left: 5px; }
+  .cx-cpd-bar-wrap { width: 64px; height: 5px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+  .cx-cpd-bar { height: 100%; background: var(--accent-2); }
+  .cx-story { border-left: 2px solid var(--accent-2); padding-left: 8px; margin-top: 10px; font-size: 12.5px; color: var(--ink-dim); line-height: 1.5; }
+  .cx-story.convergent { border-left-color: var(--accent); }
+  .cx-story.thin { border-left-color: var(--ink-dim); opacity: .8; }
+  .cx-trace-btn, .cx-tag-btn { min-height: 36px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--ink-dim); font-size: 11.5px; cursor: pointer; }
+  .cx-trace-btn { width: 100%; margin-top: 10px; color: var(--accent-2); border-color: var(--accent-2); }
+  .cx-trace-btn:hover { background: var(--accent-2); color: var(--bg); }
+  .cx-tag-row { display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
+  .cx-tag-btn { flex: 1; min-width: 58px; }
+  .cx-tag-btn[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+  .cx-tag-btn:focus-visible { outline: 2px solid var(--accent-2); }
+  .cx-side-close { background: none; border: none; color: var(--ink-dim); font-size: 12px; cursor: pointer;
+    padding: 2px 0; text-decoration: underline; text-underline-offset: 2px; }
+
+  .cx-foot { flex: none; padding: 10px 22px 16px; font-size: 11px; color: var(--ink-dim); opacity: .75;
+    line-height: 1.6; border-top: 1px solid var(--line); }
+  @media (max-width: 760px) { .cx-foot { display: none; } }
+
+  .cx-chrome-layer, .cx-edges-layer { transition: opacity .26s ease; }
+  .cx-chrome-line { stroke: var(--accent-2); fill: none; opacity: .32; }
+  .cx-chrome-label { fill: var(--ink-dim); font-size: 9.5px; letter-spacing: .04em; }
+  .cx-chrome-label.strong { fill: var(--ink); font-size: 10.5px; }
+  .cx-edge-line { stroke: var(--accent-2); fill: none; }
+  .cx-star { cursor: pointer; }
+  .cx-star-ring-focus { fill: none; stroke: var(--accent-2); stroke-width: 1.4; opacity: 0; pointer-events: none; }
+  .cx-star:focus-visible + .cx-star-ring-focus { opacity: .9; }
+  .cx-star-group.selected .cx-star-sel-ring { opacity: 1; }
+  .cx-star-sel-ring { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0; pointer-events: none; }
+  .cx-star-group.dimmed .cx-star { opacity: .22; }
+  .cx-star-group.shelved .cx-star { opacity: .4; }
+  @media (prefers-reduced-motion: reduce) {
+    .cx-chrome-layer, .cx-edges-layer { transition: opacity .12s linear; }
+  }
+
   /* Tree workspace vines — frame the dendrogram from two corners */
   #tree-vines { position: absolute; inset: 0; z-index: 2; pointer-events: none;
     opacity: 0; transition: opacity 0.7s ease-out; overflow: hidden; }
@@ -3405,6 +3542,81 @@
   <p id="depth-card-copy"></p>
   <div class="depth-card-footer"><div class="depth-card-progress" id="depth-card-progress" aria-label="Choose a depth"></div><button type="button" id="depth-card-action" class="depth-card-action" hidden></button></div>
 </aside>
+<!-- Constellation: Go Deeper's subjective hemisphere. The same NOTES/COMPOUNDS/
+     EDGES/NOTE_ORIGINS graph re-read four ways instead of re-measured — see
+     the Sixth lens depth card. Deliberately its own full-screen overlay, not
+     a #workspace-tabs entry: those three stay the objective, citation-backed
+     instruments; this is where re-interpretation of the same data is licensed. -->
+<div id="constellation-overlay" class="constellation-overlay" role="dialog" aria-modal="true" aria-labelledby="constellation-title" hidden>
+  <header class="cx-masthead">
+    <div>
+      <div class="cx-eyebrow">Go Deeper · creator mind space</div>
+      <h2 id="constellation-title">Constellation</h2>
+    </div>
+    <button type="button" id="constellation-close-btn" class="cx-close" aria-label="Close constellation">✕</button>
+  </header>
+  <div class="cx-console">
+    <nav class="cx-dock" role="tablist" aria-label="Constellation lens">
+      <button class="cx-lens-btn" data-lens="chemistry" role="tab" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="4" r="1.4"/><circle cx="19" cy="9" r="1.4"/><circle cx="16" cy="19" r="1.4"/><circle cx="6" cy="18" r="1.4"/><circle cx="4" cy="8" r="1.4"/><path d="M12 12L12 4M12 12L19 9M12 12L16 19M12 12L6 18M12 12L4 8"/></svg>
+        Chemistry
+      </button>
+      <button class="cx-lens-btn" data-lens="taxonomy" role="tab" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><path d="M12 21V11M12 11L6 5M12 11L18 5M6 5L3 3M6 5L4 8M18 5L21 3M18 5L20 8"/></svg>
+        Taxonomy
+      </button>
+      <button class="cx-lens-btn" data-lens="geography" role="tab" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M3 9H21M3 14H21M8 4V20M16 4V20"/></svg>
+        Geography
+      </button>
+      <button class="cx-lens-btn" data-lens="embodied" role="tab" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><path d="M4 15C6 8 9 3 13 3C17 3 15 9 19 9M4 15C4 18 8 19 11 18M4 15L2 15"/></svg>
+        Embodied
+      </button>
+      <div class="cx-lens-select-wrap">
+        <label for="cxLensSelect">Lens</label>
+        <select id="cxLensSelect" aria-label="Constellation lens">
+          <option value="chemistry">Chemistry</option>
+          <option value="taxonomy">Taxonomy</option>
+          <option value="geography">Geography</option>
+          <option value="embodied">Embodied</option>
+        </select>
+      </div>
+    </nav>
+    <div class="cx-stage-wrap">
+      <div class="cx-stage-frame">
+        <svg class="cx-stage" viewBox="0 0 900 680" role="img" aria-label="Constellation of tasting notes">
+          <g id="cxChromeA" class="cx-chrome-layer"></g>
+          <g id="cxChromeB" class="cx-chrome-layer" style="opacity:0"></g>
+          <g id="cxEdgesA" class="cx-edges-layer"></g>
+          <g id="cxEdgesB" class="cx-edges-layer" style="opacity:0"></g>
+          <g id="cxStars"></g>
+        </svg>
+        <div class="cx-caption-line" id="cxCaption"></div>
+        <div class="cx-badge" id="cxBadge"></div>
+        <div class="cx-floating-label" id="cxFloatLabel"></div>
+        <details class="cx-legend-plate" id="cxLegendPlate">
+          <summary>Legend</summary>
+          <div class="cx-legend-body" id="cxLegendBody"></div>
+        </details>
+      </div>
+      <div class="cx-tray" id="cxTray" hidden>
+        <div class="cx-tray-label" id="cxTrayLabel"></div>
+        <div class="cx-tray-chips" id="cxTrayChips"></div>
+      </div>
+    </div>
+    <aside class="cx-side" id="cxSide">
+      <p class="cx-empty">Select a star to read it. Click empty space, or press Escape, to clear.</p>
+    </aside>
+  </div>
+  <footer class="cx-foot">
+    Chemistry and Taxonomy are computed live from this app's own NOTES/COMPOUNDS/EDGES graph — nothing
+    here is a separate or simplified dataset. Geography plots real NOTE_ORIGINS coordinates only;
+    notes without a recorded origin collect in an explicit tray rather than getting a guessed position.
+    Embodied only places a note once you tag it this session — nothing is asserted as a fixed fact
+    about the note itself.
+  </footer>
+</div>
 <div id="origins-view" hidden>
   <div id="origins-body">
     <div id="origins-map-wrap">
@@ -10665,6 +10877,12 @@ const DEPTH_STORIES = [
     title: "Genes, ecology, selection",
     copy: "Genes guide the enzyme pathways that make aromatic compounds. Ripeness, plant tissue, stress, microbes, climate, and breeding tune the final bouquet.",
     action: "Trace it in the Tree", actionType: "tree"
+  },
+  {
+    kicker: "Sixth lens · the maker's mind",
+    title: "Go deeper into my mind",
+    copy: "The same notes, seen four ways: aligned by shared chemistry, by lineage, by where they grew, by how they actually hit you. This is where the wheel stops being only measurement.",
+    action: "Open the Constellation", actionType: "constellation"
   }
 ];
 const depthCard = document.getElementById("depth-card");
@@ -10704,8 +10922,511 @@ document.getElementById("depth-card-action").addEventListener("click", e => {
   closeDepthCard();
   if (action === "chemistry") setOrganizeBy("chemistry");
   else if (action === "tree" || action === "map") setWorkspace(action);
+  else if (action === "constellation") openConstellation();
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !depthCard.hidden) closeDepthCard(); });
+
+/* ============================== CONSTELLATION ==============================
+   Go Deeper's subjective hemisphere. Reads this app's own live NOTES/COMPOUNDS/
+   EDGES/NOTE_ORIGINS/GUIDE_MOUTH graph through four lenses instead of adding a
+   fifth dataset. Never touches state.entries or recompute() -- same rule this
+   app already applies to Delivery and Laps: this reinterprets, it doesn't
+   re-measure. All positions are computed live from real data; nothing here is
+   a curated sample or a hardcoded count. */
+
+const cxOverlayEl = document.getElementById("constellation-overlay");
+let cxState = { lens: "chemistry", minWeight: 0.15, tags: {}, selected: null, traceCompound: null };
+let cxStarEls = {};
+let cxCurrentEdgeGroup = "A";
+let cxInitialized = false;
+
+const CX_CX = 450, CX_CY = 300, CX_R = 230;
+function cxPolar(cx, cy, angDeg, rad) { const a = (angDeg - 90) * Math.PI / 180; return { x: cx + Math.cos(a) * rad, y: cy + Math.sin(a) * rad }; }
+function cxLerp(a, b, t) { return a + (b - a) * t; }
+function cxClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function cxEase(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+function cxIsChemesthetic(cpd) { return /chemesthe/i.test(cpd.note || ""); }
+
+const cxCooling = (GUIDE_MOUTH.find(g => g.key === "cooling") || { notes: [] }).notes;
+const cxWarming = (GUIDE_MOUTH.find(g => g.key === "warming") || { notes: [] }).notes;
+const cxNoteById = Object.fromEntries(NOTES.map(n => [n.id, n]));
+const cxCpdById = Object.fromEntries(COMPOUNDS.map(c => [c.id, c]));
+
+/* ---- compound story: signature (one lineage) vs. convergent (independently
+   arrived at more than once) -- computed live from EDGES + the app's own
+   taxonPath(), never hardcoded to a specific compound. ---- */
+function cxCompoundCarriers(cpdId) {
+  return EDGES.filter(e => e.cpd === cpdId).map(e => cxNoteById[e.note]).filter(Boolean);
+}
+function cxCompoundStory(cpdId) {
+  const carriers = cxCompoundCarriers(cpdId);
+  const families = new Set(carriers.map(n => { const p = taxonPath(n); return p[2] || p[1] || p[0]; }));
+  const orders = new Set(carriers.map(n => { const p = taxonPath(n); return p[1] || p[0]; }));
+  let verdict, tone;
+  if (carriers.length < 2) {
+    verdict = "Only one carrier in the current graph — too little to call signature or convergent.";
+    tone = "thin";
+  } else if (orders.size === 1) {
+    verdict = `Every carrier sits in the same lineage (${[...orders][0]}) — a real signature compound, plausibly inherited rather than reinvented.`;
+    tone = "signature";
+  } else {
+    verdict = `Carriers span ${orders.size} unrelated lineages — this molecule was independently arrived at more than once, not passed down a single ancestry.`;
+    tone = "convergent";
+  }
+  return { carriers, families, orders, verdict, tone };
+}
+
+/* ---- layouts: each returns {notePos, cpdPos, edgeLines, chrome(g), taxEdges, trayIds}.
+   notePos/cpdPos omit anything not placeable in this lens (no fabricated
+   position); trayIds lists those, rendered as HTML chips below the stage
+   rather than crammed into the SVG canvas -- the only way this scales
+   honestly from a curated sample up to the app's full ~127-note graph. ---- */
+function cxLayoutChemistry() {
+  const classes = Array.from(new Set(COMPOUNDS.map(c => c.class))).sort();
+  const secW = 360 / classes.length;
+  const cpdAngle = {};
+  classes.forEach((cls, ci) => {
+    const members = COMPOUNDS.filter(c => c.class === cls).sort((a, b) => a.label.localeCompare(b.label));
+    members.forEach((c, mi) => { cpdAngle[c.id] = ci * secW + secW * ((mi + 0.5) / members.length); });
+  });
+  const rCpd = 0.38 * CX_R, rOuter = 0.92 * CX_R;
+  const edgesByNote = {};
+  EDGES.forEach(e => { (edgesByNote[e.note] = edgesByNote[e.note] || []).push(e); });
+  let maxSum = 0; const sumW = {};
+  NOTES.forEach(n => { const es = edgesByNote[n.id] || []; sumW[n.id] = es.reduce((s, e) => s + e.w, 0); if (sumW[n.id] > maxSum) maxSum = sumW[n.id]; });
+  const notePos = {}, cpdPos = {};
+  classes.forEach(cls => {
+    COMPOUNDS.filter(c => c.class === cls).forEach(c => {
+      const p = cxPolar(CX_CX, CX_CY, cpdAngle[c.id], rCpd);
+      const deg = EDGES.filter(e => e.cpd === c.id).reduce((s, e) => s + e.w, 0);
+      cpdPos[c.id] = { x: p.x, y: p.y, r: 2.5 + cxClamp(deg, 0, 5) * 1.1, visible: true };
+    });
+  });
+  NOTES.forEach(n => {
+    const es = edgesByNote[n.id] || [];
+    if (es.length === 0) return; // no edges -> nothing to place, goes to the tray
+    let sx = 0, sy = 0;
+    es.forEach(e => { const a = (cpdAngle[e.cpd] - 90) * Math.PI / 180; sx += e.w * Math.cos(a); sy += e.w * Math.sin(a); });
+    const ang = Math.atan2(sy, sx) * 180 / Math.PI + 90;
+    const rad = rOuter - (rOuter - rCpd) * cxClamp(sumW[n.id] / (maxSum || 1), 0, 1);
+    const p = cxPolar(CX_CX, CX_CY, ang, rad);
+    notePos[n.id] = { x: p.x, y: p.y, r: 2.5 + 4.5 * cxClamp(sumW[n.id] / (maxSum || 1), 0, 1), visible: true };
+  });
+  const trayIds = NOTES.filter(n => !notePos[n.id]).map(n => n.id);
+  const edgeLines = EDGES.filter(e => e.w >= cxState.minWeight && notePos[e.note] && cpdPos[e.cpd]).map(e => ({
+    x1: notePos[e.note].x, y1: notePos[e.note].y, x2: cpdPos[e.cpd].x, y2: cpdPos[e.cpd].y,
+    w: 0.4 + 1.8 * e.w, op: 0.08 + 0.34 * e.w
+  }));
+  function chrome(g) {
+    classes.forEach((cls, ci) => {
+      const a0 = ci * secW, a1 = (ci + 1) * secW;
+      cxAddPath(g, cxRingArcPath(CX_CX, CX_CY, rCpd * 0.62, a0, a1), "cx-chrome-line");
+      const mid = cxPolar(CX_CX, CX_CY, (a0 + a1) / 2, rCpd * 0.62 + 13);
+      cxAddText(g, mid.x, mid.y, cls, "cx-chrome-label strong", true);
+    });
+    cxAddCircle(g, CX_CX, CX_CY, rCpd, "cx-chrome-line");
+    cxAddCircle(g, CX_CX, CX_CY, rOuter, "cx-chrome-line");
+  }
+  return { notePos, cpdPos, edgeLines, chrome, taxEdges: [], trayIds };
+}
+
+function cxLayoutTaxonomy() {
+  const rK = 0.16 * CX_R, rO = 0.42 * CX_R, rF = 0.66 * CX_R, rN = 0.90 * CX_R;
+  const groups = {};
+  NOTES.forEach(n => {
+    const path = taxonPath(n);
+    const k = path[0], o = path[1] || "—", f = path[2] || "—";
+    groups[k] = groups[k] || {}; groups[k][o] = groups[k][o] || {}; groups[k][o][f] = groups[k][o][f] || [];
+    groups[k][o][f].push(n);
+  });
+  const kKeys = Object.keys(groups).sort();
+  const total = NOTES.length;
+  let a = 0;
+  const notePos = {}, connectors = [], ringLabels = [];
+  kKeys.forEach(k => {
+    const kNotes = Object.values(groups[k]).flatMap(o => Object.values(o).flat());
+    const kWidth = (kNotes.length / total) * 360;
+    const kA0 = a, kA1 = a + kWidth; a += kWidth;
+    const kMid = cxPolar(CX_CX, CX_CY, (kA0 + kA1) / 2, rK);
+    ringLabels.push({ x: kMid.x, y: kMid.y, label: k, strong: true });
+    const oKeys = Object.keys(groups[k]).sort();
+    let oa = kA0;
+    oKeys.forEach(o => {
+      const oNotes = Object.values(groups[k][o]).flat();
+      const oWidth = (oNotes.length / kNotes.length) * kWidth;
+      const oA0 = oa, oA1 = oa + oWidth; oa += oWidth;
+      if (o !== "—") { const oMid = cxPolar(CX_CX, CX_CY, (oA0 + oA1) / 2, rO); ringLabels.push({ x: oMid.x, y: oMid.y, label: o, strong: false }); }
+      const fKeys = Object.keys(groups[k][o]).sort();
+      let fa = oA0;
+      fKeys.forEach(f => {
+        const fNotes = groups[k][o][f];
+        const fWidth = (fNotes.length / oNotes.length) * oWidth;
+        const fA0 = fa, fA1 = fa + fWidth; fa += fWidth;
+        if (f !== "—") { const fMid = cxPolar(CX_CX, CX_CY, (fA0 + fA1) / 2, rF); ringLabels.push({ x: fMid.x, y: fMid.y, label: f, strong: false }); }
+        fNotes.forEach((n, ni) => {
+          const nAng = fA0 + fWidth * ((ni + 0.5) / fNotes.length);
+          const p = cxPolar(CX_CX, CX_CY, nAng, rN);
+          notePos[n.id] = { x: p.x, y: p.y, r: 3.4, visible: true };
+          const full = o !== "—" && f !== "—";
+          const kp = cxPolar(CX_CX, CX_CY, nAng, rK);
+          connectors.push({ x1: kp.x, y1: kp.y, x2: p.x, y2: p.y, dashed: !full });
+        });
+      });
+    });
+  });
+  function chrome(g) {
+    [rK, rO, rF, rN].forEach(r => cxAddCircle(g, CX_CX, CX_CY, r, "cx-chrome-line"));
+    ringLabels.forEach(l => cxAddText(g, l.x, l.y, l.label, "cx-chrome-label" + (l.strong ? " strong" : ""), true));
+  }
+  return { notePos, cpdPos: {}, edgeLines: [], chrome, taxEdges: connectors, trayIds: [] };
+}
+
+function cxLayoutGeography() {
+  const x0 = CX_CX - CX_R, y0 = CX_CY - CX_R, x1 = CX_CX + CX_R, y1 = CX_CY + CX_R;
+  const notePos = {}; const trayIds = [];
+  const placed = [];
+  NOTES.forEach(n => {
+    const o = NOTE_ORIGINS[n.id];
+    if (!o) { trayIds.push(n.id); return; }
+    placed.push({ id: n.id, x: x0 + (o.lon + 180) / 360 * (x1 - x0), y: y0 + (90 - o.lat) / 180 * (y1 - y0) });
+  });
+  placed.forEach((p, i) => { notePos[p.id] = { x: p.x, y: p.y, r: 3.2, visible: true }; });
+  function chrome(g) {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", x0); rect.setAttribute("y", y0); rect.setAttribute("width", x1 - x0); rect.setAttribute("height", y1 - y0);
+    rect.setAttribute("class", "cx-chrome-line"); rect.setAttribute("fill", "none");
+    g.appendChild(rect);
+    [-120, -60, 0, 60, 120].forEach(lon => { const x = x0 + (lon + 180) / 360 * (x1 - x0); cxAddLine(g, x, y0, x, y1, "cx-chrome-line", lon === 0 ? 0.5 : 0.2); });
+    [-60, -30, 0, 30, 60].forEach(lat => { const y = y0 + (90 - lat) / 180 * (y1 - y0); cxAddLine(g, x0, y, x1, y, "cx-chrome-line", lat === 0 ? 0.5 : 0.2); });
+  }
+  return { notePos, cpdPos: {}, edgeLines: [], chrome, taxEdges: [], trayIds };
+}
+
+function cxLayoutEmbodied() {
+  const x0 = CX_CX - CX_R, x1 = CX_CX + CX_R, y0 = CX_CY - CX_R, y1 = CX_CY + CX_R;
+  const notePos = {};
+  const trayIds = [];
+  NOTES.forEach(n => {
+    const tag = cxState.tags[n.id];
+    if (!tag) { trayIds.push(n.id); return; }
+    const tx = tag === "ortho" ? -1 : tag === "retro" ? 1 : 0;
+    const ty = cxCooling.includes(n.id) ? -1 : cxWarming.includes(n.id) ? 1 : 0;
+    notePos[n.id] = { x: CX_CX + tx * (CX_R * 0.78), y: CX_CY + ty * (CX_R * 0.7), r: 7, visible: true };
+  });
+  function chrome(g) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", `M ${CX_CX - 70} ${CX_CY - 40} C ${CX_CX - 40} ${CX_CY - 90}, ${CX_CX + 30} ${CX_CY - 95}, ${CX_CX + 55} ${CX_CY - 55} C ${CX_CX + 70} ${CX_CY - 30}, ${CX_CX + 50} ${CX_CY - 5}, ${CX_CX + 58} ${CX_CY + 15} C ${CX_CX + 64} ${CX_CY + 34}, ${CX_CX + 38} ${CX_CY + 40}, ${CX_CX + 18} ${CX_CY + 34} C ${CX_CX - 10} ${CX_CY + 55}, ${CX_CX - 55} ${CX_CY + 50}, ${CX_CX - 70} ${CX_CY - 40}`);
+    path.setAttribute("class", "cx-chrome-line"); path.setAttribute("opacity", "0.4");
+    g.appendChild(path);
+    cxAddLine(g, x0, CX_CY, x1, CX_CY, "cx-chrome-line", 0.3);
+    cxAddLine(g, CX_CX, y0, CX_CX, y1, "cx-chrome-line", 0.3);
+    cxAddText(g, x0 + 30, CX_CY - 14, "orthonasal · sniff", "cx-chrome-label", false);
+    cxAddText(g, x1 - 34, CX_CY - 14, "retronasal · exhale", "cx-chrome-label", false);
+    cxAddText(g, CX_CX + 14, y0 + 20, "cooling", "cx-chrome-label", false);
+    cxAddText(g, CX_CX + 14, y1 - 10, "warming", "cx-chrome-label", false);
+  }
+  return { notePos, cpdPos: {}, edgeLines: [], chrome, taxEdges: [], trayIds };
+}
+
+/* ---- svg helpers ---- */
+const CXNS = "http://www.w3.org/2000/svg";
+function cxAddCircle(g, cx, cy, r, cls) { const c = document.createElementNS(CXNS, "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", r); c.setAttribute("class", cls); c.setAttribute("fill", "none"); g.appendChild(c); return c; }
+function cxAddLine(g, x1, y1, x2, y2, cls, op) { const l = document.createElementNS(CXNS, "line"); l.setAttribute("x1", x1); l.setAttribute("y1", y1); l.setAttribute("x2", x2); l.setAttribute("y2", y2); l.setAttribute("class", cls); if (op != null) l.setAttribute("opacity", op); g.appendChild(l); return l; }
+function cxAddPath(g, d, cls) { const p = document.createElementNS(CXNS, "path"); p.setAttribute("d", d); p.setAttribute("class", cls); p.setAttribute("fill", "none"); g.appendChild(p); return p; }
+function cxAddText(g, x, y, label, cls, center) { const t = document.createElementNS(CXNS, "text"); t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("class", cls); if (center) t.setAttribute("text-anchor", "middle"); t.textContent = label; g.appendChild(t); return t; }
+function cxRingArcPath(cx, cy, r, a0, a1) { const p0 = cxPolar(cx, cy, a0, r), p1 = cxPolar(cx, cy, a1, r); const large = (a1 - a0) > 180 ? 1 : 0; return `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${large} 1 ${p1.x} ${p1.y}`; }
+
+/* ---- els / captions ---- */
+const cxEls = {
+  chromeA: document.getElementById("cxChromeA"), chromeB: document.getElementById("cxChromeB"),
+  edgesA: document.getElementById("cxEdgesA"), edgesB: document.getElementById("cxEdgesB"),
+  stars: document.getElementById("cxStars"), stage: document.querySelector("svg.cx-stage"),
+  caption: document.getElementById("cxCaption"), badge: document.getElementById("cxBadge"),
+  legendBody: document.getElementById("cxLegendBody"), floatLabel: document.getElementById("cxFloatLabel"),
+  side: document.getElementById("cxSide"), lensSelect: document.getElementById("cxLensSelect"),
+  tray: document.getElementById("cxTray"), trayLabel: document.getElementById("cxTrayLabel"), trayChips: document.getElementById("cxTrayChips")
+};
+const CX_CAPTIONS = {
+  chemistry: "Angle = shared compounds · Radius = how strongly characterized",
+  taxonomy: "Rings = Kingdom → Order → Family → Note · dashed spokes = missing rank in the data",
+  geography: "Real cultivation-origin lat/lon · chips below = no record in the app",
+  embodied: "Tag a chip (or a star) to place it — untagged notes wait below"
+};
+function cxBadgeText(lens, L) {
+  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin`;
+  if (lens === "embodied") return `${Object.keys(cxState.tags).length} of ${NOTES.length} tagged this session`;
+  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${EDGES.length} edges`;
+}
+function cxLegendFor(lens) {
+  if (lens === "chemistry") {
+    const wt = cxState.minWeight <= 0;
+    return `<div>Compound sectors, alphabetical by chemical class — the sector layout <em>is</em> the key.</div>
+      <div class="cx-legend-toggle-row"><input type="checkbox" id="cxWtToggle" ${wt ? "checked" : ""}> <label for="cxWtToggle" style="font-size:11.5px;">Show edges below 0.15 weight</label></div>`;
+  }
+  if (lens === "taxonomy") {
+    const groups = Array.from(new Set(NOTES.map(n => taxonPath(n)[0]))).sort();
+    return `<div>Four rings: Kingdom → Order → Family → Note.</div>` +
+      groups.map(k => `<div><span class="legend-swatch" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-2);margin-right:6px;"></span>${k}</div>`).join("");
+  }
+  if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below = no NOTE_ORIGINS record in the app.</div>`;
+  return `<div>Y = felt temperature, from the app's own GUIDE_MOUTH cooling/warming tags.</div><div>X = orthonasal / retronasal, set only by tagging a note while this lens is open.</div>`;
+}
+
+function cxCurrentLayout() {
+  if (cxState.lens === "chemistry") return cxLayoutChemistry();
+  if (cxState.lens === "taxonomy") return cxLayoutTaxonomy();
+  if (cxState.lens === "geography") return cxLayoutGeography();
+  return cxLayoutEmbodied();
+}
+
+function cxEnsureStars() {
+  NOTES.forEach(n => {
+    if (cxStarEls[n.id]) return;
+    const g = document.createElementNS(CXNS, "g"); g.setAttribute("class", "cx-star-group"); g.setAttribute("data-id", n.id);
+    const sel = cxAddCircle(g, 0, 0, 9, "cx-star-sel-ring");
+    const circle = document.createElementNS(CXNS, "circle");
+    circle.setAttribute("class", "cx-star"); circle.setAttribute("r", 3); circle.setAttribute("fill", `var(--grp-${n.group})`);
+    circle.setAttribute("tabindex", "0"); circle.setAttribute("role", "button");
+    circle.setAttribute("aria-label", n.label);
+    const ring = cxAddCircle(g, 0, 0, 7, "cx-star-ring-focus");
+    g.appendChild(circle); g.appendChild(ring);
+    cxEls.stars.appendChild(g);
+    cxStarEls[n.id] = { group: g, circle, ring, sel, kind: "note", data: n };
+    cxWireStar(n.id, circle);
+  });
+  COMPOUNDS.forEach(c => {
+    const id = "cpd:" + c.id;
+    if (cxStarEls[id]) return;
+    const g = document.createElementNS(CXNS, "g"); g.setAttribute("class", "cx-star-group"); g.setAttribute("data-id", id);
+    const sel = cxAddCircle(g, 0, 0, 8, "cx-star-sel-ring");
+    const circle = document.createElementNS(CXNS, "circle");
+    circle.setAttribute("class", "cx-star"); circle.setAttribute("r", 2.5); circle.setAttribute("fill", "var(--ink-dim)");
+    circle.setAttribute("opacity", "0"); circle.setAttribute("tabindex", "-1"); circle.setAttribute("role", "button");
+    circle.setAttribute("aria-label", c.label + ", compound");
+    const ring = cxAddCircle(g, 0, 0, 6, "cx-star-ring-focus");
+    g.appendChild(circle); g.appendChild(ring);
+    cxEls.stars.appendChild(g);
+    cxStarEls[id] = { group: g, circle, ring, sel, kind: "cpd", data: c };
+    cxWireStar(id, circle);
+  });
+}
+function cxWireStar(id, circle) {
+  function activate() {
+    if (cxState.lens === "embodied" && !id.startsWith("cpd:")) { cxCycleTag(id); return; }
+    cxSelect(id);
+  }
+  circle.addEventListener("click", activate);
+  circle.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); } });
+  circle.addEventListener("mouseenter", () => cxShowFloat(id));
+  circle.addEventListener("mouseleave", cxHideFloat);
+  circle.addEventListener("focus", () => cxShowFloat(id));
+  circle.addEventListener("blur", cxHideFloat);
+}
+function cxCycleTag(noteId) {
+  const cur = cxState.tags[noteId];
+  const next = cur === "ortho" ? "retro" : cur === "retro" ? "both" : cur === "both" ? undefined : "ortho";
+  if (next) cxState.tags[noteId] = next; else delete cxState.tags[noteId];
+  cxSelect(noteId);
+  cxSwitchLens(cxState.lens, false, true);
+}
+function cxShowFloat(id) {
+  const isC = id.startsWith("cpd:");
+  const item = isC ? cxCpdById[id.slice(4)] : cxNoteById[id];
+  const s = cxStarEls[id]; if (!item || !s) return;
+  const bbox = s.circle.getBoundingClientRect(); const stageBox = cxEls.stage.getBoundingClientRect();
+  cxEls.floatLabel.style.left = (bbox.left - stageBox.left + bbox.width / 2) + "px";
+  cxEls.floatLabel.style.top = (bbox.top - stageBox.top) + "px";
+  cxEls.floatLabel.innerHTML = item.label + (isC ? ` <span class="cx-fl-group">${item.class}</span>` : ` <span class="cx-fl-group">${item.group}</span>`);
+  cxEls.floatLabel.classList.add("show");
+}
+function cxHideFloat() { cxEls.floatLabel.classList.remove("show"); }
+
+function cxSelect(id) {
+  if (cxStarEls[cxState.selected]) cxStarEls[cxState.selected].group.classList.remove("selected");
+  cxState.selected = id;
+  if (cxStarEls[id]) cxStarEls[id].group.classList.add("selected");
+  if (!id) cxState.traceCompound = null;
+  cxRenderSide();
+  cxUpdateDimming();
+}
+function cxUpdateDimming() {
+  let lit = null;
+  if (cxState.lens === "taxonomy" && cxState.traceCompound) {
+    lit = new Set(cxCompoundCarriers(cxState.traceCompound).map(n => n.id));
+  } else if (cxState.selected) {
+    lit = new Set([cxState.selected]);
+    if (cxState.selected.startsWith("cpd:")) cxCompoundCarriers(cxState.selected.slice(4)).forEach(n => lit.add(n.id));
+    else EDGES.filter(e => e.note === cxState.selected).forEach(e => lit.add("cpd:" + e.cpd));
+  }
+  Object.keys(cxStarEls).forEach(id => cxStarEls[id].group.classList.toggle("dimmed", !!lit && !lit.has(id)));
+}
+
+function cxRenderSide() {
+  const id = cxState.selected;
+  if (!id || !cxStarEls[id]) { cxEls.side.innerHTML = `<p class="cx-empty">Select a star to read it. Click empty space, or press Escape, to clear.</p>`; return; }
+  const isC = id.startsWith("cpd:");
+  if (isC) {
+    const c = cxCpdById[id.slice(4)];
+    const story = cxCompoundStory(c.id);
+    const rows = EDGES.filter(e => e.cpd === c.id).sort((a, b) => b.w - a.w).slice(0, 25).map(e => {
+      const n = cxNoteById[e.note]; if (!n) return "";
+      return `<div class="cx-cpd-row"><span class="cx-cpd-name">${n.label}<span class="cx-cpd-cls">${e.w.toFixed(2)}</span></span>
+        <div class="cx-cpd-bar-wrap"><div class="cx-cpd-bar" style="width:${e.w * 100}%"></div></div></div>`;
+    }).join("");
+    const overflow = story.carriers.length > 25 ? `<div class="cx-cpd-row" style="color:var(--ink-dim)">+ ${story.carriers.length - 25} more</div>` : "";
+    cxEls.side.innerHTML = `
+      <button class="cx-side-close" id="cxCloseBtn">Clear selection</button>
+      <h3>${c.label}${c.commonName ? ` <span style="font-size:12px;color:var(--ink-dim);">(${c.commonName})</span>` : ""}</h3>
+      <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--ink-dim)"></span>${c.class}${c.specificity ? ` · catalogued as ${c.specificity}` : ""}</span>
+      ${cxIsChemesthetic(c) ? `<div class="cx-lineage">Its own note text in the app claims a real chemesthetic effect.</div>` : ""}
+      <div class="cx-story story-${story.tone}">${story.verdict}</div>
+      ${story.carriers.length >= 2 ? `<button class="cx-trace-btn" id="cxTraceBtn">Trace ${c.label} on Taxonomy →</button>` : ""}
+      <div class="cx-cpd-list">${rows}${overflow}</div>
+    `;
+    const closeBtn = document.getElementById("cxCloseBtn"); if (closeBtn) closeBtn.addEventListener("click", () => cxSelect(null));
+    const traceBtn = document.getElementById("cxTraceBtn");
+    if (traceBtn) traceBtn.addEventListener("click", () => { cxState.traceCompound = c.id; cxSwitchLens("taxonomy", false, true); });
+    return;
+  }
+  const n = cxNoteById[id];
+  const path = taxonPath(n);
+  const o = NOTE_ORIGINS[n.id];
+  const rows = EDGES.filter(e => e.note === n.id).sort((a, b) => b.w - a.w).map(e => {
+    const c = cxCpdById[e.cpd]; if (!c) return "";
+    return `<div class="cx-cpd-row"><span class="cx-cpd-name">${c.label}<span class="cx-cpd-cls">${c.class}</span></span>
+      <div class="cx-cpd-bar-wrap"><div class="cx-cpd-bar" style="width:${e.w * 100}%"></div></div></div>`;
+  }).join("");
+  const tag = cxState.tags[n.id];
+  cxEls.side.innerHTML = `
+    <button class="cx-side-close" id="cxCloseBtn">Clear selection</button>
+    <h3>${n.label}</h3>
+    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}</span>
+    <div class="cx-lineage"><span class="cx-rank">Lineage</span>${path.join(" → ")}</div>
+    ${o ? `<div class="cx-origin">${o.region}<br><span class="cx-coord">${o.lat}°, ${o.lon}°</span></div>` : `<div class="cx-origin">No origin on record in the app.</div>`}
+    <div class="cx-cpd-list">${rows || '<div class="cx-cpd-row" style="color:var(--ink-dim)">No edges for this note yet.</div>'}</div>
+    ${cxState.lens === "embodied" ? `
+      <div class="cx-tag-row">
+        <button class="cx-tag-btn" data-tag="ortho" aria-pressed="${tag === "ortho"}">Ortho</button>
+        <button class="cx-tag-btn" data-tag="retro" aria-pressed="${tag === "retro"}">Retro</button>
+        <button class="cx-tag-btn" data-tag="both" aria-pressed="${tag === "both"}">Both</button>
+        <button class="cx-tag-btn" data-tag="" aria-pressed="${!tag}">Clear</button>
+      </div>` : ""}
+  `;
+  const closeBtn = document.getElementById("cxCloseBtn"); if (closeBtn) closeBtn.addEventListener("click", () => cxSelect(null));
+  if (cxState.lens === "embodied") {
+    cxEls.side.querySelectorAll(".cx-tag-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const v = btn.getAttribute("data-tag");
+        if (v) cxState.tags[n.id] = v; else delete cxState.tags[n.id];
+        cxSwitchLens(cxState.lens, false, true);
+        cxRenderSide();
+      });
+    });
+  }
+}
+
+function cxRenderTray(lens, trayIds) {
+  if ((lens !== "geography" && lens !== "embodied") || !trayIds.length) { cxEls.tray.hidden = true; return; }
+  cxEls.tray.hidden = false;
+  cxEls.trayLabel.textContent = lens === "geography"
+    ? `${trayIds.length} note${trayIds.length === 1 ? "" : "s"} with no recorded origin`
+    : `${trayIds.length} note${trayIds.length === 1 ? "" : "s"} not yet tagged this session`;
+  cxEls.trayChips.innerHTML = "";
+  trayIds.slice().sort((a, b) => cxNoteById[a].label.localeCompare(cxNoteById[b].label)).forEach(id => {
+    const n = cxNoteById[id];
+    const chip = document.createElement("button");
+    chip.type = "button"; chip.className = "cx-tray-chip";
+    chip.innerHTML = `<i style="background:var(--grp-${n.group})"></i>${n.label}`;
+    chip.addEventListener("click", () => { if (lens === "embodied") cxCycleTag(id); else cxSelect(id); });
+    cxEls.trayChips.appendChild(chip);
+  });
+}
+
+function cxSwitchLens(lens, silent, keepSelection) {
+  if (!keepSelection) { cxState.traceCompound = null; }
+  cxState.lens = lens;
+  document.querySelectorAll(".cx-lens-btn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lens === lens)));
+  cxEls.lensSelect.value = lens;
+  cxEnsureStars();
+  const L = cxCurrentLayout();
+  if (lens === "taxonomy" && cxState.traceCompound) {
+    const c = cxCpdById[cxState.traceCompound]; const st = cxCompoundStory(cxState.traceCompound);
+    cxEls.caption.innerHTML = `<b>Tracing ${c.label}</b> — ${st.orders.size} order${st.orders.size === 1 ? "" : "s"} · ${st.families.size} famil${st.families.size === 1 ? "y" : "ies"}. Everything else dimmed.`;
+  } else {
+    cxEls.caption.innerHTML = CX_CAPTIONS[lens];
+  }
+  cxEls.badge.textContent = cxBadgeText(lens, L);
+  cxEls.legendBody.innerHTML = cxLegendFor(lens);
+  const wt = document.getElementById("cxWtToggle");
+  if (wt) wt.addEventListener("change", () => { cxState.minWeight = wt.checked ? 0 : 0.15; cxSwitchLens(cxState.lens, true, true); });
+  cxRenderTray(lens, L.trayIds);
+  cxApplyLayout(L, !silent);
+  cxUpdateDimming();
+  if (!silent && !keepSelection) cxRenderSide();
+}
+
+function cxApplyLayout(L, animate) {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const from = {};
+  Object.keys(cxStarEls).forEach(id => {
+    const t = cxStarEls[id].group.getAttribute("transform");
+    from[id] = t ? cxParseTransform(t) : { x: CX_CX, y: CX_CY, r: 0, op: 0 };
+  });
+  const to = {};
+  NOTES.forEach(n => { const p = L.notePos[n.id]; to[n.id] = p ? { x: p.x, y: p.y, r: p.r, op: 1 } : { x: CX_CX, y: CX_CY, r: 0, op: 0 }; });
+  COMPOUNDS.forEach(c => { const id = "cpd:" + c.id; const p = L.cpdPos[c.id]; to[id] = p ? { x: p.x, y: p.y, r: p.r, op: 1 } : { x: CX_CX, y: CX_CY, r: 0, op: 0 }; });
+
+  const newChrome = cxCurrentEdgeGroup === "A" ? cxEls.chromeB : cxEls.chromeA;
+  const oldChrome = cxCurrentEdgeGroup === "A" ? cxEls.chromeA : cxEls.chromeB;
+  const newEdges = cxCurrentEdgeGroup === "A" ? cxEls.edgesB : cxEls.edgesA;
+  const oldEdges = cxCurrentEdgeGroup === "A" ? cxEls.edgesA : cxEls.edgesB;
+  newChrome.innerHTML = ""; newEdges.innerHTML = "";
+  L.chrome(newChrome);
+  L.edgeLines.forEach(e => { const l = cxAddLine(newEdges, e.x1, e.y1, e.x2, e.y2, "cx-edge-line", e.op); l.style.strokeWidth = e.w + "px"; });
+  L.taxEdges.forEach(e => { const l = cxAddLine(newEdges, e.x1, e.y1, e.x2, e.y2, "cx-edge-line", 0.22); if (e.dashed) l.setAttribute("stroke-dasharray", "2,3"); });
+  newChrome.style.opacity = 0; newEdges.style.opacity = 0;
+  requestAnimationFrame(() => { newChrome.style.opacity = 1; newEdges.style.opacity = 1; oldChrome.style.opacity = 0; oldEdges.style.opacity = 0; });
+  cxCurrentEdgeGroup = cxCurrentEdgeGroup === "A" ? "B" : "A";
+
+  Object.keys(cxStarEls).forEach(id => cxStarEls[id].group.classList.toggle("shelved", !L.notePos[id] && !L.cpdPos[(id.startsWith("cpd:") ? id.slice(4) : "")]));
+
+  if (!animate || reduce) { Object.keys(to).forEach(id => cxSetTransform(cxStarEls[id], to[id])); return; }
+  const dur = 560; const t0 = performance.now(); let settled = false;
+  function finalize() { if (settled) return; settled = true; Object.keys(to).forEach(id => cxSetTransform(cxStarEls[id], to[id])); }
+  function frame(now) {
+    const t = cxClamp((now - t0) / dur, 0, 1); const e = cxEase(t);
+    Object.keys(to).forEach(id => { const a = from[id] || { x: CX_CX, y: CX_CY, r: 0, op: 0 }, b = to[id]; cxSetTransform(cxStarEls[id], { x: cxLerp(a.x, b.x, e), y: cxLerp(a.y, b.y, e), r: cxLerp(a.r, b.r, e), op: cxLerp(a.op, b.op, e) }); });
+    if (t < 1) requestAnimationFrame(frame); else settled = true;
+  }
+  requestAnimationFrame(frame);
+  // Safety net: browsers can suspend requestAnimationFrame on a hidden/backgrounded
+  // tab, which would otherwise strand the morph mid-transition indefinitely.
+  setTimeout(finalize, dur + 120);
+}
+function cxSetTransform(s, t) {
+  s.group.setAttribute("transform", `translate(${t.x} ${t.y})`);
+  s.circle.setAttribute("r", Math.max(0.001, t.r));
+  s.circle.setAttribute("opacity", t.op);
+  s.sel.setAttribute("r", t.r + 5);
+  s.ring.setAttribute("r", t.r + 3);
+}
+function cxParseTransform(str) { const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(str); return m ? { x: parseFloat(m[1]), y: parseFloat(m[2]) } : { x: CX_CX, y: CX_CY }; }
+
+function cxInit() {
+  document.querySelectorAll(".cx-lens-btn").forEach(btn => btn.addEventListener("click", () => cxSwitchLens(btn.dataset.lens)));
+  cxEls.lensSelect.addEventListener("change", () => cxSwitchLens(cxEls.lensSelect.value));
+  cxEls.stage.addEventListener("click", e => { if (e.target === cxEls.stage) cxSelect(null); });
+  cxEnsureStars();
+  cxSwitchLens("chemistry", true);
+  cxInitialized = true;
+}
+function openConstellation() {
+  cxOverlayEl.hidden = false;
+  if (!cxInitialized) cxInit();
+}
+function closeConstellation() { cxOverlayEl.hidden = true; }
+document.getElementById("constellation-close-btn").addEventListener("click", closeConstellation);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !cxOverlayEl.hidden) closeConstellation(); });
 
 function setGoDeeper(on) {
   const wasOn = state.goDeeper;
