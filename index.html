@@ -10966,6 +10966,26 @@ function cxLerp(a, b, t) { return a + (b - a) * t; }
 function cxClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function cxEase(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 function cxIsChemesthetic(cpd) { return /chemesthe/i.test(cpd.note || ""); }
+// Ties every lens back to the real tasting: hasAnyEntry() is the app's own
+// "did the user actually enter this note" check (state.entries, the same
+// data recompute()/noteSignal() read) -- not a Constellation-local concept.
+function cxIsActive(noteId) { return hasAnyEntry(noteId); }
+function cxActiveCount() { return NOTES.filter(n => cxIsActive(n.id)).length; }
+// Embodied's ortho/retro placement prefers the REAL per-entry phase tags
+// the user already committed in the Wheel (entryKey(id,"ortho"/"retro") in
+// state.entries) over Constellation's own session-local exploratory tag --
+// real tasting data is a fact, cxState.tags is just "what if."
+function cxEffectiveTag(noteId) {
+  const ro = state.entries.has(entryKey(noteId, "ortho"));
+  const rr = state.entries.has(entryKey(noteId, "retro"));
+  if (ro && rr) return "both";
+  if (ro) return "ortho";
+  if (rr) return "retro";
+  return cxState.tags[noteId];
+}
+function cxTagIsReal(noteId) {
+  return state.entries.has(entryKey(noteId, "ortho")) || state.entries.has(entryKey(noteId, "retro"));
+}
 
 const cxCooling = (GUIDE_MOUTH.find(g => g.key === "cooling") || { notes: [] }).notes;
 const cxWarming = (GUIDE_MOUTH.find(g => g.key === "warming") || { notes: [] }).notes;
@@ -11033,10 +11053,11 @@ function cxLayoutChemistry() {
     notePos[n.id] = { x: p.x, y: p.y, r: 2.5 + 4.5 * cxClamp(sumW[n.id] / (maxSum || 1), 0, 1), visible: true };
   });
   const trayIds = NOTES.filter(n => !notePos[n.id]).map(n => n.id);
-  const edgeLines = EDGES.filter(e => e.w >= cxState.minWeight && notePos[e.note] && cpdPos[e.cpd]).map(e => ({
-    x1: notePos[e.note].x, y1: notePos[e.note].y, x2: cpdPos[e.cpd].x, y2: cpdPos[e.cpd].y,
-    w: 0.4 + 1.8 * e.w, op: 0.08 + 0.34 * e.w
-  }));
+  const edgeLines = EDGES.filter(e => e.w >= cxState.minWeight && notePos[e.note] && cpdPos[e.cpd]).map(e => {
+    const dim = cxIsActive(e.note) ? 1 : 0.35;
+    return { x1: notePos[e.note].x, y1: notePos[e.note].y, x2: cpdPos[e.cpd].x, y2: cpdPos[e.cpd].y,
+      w: (0.4 + 1.8 * e.w) * (dim < 1 ? 0.7 : 1), op: (0.08 + 0.34 * e.w) * dim };
+  });
   function chrome(g) {
     classes.forEach((cls, ci) => {
       const a0 = ci * secW, a1 = (ci + 1) * secW;
@@ -11127,7 +11148,7 @@ function cxLayoutEmbodied() {
   const notePos = {};
   const trayIds = [];
   NOTES.forEach(n => {
-    const tag = cxState.tags[n.id];
+    const tag = cxEffectiveTag(n.id);
     if (!tag) { trayIds.push(n.id); return; }
     const tx = tag === "ortho" ? -1 : tag === "retro" ? 1 : 0;
     const ty = cxCooling.includes(n.id) ? -1 : cxWarming.includes(n.id) ? 1 : 0;
@@ -11173,23 +11194,28 @@ const CX_CAPTIONS = {
   embodied: "Tag a chip (or a star) to place it — untagged notes wait below"
 };
 function cxBadgeText(lens, L) {
-  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin`;
-  if (lens === "embodied") return `${Object.keys(cxState.tags).length} of ${NOTES.length} tagged this session`;
-  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${EDGES.length} edges`;
+  const activeN = cxActiveCount();
+  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin · ${activeN} active in your tasting`;
+  if (lens === "embodied") {
+    const tagged = NOTES.filter(n => cxEffectiveTag(n.id)).length;
+    return `${tagged} of ${NOTES.length} placed (${activeN} active in your tasting)`;
+  }
+  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${activeN} active in your tasting`;
 }
 function cxLegendFor(lens) {
+  const activeNote = `<div style="margin-top:2px;">Brighter + bigger = active in your current tasting; dim = in the graph but not entered.</div>`;
   if (lens === "chemistry") {
     const wt = cxState.minWeight <= 0;
     return `<div>Compound sectors, alphabetical by chemical class — the sector layout <em>is</em> the key.</div>
-      <div class="cx-legend-toggle-row"><input type="checkbox" id="cxWtToggle" ${wt ? "checked" : ""}> <label for="cxWtToggle" style="font-size:11.5px;">Show edges below 0.15 weight</label></div>`;
+      <div class="cx-legend-toggle-row"><input type="checkbox" id="cxWtToggle" ${wt ? "checked" : ""}> <label for="cxWtToggle" style="font-size:11.5px;">Show edges below 0.15 weight</label></div>${activeNote}`;
   }
   if (lens === "taxonomy") {
     const groups = Array.from(new Set(NOTES.map(n => taxonPath(n)[0]))).sort();
     return `<div>Four rings: Kingdom → Order → Family → Note.</div>` +
-      groups.map(k => `<div><span class="legend-swatch" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-2);margin-right:6px;"></span>${k}</div>`).join("");
+      groups.map(k => `<div><span class="legend-swatch" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-2);margin-right:6px;"></span>${k}</div>`).join("") + activeNote;
   }
-  if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below = no NOTE_ORIGINS record in the app.</div>`;
-  return `<div>Y = felt temperature, from the app's own GUIDE_MOUTH cooling/warming tags.</div><div>X = orthonasal / retronasal, set only by tagging a note while this lens is open.</div>`;
+  if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below = no NOTE_ORIGINS record in the app.</div>${activeNote}`;
+  return `<div>Y = felt temperature, from the app's own GUIDE_MOUTH cooling/warming tags.</div><div>X = orthonasal / retronasal — real phase tags from your actual tasting are locked in; chips let you place anything else hypothetically for this session only.</div>`;
 }
 
 function cxCurrentLayout() {
@@ -11243,6 +11269,7 @@ function cxWireStar(id, circle) {
   circle.addEventListener("blur", cxHideFloat);
 }
 function cxCycleTag(noteId) {
+  if (cxTagIsReal(noteId)) { cxSelect(noteId); return; } // already a real fact from the tasting -- not editable here
   const cur = cxState.tags[noteId];
   const next = cur === "ortho" ? "retro" : cur === "retro" ? "both" : cur === "both" ? undefined : "ortho";
   if (next) cxState.tags[noteId] = next; else delete cxState.tags[noteId];
@@ -11316,24 +11343,27 @@ function cxRenderSide() {
     return `<div class="cx-cpd-row"><span class="cx-cpd-name">${c.label}<span class="cx-cpd-cls">${c.class}</span></span>
       <div class="cx-cpd-bar-wrap"><div class="cx-cpd-bar" style="width:${e.w * 100}%"></div></div></div>`;
   }).join("");
-  const tag = cxState.tags[n.id];
+  const tag = cxEffectiveTag(n.id);
+  const tagLocked = cxTagIsReal(n.id);
+  const active = cxIsActive(n.id);
   cxEls.side.innerHTML = `
     <button class="cx-side-close" id="cxCloseBtn">Clear selection</button>
     <h3>${n.label}</h3>
-    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}</span>
+    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}${active ? ' · <span style="color:var(--accent)">active in your tasting</span>' : ""}</span>
     <div class="cx-lineage"><span class="cx-rank">Lineage</span>${path.join(" → ")}</div>
     ${o ? `<div class="cx-origin">${o.region}<br><span class="cx-coord">${o.lat}°, ${o.lon}°</span></div>` : `<div class="cx-origin">No origin on record in the app.</div>`}
     <div class="cx-cpd-list">${rows || '<div class="cx-cpd-row" style="color:var(--ink-dim)">No edges for this note yet.</div>'}</div>
-    ${cxState.lens === "embodied" ? `
+    ${cxState.lens === "embodied" ? (tagLocked ? `
+      <div class="cx-lineage"><span class="cx-rank">Phase</span>Tagged ${tag} in your actual tasting — not editable here.</div>` : `
       <div class="cx-tag-row">
         <button class="cx-tag-btn" data-tag="ortho" aria-pressed="${tag === "ortho"}">Ortho</button>
         <button class="cx-tag-btn" data-tag="retro" aria-pressed="${tag === "retro"}">Retro</button>
         <button class="cx-tag-btn" data-tag="both" aria-pressed="${tag === "both"}">Both</button>
         <button class="cx-tag-btn" data-tag="" aria-pressed="${!tag}">Clear</button>
-      </div>` : ""}
+      </div>`) : ""}
   `;
   const closeBtn = document.getElementById("cxCloseBtn"); if (closeBtn) closeBtn.addEventListener("click", () => cxSelect(null));
-  if (cxState.lens === "embodied") {
+  if (cxState.lens === "embodied" && !tagLocked) {
     cxEls.side.querySelectorAll(".cx-tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const v = btn.getAttribute("data-tag");
@@ -11388,13 +11418,22 @@ function cxSwitchLens(lens, silent, keepSelection) {
 function cxApplyLayout(L, animate) {
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const from = {};
-  Object.keys(cxStarEls).forEach(id => {
-    const t = cxStarEls[id].group.getAttribute("transform");
-    from[id] = t ? cxParseTransform(t) : { x: CX_CX, y: CX_CY, r: 0, op: 0 };
-  });
+  Object.keys(cxStarEls).forEach(id => { from[id] = cxCurrentTransform(cxStarEls[id]); });
   const to = {};
-  NOTES.forEach(n => { const p = L.notePos[n.id]; to[n.id] = p ? { x: p.x, y: p.y, r: p.r, op: 1 } : { x: CX_CX, y: CX_CY, r: 0, op: 0 }; });
-  COMPOUNDS.forEach(c => { const id = "cpd:" + c.id; const p = L.cpdPos[c.id]; to[id] = p ? { x: p.x, y: p.y, r: p.r, op: 1 } : { x: CX_CX, y: CX_CY, r: 0, op: 0 }; });
+  // Active-in-your-tasting notes read brighter and bigger everywhere -- the
+  // one constant thread across all four lenses tying Constellation back to
+  // what's actually in the Wheel right now, not a static reference chart.
+  NOTES.forEach(n => {
+    const p = L.notePos[n.id];
+    const on = cxIsActive(n.id);
+    to[n.id] = p ? { x: p.x, y: p.y, r: p.r * (on ? 1.3 : 1), op: on ? 1 : 0.4 } : { x: CX_CX, y: CX_CY, r: 0, op: 0 };
+  });
+  COMPOUNDS.forEach(c => {
+    const id = "cpd:" + c.id;
+    const p = L.cpdPos[c.id];
+    const on = cxCompoundCarriers(c.id).some(n => cxIsActive(n.id));
+    to[id] = p ? { x: p.x, y: p.y, r: p.r * (on ? 1.2 : 1), op: on ? 1 : 0.35 } : { x: CX_CX, y: CX_CY, r: 0, op: 0 };
+  });
 
   const newChrome = cxCurrentEdgeGroup === "A" ? cxEls.chromeB : cxEls.chromeA;
   const oldChrome = cxCurrentEdgeGroup === "A" ? cxEls.chromeA : cxEls.chromeB;
@@ -11415,8 +11454,9 @@ function cxApplyLayout(L, animate) {
   function finalize() { if (settled) return; settled = true; Object.keys(to).forEach(id => cxSetTransform(cxStarEls[id], to[id])); }
   function frame(now) {
     const t = cxClamp((now - t0) / dur, 0, 1); const e = cxEase(t);
+    if (t >= 1) { finalize(); return; }
     Object.keys(to).forEach(id => { const a = from[id] || { x: CX_CX, y: CX_CY, r: 0, op: 0 }, b = to[id]; cxSetTransform(cxStarEls[id], { x: cxLerp(a.x, b.x, e), y: cxLerp(a.y, b.y, e), r: cxLerp(a.r, b.r, e), op: cxLerp(a.op, b.op, e) }); });
-    if (t < 1) requestAnimationFrame(frame); else settled = true;
+    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
   // Safety net: browsers can suspend requestAnimationFrame on a hidden/backgrounded
@@ -11430,7 +11470,16 @@ function cxSetTransform(s, t) {
   s.sel.setAttribute("r", t.r + 5);
   s.ring.setAttribute("r", t.r + 3);
 }
-function cxParseTransform(str) { const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(str); return m ? { x: parseFloat(m[1]), y: parseFloat(m[2]) } : { x: CX_CX, y: CX_CY }; }
+// Reads a star's CURRENT rendered x/y/r/opacity straight off its DOM
+// elements (not just the transform string) so a tween starting mid-morph, or
+// starting from the very first frame before anything's been positioned yet,
+// always has real numbers to lerp from -- never undefined, never NaN.
+function cxCurrentTransform(s) {
+  const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(s.group.getAttribute("transform") || "");
+  const x = m ? parseFloat(m[1]) : CX_CX, y = m ? parseFloat(m[2]) : CX_CY;
+  const r = parseFloat(s.circle.getAttribute("r")); const op = parseFloat(s.circle.getAttribute("opacity"));
+  return { x, y, r: Number.isFinite(r) ? r : 0, op: Number.isFinite(op) ? op : 0 };
+}
 
 function cxInit() {
   document.querySelectorAll(".cx-lens-btn").forEach(btn => btn.addEventListener("click", () => cxSwitchLens(btn.dataset.lens)));
@@ -11442,7 +11491,10 @@ function cxInit() {
 }
 function openConstellation() {
   cxOverlayEl.hidden = false;
-  if (!cxInitialized) cxInit();
+  if (!cxInitialized) { cxInit(); return; }
+  // Re-sync to whatever's actually in the tasting now -- a prior open
+  // shouldn't leave the view stale if notes changed while it was closed.
+  cxSwitchLens(cxState.lens, true, true);
 }
 function closeConstellation() { cxOverlayEl.hidden = true; }
 document.getElementById("constellation-close-btn").addEventListener("click", closeConstellation);
