@@ -1206,6 +1206,16 @@
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Constellation — Go Deeper's subjective hemisphere, promoted to a direct
+     header toggle (was reachable only via the Sixth-lens depth card, which
+     buried it behind a warp animation plus click-through; that on-ramp still
+     exists, this is just the fast path). Same idiom as #compass-toggle. */
+  #constellation-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; }
+  #constellation-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
+  #constellation-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Info button — small round "i" sitting next to Go Deeper */
   #info-open-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
@@ -1705,10 +1715,12 @@
     header.hud-open #organize-tabs    { grid-row: 3; grid-column: 1 / -1; justify-self: start; }
     header.hud-open #compass-toggle   { grid-row: 4; grid-column: 1; justify-self: start; }
     header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 2; justify-self: end; }
-    header.hud-open .hud-divider      { display: block; grid-row: 5; grid-column: 1 / -1;
+    header.hud-open #constellation-toggle { grid-row: 5; grid-column: 1 / -1; justify-self: stretch;
+      justify-content: center; margin-top: 6px; }
+    header.hud-open .hud-divider      { display: block; grid-row: 6; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #share-open-btn   { grid-row: 6; grid-column: 1; justify-self: stretch; margin-top: 6px; justify-content:center; }
-    header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: stretch; margin-top: 6px; }
+    header.hud-open #share-open-btn   { grid-row: 7; grid-column: 1; justify-self: stretch; margin-top: 6px; justify-content:center; }
+    header.hud-open #reset            { grid-row: 7; grid-column: 2; justify-self: stretch; margin-top: 6px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -1723,12 +1735,12 @@
     header.hud-open #info-open-btn { width: 44px; height: 44px; }
     /* Feedback is an <a> (not a <button>), so the touch-target rules above skip
        it — place it as a full-width, 44px-tall CTA at the foot of the tray. */
-    header.hud-open #hud-feedback { grid-row: 7; grid-column: 1 / -1; justify-self: stretch;
+    header.hud-open #hud-feedback { grid-row: 8; grid-column: 1 / -1; justify-self: stretch;
       justify-content: center; min-height: 44px; margin-top: 6px; }
     /* Saving/sharing is a global utility, not wheel decoration. Keep it as the
        final hamburger-tray item and let its panel expand in normal flow so it
        remains reachable instead of drawing over the wheel beneath the tray. */
-    header.hud-open #hud-save-share { grid-row: 8; grid-column: 1 / -1;
+    header.hud-open #hud-save-share { grid-row: 9; grid-column: 1 / -1;
       justify-self: stretch; margin-top: 6px; }
     header.hud-open #lap-save { width: 100%; min-height: 44px; }
     header.hud-open .lap-actions-menu { position: static; width: 100%; margin-top: 8px; }
@@ -3270,6 +3282,14 @@
     <button id="compass-toggle" title="Perception Compass: a draggable, resizable radar of your strongest notes, compounds, or a fixed chemical-class profile — a shareable snapshot of your tasting.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
       Compass
+    </button>
+    <!-- Constellation: Go Deeper's subjective hemisphere, opened directly —
+         see #constellation-overlay. The Sixth-lens depth card still exists as
+         a narrative on-ramp, but this is the fast path Nolan asked for after
+         not finding it behind the Go Deeper warp. -->
+    <button id="constellation-toggle" title="Constellation: the same tasting notes re-aligned by chemistry, taxonomy, geography, or how they actually hit you.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="18" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="8" r="1" fill="currentColor" stroke="none"/><path d="M12 12L12 4M12 12L19 9M12 12L16 19M12 12L6 18M12 12L4 8" stroke-width="1.1"/></svg>
+      Constellation
     </button>
     <!-- Mobile-only divider between the wheel controls and the utilities
          (hidden on desktop; grid-placed in the mobile tray). -->
@@ -11426,6 +11446,7 @@ function openConstellation() {
 }
 function closeConstellation() { cxOverlayEl.hidden = true; }
 document.getElementById("constellation-close-btn").addEventListener("click", closeConstellation);
+document.getElementById("constellation-toggle").addEventListener("click", openConstellation);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !cxOverlayEl.hidden) closeConstellation(); });
 
 function setGoDeeper(on) {
