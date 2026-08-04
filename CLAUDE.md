@@ -29,6 +29,36 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
   - **Failure protocol**: on any boundary crossing (ChatGPT touching a branch outside `codex/*`) or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
   - **Claude's reviewer stance**: treat the handoff's testing/verification section as **claims to check, not conclusions to trust**. Re-run what it says it ran.
 
+### Current status (checked 2026-08-04)
+
+`codex/aroma-wheel-responsive-ux-pass` is 41 commits ahead of `prototype` (which hasn't moved
+since 2026-07-11) and holds a large, coherent body of shipped work: the mobile-first HUD/Tree
+bottom-sheet pass, the full plant-taxonomy Tree redesign (conical-helix layout, clickable
+lineage rings, family wreaths), the Origins Map's radial-bloom cluster glyphs and three-note
+geography pilot (production + cultural-tradition lenses for coffee/cacao/vanilla), Laps
+(temporal tasting snapshots), Delivery conditions (a third sensory dimension), and Constellation
+(Go Deeper's subjective "maker's mind" hemisphere — 4 lenses over the live 127-note/94-compound/
+262-edge dataset). Verified 2026-08-04: Wheel, Tree, Map, and Constellation all load and switch
+cleanly at the 360×760 mobile reference viewport with zero console errors.
+
+Genuine open items, not blockers:
+- Two citation keys await Nolan's personal review in `UNVERIFIED_REFS`
+  (`buttery1995furaneol`, `usda1991cookedtomato`) — render as "under human review" until cleared,
+  which is the system working as designed, not a bug.
+- Constellation's Chemistry lens hasn't had a dedicated visual-density pass at full dataset scale
+  (structurally verified — 226 groups/667 circles render with no errors — but crowding at that
+  scale is unassessed).
+- No physical-device / social-in-app-browser check has been run on recent Tree/Map/Constellation
+  work, only the in-app browser at reference viewports.
+- The cross-workspace "Insights inbox" idea and the map's economic-cultivation/cultural-value
+  layers (beyond the 3-note pilot) are deliberately unstarted, pending explicit design approval —
+  not in-progress work.
+
+Not yet done, and not required to do now: porting this work to `prototype`. Per the policy above,
+`codex/*` may PR directly into `prototype` or `feature/bloom` when Nolan says it's time — this
+branch is coherent enough to be ready when he does, but no PR should be opened without an explicit
+go-ahead naming this branch and the target.
+
 ## Product design contract — mobile first
 
 This is the standing product-design priority for the Aroma Wheel. It applies to every
