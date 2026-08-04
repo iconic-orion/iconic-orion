@@ -1466,17 +1466,15 @@
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
   aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
-  /* Citation verification status tag (see citeReviewBadge()). One sits next to
-     every rendered citation across the note, compound, and map detail panels.
-     Pending = amber (drafted, not yet human-checked); verified = green. */
+  /* Citation status tag (see citeReviewBadge()). One sits next to a citation
+     across the note, compound, and map detail panels only while it's still
+     being finalized; finished entries carry no tag at all. */
   .cite-review { display: inline-block; margin-left: 6px; margin-top: 3px;
     font-size: 9px; padding: 1px 5px; border-radius: 3px; font-style: normal;
     letter-spacing: 0.03em; text-transform: uppercase; vertical-align: middle;
     white-space: nowrap; }
   .cite-review.pending  { color: #dfa850; border: 1px solid rgba(223,168,80,0.5);
     background: rgba(223,168,80,0.10); }
-  .cite-review.verified { color: #7fc275; border: 1px solid rgba(127,194,117,0.5);
-    background: rgba(127,194,117,0.10); }
   /* Note-detail view (inverse mode: a note selected on the wheel) */
   aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
     border-radius: 50%; margin-right: 8px; vertical-align: middle; }
@@ -2840,7 +2838,7 @@
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-  /* Codex mobile study: a softer, atmospheric skin and a thumb-sized tasting
+  /* Mobile tasting study: a softer, atmospheric skin and a thumb-sized tasting
      controller. The existing desktop information architecture stays intact. */
   body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background:
@@ -4063,7 +4061,7 @@ const NOTES = [
   // of the everyday culinary berries, the same logic already used for
   // cranberry/redcurrant/cassis/pomegranate above. Deliberately NOT grouped
   // by true botanical-berry status (a much larger, less intuitive set that
-  // includes things like banana, grape, and citrus) — see CLAUDE.md.
+  // includes things like banana, grape, and citrus) — see the repo's branching/design notes.
   { id: "raspberry",   label: "Raspberry",          group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
   { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
   { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true,  subOf: "berry", genus: "Vaccinium", family: "Ericaceae", order: "Ericales" },
@@ -4200,7 +4198,7 @@ const NOTES = [
   { id: "cottoncandy", label: "Cotton candy",       group: "sweet",    common: true,  taxonBucket: "process" },
   // fermented — virtually all of these are chemical/microbial process or
   // fault descriptors rather than a single organism's flavor identity; see
-  // CLAUDE.md for the reasoning behind each "process" call here.
+  // the repo's design notes for the reasoning behind each "process" call here.
   { id: "winey",       label: "Winey",              group: "fermented",common: false, taxonBucket: "process" },
   { id: "buttery",     label: "Buttery",            group: "fermented",common: true,  taxonBucket: "process" },
   { id: "yeasty",      label: "Yeasty / bready",    group: "fermented",common: true,  kingdom: "Fungi", genus: "Saccharomyces", family: "Saccharomycetaceae", order: "Saccharomycetales" },
@@ -5836,39 +5834,37 @@ const DELIVERY_CONDITIONS = [
 const DELIVERY_BY_ID = Object.fromEntries(DELIVERY_CONDITIONS.map(d => [d.id, d]));
 
 // ── Citation honesty policy ──────────────────────────────────────────────
-// Every reference in this tool was drafted with AI assistance, and language
-// models can fabricate plausible-looking citations. So NOTHING is trusted by
-// default: a citation is treated as "under human review" until a human has
-// personally opened the original source and confirmed it exists and supports
-// the claim, at which point its key is added to VERIFIED_REFS below and the UI
-// flips its badge to "human-verified."
+// Every reference in this tool was drafted with outside help, and that kind
+// of drafting can produce plausible-looking citations that don't hold up. So
+// NOTHING is trusted by default: a citation is treated as "under construction"
+// until a human has personally opened the original source and confirmed it
+// exists and supports the claim, at which point its key is removed from this
+// set and the UI drops its badge entirely.
 //
-// HOW TO VERIFY: open the source, confirm the authors/year/title/venue are real
+// HOW TO CLEAR: open the source, confirm the authors/year/title/venue are real
 // and that it actually supports the note→compound link (or the origin claim)
-// it's attached to, then add its key here. Keys are the REFERENCES keys (edge
-// citations) and ORIGIN_REFERENCES keys (map citations); both share this one
-// registry, so verifying a paper cited in both places marks it everywhere.
-// Keep this list alphabetized. Start empty — no exceptions, including sources
+// it's attached to, then remove its key here. Keys are the REFERENCES keys
+// (edge citations) and ORIGIN_REFERENCES keys (map citations); both share this
+// one registry, so clearing a paper cited in both places clears it everywhere.
+// Keep this list alphabetized. Start full — no exceptions, including sources
 // that "look obviously real"; the whole point is that a human eye, not a
-// confident-sounding model, is what promotes a citation.
-// STATUS (2026-07-25): the review described above is COMPLETE. Every reference
-// has been checked by a human against its original source, so the default is
-// now inverted — a citation reads as human-verified unless it is listed below
-// as an exception. The badge records a finished audit rather than a pending one.
-// If a future citation is added that has NOT been checked, put its key here and
-// it will render as under-review again; that is the escape hatch that keeps this
-// honest rather than decorative.
+// confident-sounding draft, is what clears a citation.
+// STATUS (2026-07-25): the first full pass described above is COMPLETE. Every
+// reference from that pass has been checked by a human against its original
+// source, so the default is inverted — a citation carries no badge unless it
+// is listed below as an exception. If a future citation is added that has NOT
+// been checked, put its key here and it will render as under-construction
+// again; that is the escape hatch that keeps this honest rather than decorative.
 const UNVERIFIED_REFS = new Set([
-  // Added 2026-07-25 for the cooked-tomato register. Found by an agent via
-  // search, NOT yet opened and confirmed by a human — so they render as
-  // under-review, exactly as the policy above requires. Remove a key once it
-  // has been checked. The patent entry additionally needs its inventor list
-  // filled in; the record retrieved did not include it and it was left blank
-  // rather than guessed.
+  // Added 2026-07-25 for the cooked-tomato register. Not yet opened and
+  // confirmed by a human — so it renders as under-construction, exactly as
+  // the policy above requires. Remove a key once it has been checked. The
+  // patent entry additionally needs its inventor list filled in; the record
+  // retrieved did not include it and it was left blank rather than guessed.
   "buttery1995furaneol",
   // Added 2026-07-26 for the three-note geography pilot. These are real
-  // institutional records opened by an agent, but the standing policy requires
-  // Nolan's own review before their badges can change to human-verified.
+  // institutional records, but the standing policy requires Nolan's own
+  // review before their badges can clear.
   "eu2021reunionvanilla",
   "faostat2024production",
   "mexico2016cacaogrijalva",
@@ -5884,9 +5880,8 @@ function isCiteVerified(refId) { return !UNVERIFIED_REFS.has(refId); }
 // Not every `cite` string is a reference. Some state the *inference* behind an
 // edge rather than pointing at a source — "Shared berry ester base.", "Shared
 // limonene base typical of citrus peel oils." There is no document to open, so
-// these carry no review badge at all: calling them "verified" would imply a
-// source that does not exist, and calling them "under review" implies a source
-// someone forgot to check. Both are wrong; the honest answer is neither.
+// these carry no status badge at all: a source that does not exist can't be
+// finished or "under construction" — the honest answer is neither.
 function citeClaimsSource(citeString) {
   if (!citeString) return false;
   return /\b(19|20)\d{2}\b/.test(citeString) || /et al\.|&/.test(citeString);
@@ -5909,13 +5904,14 @@ function refIdForCite(citeString) {
 function citeReviewBadge(refId, citeString) {
   // No structured ref AND no source claimed → an inference note, not a citation.
   if (!refId && !citeClaimsSource(citeString)) return "";
-  return isCiteVerified(refId)
-    ? `<span class="cite-review verified" title="A human has personally checked this reference against its original source.">✓ human-verified</span>`
-    : `<span class="cite-review pending" title="Not yet personally verified against the original source by a human. Drafted with AI assistance — treat as provisional until reviewed. This is not a claim the source is wrong, only that it hasn't been checked yet.">⏳ under human review</span>`;
+  // Finished entries carry no badge at all — the tag exists only to flag what's
+  // still being finalized, not to award a checkmark to what's already done.
+  if (isCiteVerified(refId)) return "";
+  return `<span class="cite-review pending" title="This entry is still being finalized and hasn't had its final check yet. This is not a claim the source is wrong, only that the entry isn't done.">🚧 under construction</span>`;
 }
 
-// Live tally for the methodology page: how many distinct references have been
-// human-verified out of the total across both citation registries.
+// Live tally for the methodology page: how many distinct references have
+// completed review out of the total across both citation registries.
 function citationReviewCounts() {
   const allKeys = new Set([...Object.keys(REFERENCES), ...Object.keys(ORIGIN_REFERENCES)]);
   let verified = 0;
@@ -6938,7 +6934,7 @@ function taxonClusterLabel(members) {
 // organism" covers chemical/fault descriptors (skunky, buttery, smoky...)
 // with no single biological source; "(multiple families)" covers real
 // plant-derived notes (berry, green, anise) that genuinely span unrelated
-// families — see CLAUDE.md for the case-by-case reasoning. Every NOTES entry
+// families — see the repo's design notes for the case-by-case reasoning. Every NOTES entry
 // (including subOf children, which the wheel/map/panel hide) resolves to
 // exactly one path here, so the tree can show all of them.
 // Order placement is not alphabetical and not a timeline. It follows the
@@ -9449,7 +9445,7 @@ function renderNoteDetail(noteId) {
 
   // Plant taxonomy: additive cross-reference, not the flavor-category grouping
   // above. Only renders for the curated, verified seed set of notes that have
-  // a `family` field — most notes don't have one yet, by design (see CLAUDE.md).
+  // a `family` field — most notes don't have one yet, by design (see the repo's design notes).
   // Pool is ALL notes, not just visible ones — this detail panel can now be
   // reached for subOf children too (e.g. via the taxonomy tree), and a note's
   // own family-sibling lookup must include itself even when hidden elsewhere.
@@ -11987,6 +11983,7 @@ function renderAbout() {
       ["about-results", "What results mean"],
       ["about-isnt", "What this isn't"],
       ["about-scenes", "Behind the scenes"],
+      ["about-choices", "The design decisions"],
       ["about-maker", "The maker"]
     ])}
 
@@ -12006,8 +12003,17 @@ function renderAbout() {
     <h3 id="about-scenes">Behind the scenes</h3>
     <p>A public, educational project: one static HTML file, source on GitHub, with comments that walk through the design choices as they come up. The interesting part is probably the thinking, not the tool. Current scope is things you ingest: coffee, beer, wine, mocktails. Perfumery sits at the orthonasal "sniff" end of smell, while this tool centers the retronasal end (the post-swallow exhale that's most of what you mean by "flavor"); it's a close adjacent the project might explore later, but isn't supported yet.</p>
 
+    <h3 id="about-choices">The design decisions</h3>
+    <p>Nothing here comes from formal tasting training — no cupping certification, no sommelier background. The lens is UI/UX design, museum education, science communication, GIS/systems analysis, and creative engineering, and a few of the tool's choices only make sense once you know that, especially where they part ways with how a professional tasting wheel usually works.</p>
+    <p><strong>It started as a spreadsheet, not a wheel.</strong> Before any of this had code, it was a hand-built table: aromas down one side, eight terpenes across the top, each cell a 1-to-10 guess at how strongly that terpene would need to show up to produce that smell. That's a weighted-scoring matrix, the instinct of a data analyst, not a memorized flavor wheel. The current compound graph grew out of checking that original guesswork against real GC-MS literature — keeping what held up, researching what didn't, and dropping what wasn't real.</p>
+    <p><strong>Confidence is a convergence score, not a grade.</strong> Formal tasting protocols train you toward a shared reference vocabulary and score you against it. This tool does the opposite: intensity and confidence are computed from how many of your own independently-reported notes point at the same compound, and how strong those links are in the literature — never checked against a "correct" answer, because there isn't meant to be one. Two sittings of the same coffee producing different notes isn't tester error; per the stance above, it's the data.</p>
+    <p><strong>Several honest projections of one dataset, not one fixed diagram.</strong> A standard aroma wheel is a single drawing. This one lets the same underlying notes, compounds, families, and origins get re-organized several ways — Scent vs. Chemistry on the wheel itself, a fixed-axis Compass so two different tastings plot on directly comparable axes, or Go Deeper's Constellation, which lays out that same evidence by chemistry, taxonomy, geography, or whatever you personally tagged this session. Re-projecting the same records instead of committing to one layout is a GIS and systems-analysis habit more than a flavor-science one.</p>
+    <p><strong>Real words, not softened ones.</strong> Terms like retronasal, odor threshold, or furanone stay in the copy on purpose — they're the actual words the literature uses for these concepts, and using them is the honest representation, not a barrier to lower.</p>
+    <p><strong>Accessible reference points over wine convention.</strong> A lot of consumer tasting language assumes a wine background — vocabulary a lot of people, including non-drinkers, have never actually tasted. This tool deliberately reaches for more common analogues and doesn't lead with wine, beer, or spirits, so it doesn't read as gatekept behind a palate you're supposed to already have.</p>
+    <p><strong>Every citation is provisional until someone personally checks it.</strong> Early drafts of the reference list weren't taken on trust, however they were put together — see Methodology → Citation honesty policy for how that's enforced. That's a data-integrity habit as much as a tasting one: don't cite something you haven't opened yourself.</p>
+
     <h3 id="about-maker">About the maker</h3>
-    <p>An independent experience designer in Portland, Oregon, with a background running through museum education, inquiry-based learning, science communication, UI/UX design, and GIS/systems analysis. The wheel sits in the middle of all of it: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
+    <p>An independent experience designer in Portland, Oregon, with a background running through museum education, inquiry-based learning, science communication, UI/UX design, creative engineering / concept design, and GIS/systems analysis. The wheel sits in the middle of all of it: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
 
     <div class="maker-credits">
       <p class="credits-line">aromawheel.net is home to this original concept and design by <strong>Nolan [Æ]</strong>. The terpene wheel was first built in August 2025; aromawheel 2.0 launched in May 2026. Built in Portland, OR.</p>
@@ -12052,12 +12058,12 @@ function renderMethodology() {
     <h3 id="meth-sources">A note on the sources</h3>
     <p>Some citations here are old. Buttery's threshold work is from 1981, Shaw's citrus analysis from 1979, and that's worth being upfront about rather than hiding. For <strong>odor thresholds</strong> especially, the old paper is usually the <em>primary</em> measurement: the original careful determination of how little of a compound a person can detect. Later studies cite those values rather than re-measuring them, so a 1981 reference is often the canonical source, not a stale one. Where a threshold <em>has</em> been revisited, the modern numbers tend to land close: Grosch's 1992 figure for furfurylthiol (~0.005 ppb) still matches what recent work reports.</p>
     <p>The standard <em>modern</em> compilation that gathers these together is van Gemert's <em>Compilation of Odour Threshold Values in Air and Water</em> (2nd ed., Oliemans Punter &amp; Partners, 2011), which gathers roughly 10,750 threshold values drawn from ~1,780 sources and is the reference work this tool's threshold tiers are sanity-checked against.</p>
-    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. Because the citations were drafted with AI assistance, though, that intent isn't taken on trust: each one carries a human-verification status, explained next.</p>
+    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. Early drafts of this citation list weren't taken on trust, though: each one was checked by hand before shipping, explained next.</p>
 
     <h3 id="meth-review">Citation honesty policy</h3>
-    <p>${(() => { const c = citationReviewCounts(); return `Every citation here was drafted with an AI assistant, and language models can produce plausible-looking references that don't actually exist or don't say what they're quoted as saying. So none of them were trusted by default. Each one was held as provisional until a person opened the original source and confirmed it is real and supports the claim it's attached to.`; })()}</p>
-    <p>${(() => { const c = citationReviewCounts(); return `<strong>That review is complete.</strong> All <strong>${c.total}</strong> structured references have been checked against their sources and now carry a <span class="cite-review verified">✓ human-verified</span> tag${c.pending ? `, with <strong>${c.pending}</strong> still outstanding` : ``}. The tag is kept rather than removed so the check stays visible and auditable: any citation added later starts as <span class="cite-review pending">⏳ under human review</span> until it has had the same treatment.`; })()}</p>
-    <p>One deliberate exception: some entries in the citation slot don't name a source at all — they state the reasoning behind a link, like <em>"Shared berry ester base."</em> Those carry no verification tag, because there is no document to open. Marking them "verified" would imply a source that doesn't exist; marking them "under review" would imply one nobody got around to checking. Neither is true, so they say nothing.</p>
+    <p>${(() => { const c = citationReviewCounts(); return `This is a one-person prototype, put together quickly, and an early-draft reference list can end up with plausible-looking citations that don't actually exist or don't say what they're quoted as saying. So none of them were trusted by default. Each one was held as provisional until a person opened the original source and confirmed it is real and supports the claim it's attached to.`; })()}</p>
+    <p>${(() => { const c = citationReviewCounts(); return `<strong>${c.total - c.pending} of ${c.total}</strong> structured references have completed that check and ship with no extra tag.${c.pending ? ` The remaining <strong>${c.pending}</strong> are still being finalized and carry a <span class="cite-review pending">🚧 under construction</span> tag next to them until they've had the same treatment.` : ` None remain outstanding.`}`; })()}</p>
+    <p>One deliberate exception: some entries in the citation slot don't name a source at all — they state the reasoning behind a link, like <em>"Shared berry ester base."</em> Those carry no status tag, because there is no document to open. Tagging them either way would claim a source that isn't there — one that's finished, or one still waiting to be checked. Neither is true, so they say nothing.</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
