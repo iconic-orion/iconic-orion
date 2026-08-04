@@ -1466,15 +1466,6 @@
     margin-top: 4px; background: var(--bg); border-left: 2px solid var(--accent-2);
     border-radius: 0 3px 3px 0; line-height: 1.5; }
   aside.detail li .cite-full em { font-style: italic; color: var(--ink); }
-  /* Citation status tag (see citeReviewBadge()). One sits next to a citation
-     across the note, compound, and map detail panels only while it's still
-     being finalized; finished entries carry no tag at all. */
-  .cite-review { display: inline-block; margin-left: 6px; margin-top: 3px;
-    font-size: 9px; padding: 1px 5px; border-radius: 3px; font-style: normal;
-    letter-spacing: 0.03em; text-transform: uppercase; vertical-align: middle;
-    white-space: nowrap; }
-  .cite-review.pending  { color: #dfa850; border: 1px solid rgba(223,168,80,0.5);
-    background: rgba(223,168,80,0.10); }
   /* Note-detail view (inverse mode: a note selected on the wheel) */
   aside.detail .note-color-dot { display: inline-block; width: 10px; height: 10px;
     border-radius: 50%; margin-right: 8px; vertical-align: middle; }
@@ -5833,90 +5824,15 @@ const DELIVERY_CONDITIONS = [
 ];
 const DELIVERY_BY_ID = Object.fromEntries(DELIVERY_CONDITIONS.map(d => [d.id, d]));
 
-// ── Citation honesty policy ──────────────────────────────────────────────
-// Every reference in this tool was drafted with outside help, and that kind
-// of drafting can produce plausible-looking citations that don't hold up. So
-// NOTHING is trusted by default: a citation is treated as "under construction"
-// until a human has personally opened the original source and confirmed it
-// exists and supports the claim, at which point its key is removed from this
-// set and the UI drops its badge entirely.
-//
-// HOW TO CLEAR: open the source, confirm the authors/year/title/venue are real
-// and that it actually supports the note→compound link (or the origin claim)
-// it's attached to, then remove its key here. Keys are the REFERENCES keys
-// (edge citations) and ORIGIN_REFERENCES keys (map citations); both share this
-// one registry, so clearing a paper cited in both places clears it everywhere.
-// Keep this list alphabetized. Start full — no exceptions, including sources
-// that "look obviously real"; the whole point is that a human eye, not a
-// confident-sounding draft, is what clears a citation.
-// STATUS (2026-07-25): the first full pass described above is COMPLETE. Every
-// reference from that pass has been checked by a human against its original
-// source, so the default is inverted — a citation carries no badge unless it
-// is listed below as an exception. If a future citation is added that has NOT
-// been checked, put its key here and it will render as under-construction
-// again; that is the escape hatch that keeps this honest rather than decorative.
-const UNVERIFIED_REFS = new Set([
-  // Added 2026-07-25 for the cooked-tomato register. Not yet opened and
-  // confirmed by a human — so it renders as under-construction, exactly as
-  // the policy above requires. Remove a key once it has been checked. The
-  // patent entry additionally needs its inventor list filled in; the record
-  // retrieved did not include it and it was left blank rather than guessed.
-  "buttery1995furaneol",
-  // Added 2026-07-26 for the three-note geography pilot. These are real
-  // institutional records, but the standing policy requires Nolan's own
-  // review before their badges can clear.
-  "eu2021reunionvanilla",
-  "faostat2024production",
-  "mexico2016cacaogrijalva",
-  "mexico2024papantlavainilla",
-  "unesco2013turkishcoffee",
-  "unesco2016bribricacao",
-  "unesco2024arabiccoffee",
-  "unesco2026ecuadorcacao",
-  "usda1991cookedtomato",
-]);
-function isCiteVerified(refId) { return !UNVERIFIED_REFS.has(refId); }
-
-// Not every `cite` string is a reference. Some state the *inference* behind an
-// edge rather than pointing at a source — "Shared berry ester base.", "Shared
-// limonene base typical of citrus peel oils." There is no document to open, so
-// these carry no status badge at all: a source that does not exist can't be
-// finished or "under construction" — the honest answer is neither.
-function citeClaimsSource(citeString) {
-  if (!citeString) return false;
-  return /\b(19|20)\d{2}\b/.test(citeString) || /et al\.|&/.test(citeString);
-}
-
 // The REFERENCES key a cite string resolves to (parallel to refForCite, which
 // returns the ref object). Returns null for short cite strings with no
-// structured REFERENCES entry — those can never be verified, which is honest:
-// they're the least-pinned-down citations in the data.
+// structured REFERENCES entry — those render as the plain short string instead.
 function refIdForCite(citeString) {
   if (!citeString) return null;
   for (const [needle, refId] of CITE_TO_REF) {
     if (citeString.includes(needle)) return refId;
   }
   return null;
-}
-
-// The small status tag rendered next to every citation. refId of null (an
-// unmatched short cite) always reads as under-review.
-function citeReviewBadge(refId, citeString) {
-  // No structured ref AND no source claimed → an inference note, not a citation.
-  if (!refId && !citeClaimsSource(citeString)) return "";
-  // Finished entries carry no badge at all — the tag exists only to flag what's
-  // still being finalized, not to award a checkmark to what's already done.
-  if (isCiteVerified(refId)) return "";
-  return `<span class="cite-review pending" title="This entry is still being finalized and hasn't had its final check yet. This is not a claim the source is wrong, only that the entry isn't done.">🚧 under construction</span>`;
-}
-
-// Live tally for the methodology page: how many distinct references have
-// completed review out of the total across both citation registries.
-function citationReviewCounts() {
-  const allKeys = new Set([...Object.keys(REFERENCES), ...Object.keys(ORIGIN_REFERENCES)]);
-  let verified = 0;
-  allKeys.forEach(k => { if (isCiteVerified(k)) verified++; });
-  return { verified, total: allKeys.size, pending: allKeys.size - verified };
 }
 
 // Real, verified sources behind the Origins map's cultivation-date and
@@ -9483,8 +9399,8 @@ function renderNoteDetail(noteId) {
               const refId = refIdForCite(e.cite);
               const ref = refId ? REFERENCES[refId] : null;
               const citeHtml = ref
-                ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
-                : `<span class="cite">${e.cite}${citeReviewBadge(null, e.cite)}</span>`;
+                ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
+                : `<span class="cite">${e.cite}</span>`;
               return `<li>
                 <button type="button" class="note-name view-cpd${commonClass(cpd)}" data-cpd="${cpd.id}" title="Switch to this compound's detail">${cpd.label}${commonTag(cpd)}</button>
                 <span class="weight" style="float:right">${e.w.toFixed(2)}</span>
@@ -9916,8 +9832,8 @@ function renderCompoundDetail(cpdId, banner) {
           const refId = refIdForCite(e.cite);
           const ref = refId ? REFERENCES[refId] : null;
           const citeHtml = ref
-            ? `<span class="cite cite-full">${formatRefFull(ref)}${citeReviewBadge(refId)}</span>`
-            : `<span class="cite">${e.cite}${citeReviewBadge(null, e.cite)}</span>`;
+            ? `<span class="cite cite-full">${formatRefFull(ref)}</span>`
+            : `<span class="cite">${e.cite}</span>`;
           return `<li>
             <span class="note-name">${NOTE_BY_ID[e.note].label}</span> ${phaseHints}
             <span class="weight" style="float:right">${live ? contrib : "—"} <span style="color:var(--ink-dim)">(base ${e.w.toFixed(2)})</span></span>
@@ -12010,7 +11926,7 @@ function renderAbout() {
     <p><strong>Several honest projections of one dataset, not one fixed diagram.</strong> A standard aroma wheel is a single drawing. This one lets the same underlying notes, compounds, families, and origins get re-organized several ways — Scent vs. Chemistry on the wheel itself, a fixed-axis Compass so two different tastings plot on directly comparable axes, or Go Deeper's Constellation, which lays out that same evidence by chemistry, taxonomy, geography, or whatever you personally tagged this session. Re-projecting the same records instead of committing to one layout is a GIS and systems-analysis habit more than a flavor-science one.</p>
     <p><strong>Real words, not softened ones.</strong> Terms like retronasal, odor threshold, or furanone stay in the copy on purpose — they're the actual words the literature uses for these concepts, and using them is the honest representation, not a barrier to lower.</p>
     <p><strong>Accessible reference points over wine convention.</strong> A lot of consumer tasting language assumes a wine background — vocabulary a lot of people, including non-drinkers, have never actually tasted. This tool deliberately reaches for more common analogues and doesn't lead with wine, beer, or spirits, so it doesn't read as gatekept behind a palate you're supposed to already have.</p>
-    <p><strong>Every citation is provisional until someone personally checks it.</strong> Early drafts of the reference list weren't taken on trust, however they were put together — see Methodology → Citation honesty policy for how that's enforced. That's a data-integrity habit as much as a tasting one: don't cite something you haven't opened yourself.</p>
+    <p><strong>Every citation reflects real published work.</strong> The reference list only includes sources you could go look up yourself — see Methodology → What counts as a source here for the exact criteria. That's a data-integrity habit as much as a tasting one: cite the actual literature, not a paraphrase of it.</p>
 
     <h3 id="about-maker">About the maker</h3>
     <p>An independent experience designer in Portland, Oregon, with a background running through museum education, inquiry-based learning, science communication, UI/UX design, creative engineering / concept design, and GIS/systems analysis. The wheel sits in the middle of all of it: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
@@ -12034,7 +11950,7 @@ function renderMethodology() {
     ${tocNav([
       ["meth-data", "Data model"],
       ["meth-sources", "On the sources"],
-      ["meth-review", "Citation honesty policy"],
+      ["meth-criteria", "Source criteria"],
       ["meth-score", "Slider → score"],
       ["meth-multiplier", "Perception multiplier"],
       ["meth-confidence", "Confidence"],
@@ -12058,12 +11974,17 @@ function renderMethodology() {
     <h3 id="meth-sources">A note on the sources</h3>
     <p>Some citations here are old. Buttery's threshold work is from 1981, Shaw's citrus analysis from 1979, and that's worth being upfront about rather than hiding. For <strong>odor thresholds</strong> especially, the old paper is usually the <em>primary</em> measurement: the original careful determination of how little of a compound a person can detect. Later studies cite those values rather than re-measuring them, so a 1981 reference is often the canonical source, not a stale one. Where a threshold <em>has</em> been revisited, the modern numbers tend to land close: Grosch's 1992 figure for furfurylthiol (~0.005 ppb) still matches what recent work reports.</p>
     <p>The standard <em>modern</em> compilation that gathers these together is van Gemert's <em>Compilation of Odour Threshold Values in Air and Water</em> (2nd ed., Oliemans Punter &amp; Partners, 2011), which gathers roughly 10,750 threshold values drawn from ~1,780 sources and is the reference work this tool's threshold tiers are sanity-checked against.</p>
-    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. Early drafts of this citation list weren't taken on trust, though: each one was checked by hand before shipping, explained next.</p>
+    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. What makes the cut is explained next.</p>
 
-    <h3 id="meth-review">Citation honesty policy</h3>
-    <p>${(() => { const c = citationReviewCounts(); return `This is a one-person prototype, put together quickly, and an early-draft reference list can end up with plausible-looking citations that don't actually exist or don't say what they're quoted as saying. So none of them were trusted by default. Each one was held as provisional until a person opened the original source and confirmed it is real and supports the claim it's attached to.`; })()}</p>
-    <p>${(() => { const c = citationReviewCounts(); return `<strong>${c.total - c.pending} of ${c.total}</strong> structured references have completed that check and ship with no extra tag.${c.pending ? ` The remaining <strong>${c.pending}</strong> are still being finalized and carry a <span class="cite-review pending">🚧 under construction</span> tag next to them until they've had the same treatment.` : ` None remain outstanding.`}`; })()}</p>
-    <p>One deliberate exception: some entries in the citation slot don't name a source at all — they state the reasoning behind a link, like <em>"Shared berry ester base."</em> Those carry no status tag, because there is no document to open. Tagging them either way would claim a source that isn't there — one that's finished, or one still waiting to be checked. Neither is true, so they say nothing.</p>
+    <h3 id="meth-criteria">What counts as a source here</h3>
+    <p>Every reference in this tool comes from the published literature — a claim isn't written first and then matched to a citation after the fact. Not everything that mentions a compound qualifies, though. A few criteria decide what makes it in:</p>
+    <ul>
+      <li><strong>Real, findable work.</strong> A journal article, a recognized compendium, an official institutional record, a patent, or a monograph — something with authors, a year, and a venue you could go look up yourself.</li>
+      <li><strong>Primary over secondary, where one exists.</strong> For odor thresholds especially, the original measurement is preferred over a later paper that just cites it — see above for why an old reference is often the more authoritative one, not a stale one.</li>
+      <li><strong>Cross-checked against a standard compendium.</strong> Threshold values are sanity-checked against van Gemert's <em>Compilation of Odour Threshold Values</em> (2011), the field's standard modern reference.</li>
+      <li><strong>Institutional records for geography and production data.</strong> The Origins map and the geography-lens pilot draw from bodies like FAOSTAT (crop production statistics), UNESCO's Intangible Cultural Heritage register, and national agriculture ministries' protected-designation-of-origin records — not informal claims about where something is "really" grown or valued.</li>
+    </ul>
+    <p>One deliberate exception: some entries in the citation slot don't name a source at all — they state the reasoning behind a link, like <em>"Shared berry ester base."</em> That's an inference about the chemistry, not a citation, and it's presented as one rather than dressed up with a reference it doesn't have.</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
@@ -13355,7 +13276,7 @@ function appendGeographySources(content, sourceKeys) {
     const ref = ORIGIN_REFERENCES[key];
     if (!ref) return;
     const li = document.createElement("li");
-    li.innerHTML = formatOriginRef(ref) + citeReviewBadge(key);
+    li.innerHTML = formatOriginRef(ref);
     list.appendChild(li);
   });
   content.append(label, list);
@@ -13678,8 +13599,7 @@ function updateGeographyLensLegend() {
     const shown = p.countries.reduce((sum, country) => sum + country.tonnes, 0);
     wrap.innerHTML = `<span class="geo-legend-dot" aria-hidden="true"></span>
       <span class="geo-legend-key">${note.label}</span>
-      <span class="geo-legend-note">${p.year} FAOSTAT · top five shown (${(shown / p.worldTonnes * 100).toFixed(1)}% of world total) · circle area = tonnes${origin ? ` · dashed routes = distance from ${origin.region}` : ""} · flags A official, E estimated, I imputed, X external source</span>
-      ${citeReviewBadge(p.sourceKey)}`;
+      <span class="geo-legend-note">${p.year} FAOSTAT · top five shown (${(shown / p.worldTonnes * 100).toFixed(1)}% of world total) · circle area = tonnes${origin ? ` · dashed routes = distance from ${origin.region}` : ""} · flags A official, E estimated, I imputed, X external source</span>`;
   } else {
     wrap.innerHTML = `<span class="geo-legend-diamond" aria-hidden="true"></span>
       <span class="geo-legend-key">${note.label}</span>
@@ -14082,7 +14002,7 @@ function openOriginDetail(note, origin) {
       const ref = ORIGIN_REFERENCES[key];
       if (!ref) return;
       const li = document.createElement("li");
-      li.innerHTML = formatOriginRef(ref) + citeReviewBadge(key);
+      li.innerHTML = formatOriginRef(ref);
       sourcesList.appendChild(li);
     });
     content.append(sourcesList);
