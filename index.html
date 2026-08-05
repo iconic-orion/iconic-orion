@@ -1037,6 +1037,16 @@
   .cx-legend-toggle-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
   .cx-legend-toggle-row input { accent-color: var(--accent); }
 
+  /* Pan/zoom over the stage's fixed 900x680 coordinate space, the same
+     viewBox-window technique the Origins map uses (see zoomMapAt()) — so
+     stars can be studied up close the same way map markers can. */
+  .cx-zoom-controls { position: absolute; right: 14px; bottom: 12px; z-index: 4; }
+  .cx-zoom-controls button { width: 30px; height: 30px; border-radius: 4px; font-size: 15px; font-weight: 600;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line); cursor: pointer; }
+  .cx-zoom-controls button:last-child { font-size: 13px; }
+  .cx-zoom-controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .cx-stage-frame.cx-dragging { cursor: grabbing; }
+
   .cx-side { border-left: 1px solid var(--line); background: var(--panel); padding: 16px; overflow-y: auto; font-size: 13px; }
   .cx-side .cx-empty { color: var(--ink-dim); font-size: 12.5px; padding-top: 10px; }
   .cx-side h3 { font: 400 20px/1.2 Georgia, "Times New Roman", serif; margin: 0; color: var(--ink); }
@@ -3608,6 +3618,11 @@
           <summary>Legend</summary>
           <div class="cx-legend-body" id="cxLegendBody"></div>
         </details>
+        <div class="omc-zoom cx-zoom-controls">
+          <button type="button" id="cx-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+          <button type="button" id="cx-zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
+          <button type="button" id="cx-zoom-reset" aria-label="Reset view" title="Reset view">⤾</button>
+        </div>
       </div>
       <div class="cx-tray" id="cxTray" hidden>
         <div class="cx-tray-label" id="cxTrayLabel"></div>
@@ -11081,6 +11096,95 @@ function cxLayoutEmbodied() {
   return { notePos, cpdPos: {}, edgeLines: [], chrome, taxEdges: [], trayIds };
 }
 
+/* ---- pan/zoom ----
+   Same viewBox-window technique as the Origins map (see mapView/zoomMapAt):
+   the stage's coordinate space is always 900x680, and zooming just shrinks
+   the visible window into it, so every star's screen position stays correct
+   with no extra transform math needed anywhere else. */
+const CX_VB_W = 900, CX_VB_H = 680;
+const cxView = { x: 0, y: 0, w: CX_VB_W, h: CX_VB_H };
+const CX_MIN_W = CX_VB_W / 10; // ~10x zoom-in ceiling
+function applyCxView() {
+  cxEls.stage.setAttribute("viewBox", `${cxView.x} ${cxView.y} ${cxView.w} ${cxView.h}`);
+}
+function resetCxView() {
+  cxView.x = 0; cxView.y = 0; cxView.w = CX_VB_W; cxView.h = CX_VB_H;
+  applyCxView();
+}
+// fx/fy (0 to 1) mark the point within the view that stays fixed while
+// zooming, so wheel/pinch zoom can center on the cursor while the +/-
+// buttons zoom around the view's own center.
+function zoomCxAt(factor, fx, fy) {
+  const px = cxView.x + fx * cxView.w, py = cxView.y + fy * cxView.h;
+  const newW = Math.min(CX_VB_W, Math.max(CX_MIN_W, cxView.w * factor));
+  const newH = Math.min(CX_VB_H, Math.max(CX_VB_H * (CX_MIN_W / CX_VB_W), cxView.h * factor));
+  cxView.w = newW; cxView.h = newH;
+  cxView.x = Math.min(Math.max(px - fx * newW, 0), CX_VB_W - newW);
+  cxView.y = Math.min(Math.max(py - fy * newH, 0), CX_VB_H - newH);
+  applyCxView();
+}
+function wireCxZoom() {
+  const frame = document.querySelector(".cx-stage-frame");
+  frame.addEventListener("wheel", e => {
+    e.preventDefault();
+    const rect = frame.getBoundingClientRect();
+    const fx = (e.clientX - rect.left) / rect.width;
+    const fy = (e.clientY - rect.top) / rect.height;
+    zoomCxAt(e.deltaY < 0 ? 0.88 : 1 / 0.88, fx, fy);
+  }, { passive: false });
+  document.getElementById("cx-zoom-in").addEventListener("click", () => zoomCxAt(0.8, 0.5, 0.5));
+  document.getElementById("cx-zoom-out").addEventListener("click", () => zoomCxAt(1 / 0.8, 0.5, 0.5));
+  document.getElementById("cx-zoom-reset").addEventListener("click", resetCxView);
+
+  // Drag-to-pan, mirroring the Origins map's pattern exactly: star and
+  // button clicks still fire normally (no movement means no pan), and a
+  // drag past a small threshold flags the next click to be swallowed so it
+  // does not also select whatever star sits under the pointer on release.
+  let dragging = false, dragMoved = false, startX = 0, startY = 0, startView = null;
+  frame.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    if (e.target.closest("button, .cx-star-group, .cx-legend-plate, .cx-tray-chip")) return;
+    dragging = true; dragMoved = false;
+    startX = e.clientX; startY = e.clientY;
+    startView = { x: cxView.x, y: cxView.y };
+    frame.setPointerCapture(e.pointerId);
+  });
+  frame.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (!dragMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) dragMoved = true;
+    if (!dragMoved) return;
+    const rect = frame.getBoundingClientRect();
+    cxView.x = Math.min(Math.max(startView.x - dx / rect.width * cxView.w, 0), CX_VB_W - cxView.w);
+    cxView.y = Math.min(Math.max(startView.y - dy / rect.height * cxView.h, 0), CX_VB_H - cxView.h);
+    applyCxView();
+    frame.classList.add("cx-dragging");
+  });
+  const endDrag = () => { dragging = false; frame.classList.remove("cx-dragging"); };
+  frame.addEventListener("pointerup", endDrag);
+  frame.addEventListener("pointercancel", endDrag);
+  frame.addEventListener("click", e => {
+    if (dragMoved) { e.stopPropagation(); dragMoved = false; }
+  }, true);
+
+  // Two-finger pinch-zoom, matching the taxonomy tree's touch handling.
+  const touchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const touchMid  = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+  let pinchDist = 0;
+  frame.addEventListener("touchstart", e => { if (e.touches.length === 2) pinchDist = touchDist(e.touches); }, { passive: true });
+  frame.addEventListener("touchmove", e => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    const d = touchDist(e.touches);
+    if (pinchDist > 0) {
+      const m = touchMid(e.touches);
+      const rect = frame.getBoundingClientRect();
+      zoomCxAt(d / pinchDist, (m.x - rect.left) / rect.width, (m.y - rect.top) / rect.height);
+    }
+    pinchDist = d;
+  }, { passive: false });
+}
+
 /* ---- svg helpers ---- */
 const CXNS = "http://www.w3.org/2000/svg";
 function cxAddCircle(g, cx, cy, r, cls) { const c = document.createElementNS(CXNS, "circle"); c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", r); c.setAttribute("class", cls); c.setAttribute("fill", "none"); g.appendChild(c); return c; }
@@ -11305,6 +11409,7 @@ function cxRenderTray(lens, trayIds) {
 }
 
 function cxSwitchLens(lens, silent, keepSelection) {
+  if (cxState.lens !== lens) resetCxView();
   if (!keepSelection) { cxState.traceCompound = null; }
   cxState.lens = lens;
   document.querySelectorAll(".cx-lens-btn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lens === lens)));
@@ -11397,6 +11502,8 @@ function cxInit() {
   document.querySelectorAll(".cx-lens-btn").forEach(btn => btn.addEventListener("click", () => cxSwitchLens(btn.dataset.lens)));
   cxEls.lensSelect.addEventListener("change", () => cxSwitchLens(cxEls.lensSelect.value));
   cxEls.stage.addEventListener("click", e => { if (e.target === cxEls.stage) cxSelect(null); });
+  applyCxView();
+  wireCxZoom();
   cxEnsureStars();
   cxSwitchLens("chemistry", true);
   cxInitialized = true;
@@ -11892,47 +11999,46 @@ function tocNav(items) {
 function renderAbout() {
   return `
     <h2>About this tool</h2>
-    <p class="lede">Tell Aroma Wheel what you're smelling or tasting, and it maps your words onto the aromatic compounds most likely behind them, drawn from published gas-chromatography (GC-MS) work in coffee, beer, wine, and mocktails. You report perceptions; the wheel shows compounds.</p>
+    <p class="lede">Tell Aroma Wheel what you are smelling or tasting, and it maps your words onto the aromatic compounds most likely behind them, drawn from published gas-chromatography (GC-MS) work on coffee and botanical aromatics. You report perceptions, and the wheel shows compounds.</p>
 
     ${tocNav([
       ["about-stance", "The stance"],
       ["about-results", "What results mean"],
-      ["about-isnt", "What this isn't"],
+      ["about-isnt", "What this is not"],
       ["about-scenes", "Behind the scenes"],
       ["about-choices", "The design decisions"],
       ["about-maker", "The maker"]
     ])}
 
     <h3 id="about-stance">The stance</h3>
-    <p>Your perceptions are real, and they change with the moment. The same coffee or glass of wine can read differently depending on the time of day, what you ate, how alert you are. That variation is signal, not noise. This tool never grades you against a "correct answer." What you smell <em>is</em> the data; the compounds it surfaces are plausible contributors, weighted by what the literature says about that combination of notes, not verdicts about what you should have noticed.</p>
+    <p>Your perceptions are real, and they change with the moment. The same coffee or glass of wine can read differently depending on the time of day, what you ate, how alert you are. That variation is signal, not noise. This tool never grades you against a "correct answer." What you smell <em>is</em> the data. The compounds it surfaces are plausible contributors, weighted by what the literature says about that combination of notes, not verdicts about what you should have noticed.</p>
 
     <h3 id="about-results">What the results mean</h3>
     <ul>
-      <li><strong>Intensity:</strong> how strongly your notes point to a compound, adjusted for how easily it's perceived. Some compounds (like furfurylthiol in coffee) read strong even at trace amounts.</li>
-      <li><strong>Confidence:</strong> how many of your notes converge on a compound, and how strongly. Several notes agreeing is high; a lone speculative match is low.</li>
+      <li><strong>Intensity:</strong> how strongly your notes point to a compound, adjusted for how easily it is perceived. Some compounds (like furfurylthiol in coffee) read strong even at trace amounts.</li>
+      <li><strong>Confidence:</strong> how many of your notes converge on a compound, and how strongly. Several notes agreeing is high, a lone speculative match is low.</li>
       <li><strong>Citations:</strong> the published source behind every note-to-compound link. Click any compound in the Compounds pane to see them.</li>
     </ul>
 
-    <h3 id="about-isnt">What this isn't</h3>
-    <p>This is a <strong>suggestion engine, not a lab</strong>. There's no chromatograph in your browser. When you log apple and ethyl butanoate lights up, that means <em>"given what's published about apple aroma, ethyl butanoate is one plausible thing you're picking up."</em> It doesn't mean your drink was tested, that it's <em>the</em> single compound responsible, or that nothing else is present. Real samples carry dozens or hundreds of volatiles; this models a curated set chosen for usefulness in tasting. What it <em>is</em>: a structured way to think about what might be going on chemically, with the citations as receipts.</p>
+    <h3 id="about-isnt">What this is not</h3>
+    <p>This is a <strong>suggestion engine, not a lab</strong>. There is no chromatograph in your browser. When you log apple and ethyl butanoate lights up, that means <em>"given what is published about apple aroma, ethyl butanoate is one plausible thing you are picking up."</em> It does not mean your drink was tested, that it is <em>the</em> single compound responsible, or that nothing else is present. Real samples carry dozens or hundreds of volatiles. This models a curated set chosen for usefulness in tasting. What it <em>is</em>: a structured way to think about what might be going on chemically, with the citations as receipts.</p>
 
     <h3 id="about-scenes">Behind the scenes</h3>
-    <p>A public, educational project: one static HTML file, source on GitHub, with comments that walk through the design choices as they come up. The interesting part is probably the thinking, not the tool. Current scope is things you ingest: coffee, beer, wine, mocktails. Perfumery sits at the orthonasal "sniff" end of smell, while this tool centers the retronasal end (the post-swallow exhale that's most of what you mean by "flavor"); it's a close adjacent the project might explore later, but isn't supported yet.</p>
+    <p>The current scope centers on coffee and botanical aromatics broadly, mostly terpenes and esters, with wine and fermentation covering alcohol and other fermented flavors. Coffee gets particular attention here: how roast level and growing region shift its aroma profile. Perfumery sits at the orthonasal, or sniff, end of smell. This tool centers the retronasal end, the post-swallow exhale that is most of what people mean by flavor. Perfumery is a related area to explore later.</p>
 
     <h3 id="about-choices">The design decisions</h3>
-    <p>Nothing here comes from formal tasting training — no cupping certification, no sommelier background. The lens is UI/UX design, museum education, science communication, GIS/systems analysis, and creative engineering, and a few of the tool's choices only make sense once you know that, especially where they part ways with how a professional tasting wheel usually works.</p>
-    <p><strong>It started as a spreadsheet, not a wheel.</strong> Before any of this had code, it was a hand-built table: aromas down one side, eight terpenes across the top, each cell a 1-to-10 guess at how strongly that terpene would need to show up to produce that smell. That's a weighted-scoring matrix, the instinct of a data analyst, not a memorized flavor wheel. The current compound graph grew out of checking that original guesswork against real GC-MS literature — keeping what held up, researching what didn't, and dropping what wasn't real.</p>
-    <p><strong>Confidence is a convergence score, not a grade.</strong> Formal tasting protocols train you toward a shared reference vocabulary and score you against it. This tool does the opposite: intensity and confidence are computed from how many of your own independently-reported notes point at the same compound, and how strong those links are in the literature — never checked against a "correct" answer, because there isn't meant to be one. Two sittings of the same coffee producing different notes isn't tester error; per the stance above, it's the data.</p>
-    <p><strong>Several honest projections of one dataset, not one fixed diagram.</strong> A standard aroma wheel is a single drawing. This one lets the same underlying notes, compounds, families, and origins get re-organized several ways — Scent vs. Chemistry on the wheel itself, a fixed-axis Compass so two different tastings plot on directly comparable axes, or Go Deeper's Constellation, which lays out that same evidence by chemistry, taxonomy, geography, or whatever you personally tagged this session. Re-projecting the same records instead of committing to one layout is a GIS and systems-analysis habit more than a flavor-science one.</p>
-    <p><strong>Real words, not softened ones.</strong> Terms like retronasal, odor threshold, or furanone stay in the copy on purpose — they're the actual words the literature uses for these concepts, and using them is the honest representation, not a barrier to lower.</p>
-    <p><strong>Accessible reference points over wine convention.</strong> A lot of consumer tasting language assumes a wine background — vocabulary a lot of people, including non-drinkers, have never actually tasted. This tool deliberately reaches for more common analogues and doesn't lead with wine, beer, or spirits, so it doesn't read as gatekept behind a palate you're supposed to already have.</p>
-    <p><strong>Every citation reflects real published work.</strong> The reference list only includes sources you could go look up yourself — see Methodology → What counts as a source here for the exact criteria. That's a data-integrity habit as much as a tasting one: cite the actual literature, not a paraphrase of it.</p>
+    <p>This tool comes from a background in UI/UX design, museum education, science communication, GIS and systems analysis, and creative engineering. That background shapes a few choices here that differ from how a professional tasting wheel usually works.</p>
+    <p>Before this had any code, it was a spreadsheet: aromas listed against eight terpenes, each cell a 1 to 10 guess at how strongly that terpene would need to show up to produce that smell. The current compound graph grew out of checking that early guesswork against real GC-MS literature, keeping what held up and replacing what the literature contradicted.</p>
+    <p>Confidence here is a convergence score: how many of your own independently-reported notes point at the same compound, and how strong those links are in the literature. Two sittings of the same coffee can produce different notes, each reflecting what was perceived in that moment.</p>
+    <p>The wheel, the Compass, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, a fixed set of axes in the Compass so two tastings sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
+    <p>Terms like retronasal, odor threshold, and furanone stay in the copy because they are the words the literature actually uses. The reference points lean toward things most people have tasted, since a lot of this audience is sober or non-drinking. Citations point to real published sources, and Methodology → What counts as a source here lists the exact criteria.</p>
+    <p>Expert tasting skill comes from years of repetition and calibration against a shared vocabulary. What this tool maps is closer to precision: how well a personal, in-the-moment perception lines up with what is published about a compound's known aroma. That gap, between perceiving something and pinning down its chemistry, is what makes sensory perception worth paying attention to.</p>
 
     <h3 id="about-maker">About the maker</h3>
     <p>An independent experience designer in Portland, Oregon, with a background running through museum education, inquiry-based learning, science communication, UI/UX design, creative engineering / concept design, and GIS/systems analysis. The wheel sits in the middle of all of it: a UI for personal perception, an educational artifact about flavor chemistry, a spatial visualization over a structured knowledge graph, and a systems model of how sensory inference actually works.</p>
 
     <div class="maker-credits">
-      <p class="credits-line">aromawheel.net is home to this original concept and design by <strong>Nolan [Æ]</strong>. The terpene wheel was first built in August 2025; aromawheel 2.0 launched in May 2026. Built in Portland, OR.</p>
+      <p class="credits-line">aromawheel.net is home to this original concept and design by <strong>Nolan [Æ]</strong>. The terpene wheel was first built in August 2025, and aromawheel 2.0 launched in May 2026. Built in Portland, OR.</p>
       <p class="credits-copyright">© 2025–2026 · aromawheel</p>
     </div>
     <p class="maker-feedback"><a class="feedback-cta" href="https://forms.gle/d6onz2i3rzuSPs6H8" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z"/></svg>Share feedback on the prototype</a></p>
@@ -11945,7 +12051,7 @@ function renderMethodology() {
   const showing = infoBodyEl.classList.contains("show-formulas");
   return `
     <h2>Methodology</h2>
-    <p class="lede">What happens between "you slide a note" and "compounds light up." Plain-language by default; toggle the formulas on if you want the actual math.</p>
+    <p class="lede">What happens between "you slide a note" and "compounds light up." Plain-language by default. Toggle the formulas on if you want the actual math.</p>
 
     ${tocNav([
       ["meth-data", "Data model"],
@@ -11972,30 +12078,30 @@ function renderMethodology() {
     <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture, never these numbers.)</p>
 
     <h3 id="meth-sources">A note on the sources</h3>
-    <p>Some citations here are old. Buttery's threshold work is from 1981, Shaw's citrus analysis from 1979, and that's worth being upfront about rather than hiding. For <strong>odor thresholds</strong> especially, the old paper is usually the <em>primary</em> measurement: the original careful determination of how little of a compound a person can detect. Later studies cite those values rather than re-measuring them, so a 1981 reference is often the canonical source, not a stale one. Where a threshold <em>has</em> been revisited, the modern numbers tend to land close: Grosch's 1992 figure for furfurylthiol (~0.005 ppb) still matches what recent work reports.</p>
-    <p>The standard <em>modern</em> compilation that gathers these together is van Gemert's <em>Compilation of Odour Threshold Values in Air and Water</em> (2nd ed., Oliemans Punter &amp; Partners, 2011), which gathers roughly 10,750 threshold values drawn from ~1,780 sources and is the reference work this tool's threshold tiers are sanity-checked against.</p>
-    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that's where future citation refreshes will draw from. Either way, the intent is that every reference in here is a real paper — this tool would rather show an old-but-real source than a fresh-looking invented one. What makes the cut is explained next.</p>
+    <p>Some citations here are old. Buttery's threshold work is from 1981, Shaw's citrus analysis from 1979. For <strong>odor thresholds</strong> especially, the old paper is usually the <em>primary</em> measurement: the original determination of how little of a compound a person can detect. Later studies tend to cite those values rather than re-measure them, so a 1981 reference is often the standard source for that number. Where a threshold <em>has</em> been revisited, the modern numbers tend to land close: Grosch's 1992 figure for furfurylthiol (~0.005 ppb) still matches recent work.</p>
+    <p>The standard <em>modern</em> compilation that gathers these together is van Gemert's <em>Compilation of Odour Threshold Values in Air and Water</em> (2nd ed., Oliemans Punter &amp; Partners, 2011), which gathers roughly 10,750 threshold values drawn from ~1,780 sources and is the reference work this tool's threshold tiers are checked against.</p>
+    <p>The note→compound <em>links</em> are a different matter: active areas like coffee thiols and wine polyfunctional thiols see a steady stream of recent (2017–2024) work, and that is where future citation updates will draw from. Every reference here traces to a real paper. What makes the cut is explained next.</p>
 
     <h3 id="meth-criteria">What counts as a source here</h3>
-    <p>Every reference in this tool comes from the published literature — a claim isn't written first and then matched to a citation after the fact. Not everything that mentions a compound qualifies, though. A few criteria decide what makes it in:</p>
+    <p>Every reference in this tool traces to the published literature. A few criteria decide what makes it in:</p>
     <ul>
-      <li><strong>Real, findable work.</strong> A journal article, a recognized compendium, an official institutional record, a patent, or a monograph — something with authors, a year, and a venue you could go look up yourself.</li>
-      <li><strong>Primary over secondary, where one exists.</strong> For odor thresholds especially, the original measurement is preferred over a later paper that just cites it — see above for why an old reference is often the more authoritative one, not a stale one.</li>
-      <li><strong>Cross-checked against a standard compendium.</strong> Threshold values are sanity-checked against van Gemert's <em>Compilation of Odour Threshold Values</em> (2011), the field's standard modern reference.</li>
-      <li><strong>Institutional records for geography and production data.</strong> The Origins map and the geography-lens pilot draw from bodies like FAOSTAT (crop production statistics), UNESCO's Intangible Cultural Heritage register, and national agriculture ministries' protected-designation-of-origin records — not informal claims about where something is "really" grown or valued.</li>
+      <li><strong>Real, findable work.</strong> A journal article, a recognized compendium, an official institutional record, a patent, or a monograph: something with authors, a year, and a venue you could look up yourself.</li>
+      <li><strong>Primary over secondary, where one exists.</strong> For odor thresholds especially, the original measurement is preferred over a later paper that just cites it. See above for why an old reference is often the more authoritative source.</li>
+      <li><strong>Cross-checked against a standard compendium.</strong> Threshold values are checked against van Gemert's <em>Compilation of Odour Threshold Values</em> (2011), the field's standard modern reference.</li>
+      <li><strong>Institutional records for geography and production data.</strong> The Origins map and the geography-lens pilot draw from bodies like FAOSTAT (crop production statistics), UNESCO's Intangible Cultural Heritage register, and national agriculture ministries' protected-designation-of-origin records.</li>
     </ul>
-    <p>One deliberate exception: some entries in the citation slot don't name a source at all — they state the reasoning behind a link, like <em>"Shared berry ester base."</em> That's an inference about the chemistry, not a citation, and it's presented as one rather than dressed up with a reference it doesn't have.</p>
+    <p>Some entries in the citation slot are labeled as inferences, like <em>"Shared berry ester base."</em> These state the chemistry reasoning behind a link.</p>
 
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
-    <p>If several notes all point to the same compound, those contributions sum. So <em>lemon</em>, <em>orange</em>, and <em>grapefruit</em> all reinforce <em>limonene</em>; the compound's raw intensity is the total of every contribution.</p>
+    <p>If several notes all point to the same compound, those contributions sum. So <em>lemon</em>, <em>orange</em>, and <em>grapefruit</em> all reinforce <em>limonene</em>. The compound's raw intensity is the total of every contribution.</p>
     <p>The phase model adds a wrinkle when Go Deeper is on. A single note can carry up to three independent entries: a default (no phase), an ortho-tagged one, and a retro-tagged one. All three contribute separately. So logging <em>apple</em> as ortho:3 and retro:5 gives twice the evidence of just retro:5 alone.</p>
     <div class="formula">
       <p>The math: intensity 5 becomes a <code>noteSignal</code> of 0.5 (intensity divided by 10). For each compound the note links to, the contribution is <code>noteSignal × edge.weight</code>. Using actual edge weights from the data: <em>lemon</em> at intensity 5 contributes 0.475 to <em>limonene</em> (0.5 × 0.95) and 0.175 to <em>linalool</em> (0.5 × 0.35).</p>
     </div>
 
     <h3 id="meth-multiplier">The perception multiplier</h3>
-    <p>The raw intensity isn't the final score. Compounds have very different odor thresholds, the minimum concentration at which a typical person can detect them. A trace of furfurylthiol reads loud; a much larger amount of furfural barely registers. The tool models this with a per-compound multiplier based on which threshold tier the compound is in.</p>
+    <p>The raw intensity is not the final score. Compounds have very different odor thresholds, the minimum concentration at which a typical person can detect them. A trace of furfurylthiol reads loud, and a much larger amount of furfural barely registers. The tool models this with a per-compound multiplier based on which threshold tier the compound is in.</p>
     <div class="formula">
       <p>The four tiers and their multipliers:</p>
       <ul>
@@ -12015,21 +12121,21 @@ function renderMethodology() {
     </div>
 
     <h3 id="meth-scope">What's not modeled</h3>
-    <p>The tool is honest about its scope. Things it deliberately doesn't try to capture:</p>
+    <p>The tool is honest about its scope. Things it deliberately does not try to capture:</p>
     <ul>
-      <li><strong>Concentration math.</strong> We don't know how much of a compound is in your cup. The threshold tier is a rough proxy for perceived loudness, not a quantitative claim.</li>
-      <li><strong>Matrix effects.</strong> Compounds smell differently in different drinks. Limonene in a citrus mocktail and limonene in a pine-forward gin both contribute equally in the model, but the actual perceived character can shift in ways the tool doesn't capture.</li>
+      <li><strong>Concentration math.</strong> We do not know how much of a compound is in your cup. The threshold tier is a rough proxy for perceived loudness, not a quantitative claim.</li>
+      <li><strong>Matrix effects.</strong> Compounds smell differently in different drinks. Limonene in a citrus mocktail and limonene in a pine-forward gin both contribute equally in the model, but the actual perceived character can shift in ways the tool does not capture.</li>
       <li><strong>Co-occurrence physics.</strong> Some compounds amplify or mask each other in reality. The model treats edges as independent contributions.</li>
-      <li><strong>Individual perceptual variation</strong> beyond the threshold-tier multiplier. Two people with the same sensory experience can produce different reports; the tool honors what you report and doesn't try to "correct" for it.</li>
+      <li><strong>Individual perceptual variation</strong> beyond the threshold-tier multiplier. Two people with the same sensory experience can produce different reports. The tool honors what you report and does not try to "correct" for it.</li>
     </ul>
-    <p>These limits are exactly why this is a suggestion engine, not a lab. See <button type="button" class="inline-link" data-open-info="about">About → What this isn't</button> for the longer story.</p>
+    <p>These limits are exactly why this is a suggestion engine, not a lab. See <button type="button" class="inline-link" data-open-info="about">About → What this is not</button> for the longer story.</p>
   `;
 }
 
 function renderHowToUse() {
   return `
     <h2>How to use</h2>
-    <p class="lede">Slide the descriptors you notice; compounds light up as evidence accumulates. That's the whole loop.</p>
+    <p class="lede">Slide the descriptors you notice, and compounds light up as evidence accumulates. That is the whole loop.</p>
 
     ${tocNav([
       ["use-ladder", "The inference chain"],
@@ -12052,32 +12158,30 @@ function renderHowToUse() {
       <div class="ladder-arrow">↓</div>
       <div class="ladder-step"><span class="ladder-n">4</span><span class="ladder-label">Aromatic compounds</span><span class="ladder-desc">The compounds most likely present, ranked by how strongly your notes point to them and how easily each is perceived at trace amounts. Tap any one for its odor threshold and the citations behind it.</span></div>
     </div>
-    <p>The step worth dwelling on is 3→4: the tool isn't matching a single word to a single molecule. It's looking for convergence across everything you reported. Lemon + grapefruit + passionfruit all point toward polyfunctional thiols — that triangulation is what gives the inference meaning.</p>
+    <p>The step worth dwelling on is 3→4: the tool is not matching a single word to a single molecule. It is looking for convergence across everything you reported. Lemon, grapefruit, and passionfruit all point toward polyfunctional thiols, and that triangulation is what gives the inference meaning.</p>
 
     <h3 id="use-flow">The basic flow</h3>
-    <p>Find a descriptor you're noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>; there's no separate confirm step. To change it, move the slider again; to drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
+    <p>Find a descriptor you are noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>, with no separate confirm step. To change it, move the slider again. To drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
 
     <h3 id="use-views">Two views of the same thing</h3>
-    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail; click a note for its inverse — the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
+    <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail. Click a note for its inverse, the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
     <p>The <strong>Compounds pane</strong> (gray panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
-    <p>The header's <strong>Organize</strong> toggle decides what the ring is built from: two views of the same note-to-compound web. The scoring never changes; only the layout and coloring do.</p>
+    <p>The header's <strong>Organize</strong> toggle decides what the ring is built from: two views of the same note-to-compound web. The scoring never changes. Only the layout and coloring do.</p>
     <ul>
-      <li><strong>Scent</strong> (default). The rim is your <em>note groups</em> (Fruity, Floral, Roasted…). Compounds float inward toward the notes pulling on them, each tinted by the scent family it belongs to. Best for "what compounds sit behind what I'm tasting?"</li>
+      <li><strong>Scent</strong> (default). The rim is your <em>note groups</em> (Fruity, Floral, Roasted…). Compounds float inward toward the notes pulling on them, each tinted by the scent family it belongs to. Best for "what compounds sit behind what I am tasting?"</li>
       <li><strong>Chemistry</strong>. The rim becomes <em>chemical classes</em> (terpene, ester, thiol…), with every compound parked in its class like a periodic table, and now your <em>notes</em> float inward toward the chemistry they evoke. Best for "what kinds of molecules am I noticing?", or for spotting that, say, caramel and chocolate are chemical neighbors even though they live in different scent groups.</li>
     </ul>
 
     <h3 id="use-controls">Controls</h3>
     <ul>
-      <li><strong>Sliders pane (left).</strong> Your input: one slider per descriptor. Sliding registers a note live; sliding to 0 removes it.</li>
-      <li><strong>Note Suggester (top of that pane).</strong> Not sure what to log? It turns everyday words ("tropical," "earthy," "boozy") into specific notes to try.</li>
-      <li><strong>Workspace switch (header, far left).</strong> <em>Wheel</em> is the tasting workspace; <em>Map</em> opens the world map of where each ingredient was first cultivated; <em>Tree</em> shows every note by real plant, fungus, animal, or process taxonomy. Wheel-only controls gray out when they do not apply.</li>
-      <li><strong>Panels tabs (header).</strong> <em>Notes</em> = sliders + wheel (the default). <em>Notes + Results</em> = all three panes. <em>Results</em> = wheel + the compounds pane. The wheel is always shown. On phones the panes stack and these tabs pick which one sits below the wheel.</li>
-      <li><strong>Organize (header).</strong> Flip the wheel between the Scent and Chemistry layouts described above.</li>
-      <li><strong>Compass (header).</strong> Pops up a small draggable, resizable radar (drag its corner handle to scale everything proportionally) — a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class (pick which via the dropdown) — that last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
-      <li><strong>Share (header).</strong> Opens a tasting-card preview with image/PDF downloads and a URL that preserves the current tasting.</li>
-      <li><strong>Legend.</strong> Visibility filters <em>and</em> a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
+      <li><strong>Wheel.</strong> The default tasting workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). Not sure what to log? The Note Suggester above the sliders turns everyday words ("tropical," "earthy," "boozy") into specific notes to try. The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed a tasting too.</li>
+      <li><strong>Tree.</strong> Every note placed by real plant, fungus, animal, or process taxonomy. Zoom from Kingdom down to a single note to see which relatives share aromatic pathways.</li>
+      <li><strong>Compass.</strong> A small draggable, resizable radar, a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
+      <li><strong>Share.</strong> Opens a tasting-card preview with image and PDF downloads and a URL that preserves the current tasting.</li>
+      <li><strong>Legend.</strong> Visibility filters and a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
@@ -12159,7 +12263,7 @@ function renderTypesOfAroma() {
 
   infoBodyEl.innerHTML = `
     <h2>Types of Aroma</h2>
-    <p class="lede">A reference for the compound space the wheel draws from, plus a glossary of jargon you'll hear in tasting circles. Search across compound names, classes, where things naturally occur, and definitions.</p>
+    <p class="lede">A reference for the compound space the wheel draws from, plus a glossary of jargon you will hear in tasting circles. Search across compound names, classes, where things naturally occur, and definitions.</p>
 
     <div class="info-search-row">
       <input type="search" id="info-search-input" class="info-search" placeholder="Search compounds, classes, jargon, origins..." value="${q}" />
@@ -16320,6 +16424,21 @@ function renderTaxonomyTree() {
   fanByRank.forEach((arr, rank) => {
     fanBandH.set(rank, Math.max(FAN_BAND_MIN, Math.min(FAN_BAND_MAX, (arr.length - 1) * FAN_VSTEP)));
   });
+  // Notes no longer climb their own arc by raw list order (see the floret
+  // block below) — each family climbs its OWN short vertical column above
+  // its own joint instead — so the note band only needs headroom for the
+  // single most crowded family, not one climbing step per leaf across the
+  // whole Kingdom.
+  const FLORET_VSTEP = compactSway ? 26 : 30;
+  const familyNoteGroups = new Map();
+  (fanByRank.get("note") || []).forEach(noteNode => {
+    const family = noteNode.parent;
+    if (!family) return;
+    if (!familyNoteGroups.has(family)) familyNoteGroups.set(family, []);
+    familyNoteGroups.get(family).push(noteNode);
+  });
+  const maxNotesPerFamily = Math.max(1, ...Array.from(familyNoteGroups.values()).map(a => a.length));
+  fanBandH.set("note", maxNotesPerFamily * FLORET_VSTEP + FLORET_VSTEP);
   const fanAngle = d => -FAN_HALF_SWEEP + fanProgress.get(d) * (2 * FAN_HALF_SWEEP);
   // Climb is eased, not linear: raising progress to a power keeps most of a
   // row's early members near the band floor — spreading out laterally, fan-
@@ -16348,6 +16467,35 @@ function renderTaxonomyTree() {
   };
   const baseScreenX = d => underPlantae(d) ? fanScreenX(d) : legacyScreenX(d);
   const baseScreenY = d => underPlantae(d) ? fanScreenY(d) : legacyScreenY(d);
+
+  // Curly-bracket florets: each family's own notes climb a short vertical
+  // column straight up from that family's own joint — not spreading
+  // sideways into a neighbour's lane at all — with a gentle sine bulge
+  // through the column's middle for the curl of a brace, "{", rather than
+  // a flat straight line. The old scheme put notes from unrelated families
+  // side by side just because they happened to be neighbours in x; a
+  // vertical column keeps a family's whole group directly above its own
+  // joint, so it visibly belongs to that family and nothing else.
+  //
+  // A per-Order packed layout (family width scaled to its note count,
+  // families placed side by side under their Order) was tried here and
+  // measurably made things WORSE, not better: collapsing every family
+  // under one Order onto a single shared row height, on top of an already
+  // tight Order band, produced more collisions than the plain per-family
+  // joint below, including new collisions between Order/family labels
+  // that had none before. Reverted rather than kept as a regression.
+  const FLORET_BULGE = compactSway ? 5 : 6;
+  const floretX = new Map(), floretY = new Map();
+  familyNoteGroups.forEach((notes, family) => {
+    const fx = baseScreenX(family), fy = baseScreenY(family);
+    const n = notes.length;
+    notes.forEach((noteNode, i) => {
+      const t = n <= 1 ? 0.5 : i / (n - 1);
+      const bulge = Math.sin(t * Math.PI) * FLORET_BULGE;
+      floretX.set(noteNode, fx + bulge);
+      floretY.set(noteNode, fy - FLORET_VSTEP * (0.9 + i));
+    });
+  });
 
   // Once an Order is chosen, its descendants stop participating in the global
   // all-Orders fan. A two-Family branch should not inherit the full 900px fan
@@ -16384,8 +16532,8 @@ function renderTaxonomyTree() {
       });
     });
   }
-  const screenX = d => localBranchX.get(d) ?? baseScreenX(d);
-  const screenY = d => localBranchY.get(d) ?? baseScreenY(d);
+  const screenX = d => localBranchX.get(d) ?? floretX.get(d) ?? baseScreenX(d);
+  const screenY = d => localBranchY.get(d) ?? floretY.get(d) ?? baseScreenY(d);
 
   // The fan bounds Order-joint spacing to single-digit pixels once there are
   // ~30 of them (radius x sin(sweep) is fixed regardless of population), but
