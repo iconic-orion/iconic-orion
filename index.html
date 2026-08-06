@@ -255,6 +255,11 @@
   .results-section-help { font-size: 11px; color: var(--ink-dim); line-height: 1.4; margin-bottom: 10px; }
   .results-disclaimer { font-size: 11px; color: var(--ink-dim); line-height: 1.5;
     padding-top: 10px; border-top: 1px dotted var(--line); margin-top: 8px; }
+  .medical-boundary { margin: 10px 0 14px; padding: 11px 13px;
+    border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line)); border-radius: 8px;
+    background: color-mix(in srgb, var(--warn) 7%, var(--panel-2)); color: var(--ink);
+    font-size: 12px; line-height: 1.5; }
+  .medical-boundary strong { color: var(--warn); }
 
   /* ── Bouquet readout ("clouds") ───────────────────────────────────────
      Soft, rounded, translucent cards that synthesize the whole input in
@@ -1134,6 +1139,19 @@
   .cx-overlap-summary { display: flex; flex-wrap: wrap; gap: 5px 9px; margin-top: 8px;
     color: var(--accent-2); font-size: 10px; font-weight: 700; letter-spacing: .04em;
     text-transform: uppercase; }
+  .cx-tasting-links { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .cx-tasting-links h3 { color: var(--accent-2); }
+  .cx-tasting-links > p { margin: 6px 0 9px; color: var(--ink-dim); font-size: 10.5px; line-height: 1.45; }
+  .cx-tasting-pair { cursor: default; border-color: color-mix(in srgb, var(--accent) 28%, transparent); }
+  .cx-tasting-pair:hover { background: transparent; }
+  .cx-tasting-pair-actions { display: flex; gap: 5px; margin-top: 6px; }
+  .cx-tasting-pair-actions button { padding: 4px 7px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--panel-2); color: var(--ink); font-size: 9.5px; cursor: pointer; }
+  .cx-tasting-pair-actions button:hover, .cx-tasting-pair-actions button:focus-visible {
+    border-color: var(--accent); color: var(--accent); outline: none; }
+  .cx-all-overlaps > summary { margin: 0 0 8px; padding: 8px 0; color: var(--ink-dim);
+    font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+  .cx-all-overlaps[open] > summary { color: var(--accent-2); }
   .cx-overlap-list { display: grid; gap: 5px; }
   .cx-overlap-row { position: relative; width: 100%; min-width: 0; padding: 6px 7px 7px;
     border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ink);
@@ -2961,6 +2979,7 @@
   #origins-group-filters { display: inline-flex; align-items: center; gap: 10px;
     flex-wrap: wrap; row-gap: 6px; }
   #origins-filter-empty { color: var(--accent); }
+  #origins-tasting-coverage { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; line-height: 1.4; }
   /* The global `svg { width:100%; height:100% }` rule (for the main wheel SVG)
      would otherwise stretch these tiny inline icons to fill the row; pin
      their intrinsic size back so the dot/line lines up with its label. */
@@ -3819,11 +3838,11 @@
 <header>
   <div class="brand">
     <h1>Aroma Wheel</h1>
-    <p class="tagline">Describe what you smell. Explore the chemistry behind it.</p>
+    <p class="tagline">Describe what you notice. Explore the chemistry it may point to.</p>
   </div>
   <!-- Go Deeper: centered in the header, between brand and right utilities -->
   <button id="godeeper-toggle" class="header-center-btn"
-    title="Reveal the Map and Tree explorers plus advanced tasting inputs">
+    title="Follow this tasting into note comparison, Constellation, Map, and Tree">
     <span>Go Deeper</span>
     <span class="godeeper-glyphs" aria-hidden="true">
       <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25">
@@ -3974,7 +3993,7 @@
   <!-- Discovery aid: opens a modal of evocative descriptors that suggest which
        specific notes to try. Subtle text button so it's there for people who
        want it without crowding the pane for people who don't. -->
-  <button type="button" id="wais-open-btn" class="wais-open-btn">Not sure what to add? Use Note Suggester</button>
+  <button type="button" id="wais-open-btn" class="wais-open-btn">Not sure what you're noticing? Use Note Suggester</button>
   <!-- Subtle search field at the top of the notes pane. Filters which note rows
        are visible as the user types. Empty query = show all. -->
   <div class="notes-search-field">
@@ -4085,7 +4104,7 @@
       <button type="button" class="nudge-demo" data-demo="marinara">Marinara</button>
       <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
-    <div class="nudge-sub">Compounds appear as evidence accumulates. Works with coffee, tea, wine, beer, botanicals, and food.</div>
+    <div class="nudge-sub">Your notes surface literature-linked compound clues. Works with coffee, tea, wine, beer, botanicals, and food. Sensory exploration only—not medical advice.</div>
   </div>
   <!-- Persistent, tap-expandable context caption (see .wheel-hint CSS). Always
        says what the wheel is showing and updates with the Organize mode, so the
@@ -4197,7 +4216,7 @@
 <div id="constellation-overlay" class="constellation-overlay" role="dialog" aria-modal="true" aria-labelledby="constellation-title" hidden>
   <header class="cx-masthead">
     <div>
-      <div class="cx-eyebrow">Go Deeper · creator mind space</div>
+      <div class="cx-eyebrow">Go Deeper · relationship explorer</div>
       <h2 id="constellation-title">Constellation</h2>
     </div>
     <button type="button" id="constellation-close-btn" class="cx-close" aria-label="Close constellation">✕</button>
@@ -4351,6 +4370,7 @@
       </label>
       <button type="button" class="ol-clear-tasting" id="origins-clear-tasting">Clear tasting</button>
       <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
+      <span id="origins-tasting-coverage" aria-live="polite"></span>
       <span class="ol-sep">·</span>
       <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every flavor group off so you can switch on just the ones you want (click again to turn all back on)">toggle groups</span>
       <span id="origins-group-filters"></span>
@@ -4502,7 +4522,7 @@
   <span id="taxonomy-sheet-label">Details</span>
 </button>
 <aside class="detail" id="detail-panel">
-  <div class="empty">Click a compound to see contributing notes and citations. Slide notes on the left to register what you're noticing. Compounds light up as evidence accumulates.</div>
+  <div class="empty">Click a compound to see linked notes and citations. Slide notes on the left to register what you're noticing. The results are literature-guided possibilities, not a chemical measurement.</div>
 </aside>
 
 <!-- Info overlay (the "i" tab). Three sub-tabs: About / How to Use / Types of Aroma.
@@ -7618,6 +7638,30 @@ function taxonPath(note) {
   return path;
 }
 
+function isTaxonomyTreeNote(note) {
+  if (!note || note.taxonBucket === "process" || note.taxonBucket === "umbrella") return false;
+  const kingdom = note.kingdom || "Plantae";
+  return kingdom === "Plantae" || kingdom === "Fungi";
+}
+
+function taxonomyTastingCoverageText() {
+  const active = NOTES.filter(note => hasAnyEntry(note.id));
+  if (!active.length) {
+    return `All ${countTaxonomyLeaves(taxTreeRoot)} biologically placed flavor notes · choose a Kingdom or branch to explore.`;
+  }
+  const placed = active.filter(isTaxonomyTreeNote);
+  const omitted = active.filter(note => !isTaxonomyTreeNote(note));
+  const omittedText = omitted.map(note => {
+    if (note.taxonBucket === "process") return `${note.label} is a process or fault descriptor`;
+    if (note.taxonBucket === "umbrella") return `${note.label} spans multiple plant families`;
+    if (note.kingdom === "Animalia") return `${note.label} appears as ecology, not a plant or fungal branch`;
+    return `${note.label} has no organism branch here`;
+  });
+  return `${placed.length} of ${active.length} tasting notes have organism branches here.`
+    + (omittedText.length ? ` ${omittedText.join("; ")}.` : "")
+    + " Related branches are context for comparison, not proof that ancestry caused an aroma.";
+}
+
 // Folds biologically placeable notes into a {name, children} hierarchy ready
 // for d3.hierarchy(). Process descriptors and umbrella aroma language remain
 // available everywhere else in the app, but do not become invented or weakly
@@ -7628,11 +7672,7 @@ function buildTaxonomyTreeData() {
   const root = { name: "All notes", children: [] };
   const nodeByPath = new Map();
   nodeByPath.set("", root);
-  NOTES.filter(note => {
-    if (note.taxonBucket === "process" || note.taxonBucket === "umbrella") return false;
-    const kingdom = note.kingdom || "Plantae";
-    return kingdom === "Plantae" || kingdom === "Fungi";
-  }).forEach(note => {
+  NOTES.filter(isTaxonomyTreeNote).forEach(note => {
     const path = taxonPath(note);
     let parentKey = "";
     let parent = root;
@@ -9296,6 +9336,7 @@ function recompute() {
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
   updateOriginsClearTasting();     // map-local bulk clear mirrors the same live input count
+  updateOriginsFilterEmpty();     // map coverage names active notes that have no origin record
 
   // One-time-per-input-change work the tick used to redo every frame:
   // re-derive each float's home, rebuild the float set + styles, and
@@ -10393,7 +10434,7 @@ function renderAnalysisGrid() {
   const topByConf = byConfidence.slice(0, 6);
   const byIntensity = allActive.slice().sort((a, b) => b.intensity - a.intensity);
 
-  const disclaimerLine = `<div class="results-disclaimer">Suggestions, not analysis. Based on common aroma knowledge and GC-MS citations. <button type="button" class="inline-link" data-open-info="about">What this isn't →</button></div>`;
+  const disclaimerLine = `<div class="results-disclaimer"><strong>Not medical advice.</strong> Sensory suggestions only—not chemical analysis. Never use this tool to judge allergies, toxicity, food safety, exposure, diagnosis, or treatment. <button type="button" class="inline-link" data-open-info="about">Read the safety boundary →</button></div>`;
 
   // Empty state — nothing logged yet. Still render a browseable list of every
   // compound in the library so users can click into them on their own without
@@ -12128,10 +12169,37 @@ function cxOverlapSpectrum() {
   return rows;
 }
 
+// Keep Constellation's first explanation anchored to what the person actually
+// entered. The full graph remains available below, but it should not make a
+// six-note tasting feel like a 127-note catalog exercise.
+function cxActiveTastingNotes() {
+  return NOTES.map(note => ({
+    note,
+    total: INPUT_PHASES.reduce((sum, phase) => sum + (getEntry(note.id, phase) || 0), 0),
+  })).filter(item => item.total > 0)
+    .sort((a, b) => b.total - a.total || a.note.label.localeCompare(b.note.label));
+}
+
+function cxTastingOverlapPairs(active) {
+  const pairs = [];
+  for (let i = 0; i < active.length; i++) {
+    for (let j = i + 1; j < active.length; j++) {
+      const data = taxonomyComparisonData(active[i].note.id, active[j].note.id);
+      if (data.shared.length) pairs.push({ a: active[i].note, b: active[j].note, data });
+    }
+  }
+  return pairs.sort((a, b) => b.data.score - a.data.score
+    || b.data.shared.length - a.data.shared.length
+    || a.a.label.localeCompare(b.a.label)
+    || a.b.label.localeCompare(b.b.label));
+}
+
 function cxRenderOverlapGraph() {
   const rows = cxOverlapSpectrum();
   const connected = rows.filter(row => row.relatedCount);
   const isolated = rows.filter(row => !row.relatedCount);
+  const active = cxActiveTastingNotes();
+  const tastingPairs = cxTastingOverlapPairs(active);
   const rowHtml = row => {
     const strongest = row.strongest
       ? `Strongest: ${row.strongest.note.label} · ${Math.round(row.strongest.score * 100)}%`
@@ -12140,7 +12208,7 @@ function cxRenderOverlapGraph() {
       ? `${row.relatedCount} link${row.relatedCount === 1 ? "" : "s"}` : "none";
     const aria = row.relatedCount
       ? `${row.note.label}: ${Math.round(row.normalized * 100)} percent of the top graph connectedness, ${links}; ${strongest}`
-      : `${row.note.label}: no compound overlap with any other note in the current evidence graph`;
+      : `${row.note.label}: no compound overlap with any other note in the current dataset`;
     return `<button type="button" class="cx-overlap-row${row.relatedCount ? "" : " is-isolated"}${cxIsActive(row.note.id) ? " is-active" : ""}"
         data-cx-overlap-note="${row.note.id}" aria-label="${aria}">
       <span class="cx-overlap-row-top">
@@ -12152,18 +12220,70 @@ function cxRenderOverlapGraph() {
       <span class="cx-overlap-best">${strongest}</span>
     </button>`;
   };
+  const tastingPairHtml = ({ a, b, data }) => {
+    const percent = Math.round(data.score * 100);
+    const shared = data.shared.slice(0, 4).map(item => item.cpd.label).join(" · ");
+    return `<article class="cx-overlap-row cx-tasting-pair">
+      <span class="cx-overlap-row-top">
+        <span class="cx-overlap-name">${noteIcon(a)} ${a.label} ↔ ${noteIcon(b)} ${b.label}</span>
+        <span class="cx-overlap-links">${percent}%</span>
+      </span>
+      <span class="cx-overlap-track" aria-hidden="true"><span class="cx-overlap-fill"
+        style="width:${percent}%;background:linear-gradient(90deg,var(--grp-${a.group}),var(--grp-${b.group}))"></span></span>
+      <span class="cx-overlap-best">${data.shared.length} shared: ${shared}</span>
+      <span class="cx-tasting-pair-actions">
+        <button type="button" data-cx-overlap-note="${a.id}">Open ${a.label}</button>
+        <button type="button" data-cx-overlap-note="${b.id}">Open ${b.label}</button>
+        <button type="button" data-cx-compare-pair="${a.id}|${b.id}">Compare</button>
+      </span>
+    </article>`;
+  };
+  let tastingHtml;
+  if (!active.length) {
+    tastingHtml = `<section class="cx-tasting-links">
+      <h3>Start with your tasting</h3>
+      <p>Add two or more notes on the Wheel. Their shared, literature-linked compounds will appear here before the full system view.</p>
+    </section>`;
+  } else if (active.length === 1) {
+    tastingHtml = `<section class="cx-tasting-links">
+      <h3>Your tasting · 1 note</h3>
+      <p>${noteIcon(active[0].note)} ${active[0].note.label} is active. Add another note to look for crossover, or open the whole graph below.</p>
+    </section>`;
+  } else {
+    tastingHtml = `<section class="cx-tasting-links">
+      <h3>Your tasting connections</h3>
+      <p>${active.length} active notes · ${tastingPairs.length} pair${tastingPairs.length === 1 ? "" : "s"} share at least one linked compound. These are clues for sensory comparison, not proof that the compound is present or that one note caused another.</p>
+      <div class="cx-overlap-list">
+        ${tastingPairs.length ? tastingPairs.slice(0, 8).map(tastingPairHtml).join("")
+          : `<div class="cx-empty">No active pair shares a linked compound in the current dataset. That may be a coverage gap, not chemical uniqueness.</div>`}
+      </div>
+    </section>`;
+  }
   cxEls.side.innerHTML = `
-    <div class="cx-overlap-head">
-      <h3>Aroma overlap spectrum</h3>
-      <p>Bar = total weighted compound overlap with every other note, normalized to the most-connected note. This is chemical correlation, not ancestry.</p>
-      <div class="cx-overlap-summary"><span>${connected.length} connected</span><span>${isolated.length} isolated</span></div>
-    </div>
-    <div class="cx-overlap-list" role="list" aria-label="Notes ranked by shared aroma-compound overlap">
-      ${connected.map(rowHtml).join("")}
-      ${isolated.length ? `<div class="cx-overlap-divider">No overlap with any other note</div>${isolated.map(rowHtml).join("")}` : ""}
-    </div>`;
+    ${tastingHtml}
+    <details class="cx-all-overlaps" ${active.length < 2 ? "open" : ""}>
+      <summary>Explore the whole ${NOTES.length}-note system</summary>
+      <div class="cx-overlap-head">
+        <h3>Aroma overlap spectrum</h3>
+        <p>Bar = total weighted compound overlap with every other note, normalized to the most-connected note. This is chemical correlation, not ancestry.</p>
+        <div class="cx-overlap-summary"><span>${connected.length} connected</span><span>${isolated.length} isolated</span></div>
+      </div>
+      <div class="cx-overlap-list" role="list" aria-label="Notes ranked by shared aroma-compound overlap">
+        ${connected.map(rowHtml).join("")}
+        ${isolated.length ? `<div class="cx-overlap-divider">No overlap with any other note</div>${isolated.map(rowHtml).join("")}` : ""}
+      </div>
+    </details>`;
   cxEls.side.querySelectorAll("[data-cx-overlap-note]").forEach(button => {
     button.addEventListener("click", () => cxSelect(button.dataset.cxOverlapNote));
+  });
+  cxEls.side.querySelectorAll("[data-cx-compare-pair]").forEach(button => {
+    button.addEventListener("click", () => {
+      taxonomyCompareIds = button.dataset.cxComparePair.split("|");
+      taxonomyCompareActive = true;
+      taxonomyCompareExpanded = false;
+      closeConstellation();
+      renderTaxonomyComparePanel();
+    });
   });
 }
 
@@ -12181,7 +12301,7 @@ function cxNoteOverlapHtml(noteId) {
   const matches = cxNoteOverlapMatches(noteId);
   if (!matches.length) return `<section class="cx-note-overlaps">
     <h4>No compound-overlap matches</h4>
-    <p>This note shares no linked aroma compound with another note in the current evidence graph. That is an evidence gap, not proof of chemical uniqueness.</p>
+    <p>This note shares no linked aroma compound with another note in the current dataset. That is a coverage gap, not proof of chemical uniqueness.</p>
   </section>`;
   const rows = matches.map(({ note, data }) => {
     const compounds = data.shared.map(item => item.cpd.label).join(" · ");
@@ -12199,7 +12319,7 @@ function cxNoteOverlapHtml(noteId) {
   }).join("");
   return `<section class="cx-note-overlaps">
     <h4>Overlaps with ${matches.length} note${matches.length === 1 ? "" : "s"}</h4>
-    <p>Ranked by weighted Jaccard overlap. Every current match is shown; compound names are the exact shared evidence.</p>
+    <p>Ranked by weighted overlap in this model. Every current match is shown; the compound names are the literature-linked crossover to investigate with your senses.</p>
     <div class="cx-note-overlap-list">${rows}</div>
   </section>`;
 }
@@ -13002,11 +13122,12 @@ function tocNav(items) {
 function renderAbout() {
   return `
     <h2>About this tool</h2>
-    <p class="lede">Tell Aroma Wheel what you are smelling or tasting, and it maps your words onto the aromatic compounds most likely behind them, drawn from published gas-chromatography (GC-MS) work on coffee and botanical aromatics. You report perceptions, and the wheel shows compounds.</p>
+    <p class="lede">Tell Aroma Wheel what you are smelling or tasting, and it maps your words onto possible aromatic contributors drawn from published gas-chromatography (GC-MS) work on coffee and botanical aromatics. You report perceptions; the wheel shows literature-linked hypotheses.</p>
 
     ${tocNav([
       ["about-stance", "The stance"],
       ["about-results", "What results mean"],
+      ["about-medical", "Medical-use boundary"],
       ["about-isnt", "What this is not"],
       ["about-scenes", "Behind the scenes"],
       ["about-choices", "The design decisions"],
@@ -13022,6 +13143,9 @@ function renderAbout() {
       <li><strong>Confidence:</strong> how many of your notes converge on a compound, and how strongly. Several notes agreeing is high, a lone speculative match is low.</li>
       <li><strong>Citations:</strong> the published source behind every note-to-compound link. Click any compound in the Compounds pane to see them.</li>
     </ul>
+
+    <h3 id="about-medical">Medical-use boundary</h3>
+    <div class="medical-boundary" role="note" aria-label="Medical-use warning"><strong>Do not use Aroma Wheel for medical advice or safety decisions.</strong> It cannot diagnose or treat a condition, identify an allergen, determine whether a food or substance is safe, assess toxicity or exposure, or confirm which chemicals are present in a sample. Do not deliberately smell or taste an unknown or potentially hazardous substance to test a result. For a health concern, contact a qualified clinician; for a suspected poisoning or immediate danger, contact local poison-control or emergency services.</div>
 
     <h3 id="about-isnt">What this is not</h3>
     <p>This is a <strong>suggestion engine, not a lab</strong>. There is no chromatograph in your browser. When you log apple and ethyl butanoate lights up, that means <em>"given what is published about apple aroma, ethyl butanoate is one plausible thing you are picking up."</em> It does not mean your drink was tested, that it is <em>the</em> single compound responsible, or that nothing else is present. Real samples carry dozens or hundreds of volatiles. This models a curated set chosen for usefulness in tasting. What it <em>is</em>: a structured way to think about what might be going on chemically, with the citations as receipts.</p>
@@ -13054,7 +13178,7 @@ function renderMethodology() {
   const showing = infoBodyEl.classList.contains("show-formulas");
   return `
     <h2>Methodology</h2>
-    <p class="lede">What happens between "you slide a note" and "compounds light up." Plain-language by default. Toggle the formulas on if you want the actual math.</p>
+    <p class="lede">What happens between "you slide a note" and "possible compounds rise in the results." Plain language by default; formulas are available when you want the math.</p>
 
     ${tocNav([
       ["meth-data", "Data model"],
@@ -13098,7 +13222,7 @@ function renderMethodology() {
     <h3 id="meth-score">From slider to compound score</h3>
     <p>When you log a note, the tool looks up which compounds that note maps to in the data. For each linked compound, it adds a weighted contribution to that compound's running score. Stronger edges give bigger contributions.</p>
     <p>If several notes all point to the same compound, those contributions sum. So <em>lemon</em>, <em>orange</em>, and <em>grapefruit</em> all reinforce <em>limonene</em>. The compound's raw intensity is the total of every contribution.</p>
-    <p>The phase model adds a wrinkle when Go Deeper is on. A single note can carry up to three independent entries: a default (no phase), an ortho-tagged one, and a retro-tagged one. All three contribute separately. So logging <em>apple</em> as ortho:3 and retro:5 gives twice the evidence of just retro:5 alone.</p>
+    <p>The phase model adds a wrinkle when Go Deeper is on. A single note can carry up to three independent entries: a default (no phase), an ortho-tagged one, and a retro-tagged one. All three contribute separately. So logging <em>apple</em> as ortho:3 and retro:5 contributes twice the model signal of just retro:5 alone.</p>
     <div class="formula">
       <p>The math: intensity 5 becomes a <code>noteSignal</code> of 0.5 (intensity divided by 10). For each compound the note links to, the contribution is <code>noteSignal × edge.weight</code>. Using actual edge weights from the data: <em>lemon</em> at intensity 5 contributes 0.475 to <em>limonene</em> (0.5 × 0.95) and 0.175 to <em>linalool</em> (0.5 × 0.35).</p>
     </div>
@@ -13138,15 +13262,16 @@ function renderMethodology() {
 function renderHowToUse() {
   return `
     <h2>How to use</h2>
-    <p class="lede">Slide the descriptors you notice, and compounds light up as evidence accumulates. That is the whole loop.</p>
+    <p class="lede">Slide the notes you notice. The app follows literature-linked paths to possible compounds—clues for closer smelling, not a lab result.</p>
 
     ${tocNav([
       ["use-ladder", "The inference chain"],
       ["use-flow", "The basic flow"],
-      ["use-views", "Two views"],
+      ["use-views", "Wheel + Results"],
       ["use-organize", "Organize the wheel"],
       ["use-controls", "Controls"],
       ["use-deeper", "Go Deeper"],
+      ["use-explore", "Try a sensory question"],
       ["use-repeat", "Repeat-tasting"]
     ])}
 
@@ -13157,18 +13282,18 @@ function renderHowToUse() {
       <div class="ladder-arrow">↓</div>
       <div class="ladder-step"><span class="ladder-n">2</span><span class="ladder-label">Flavor notes</span><span class="ladder-desc">You translate that into descriptors from the wheel's vocabulary: <em>lavender</em>, <em>lemon</em>, <em>green</em>.</span></div>
       <div class="ladder-arrow">↓</div>
-      <div class="ladder-step"><span class="ladder-n">3</span><span class="ladder-label">Shared patterns</span><span class="ladder-desc">Multiple notes converge on the same compounds — evidence accumulates where your perceptions agree.</span></div>
+      <div class="ladder-step"><span class="ladder-n">3</span><span class="ladder-label">Literature-linked overlap</span><span class="ladder-desc">Multiple notes can point to the same compounds in the app's source graph.</span></div>
       <div class="ladder-arrow">↓</div>
-      <div class="ladder-step"><span class="ladder-n">4</span><span class="ladder-label">Aromatic compounds</span><span class="ladder-desc">The compounds most likely present, ranked by how strongly your notes point to them and how easily each is perceived at trace amounts. Tap any one for its odor threshold and the citations behind it.</span></div>
+      <div class="ladder-step"><span class="ladder-n">4</span><span class="ladder-label">Possible aromatic compounds</span><span class="ladder-desc">Ranked clues based on link strength and odor-threshold tier. Tap one for its sensory description, threshold, contributing notes, and citations.</span></div>
     </div>
-    <p>The step worth dwelling on is 3→4: the tool is not matching a single word to a single molecule. It is looking for convergence across everything you reported. Lemon, grapefruit, and passionfruit all point toward polyfunctional thiols, and that triangulation is what gives the inference meaning.</p>
+    <p>The step worth dwelling on is 3→4: the tool is not matching one word to one molecule. It looks for convergence across what you reported. If lemon, grapefruit, and passionfruit all point toward a thiol, that makes the thiol a useful sensory hypothesis inside this model—not confirmation that it is present in your sample.</p>
 
     <h3 id="use-flow">The basic flow</h3>
-    <p>Find a descriptor you are noticing (lemon, vanilla, toast, smoky, whatever fits) and drag its slider up from 0 to 10. The note registers <em>the moment you slide</em>, with no separate confirm step. To change it, move the slider again. To drop it, slide back to 0. Each descriptor has published links to specific compounds, so the compounds it points to each pick up a weighted contribution. Several notes landing on the same compound stack up.</p>
+    <p>Find a descriptor you are noticing (lemon, vanilla, toast, smoky—whatever fits) and drag its slider from 0 to 10. The note registers <em>the moment you slide</em>. Move it again to revise the intensity, or return it to 0 to remove it. Each descriptor has sourced links to specific compounds; several notes pointing to the same compound make that possibility more prominent in the model.</p>
 
-    <h3 id="use-views">Two views of the same thing</h3>
+    <h3 id="use-views">The Wheel and Results</h3>
     <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail. Click a note for its inverse, the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
-    <p>The <strong>Compounds pane</strong> (gray panel, right) is the same data ranked and textual: a sortable grid of compounds with intensity and confidence bars. Click any card for its odor threshold, contributing notes, and the citations behind each link.</p>
+    <p>The <strong>Results pane</strong> is the same model in ranked, textual form: possible compounds with intensity and confidence bars. Click any card for its sensory anchor, odor threshold, contributing notes, and the citations behind each link.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
     <p>The header's <strong>Organize</strong> toggle decides what the ring is built from: two views of the same note-to-compound web. The scoring never changes. Only the layout and coloring do.</p>
@@ -13181,14 +13306,19 @@ function renderHowToUse() {
     <ul>
       <li><strong>Wheel.</strong> The default tasting workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). Not sure what to log? The Note Suggester above the sliders turns everyday words ("tropical," "earthy," "boozy") into specific notes to try. The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
       <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed a tasting too.</li>
-      <li><strong>Tree.</strong> Every note placed by real plant, fungus, animal, or process taxonomy. Zoom from Kingdom down to a single note to see which relatives share aromatic pathways.</li>
+      <li><strong>Tree.</strong> Biologically placeable plant and fungal notes arranged by represented lineage. Culinary umbrellas and process/fault descriptors stay on the Wheel rather than becoming invented branches. Use relatives as comparison leads, then check their compound links; shared ancestry alone does not prove an aroma relationship.</li>
+      <li><strong>Compare notes.</strong> Put any two notes side by side. Shared compounds give you a sensory crossover to investigate; culinary, botanical, and geographic cards provide context without treating correlation as causation.</li>
+      <li><strong>Constellation.</strong> Starts with crossover inside your current tasting, then lets you open the whole note system through chemistry, taxonomy, geography, or embodied perception. Brighter stars are notes you actually entered.</li>
       <li><strong>Compass.</strong> A small draggable, resizable radar, a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
       <li><strong>Share.</strong> Opens a tasting-card preview with image and PDF downloads and a URL that preserves the current tasting.</li>
       <li><strong>Legend.</strong> Visibility filters and a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p>The header's <strong>Go Deeper</strong> toggle trades the live sliders for an explicit commit step. Each row gains <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (exhale) buttons: you set the slider, then click to log, and can tag <em>when</em> in the sip you caught each note. Click an <em>Added</em> button to edit or delete it.</p>
+    <p><strong>Go Deeper</strong> keeps the Wheel and your tasting intact, then reveals Compare notes, Constellation, Map, and Tree. It also adds optional phase controls to the note rows: <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (after swallowing, exhale through the nose). Use them when timing matters; you do not need them for a useful tasting.</p>
+
+    <h3 id="use-explore">Turn a crossover into a sensory question</h3>
+    <p>When two notes share a linked compound, treat that as an invitation to test your perception. Open the compound and read its sensory description. Smell or taste the two ingredients separately, then together. Ask whether the shared character becomes easier to name, disappears under a stronger note, or changes with temperature, bubbles, swirling, or retronasal exhalation. Record what <em>you</em> notice; the app supplies a hypothesis and vocabulary, not a correct answer.</p>
 
     <h3 id="use-repeat">Repeat-tasting</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
@@ -14791,8 +14921,20 @@ function rebuildOriginMarkers() {
 // shown only when that filter is on AND it filtered the map down to nothing,
 // so an empty map is explained rather than looking broken.
 function updateOriginsFilterEmpty() {
+  const active = NOTES.filter(note => hasAnyEntry(note.id));
   document.getElementById("origins-filter-empty").hidden =
-    !(state.originsOnlyTasting && !NOTES.some(n => hasAnyEntry(n.id)));
+    !(state.originsOnlyTasting && active.length === 0);
+  const coverage = document.getElementById("origins-tasting-coverage");
+  if (!coverage) return;
+  if (!active.length) {
+    coverage.textContent = "Add notes on the Wheel to see which have a recorded cultivation-origin point.";
+    return;
+  }
+  const mapped = active.filter(note => NOTE_ORIGINS[note.id]);
+  const missing = active.filter(note => !NOTE_ORIGINS[note.id]);
+  coverage.textContent = `${mapped.length} of ${active.length} tasting notes have a mapped origin.`
+    + (missing.length ? ` Not mapped here: ${missing.map(note => note.label).join(", ")}.` : "")
+    + " Missing means no defensible single origin is recorded in this app—not that the note lacks a history.";
 }
 
 function updateOriginsClearTasting() {
@@ -16142,14 +16284,15 @@ function renderTaxonomyCompareResult(result) {
   result.classList.toggle("taxonomy-compare-columns-active",
     taxonomyCompareExpanded && taxonomyCompareChartOrientation === "columns");
   if (!aId && !bId) {
-    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two culinary aroma notes. The active workspace adds its own chemistry, botanical, or geographic lens.</div>`;
+    const activeCount = NOTES.filter(note => hasAnyEntry(note.id)).length;
+    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two aroma notes. ${activeCount >= 2 ? `Start with two of the ${activeCount} notes in your tasting, or reach beyond it.` : "The active workspace adds chemistry, botanical, or geographic context."} Shared links are questions to explore—not proof of causation.</div>`;
     return;
   }
   if (!aId || !bId) {
     const chosen = NOTE_BY_ID[aId || bId];
     const relatedCount = NOTES.filter(note => note.id !== chosen.id
       && taxonomyComparisonAffinity(chosen.id, note.id).related).length;
-    result.innerHTML = `<div class="taxonomy-compare-empty"><strong>${noteIcon(chosen)} ${chosen.label}</strong> selected. ${relatedCount} choices with shared chemistry or culinary aroma context stay bright; dim choices have no known link yet, but remain selectable.</div>`;
+    result.innerHTML = `<div class="taxonomy-compare-empty"><strong>${noteIcon(chosen)} ${chosen.label}</strong> selected. ${relatedCount} choices with shared linked chemistry or a culinary parent stay bright. Dim choices have no recorded link yet, but remain selectable—the gap may be in the dataset.</div>`;
     return;
   }
   if (aId === bId) {
@@ -16162,9 +16305,9 @@ function renderTaxonomyCompareResult(result) {
   const percent = Math.round(data.score * 100);
   result.innerHTML = `
     <div class="taxonomy-compare-summary">
-      <span class="taxonomy-compare-score">${percent}% weighted aroma overlap</span>
+      <span class="taxonomy-compare-score">${percent}% weighted overlap in this model</span>
       <span>${data.shared.length} shared of ${new Set([...data.aEdges.keys(), ...data.bEdges.keys()]).size} linked compounds</span>
-      <span class="taxonomy-compare-badge">correlation view</span>
+      <span class="taxonomy-compare-badge">linked-data view</span>
     </div>
     <div class="taxonomy-compare-detail-grid">
       <div class="taxonomy-compare-explanation">
@@ -16177,7 +16320,7 @@ function renderTaxonomyCompareResult(result) {
             </div>`).join("")
             : `<span class="taxonomy-compare-empty">No shared compounds in the current evidence set—not evidence that none exist.</span>`}
         </div>
-        <p class="taxonomy-compare-context"><strong>Culinary reading:</strong> chemical overlap is correlation—not causation or ancestry.${context ? ` <strong>Related context:</strong> ${context}` : ""}</p>
+        <p class="taxonomy-compare-context"><strong>Sensory question:</strong> do the shared compound descriptions help you notice a crossover when you smell these separately, then together? A shared link is correlation—not proof of presence, causation, or ancestry.${context ? ` <strong>Related context:</strong> ${context}` : ""}</p>
       </div>
       ${taxonomyComparisonChartHtml(aNote, bNote, data)}
     </div>
@@ -18505,7 +18648,7 @@ function renderTaxonomyTree() {
     }
   } else if (pathReadout && !selectedTarget) {
     pathReadout.textContent = state.goDeeper
-      ? `All ${countTaxonomyLeaves(taxTreeRoot)} biologically placed flavor notes · use Kingdom overview whenever you want the calmer categorized view.`
+      ? taxonomyTastingCoverageText()
       : "Choose a plant Order to grow its family florets, or follow the fungal roots downward.";
   }
 
@@ -19537,7 +19680,7 @@ updateTaxonomyLayerSummary();
     function appendFooter() {
       svg.appendChild(sEl("line", { x1: PAD, y1: footerTop, x2: W - PAD, y2: footerTop, stroke: "#26242b", "stroke-width": 1 }));
       svg.appendChild(sEl("text", { x: PAD, y: footerTop + 40, fill: "#d8a657", "font-size": 24, "font-weight": 700, "font-family": SANS }, "aromawheel.net"));
-      svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Perceptions are real — and they change with the moment."));
+      svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Sensory exploration only · not chemical analysis or medical advice."));
     }
 
     // Title

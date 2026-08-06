@@ -1343,6 +1343,78 @@ polish, while keeping the feature logic and mobile legibility intact.
 - This pass remains Tree-only. The concurrent `CLAUDE.md` modification and untracked
   `.claude/session-handoff-thesis-systems.md` file were left untouched.
 
+## Check-in: tasting-first relationship guidance — 1 commit
+
+Date: 2026-08-06
+Branch: `codex/aroma-wheel-responsive-ux-pass`
+Commits: `feat: center deeper exploration on tasting insights`
+
+### What I worked on
+
+**Scope:** Pre-merge usability and language check across the Wheel/Results tasting
+loop, Compare notes, Constellation, Map, Tree, and How to Use guidance.
+
+**Why:** The system work is coherent, but the deeper surfaces often opened with the
+whole 127-note model before explaining the user's own tasting. Several help strings
+also still described older Go Deeper and Tree behavior, and "evidence accumulates"
+could read as a stronger chemical claim than this inference model supports.
+
+### Changes summary
+
+- **Tasting-first Constellation:**
+  - The default side story now begins with all compound-overlap pairs inside the
+    current tasting, ranked by weighted overlap and naming the shared compounds.
+  - Each pair can open either note or hand off directly to the full Compare notes
+    panel with both selectors filled.
+  - The graph-wide 127-note spectrum remains available in a collapsed disclosure.
+- **Cross-tool coverage guidance:**
+  - Map now reports how many active tasting notes have origin records and names the
+    missing notes without implying they lack a history.
+  - Tree now reports how many active tasting notes have organism branches and names
+    omitted culinary umbrellas/process descriptors with the reason.
+- **Inference-language contract:**
+  - Updated the header, first-run nudge, empty state, comparison summary, and
+    Constellation language to distinguish observations, literature-linked clues,
+    and chemical measurement.
+  - Compare notes now frames overlap as a sensory question and states that a shared
+    link is not proof of presence, ancestry, or causation.
+  - Added a prominent medical-use boundary in Results and About covering allergy,
+    toxicity, food safety, exposure, diagnosis, and treatment; exported tasting
+    cards now also state that they are not chemical analysis or medical advice.
+- **How to Use compatibility update:**
+  - Replaced the stale Go Deeper description with the current reveal hierarchy.
+  - Corrected Tree scope (plant/fungal branches; no invented umbrella/process taxa).
+  - Added Compare notes, Constellation, and a concrete smell-separately/then-together
+    inquiry loop using delivery conditions and retronasal perception.
+
+### Testing / verification
+
+- Parsed the single inline script with Node `vm.Script`; `git diff --check` passes.
+- In-app browser at 360 × 760:
+  - Loaded the Ethiopian coffee example (6 active notes), revealed Go Deeper, and
+    verified Constellation shows 9 active-tasting crossover pairs before the full
+    system spectrum.
+  - Activated Coffee / roast ↔ Caramel's Compare action and verified the overlay
+    closes into a populated two-note comparison (2 shared compounds, 16% model
+    overlap) with the new sensory-question copy.
+  - Verified Map reports 5/6 mapped notes and names Berry as unmapped.
+  - Verified Tree reports 4/6 biologically branched notes and explains Berry and
+    Caramel's omission.
+  - No console warnings or errors.
+- In-app browser at 1280 × 800:
+  - Clean reload, Ethiopian coffee example, Wheel rendering, Radar, tasting tray,
+    and the two-row Go Deeper header hierarchy all rendered without overlap.
+  - Opened How to Use and verified the new Tree, Compare notes, Constellation,
+    Go Deeper, and sensory-question sections.
+
+### Questions / next review
+
+- The Constellation canvas still opens fit-to-system on compact phones. The new
+  tasting-first side cards make the first task legible, but a future dedicated
+  "fit my tasting" camera control could make the constellation graphic itself a
+  stronger entry point.
+- Physical-device and social in-app-browser behavior remains unverified.
+
 ## Follow-up: pointer-capture fix for radial controls (2026-07-27)
 
 - Reproduced the reported symptom from its cursor clue: Tree's empty-space
