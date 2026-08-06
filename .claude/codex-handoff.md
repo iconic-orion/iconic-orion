@@ -1,5 +1,90 @@
 # Codex branch check-in
 
+## Codex follow-up: bounded, biologically scoped Tree viewport (2026-08-05)
+
+Kept the Branches tree as the detailed, gently curving fan rather than replacing it with
+a vertical overview schematic. On a 360px portrait screen the natural tree is about 859px
+wide, so left/right exploration remains intentional; `Fit tree` is an optional one-tap
+whole-tree overview, while `Whole tree` returns to the readable natural scale.
+
+- Added content-aware pan guards. The viewport may travel across the real tree, but if a
+  drag reaches an outer margin or an internal clearing with no rendered node/label visible,
+  it catches on the nearest real branch point instead of allowing a long blank-screen trip.
+- `Whole tree` now opens centered on the first rendered canopy content, rather than inheriting
+  a stale corner scroll position or automatically forcing the tiny fit scale.
+- The organism tree now contains only Plantae (109 notes) and Fungi (2) as ancestry branches.
+  Process descriptors and the two cross-family umbrella notes stay available in the Wheel but
+  are omitted from Tree; Honey remains a clickable, free-flying bee beside the trunk base rather
+  than becoming a connected Animalia limb.
+- Fungi begins below the shared trunk flare and its complete Order → Family → note lineage grows
+  downward as the diagram's literal root system. Earth-toned tapered links distinguish those
+  fungal roots while the shared base still keeps Fungi taxonomically separate from Plantae.
+- Added an optional `Pollinators & dispersal` Visibility layer. Conservative family-level bee,
+  butterfly/moth, fly, beetle, bird, bat, wind, and human-propagation icons sit directly inside
+  the flower head without receiving branches; their titles describe the ecological association.
+- Family florets now expose two distinct hit areas: the opaque family-name plate opens family
+  detail, while the gold flower center toggles a compact pollinator/dispersal nameplate between
+  the head and its first note petals. Clicking a second center moves the nameplate; clicking the
+  same center again closes it.
+- Berry now displays as `Berry*`. Expanding its varietals or opening its detail explains the
+  culinary umbrella versus botanical classification, including the four represented families
+  and the distinction among berries, a balausta, aggregate accessory fruit, and drupelets.
+
+### Verification
+
+- Chrome localhost at 360x760: natural SVG 859x4901, horizontal overflow 534px; 150 rendered
+  note/family labels with zero measured overlap pairs. No Process or `(multiple families)` node.
+- Chrome localhost at 1280x820: natural SVG 1299x3901; the same 150 labels with zero overlap pairs.
+- `Fit tree` leaves zero horizontal or vertical overflow at both tested viewports; `Whole tree`
+  restores the detailed pan/zoom view. Mobile base visually checked with Plantae centered,
+  Honey's unconnected bee beside the trunk, and Fungi branching into a downward-growing root
+  system below the flare.
+- Chrome DOM check: exactly two Kingdom nodes (Plantae and Fungi), zero Animalia links, one
+  free Honey bee control, five downward fungal root links, and 23 mapped family ecology marks.
+- Pollinator-center interaction checked in Chrome at 1280x820 and 360x760. Rosaceae opens the
+  254px desktop / 222px phone pill `🐝 honey + native bees · 🦋 butterflies / moths`; neither
+  pill overlaps a rendered family/note label. Re-click closes it, clicking Solanaceae replaces
+  it with `🐝 bees`, and the separate Rosaceae name-plate hitbox still opens family detail.
+
+## Codex follow-up: family flower heads and label florets (2026-08-05)
+
+Replaced the Branches view's nearly straight per-family note columns with one reusable
+family-level floret layout. Large families now open into two outward-facing, brace-like
+label wings; one-, two-, and three-note families use dedicated bud/fork/crown silhouettes.
+The note dots stay small and serve only as stem endpoints—the labels themselves make the
+flower shape.
+
+Each family now has a central green-and-gold flower head at that convergence point, with
+the family name on an opaque plate directly beneath it. The Order-to-Family branch reads as
+the main stalk, while the note stems leave the head's upper rim and become the individual
+label petals. The head, name, and petal arrangement move as one unit when collision packing
+lengthens a stalk.
+
+- A complete family is now the collision unit. If two family envelopes would overlap, the
+  later family's whole floret grows a longer stem; individual labels are no longer nudged
+  away from their family silhouette.
+- The focused-Order view and All-notes view now share this same floret builder instead of
+  switching to a separate five-across canopy algorithm.
+- Focus centering uses the full rendered label envelope, not only note-dot coordinates, and
+  re-runs when the viewport or mobile detail-sheet height changes.
+- Compact-phone geometry uses shorter wings and 10px labels so the densest current family,
+  Rosaceae (10 labels), fits within the 360px viewport without horizontal clipping.
+- When a desktop zoom carries into the phone breakpoint, it is clamped back to 1 so the
+  central family head and name plate remain visible above the minimized detail sheet.
+
+### Verification
+
+- Chrome localhost visual pass at 1280×820 and 360×760.
+- Rosaceae: all 10 labels visible as petals around one family head, with the family name plate
+  visible and zero bounding-box overlaps at both viewports.
+- Fagales: Betulaceae's one-note Hazelnut reads as a single sprout; Juglandaceae's Pecan/Walnut
+  pair reads as a forked bud; each has its own family head and name plate.
+- All-notes view: 167 rendered note and family labels, zero measured bounding-box overlap pairs
+  at both 1280×820 and 360×760.
+- Mobile detail sheet tested minimized after resize; the focused floret re-centers when the
+  sheet snap changes. Browser console reported no warnings or errors.
+- Not claimed: physical-device or social in-app-browser verification.
+
 ## Claude follow-up: Constellation, Go Deeper's subjective hemisphere (2026-08-01)
 
 Landed the feature discussed in-session with Nolan across several turns: Go Deeper is repositioning
