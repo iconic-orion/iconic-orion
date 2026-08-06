@@ -118,7 +118,12 @@
   /* Go Deeper button: centered in flex layout without covering other controls */
   #godeeper-toggle.header-center-btn {
     background: var(--accent); color: #1a1810; border-color: var(--accent);
-    font-weight: 600; margin: 0 auto; }
+    font-weight: 600; margin: 0 auto; display: inline-flex; align-items: center;
+    justify-content: center; gap: 6px; }
+  .godeeper-glyphs { display: inline-flex; align-items: center; gap: 3px;
+    padding-left: 5px; border-left: 1px solid rgba(26,24,16,.3); }
+  #godeeper-toggle .godeeper-glyph { width: 13px; height: 13px;
+    display: block; flex: 0 0 auto; }
   #godeeper-toggle.header-center-btn:hover {
     background: #e7bd7d; border-color: #e7bd7d; color: #1a1810; }
   body.go-deeper #godeeper-toggle.header-center-btn {
@@ -174,10 +179,14 @@
      rendered at x438-507 while the clip ended at 447, so its center fell
      outside and it never hit-tested. The no-shrink protection now lives on
      `.tabs` (see above), which covers this group and its siblings alike. */
-  .workspace-tabs { border-color: var(--accent); }
+  .workspace-tabs { border-color: var(--accent); transition: opacity 150ms ease-out; }
   .workspace-tabs button { display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; padding: 6px 12px; }
   .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
+  /* Map and Tree are deeper explanatory lenses, not peer entry points on the
+     first-use HUD. Go Deeper grows them into this workspace switch. */
+  body:not(.go-deeper) #workspace-tabs button[data-workspace="map"],
+  body:not(.go-deeper) #workspace-tabs button[data-workspace="tree"] { display: none; }
   /* Desktop-only vertical divider between workspace switch and wheel controls. */
   .hud-vdivider { width: 1px; align-self: stretch; margin: 6px 2px;
     background: var(--line); }
@@ -452,6 +461,17 @@
   main.wheel { grid-area: wheel; position: relative; overflow: hidden; }
   svg { width: 100%; height: 100%; display: block; }
 
+  /* Wheel-local display controls. These belong to the visualization they
+     reshape, not to the global HUD: Map and Tree hide main.wheel wholesale,
+     so neither control can be mistaken for a workspace-wide setting. */
+  .wheel-view-tools { position: absolute; left: 10px; top: 10px; z-index: 18;
+    display: flex; align-items: center; gap: 7px; max-width: calc(100% - 20px);
+    padding: 5px; box-sizing: border-box;
+    background: rgba(29, 27, 23, 0.78); border: 1px solid var(--line);
+    border-radius: 9px; box-shadow: 0 5px 16px rgba(0,0,0,.24);
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+  .wheel-view-tools .tabs { background: rgba(18, 16, 20, .42); }
+
   /* Compound callout labels (mobile-only toggle) */
   #callout-toggle { display: none; }
   .callout-tail { pointer-events: none; }
@@ -504,6 +524,9 @@
   .wheel-hint .wheel-hint-long { display: none; }
   .wheel-hint.open .wheel-hint-short { display: none; }
   .wheel-hint.open .wheel-hint-long  { display: inline; }
+  /* The Wheel's own toolbar occupies the first row; its explainer sits below. */
+  .wheel-view-tools ~ .wheel-hint { top: 56px; }
+  body.compass-on .wheel-hint { display: none; }
 
   /* Dismiss (×) affordance shared by the wheel's helper boxes — the first-run
      nudge and the context caption. Everything a user might want gone can be
@@ -527,7 +550,7 @@
      A pill bar pinned to the bottom of the wheel. Each chip is one entered
      note: emoji + name + intensity, in its flavor-group color. Horizontally
      scrollable so a long tasting never pushes the wheel around. z-index 8:
-     above wheel content, below the compass (20) and any modal (200+). */
+     above wheel content, below the Radar (20) and any modal (200+). */
   .tasting-tray { position: absolute; left: 50%; transform: translateX(-50%);
     bottom: 12px; z-index: 8; max-width: calc(100% - 24px);
     display: flex; align-items: center; gap: 9px;
@@ -584,7 +607,7 @@
     text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; }
   .tray-clear:hover { border-color: var(--warn); color: var(--warn); }
 
-  /* Perception Compass: small draggable, resizable radar widget, corner-
+  /* Radar: small draggable, resizable aroma-profile widget, corner-
      anchored by default (top/right) until dragged, at which point JS
      switches it to an explicit left/top position. z-index 20: above wheel
      SVG content (no z-index of its own) and the mobile callout-toggle (5),
@@ -594,7 +617,7 @@
      tabs, svg, caption) grows/shrinks together in proportion. #aroma-compass
      itself is resized in lockstep (its width/height tracks the scaled
      content's rendered footprint) so it never clips or leaves a gap. */
-  .aroma-compass { position: absolute; top: 12px; right: 12px; z-index: 20;
+  .aroma-compass { position: absolute; top: 58px; right: 12px; z-index: 20;
     background: var(--panel); border: 1px solid var(--line);
     border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     overflow: hidden; }
@@ -847,6 +870,55 @@
   #deeper-warp[hidden] { display: none; }
   #deeper-warp.warp-show { opacity: 1; }
   #deeper-warp.warp-fade { opacity: 0; transition: opacity 380ms ease-out; }
+
+  /* Go Deeper handoff: after the strata descent clears, a gold outline traces
+     the live Wheel rim, then contracts into the real Wheel / Map / Tree switch
+     in the HUD. Geometry is supplied in client pixels by playWorkspaceReveal()
+     because the starting ring and ending HUD control use different layouts. */
+  #workspace-reveal-morph { position: fixed; z-index: 290; box-sizing: border-box;
+    pointer-events: none; overflow: hidden; opacity: 0;
+    border: 2px solid var(--accent); border-radius: 50%; background: transparent;
+    box-shadow: 0 0 0 1px rgba(216,166,87,.34),
+      0 0 26px rgba(216,166,87,.58), inset 0 0 20px rgba(216,166,87,.08); }
+  #workspace-reveal-morph[hidden] { display: none; }
+  #workspace-reveal-morph.is-ring { opacity: 1;
+    animation: workspace-ring-arrive 420ms cubic-bezier(.2,.8,.2,1) both; }
+  #workspace-reveal-morph.is-morphing { opacity: 1; border-radius: 6px;
+    background: var(--panel); box-shadow: 0 0 0 2px rgba(216,166,87,.22),
+      0 7px 24px rgba(0,0,0,.42);
+    transition: left 720ms cubic-bezier(.2,.82,.2,1),
+      top 720ms cubic-bezier(.2,.82,.2,1),
+      width 720ms cubic-bezier(.2,.82,.2,1),
+      height 720ms cubic-bezier(.2,.82,.2,1),
+      border-radius 720ms cubic-bezier(.2,.82,.2,1),
+      background 420ms ease 260ms, box-shadow 420ms ease 260ms; }
+  #workspace-reveal-morph.is-arrived { opacity: 0;
+    transition: opacity 180ms ease-out; }
+  .workspace-reveal-options { position: absolute; inset: 0; display: grid;
+    grid-template-columns: repeat(3, 1fr); opacity: 0; color: var(--ink);
+    font-size: 12px; }
+  #workspace-reveal-morph.is-morphing .workspace-reveal-options { opacity: 1;
+    transition: opacity 180ms ease 500ms; }
+  .workspace-reveal-option { min-width: 0; display: flex; align-items: center;
+    justify-content: center; gap: 5px; border-right: 1px solid var(--line);
+    white-space: nowrap; }
+  .workspace-reveal-option:last-child { border-right: none; }
+  .workspace-reveal-option:first-child { background: var(--accent); color: #1a1810; }
+  .workspace-reveal-option svg { width: 14px; height: 14px; flex: 0 0 auto; }
+  /* The real target keeps its geometry but waits invisibly for the outline to
+     arrive. Removing this class crossfades the genuine interactive menu in. */
+  body.workspace-reveal-active #workspace-tabs { opacity: 0; pointer-events: none;
+    transition: opacity 150ms ease-out; }
+  #workspace-tabs.workspace-tabs-attention { animation: workspace-tabs-attention 620ms ease-out; }
+  @keyframes workspace-ring-arrive {
+    from { opacity: 0; transform: scale(.94); box-shadow: 0 0 0 0 rgba(216,166,87,0); }
+    62% { opacity: 1; transform: scale(1.012); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes workspace-tabs-attention {
+    0% { box-shadow: 0 0 0 0 rgba(216,166,87,.75); }
+    100% { box-shadow: 0 0 0 8px rgba(216,166,87,0); }
+  }
   /* One tall column of five horizontal strata, slid upward past the viewport so
      the eye reads it as sinking. Bands are stacked oldest/deepest LAST, so the
      descent runs canopy -> understory -> bark -> root -> soil, matching the same
@@ -971,7 +1043,8 @@
     padding: 6px 8px; line-height: 1; min-width: 44px; min-height: 44px; }
   .cx-close:hover { color: var(--accent); }
 
-  .cx-console { flex: 1; display: grid; grid-template-columns: 64px 1fr 260px; min-height: 0; }
+  .cx-console { flex: 1; display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) clamp(290px, 22vw, 340px); min-height: 0; }
   @media (max-width: 760px) {
     .cx-console { grid-template-columns: 1fr; grid-template-rows: 1fr auto auto; }
     .cx-dock { order: 3; }
@@ -1055,6 +1128,55 @@
   .cx-side { border-left: 1px solid var(--line); background: var(--panel); padding: 16px; overflow-y: auto; font-size: 13px; }
   .cx-side .cx-empty { color: var(--ink-dim); font-size: 12.5px; padding-top: 10px; }
   .cx-side h3 { font: 400 20px/1.2 Georgia, "Times New Roman", serif; margin: 0; color: var(--ink); }
+  .cx-overlap-head { position: sticky; z-index: 2; top: -16px; margin: -16px -16px 10px;
+    padding: 16px 16px 11px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .cx-overlap-head p { margin: 7px 0 0; color: var(--ink-dim); font-size: 11px; line-height: 1.45; }
+  .cx-overlap-summary { display: flex; flex-wrap: wrap; gap: 5px 9px; margin-top: 8px;
+    color: var(--accent-2); font-size: 10px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; }
+  .cx-overlap-list { display: grid; gap: 5px; }
+  .cx-overlap-row { position: relative; width: 100%; min-width: 0; padding: 6px 7px 7px;
+    border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ink);
+    text-align: left; cursor: pointer; }
+  .cx-overlap-row:hover, .cx-overlap-row:focus-visible { border-color: var(--line);
+    background: var(--panel-2); outline: none; }
+  .cx-overlap-row.is-active { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .cx-overlap-row-top { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline; gap: 7px; }
+  .cx-overlap-name { overflow: hidden; font-size: 11.5px; font-weight: 650;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .cx-overlap-links { color: var(--ink-dim); font-size: 9.5px; font-variant-numeric: tabular-nums; }
+  .cx-overlap-track { display: block; height: 7px; margin-top: 5px; overflow: hidden; border-radius: 999px;
+    background: #0d130f; box-shadow: inset 0 0 0 1px rgba(255,255,255,.045); }
+  .cx-overlap-fill { display: block; height: 100%; min-width: 2px; border-radius: inherit;
+    opacity: .88; }
+  .cx-overlap-best { display: block; margin-top: 4px; overflow: hidden; color: var(--ink-dim); font-size: 9.5px;
+    line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+  .cx-overlap-row.is-isolated { opacity: .68; }
+  .cx-overlap-row.is-isolated .cx-overlap-track { background: transparent;
+    box-shadow: inset 0 0 0 1px #364139; }
+  .cx-overlap-row.is-isolated .cx-overlap-fill { display: none; }
+  .cx-overlap-divider { margin: 10px 0 3px; padding: 9px 7px 0; border-top: 1px dashed #465248;
+    color: var(--ink-dim); font-size: 9.5px; font-weight: 700; letter-spacing: .065em;
+    text-transform: uppercase; }
+  .cx-note-overlaps { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line); }
+  .cx-note-overlaps h4 { margin: 0; color: var(--ink); font-size: 12px; letter-spacing: .04em;
+    text-transform: uppercase; }
+  .cx-note-overlaps > p { margin: 5px 0 9px; color: var(--ink-dim); font-size: 10.5px; line-height: 1.4; }
+  .cx-note-overlap-list { display: grid; gap: 7px; }
+  .cx-note-overlap-row { width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--line);
+    border-radius: 7px; background: #111914; color: var(--ink); text-align: left; cursor: pointer; }
+  .cx-note-overlap-row:hover, .cx-note-overlap-row:focus-visible { border-color: var(--accent-2);
+    background: var(--panel-2); outline: none; }
+  .cx-note-overlap-top { display: grid; grid-template-columns: minmax(0,1fr) auto;
+    align-items: baseline; gap: 8px; }
+  .cx-note-overlap-name { overflow: hidden; font-size: 11px; font-weight: 700;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .cx-note-overlap-score { color: var(--accent-2); font-size: 10px; font-weight: 750;
+    font-variant-numeric: tabular-nums; }
+  .cx-note-overlap-row .cx-overlap-track { height: 5px; margin-top: 6px; }
+  .cx-note-overlap-compounds { display: block; margin-top: 6px; color: var(--ink-dim);
+    font-size: 9.5px; line-height: 1.35; }
   .cx-grp-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim);
     text-transform: uppercase; letter-spacing: .05em; }
   .cx-grp-dot { width: 9px; height: 9px; border-radius: 50%; }
@@ -1182,6 +1304,9 @@
     .depth-card { animation:none; }
     .depth-card::before { animation:none; display:none; }
     .tx-note-focus-plot { animation:none; }
+    #workspace-reveal-morph { display: none !important; }
+    #workspace-tabs.workspace-tabs-attention { animation: none;
+      box-shadow: 0 0 0 2px rgba(216,166,87,.45); }
   }
 
   /* ── Reading / dyslexia mode ──────────────────────────────────────────
@@ -1213,10 +1338,11 @@
   body.reading-mode .info-overlay-body p,
   body.reading-mode .info-entry-body { font-size: 14px; }
 
-  /* Compass: a first-class header toggle (promoted out of the settings gear). */
+  /* Radar: the wheel-local aroma-profile tool. "Compass" is reserved for
+     Map's separate geographic bearing control. */
   #compass-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
     padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; }
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
   #compass-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
@@ -1668,14 +1794,16 @@
       font-size: 13px; line-height: 1; letter-spacing: 0.05em; }
     .hud-extra { display: none; }
     /* Opened tray: a tidy 2-column grid instead of a haphazard pill wrap.
-         row 1   [ Wheel | Map ]                   (i)
-         row 2   PANELS | Notes Both Results
-         row 3   ORGANIZE | Scent Chemistry
-         row 4   Compass                    Go Deeper
+         row 1   [ Wheel | Map | Tree ]             (i)
+         row 2   PANELS | Notes Results
+         row 3   Compare notes
+         row 4   Constellation
          row 5   ──────────── divider ────────────
          row 6   Share card                 Start Over
          row 7   Feedback
          row 8   Save or share tasting
+       Wheel organization and the Radar now live on the Wheel
+       itself, so they intentionally do not appear in this global tray.
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
        dictate the mobile layout. The desktop-only .hud-vdivider and .hud-spacer
        are removed from the grid flow entirely. */
@@ -1716,15 +1844,14 @@
     header.hud-open #workspace-tabs  { grid-row: 1; grid-column: 1; justify-self: start; }
     header.hud-open #info-open-btn    { grid-row: 1; grid-column: 2; justify-self: end; }
     header.hud-open #view-tabs       { grid-row: 2; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open #organize-tabs    { grid-row: 3; grid-column: 1 / -1; justify-self: start; }
-    header.hud-open #compass-toggle   { grid-row: 4; grid-column: 1; justify-self: start; }
-    header.hud-open #godeeper-toggle  { grid-row: 4; grid-column: 2; justify-self: end; }
-    header.hud-open #constellation-toggle { grid-row: 5; grid-column: 1 / -1; justify-self: stretch;
+    header.hud-open #taxonomy-compare-toggle { grid-row: 3; grid-column: 1 / -1;
+      justify-self: stretch; justify-content: center; margin-top: 6px; }
+    header.hud-open #constellation-toggle { grid-row: 4; grid-column: 1 / -1; justify-self: stretch;
       justify-content: center; margin-top: 6px; }
-    header.hud-open .hud-divider      { display: block; grid-row: 6; grid-column: 1 / -1;
+    header.hud-open .hud-divider      { display: block; grid-row: 5; grid-column: 1 / -1;
       height: 1px; background: var(--line); }
-    header.hud-open #share-open-btn   { grid-row: 7; grid-column: 1; justify-self: stretch; margin-top: 6px; justify-content:center; }
-    header.hud-open #reset            { grid-row: 7; grid-column: 2; justify-self: stretch; margin-top: 6px; }
+    header.hud-open #share-open-btn   { grid-row: 6; grid-column: 1; justify-self: stretch; margin-top: 6px; justify-content:center; }
+    header.hud-open #reset            { grid-row: 6; grid-column: 2; justify-self: stretch; margin-top: 6px; }
 
     /* The 28px-tall buttons that work fine for a mouse are too small to
        reliably thumb-tap (Material/WCAG both call for ~44-48px minimum).
@@ -1732,19 +1859,18 @@
        which is mouse-driven, is untouched. */
     header.hud-open .hud-extra button,
     header.hud-open #view-tabs button,
-    header.hud-open #organize-tabs button,
     header.hud-open #workspace-tabs button {
       min-height: 44px; padding: 10px 14px;
     }
     header.hud-open #info-open-btn { width: 44px; height: 44px; }
     /* Feedback is an <a> (not a <button>), so the touch-target rules above skip
        it — place it as a full-width, 44px-tall CTA at the foot of the tray. */
-    header.hud-open #hud-feedback { grid-row: 8; grid-column: 1 / -1; justify-self: stretch;
+    header.hud-open #hud-feedback { grid-row: 7; grid-column: 1 / -1; justify-self: stretch;
       justify-content: center; min-height: 44px; margin-top: 6px; }
     /* Saving/sharing is a global utility, not wheel decoration. Keep it as the
        final hamburger-tray item and let its panel expand in normal flow so it
        remains reachable instead of drawing over the wheel beneath the tray. */
-    header.hud-open #hud-save-share { grid-row: 9; grid-column: 1 / -1;
+    header.hud-open #hud-save-share { grid-row: 8; grid-column: 1 / -1;
       justify-self: stretch; margin-top: 6px; }
     header.hud-open #lap-save { width: 100%; min-height: 44px; }
     header.hud-open .lap-actions-menu { position: static; width: 100%; margin-top: 8px; }
@@ -1783,7 +1909,7 @@
        impossible to close. Anchor it to the TOP of the band so the header row
        and × are always visible; keep it narrow enough to stay inside the ring. */
     .wheel-nudge { width: min(260px, calc(100vw - 44px)); padding: 12px 10px;
-      top: 12px; transform: translateX(-50%); }
+      top: 64px; transform: translateX(-50%); }
     .wheel-nudge .nudge-head { font-size: 12px; line-height: 1.25; }
     .wheel-nudge .nudge-sub { font-size: 10.5px; line-height: 1.45; }
     .wheel-nudge .nudge-demo { padding: 4px 10px; }
@@ -1796,6 +1922,7 @@
        otherwise overlap the nudge (and its ×) on a narrow screen. They return
        the moment a note is logged (nudge-active is cleared in updateNudge). */
     body.nudge-active #callout-toggle,
+    body.compass-on #callout-toggle,
     body.nudge-active #aroma-compass { display: none; }
 
     /* An expanded lap ribbon shows each layer's note count + delivery
@@ -1803,12 +1930,27 @@
        overlap risk as the nudge above, same fix: yield the band while it's
        open rather than trying to guess a tall-enough static offset. */
     .lap-rail.laps-open ~ #callout-toggle,
-    .lap-rail.laps-open ~ .wheel-hint { display: none; }
+    .lap-rail.laps-open ~ .wheel-hint,
+    .lap-rail.laps-open ~ .wheel-view-tools { display: none; }
 
-    /* Drop the context hint below the top-left "Show compound labels" toggle
-       (which is mobile-only, now at top:50px to clear the lap-rail ribbon above
-       it) so the two never overlap; widen it to the wheel. */
-    .wheel-hint { top: 78px; max-width: calc(100% - 20px); }
+    /* Wheel-local controls replace the two former hamburger/HUD entries. Hide
+       the redundant "Organize" eyebrow on a phone, but keep the two choices
+       and Radar as comfortable touch targets. */
+    .wheel-view-tools { left: 8px; right: 8px; top: 8px; max-width: none;
+      gap: 5px; padding: 4px; justify-content: space-between; }
+    .wheel-view-tools .tabs-label { display: none; }
+    .wheel-view-tools .tabs button { min-height: 40px; padding: 8px 9px; }
+    .wheel-view-tools #compass-toggle { min-height: 40px; padding: 8px;
+      font-size: 11px; }
+    /* A saved-lap ribbon owns the very top of the mobile Wheel. Keep the tools
+       immediately below its collapsed state; expanded laps hide them above. */
+    .lap-rail:not(.is-empty) ~ .wheel-view-tools { top: 50px; }
+    .lap-rail:not(.is-empty) ~ .wheel-hint { top: 142px; }
+    .lap-rail:not(.is-empty) ~ #callout-toggle { top: 106px; }
+
+    /* Drop the context hint below the wheel-local tools and the mobile-only
+       "Show compound labels" toggle so the three layers never overlap. */
+    .wheel-view-tools ~ .wheel-hint { top: 100px; max-width: calc(100% - 20px); }
 
     /* The floating dots' labels (compound names in scent mode, note names in
        chemistry mode) are too long for a phone-width wheel and pile up
@@ -1852,13 +1994,12 @@
        color bands decode via the legend and tapping a dot. */
     body.organize-chemistry text.group-arc-label { display: none; }
 
-    /* "Show compound labels" callout toggle: small control pinned to the top-left
-       of the wheel pane. Only renders on mobile where floating dot labels are hidden.
-       top:50px clears the lap-rail ribbon docked at top:6px (collapsed height ~38px) —
-       see the .lap-rail mobile rule below; the two were colliding at top:10px. */
+    /* "Show compound labels" callout toggle: small control pinned below the
+       Wheel-local toolbar. It only renders on mobile, where floating dot labels
+       are hidden; saved laps shift both controls down together. */
     #callout-toggle {
       display: flex; align-items: center; gap: 5px;
-      position: absolute; top: 50px; left: 10px; z-index: 5;
+      position: absolute; top: 64px; left: 10px; z-index: 5;
       padding: 4px 8px;
       background: rgba(29, 27, 23, 0.55);
       border: 1px solid rgba(205, 200, 190, 0.22);
@@ -1880,13 +2021,9 @@
   body.origins-mode aside.detail,
   body.origins-mode .pane-toggle { display: none !important; }
   body.origins-mode { grid-template-columns: 1fr; }
-  /* Wheel-only controls don't do anything on the map, so they're grayed out
-     (not hidden) as a signal they're inert here rather than missing. The
-     workspace switch itself stays live — it's how you get back to the wheel. */
+  /* Global panel/depth controls do not act on the map. Wheel-local display
+     controls disappear with main.wheel instead of lingering inert in the HUD. */
   body.origins-mode #view-tabs,
-  body.origins-mode #organize-tabs,
-  body.origins-mode #compass-toggle,
-  body.origins-mode #godeeper-toggle,
   body.origins-mode .hud-vdivider {
     opacity: 0.4; pointer-events: none;
   }
@@ -1910,8 +2047,6 @@
   body.taxonomy-mode .pane-toggle { display: none !important; }
   body.taxonomy-mode { grid-template-columns: 0 1fr var(--detail-pane-w); }
   body.taxonomy-mode #view-tabs,
-  body.taxonomy-mode #organize-tabs,
-  body.taxonomy-mode #compass-toggle,
   body.taxonomy-mode .hud-vdivider {
     opacity: 0.4; pointer-events: none;
   }
@@ -1927,6 +2062,27 @@
   #taxonomy-search-wrap button { font-size: 11px; padding: 4px 8px; }
   #taxonomy-search-count { font-size: 11px; line-height: 1.35; color: var(--ink-dim); }
   #taxonomy-search-count.tx-search-opened { color: var(--accent); font-weight: 700; }
+  #taxonomy-compare-toggle { display: inline-flex; align-items: center; gap: 7px;
+    min-height: 30px; padding: 3px 9px 3px 5px !important; border-color: #7b755a;
+    background: linear-gradient(135deg, #20271f, #171c18); color: #eee9da;
+    box-shadow: inset 0 0 0 1px rgba(218, 188, 107, .08), 0 2px 8px rgba(0,0,0,.2); }
+  #taxonomy-compare-toggle:hover { border-color: #c7a95f; background: #252d24; }
+  .taxonomy-compare-toggle-glyph { display: inline-grid; grid-template-columns: 18px 12px 18px;
+    align-items: center; flex: 0 0 auto; }
+  .taxonomy-compare-toggle-card { display: grid; place-items: center; width: 18px; height: 20px;
+    border: 1px solid currentColor; border-radius: 5px 5px 7px 7px; color: #171912;
+    font-size: 8px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .taxonomy-compare-toggle-card:first-child { background: #d49b5a; border-color: #f1c17f;
+    transform: rotate(-4deg); }
+  .taxonomy-compare-toggle-card:last-child { background: #78a8bd; border-color: #a9d4e1;
+    transform: rotate(4deg); }
+  .taxonomy-compare-toggle-arrow { color: #d9ca91; font-size: 11px; line-height: 1;
+    text-align: center; }
+  #taxonomy-compare-toggle-label { font-size: 10px; font-weight: 780; letter-spacing: .015em;
+    white-space: nowrap; }
+  #taxonomy-compare-toggle[aria-pressed="true"] { background: var(--accent);
+    border-color: #f0d893; color: #17180f; }
+  #taxonomy-compare-toggle[aria-pressed="true"] .taxonomy-compare-toggle-arrow { color: #473915; }
   .flavor-search-results { position: absolute; top: calc(100% + 5px); left: 0; right: 0;
     max-height: min(320px, 48vh); overflow-y: auto; z-index: 20;
     background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
@@ -2510,6 +2666,15 @@
   /* Dot + label emphasis for the selected marker (after .active so it wins). */
   .origin-marker.selected .origin-dot { fill: #fff !important; opacity: 1; }
   .origin-marker.selected .origin-label { fill: #fff !important; font-weight: 700; }
+  .origin-compare-route { fill: none; stroke: #d7bf79; stroke-width: 2.25;
+    stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; opacity: .9; }
+  .origin-compare-endpoint { stroke: #f4ead0; stroke-width: 2;
+    vector-effect: non-scaling-stroke; }
+  .origin-compare-endpoint-a { fill: #d49b5a; }
+  .origin-compare-endpoint-b { fill: #78a8bd; }
+  .origin-compare-distance-label { fill: #fff2ca; font-size: 12px; font-weight: 800;
+    text-anchor: middle; paint-order: stroke; stroke: #131914; stroke-width: 4px;
+    stroke-linejoin: round; pointer-events: none; }
   .origin-leader { fill: none; stroke: var(--accent); stroke-width: 1; opacity: 0.7; }
   .origin-leader.dashed { stroke-dasharray: 4 3; }
   .origin-label {
@@ -3109,6 +3274,300 @@
     color: var(--ink-dim); font-size: 11px; line-height: 1.4; position: relative; z-index: 3; }
   .taxonomy-story strong { color: var(--accent-2); font-weight: 600; white-space: nowrap; }
   #taxonomy-path-readout { color: var(--ink); }
+  #taxonomy-compare-panel { flex-shrink: 0; position: relative; z-index: 7;
+    padding: 9px 14px 10px; border-bottom: 1px solid var(--line); background: #121a15; }
+  #taxonomy-compare-panel[hidden], #global-compare-panel[hidden] { display: none; }
+  #global-compare-panel { position: fixed; z-index: 96; top: 58px; left: 50%;
+    width: min(860px, calc(100vw - 24px)); transform: translateX(-50%);
+    padding: 11px 14px 12px; border: 1px solid #667668; border-radius: 10px;
+    background: rgba(18, 26, 21, .98); box-shadow: 0 18px 46px rgba(0,0,0,.55); }
+  .taxonomy-compare-pickers { display: grid;
+    grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr) auto auto;
+    align-items: end; gap: 7px; }
+  .taxonomy-compare-pickers label { display: grid; gap: 3px; min-width: 0;
+    color: var(--ink-dim); font-size: 8.5px; font-weight: 750;
+    letter-spacing: .07em; text-transform: uppercase; }
+  .taxonomy-compare-pickers select { width: 100%; min-width: 0; height: 34px;
+    border: 1px solid #617265; border-radius: 7px; padding: 0 26px 0 8px;
+    color: var(--ink); background: #1a241d; font-size: 11px; }
+  .taxonomy-compare-pickers option.taxonomy-compare-related { color: #f3eee3;
+    background: #1b251e; font-weight: 650; }
+  .taxonomy-compare-pickers option.taxonomy-compare-unrelated { color: #747c75;
+    background: #141915; font-weight: 400; }
+  .taxonomy-compare-pickers button { min-height: 34px; padding: 0 10px;
+    border: 1px solid var(--line); border-radius: 7px; color: var(--ink);
+    background: var(--panel); cursor: pointer; }
+  .taxonomy-compare-expand { display: inline-flex; align-items: center; justify-content: center;
+    gap: 5px; border-color: #86744e !important; color: #e6d49b !important;
+    white-space: nowrap; }
+  .taxonomy-compare-expand:hover, .taxonomy-compare-expand:focus { border-color: var(--accent) !important;
+    color: var(--accent) !important; }
+  .taxonomy-compare-result { margin-top: 8px; color: var(--ink); font-size: 10px; line-height: 1.4; }
+  .taxonomy-compare-empty { color: var(--ink-dim); }
+  .taxonomy-compare-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 9px; }
+  .taxonomy-compare-score { color: var(--accent-2); font-size: 12px; font-weight: 800; }
+  .taxonomy-compare-badge { padding: 2px 6px; border: 1px solid #7a8068;
+    border-radius: 999px; color: #d5c58f; font-size: 8px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; }
+  .taxonomy-compare-compounds { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .taxonomy-compare-compound { display: grid; gap: 2px; max-width: min(280px, 78vw);
+    border: 1px solid #607565; border-radius: 9px; padding: 6px 8px;
+    color: var(--ink); background: #1b2821; text-align: left; }
+  .taxonomy-compare-definition { padding: 0; border: 0; background: transparent;
+    color: inherit; font: 700 9.5px/1.2 ui-sans-serif, system-ui, sans-serif;
+    text-align: inherit; text-decoration: underline; text-decoration-color: #789484;
+    text-decoration-style: dotted; text-underline-offset: 3px; cursor: help; }
+  .taxonomy-compare-definition:hover, .taxonomy-compare-definition:focus-visible {
+    color: var(--accent-2); outline: none; text-decoration-style: solid; }
+  .taxonomy-compare-compound span { color: #a6b0a8;
+    font: 500 8px/1.3 ui-sans-serif, system-ui, sans-serif; }
+  .taxonomy-compare-compound:hover { border-color: var(--accent); }
+  .taxonomy-compare-context { margin: 7px 0 0; color: var(--ink-dim); }
+  .taxonomy-compare-context strong { color: var(--accent-2); }
+  .taxonomy-compare-detail-grid { display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    align-items: end; gap: 10px 18px; }
+  .taxonomy-compare-chart { margin: 5px 0 0; padding: 7px 8px 6px;
+    border: 1px solid #425347; border-radius: 8px; background: #0e1511; min-width: 0; }
+  .taxonomy-compare-chart figcaption { display: flex; justify-content: space-between; gap: 8px;
+    color: #d8d5ca; font-size: 9px; font-weight: 800; letter-spacing: .035em;
+    text-transform: uppercase; }
+  .taxonomy-compare-chart-heading { display: flex; align-items: baseline; gap: 9px; }
+  .taxonomy-compare-chart-layout { display: none; align-items: center; gap: 3px;
+    padding: 3px; border: 1px solid #48574c; border-radius: 7px; background: #111a14; }
+  .taxonomy-compare-chart-layout button { min-height: 28px; padding: 3px 9px;
+    border: 0; border-radius: 5px; background: transparent; color: #929d95;
+    font: 750 10px/1 ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+  .taxonomy-compare-chart-layout button[aria-pressed="true"] { background: #314439; color: #f0eadc; }
+  .taxonomy-compare-chart-axis, .taxonomy-compare-chart-row { display: grid;
+    grid-template-columns: minmax(45px,1fr) 108px minmax(45px,1fr);
+    align-items: center; gap: 6px; }
+  .taxonomy-compare-chart-axis { margin: 5px 0 3px; color: var(--ink-dim); font-size: 7.5px; }
+  .taxonomy-compare-chart-axis span:first-child { color: #e3aa69; text-align: right; }
+  .taxonomy-compare-chart-axis span:nth-child(2) { text-align: center; }
+  .taxonomy-compare-chart-axis span:last-child { color: #8cc0d2; }
+  .taxonomy-compare-chart-row { min-height: 26px; }
+  .taxonomy-compare-chart-row.is-unmatched { opacity: .43; }
+  .taxonomy-compare-chart-divider { margin: 5px 0 3px; border-top: 1px dashed #39463d;
+    padding-top: 3px; color: #7d857f; font-size: 7px; letter-spacing: .06em;
+    text-align: center; text-transform: uppercase; }
+  .taxonomy-compare-chart-bar { height: 6px; display: flex; border-radius: 999px;
+    background: rgba(255,255,255,.035); overflow: hidden; }
+  .taxonomy-compare-chart-bar.a { justify-content: flex-end; }
+  .taxonomy-compare-chart-bar span { display: block; min-width: 1px; border-radius: inherit; }
+  .taxonomy-compare-chart-bar.a span { background: #d49b5a; }
+  .taxonomy-compare-chart-bar.b span { background: #78a8bd; }
+  .taxonomy-compare-chart-label { overflow: hidden; color: #cfd4cd; font-size: 7.5px;
+    line-height: 1.1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+  .taxonomy-compare-chart-label strong { display: block; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .taxonomy-compare-chart-definition { display: block; width: 100%; overflow: hidden;
+    font-size: inherit; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+  .taxonomy-compare-chart-aroma { display: block; margin-top: 2px; overflow: hidden;
+    color: #879189; font-size: 6.5px; font-weight: 500; line-height: 1.15;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .taxonomy-compare-chart-label small { display: none; color: #8c968e; font-size: 8px;
+    font-weight: 500; }
+  .taxonomy-compare-chart-note { margin: 5px 0 0; color: #778078; font-size: 7px;
+    line-height: 1.25; text-align: right; }
+  .taxonomy-compare-chart-columns { display: none; }
+  .taxonomy-compare-vertical-sections { display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; min-width: 760px; }
+  .taxonomy-compare-vertical-sections.is-single { grid-template-columns: 1fr; }
+  .taxonomy-compare-vertical-group { min-width: 0; }
+  .taxonomy-compare-vertical-group + .taxonomy-compare-vertical-group {
+    padding-left: 30px; border-left: 1px dashed #425047; }
+  .taxonomy-compare-vertical-group h5 { margin: 0 0 10px; color: #aeb8b0;
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+  .taxonomy-compare-vertical-grid { display: grid;
+    grid-template-columns: repeat(var(--compound-count), minmax(76px, 1fr));
+    align-items: end; gap: 9px; }
+  .taxonomy-compare-vertical-item { min-width: 0; }
+  .taxonomy-compare-vertical-item.is-unmatched { opacity: .62; }
+  .taxonomy-compare-vertical-bars { height: clamp(270px, 38vh, 430px); display: flex;
+    align-items: end; justify-content: center; gap: 7px; padding: 24px 4px 0;
+    border-bottom: 1px solid #536158;
+    background: linear-gradient(to top, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 100% 25%; }
+  .taxonomy-compare-vertical-bar { position: relative; width: min(30px, 38%); min-height: 2px;
+    border-radius: 5px 5px 2px 2px; }
+  .taxonomy-compare-vertical-bar.a { background: #d49b5a; }
+  .taxonomy-compare-vertical-bar.b { background: #78a8bd; }
+  .taxonomy-compare-vertical-bar small { position: absolute; top: -20px; left: 50%;
+    color: #d8ddd8; font-size: 10px; font-weight: 750; transform: translateX(-50%); }
+  .taxonomy-compare-vertical-label { min-height: 64px; padding: 8px 2px 0;
+    color: #d6dbd5; font-size: 13px; line-height: 1.25; text-align: center;
+    overflow-wrap: anywhere; }
+  .taxonomy-compare-vertical-label strong { display: block; }
+  .taxonomy-compare-vertical-label .taxonomy-compare-chart-aroma { margin-top: 4px;
+    font-size: 10px; line-height: 1.25; white-space: normal; }
+  .taxonomy-compare-definition-popover { position: fixed; z-index: 99;
+    top: calc(var(--compare-pane-top, 58px) + 64px); left: 50%; width: min(390px, calc(100vw - 24px));
+    max-height: calc(100svh - var(--compare-pane-top, 58px) - 84px); overflow-y: auto;
+    transform: translateX(-50%); padding: 15px; border: 1px solid #859487;
+    border-radius: 12px; background: #152019; color: var(--ink);
+    box-shadow: 0 18px 55px rgba(0,0,0,.72); }
+  .taxonomy-compare-definition-popover[hidden] { display: none; }
+  .taxonomy-compare-definition-close { position: absolute; top: 7px; right: 8px;
+    width: 34px; height: 34px; border: 0; background: transparent; color: var(--ink-dim);
+    font-size: 18px; cursor: pointer; }
+  .taxonomy-compare-definition-kicker { color: var(--accent-2); font-size: 9px;
+    font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .taxonomy-compare-definition-popover h4 { margin: 4px 38px 2px 0;
+    font: 400 21px/1.2 Georgia, "Times New Roman", serif; }
+  .taxonomy-compare-definition-meta { color: #93a097; font-size: 10px;
+    letter-spacing: .045em; text-transform: uppercase; }
+  .taxonomy-compare-definition-copy { margin: 11px 0; color: #d8ded9;
+    font-size: 12.5px; line-height: 1.5; }
+  .taxonomy-compare-threshold { margin-top: 12px; padding-top: 10px; border-top: 1px solid #3d4b41; }
+  .taxonomy-compare-threshold-head { display: flex; justify-content: space-between; gap: 10px;
+    color: #a8b1aa; font-size: 10px; }
+  .taxonomy-compare-threshold-head strong { color: #dfc981; text-transform: capitalize; }
+  .taxonomy-compare-threshold-scale { display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 4px; margin-top: 7px; }
+  .taxonomy-compare-threshold-scale i { display: block; height: 7px; border-radius: 999px;
+    background: #28342c; }
+  .taxonomy-compare-threshold-scale i.is-on { background: linear-gradient(90deg,#d8a657,#7daea3); }
+  .taxonomy-compare-found-label { margin-top: 13px; color: #a8b1aa; font-size: 9px;
+    font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+  .taxonomy-compare-found { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .taxonomy-compare-found span { padding: 4px 7px; border: 1px solid #46584b;
+    border-radius: 999px; color: #ced6d0; background: #111914; font-size: 10px; }
+  .taxonomy-compare-definition-scores { display: grid; grid-template-columns: 88px 1fr 34px;
+    align-items: center; gap: 7px; margin-top: 12px; padding-top: 11px;
+    border-top: 1px solid #3d4b41; color: #a8b1aa; font-size: 10px; }
+  .taxonomy-compare-definition-score-track { height: 7px; overflow: hidden;
+    border-radius: 999px; background: #28342c; }
+  .taxonomy-compare-definition-score-track i { display: block; height: 100%;
+    border-radius: inherit; background: var(--accent); }
+  .taxonomy-compare-definition-score-track.confidence i { background: var(--accent-2); }
+  .taxonomy-compare-definition-score-value { color: #dce2dd; text-align: right;
+    font-variant-numeric: tabular-nums; }
+  .taxonomy-compare-threshold-source { margin: 8px 0 0; color: #8d9890;
+    font-size: 10px; line-height: 1.4; }
+  .taxonomy-compare-evidence { margin-top: 14px; padding-top: 11px; border-top: 1px solid #3d4b41; }
+  .taxonomy-compare-evidence h5 { margin: 0 0 8px; color: #dce2dd; font-size: 10px;
+    letter-spacing: .07em; text-transform: uppercase; }
+  .taxonomy-compare-evidence-list { display: grid; gap: 8px; }
+  .taxonomy-compare-evidence-row { padding: 8px 9px; border: 1px solid #3b4a40;
+    border-radius: 8px; background: #101713; }
+  .taxonomy-compare-evidence-note { display: flex; justify-content: space-between; gap: 10px;
+    color: #e0e5e1; font-size: 11px; font-weight: 700; }
+  .taxonomy-compare-evidence-weight { color: #d7bd72; font-size: 10px;
+    font-weight: 600; white-space: nowrap; }
+  .taxonomy-compare-evidence-phase { margin-top: 3px; color: #89948c; font-size: 9px; }
+  .taxonomy-compare-evidence-row .cite { display: block; margin-top: 5px; color: #929d95;
+    font-size: 9px; font-style: normal; line-height: 1.35; }
+  .taxonomy-compare-expanded-layers { display: none; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-expanded-layers {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+    margin-top: 12px; }
+  .taxonomy-compare-layer-card { min-width: 0; padding: 9px 10px; border: 1px solid #39483e;
+    border-radius: 8px; background: #101713; color: #9da69f; font-size: 9px;
+    line-height: 1.35; }
+  .taxonomy-compare-layer-card.is-workspace-lens { border-color: #9a8151;
+    box-shadow: inset 0 0 0 1px rgba(224,190,107,.12); }
+  .taxonomy-compare-layer-card h4 { margin: 0 0 5px; color: #ddd8ca; font-size: 9px;
+    letter-spacing: .055em; text-transform: uppercase; }
+  .taxonomy-compare-layer-card h4 span { color: #c6a75c; font-size: 7px; }
+  .taxonomy-compare-layer-card p { margin: 0; }
+  .taxonomy-compare-layer-card .taxonomy-compare-layer-caveat { margin-top: 5px;
+    color: #737c75; font-size: 7.5px; }
+  .taxonomy-compare-production-row { display: grid;
+    grid-template-columns: minmax(28px,1fr) 54px minmax(28px,1fr); align-items: center;
+    gap: 4px; margin-top: 4px; }
+  .taxonomy-compare-production-row .taxonomy-compare-chart-label { font-size: 7px; }
+  .taxonomy-compare-production-row .taxonomy-compare-chart-bar { height: 5px; }
+  #global-compare-panel.taxonomy-compare-expanded {
+    top: var(--compare-pane-top, 58px); right: 0; bottom: 0; left: 0;
+    width: auto; max-height: none; transform: none;
+    padding: 18px max(22px, calc((100vw - 1500px) / 2)) 24px;
+    border: 0; border-top: 1px solid #8a7a53; border-radius: 0;
+    background: #0e1511; box-shadow: none; overflow-y: auto; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers,
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-result {
+    width: min(1500px, 100%); margin-right: auto; margin-left: auto; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers {
+    grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr) auto auto;
+    gap: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers label {
+    gap: 6px; font-size: 11px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers select {
+    height: 46px; padding-left: 12px; font-size: 15px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers button {
+    min-height: 46px; padding-right: 15px; padding-left: 15px; font-size: 13px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-result {
+    margin-top: 18px; font-size: 14px; line-height: 1.55; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-summary { gap: 8px 16px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-score { font-size: 21px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-badge {
+    padding: 4px 9px; font-size: 10px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-compounds {
+    gap: 8px; margin-top: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-compound {
+    max-width: 420px; padding: 9px 11px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-compound .taxonomy-compare-definition {
+    font-size: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-compound span {
+    font-size: 11px; line-height: 1.4; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-definition-popover {
+    width: min(760px, calc(100vw - 40px)); padding: 20px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-definition-popover h4 {
+    font-size: 27px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-definition-copy {
+    font-size: 14px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-evidence-list {
+    grid-template-columns: repeat(2, minmax(0,1fr)); }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-context { margin-top: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-detail-grid {
+    grid-template-columns: minmax(270px, .72fr) minmax(520px, 1.45fr); gap: 18px 28px;
+    align-items: stretch; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-result.taxonomy-compare-columns-active .taxonomy-compare-detail-grid {
+    grid-template-columns: 1fr; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart {
+    margin-top: 8px; padding: 13px 15px 11px; border-color: #667668;
+    background: #0b120e; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart figcaption {
+    align-items: center; font-size: 14px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-layout { display: inline-flex; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart.is-columns .taxonomy-compare-chart-rows {
+    display: none; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart.is-columns .taxonomy-compare-chart-columns {
+    display: block; margin-top: 16px; overflow-x: auto; padding: 2px 2px 8px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-axis,
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-row {
+    grid-template-columns: minmax(110px,1fr) 190px minmax(110px,1fr); gap: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-axis {
+    margin: 10px 0 6px; font-size: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-row { min-height: 46px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-bar { height: 12px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-label {
+    font-size: 11px; white-space: normal; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-aroma {
+    margin-top: 3px; font-size: 9.5px; line-height: 1.25; white-space: normal; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-label small {
+    display: block; margin-top: 2px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-divider {
+    margin: 10px 0 5px; padding-top: 6px; font-size: 9px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-note {
+    display: block; margin-top: 12px; font-size: 11px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-expanded-layers {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;
+    margin-top: 18px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-layer-card {
+    padding: 15px 16px; font-size: 12.5px; line-height: 1.5; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-layer-card h4 {
+    margin-bottom: 8px; font-size: 13px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-layer-card h4 span {
+    font-size: 9px; }
+  #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-layer-card .taxonomy-compare-layer-caveat {
+    margin-top: 8px; font-size: 11px; }
+  #taxonomy-view.taxonomy-compare-active .taxonomy-story,
+  #taxonomy-view.taxonomy-compare-active .taxonomy-encoding-key { display: none; }
+  .tx-node.tx-compare-a .tx-node-core { stroke: #e4a95c; stroke-width: 4; }
+  .tx-node.tx-compare-b .tx-node-core { stroke: #7db9d8; stroke-width: 4; }
+  .tx-node.tx-compare-a .tx-node-label { fill: #f4bd74; font-weight: 800; }
+  .tx-node.tx-compare-b .tx-node-label { fill: #91c9e5; font-weight: 800; }
   .taxonomy-encoding-key { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 12px;
     padding: 7px 14px; border-bottom: 1px solid var(--line); background: var(--bg);
     color: var(--ink-dim); font-size: 9.5px; line-height: 1.35; position: relative; z-index: 8; }
@@ -3176,8 +3635,10 @@
       min-width: 0; max-width: calc(100% - 136px); }
     header h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #godeeper-toggle.header-center-btn { position: absolute; top: 6px;
-      right: calc(56px + env(safe-area-inset-right)); width: 84px; height: 44px;
-      margin: 0; padding: 0 8px; font-size: 10.5px; white-space: nowrap; }
+      right: calc(56px + env(safe-area-inset-right)); width: 124px; height: 44px;
+      margin: 0; padding: 0 7px; gap: 4px; font-size: 10px; white-space: nowrap; }
+    .godeeper-glyphs { gap: 2px; padding-left: 4px; }
+    #godeeper-toggle .godeeper-glyph { width: 11px; height: 11px; }
     #hud-toggle { top: 6px; right: calc(6px + env(safe-area-inset-right));
       width: 44px; height: 44px; }
     .site-footer { top: 34px; left: calc(17px + env(safe-area-inset-left)); right: auto;
@@ -3226,6 +3687,62 @@
     #taxonomy-search-wrap > button { min-height: 44px; }
     #taxonomy-search-wrap .tx-zoom button { width: 44px; min-width: 44px; min-height: 44px; }
     #taxonomy-search-wrap .tx-zoom .tx-fit-button { width: auto; min-width: 58px; }
+    #taxonomy-compare-panel, #global-compare-panel { padding: 8px 10px; overflow-y: auto; }
+    #taxonomy-compare-panel { max-height: min(330px, calc(100svh - 76px)); }
+    #global-compare-panel { max-height: min(395px, calc(100svh - 76px)); }
+    #global-compare-panel { top: calc(58px + env(safe-area-inset-top)); left: 8px;
+      right: 8px; width: auto; transform: none; border-radius: 0 0 10px 10px; }
+    .taxonomy-compare-pickers { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 5px; }
+    .taxonomy-compare-pickers .taxonomy-compare-clear { grid-column: 1 / 2; min-height: 32px; }
+    .taxonomy-compare-pickers .taxonomy-compare-expand { grid-column: 2 / -1; min-height: 32px; }
+    .taxonomy-compare-pickers select { height: 42px; font-size: 12px; }
+    .taxonomy-compare-swap { width: 36px; padding: 0 !important; }
+    .taxonomy-compare-result { font-size: 9.5px; }
+    .taxonomy-compare-compounds { flex-wrap: nowrap; overflow-x: auto;
+      padding-bottom: 4px; scrollbar-width: thin; }
+    .taxonomy-compare-compound { flex: 0 0 auto; }
+    .taxonomy-compare-context { line-height: 1.3; }
+    .taxonomy-compare-detail-grid { grid-template-columns: 1fr; gap: 5px; }
+    .taxonomy-compare-chart { margin-top: 3px; }
+    .taxonomy-compare-chart-note { display: none; }
+    #global-compare-panel.taxonomy-compare-expanded {
+      top: var(--compare-pane-top, calc(56px + env(safe-area-inset-top)));
+      right: 0; bottom: 0; left: 0; width: auto; max-height: none;
+      padding: 10px 8px calc(12px + env(safe-area-inset-bottom)); border-radius: 0; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers {
+      grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 5px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers label {
+      gap: 3px; font-size: 8.5px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers select {
+      height: 42px; padding-left: 8px; font-size: 12px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers button {
+      min-height: 32px; padding-right: 10px; padding-left: 10px; font-size: 11px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers .taxonomy-compare-clear {
+      grid-column: 1 / 2; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-pickers .taxonomy-compare-expand {
+      grid-column: 2 / -1; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-detail-grid {
+      grid-template-columns: 1fr; gap: 8px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart {
+      padding: 11px 9px 9px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-layout { display: none; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart.is-columns .taxonomy-compare-chart-rows {
+      display: block; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart.is-columns .taxonomy-compare-chart-columns {
+      display: none; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-axis,
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-row {
+      grid-template-columns: minmax(64px,1fr) 132px minmax(64px,1fr); gap: 7px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-row { min-height: 44px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-bar { height: 10px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-chart-label { font-size: 9px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-expanded-layers {
+      grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-definition-popover {
+      top: calc(var(--compare-pane-top, 56px) + 12px); width: calc(100vw - 16px);
+      max-height: calc(100svh - var(--compare-pane-top, 56px) - 24px); padding: 15px; }
+    #global-compare-panel.taxonomy-compare-expanded .taxonomy-compare-evidence-list {
+      grid-template-columns: 1fr; }
     #taxonomy-tree-scroll { padding: 10px; }
     /* The mobile canvas starts as a readable hierarchy overview. Decoration
        recedes and the long desktop instruction block no longer consumes the
@@ -3286,8 +3803,8 @@
   }
 
   @media (max-width: 390px) {
-    header .brand { max-width: calc(100% - 124px); }
-    #godeeper-toggle.header-center-btn { width: 70px; font-size: 10px; }
+    header .brand { max-width: calc(100% - 194px); }
+    #godeeper-toggle.header-center-btn { width: 124px; font-size: 9.5px; }
   }
 </style>
 </head>
@@ -3305,13 +3822,27 @@
     <p class="tagline">Describe what you smell. Explore the chemistry behind it.</p>
   </div>
   <!-- Go Deeper: centered in the header, between brand and right utilities -->
-  <button id="godeeper-toggle" class="header-center-btn" title="Reveal advanced inputs (e.g. ortho/retro phase tagging)">Go Deeper</button>
+  <button id="godeeper-toggle" class="header-center-btn"
+    title="Reveal the Map and Tree explorers plus advanced tasting inputs">
+    <span>Go Deeper</span>
+    <span class="godeeper-glyphs" aria-hidden="true">
+      <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25">
+        <circle cx="8" cy="8" r="6.2"/><path d="m10.6 5.4-1.4 3.8-3.8 1.4 1.4-3.8z" fill="currentColor" stroke="none"/>
+      </svg>
+      <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+        <circle cx="8" cy="2.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.2" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="12.8" cy="13" r="1.2" fill="currentColor" stroke="none"/><path d="M8 3.8v4M3.2 10.2h9.6M3.2 10.2V12M8 7.8V12M12.8 10.2V12"/>
+      </svg>
+      <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1.2c.55 3.85 1.05 4.35 4.9 4.9-3.85.55-4.35 1.05-4.9 4.9-.55-3.85-1.05-4.35-4.9-4.9C6.95 5.55 7.45 5.05 8 1.2Z"/><path d="M12.7 10.1c.25 1.75.5 2 2.25 2.25-1.75.25-2 .5-2.25 2.25-.25-1.75-.5-2-2.25-2.25 1.75-.25 2-.5 2.25-2.25Z" opacity=".7"/>
+      </svg>
+    </span>
+  </button>
   <!-- All controls: always inline on desktop (display:contents makes children
        direct flex items); on mobile hidden until ••• expands them as a tray.
        The desktop left/right split is done by .hud-spacer inside this group. -->
   <div class="hud-extra" id="hud-extra">
-    <!-- Workspace switch (primary nav): which screen am I on. The two visual
-         explorers — the wheel, and the origins world map. -->
+    <!-- Workspace switch (primary nav): Wheel is always present; Go Deeper
+         reveals the Map and Tree explanatory lenses. -->
     <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the tasting wheel, the world map of ingredient origins, and the plant/fungus ancestry tree with optional ecological visitors.">
       <button data-workspace="wheel" class="active" title="The tasting wheel">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3" stroke-linecap="round"/></svg>
@@ -3334,15 +3865,6 @@
       <button data-view="dashboard" title="Show the notes sliders and the results side by side">Notes + Results</button>
       <button data-view="analysis">Results</button>
     </div>
-    <div class="tabs" id="organize-tabs" title="Organize the wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
-      <span class="tabs-label">Organize</span>
-      <button data-organize="scent" class="active">Scent</button>
-      <button data-organize="chemistry">Chemistry</button>
-    </div>
-    <button id="compass-toggle" title="Perception Compass: a draggable, resizable radar of your strongest notes, compounds, or a fixed chemical-class profile — a shareable snapshot of your tasting.">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
-      Compass
-    </button>
     <!-- Constellation: Go Deeper's subjective hemisphere, opened directly —
          see #constellation-overlay. The Sixth-lens depth card still exists as
          a narrative on-ramp, but this is the fast path Nolan asked for after
@@ -3350,6 +3872,15 @@
     <button id="constellation-toggle" title="Constellation: the same tasting notes re-aligned by chemistry, taxonomy, geography, or how they actually hit you.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="18" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="8" r="1" fill="currentColor" stroke="none"/><path d="M12 12L12 4M12 12L19 9M12 12L16 19M12 12L6 18M12 12L4 8" stroke-width="1.1"/></svg>
       Constellation
+    </button>
+    <button type="button" id="taxonomy-compare-toggle" aria-pressed="false"
+      title="Compare two culinary aroma notes side by side in any workspace">
+      <span class="taxonomy-compare-toggle-glyph" aria-hidden="true">
+        <span class="taxonomy-compare-toggle-card">A</span>
+        <span class="taxonomy-compare-toggle-arrow">⇄</span>
+        <span class="taxonomy-compare-toggle-card">B</span>
+      </span>
+      <span id="taxonomy-compare-toggle-label">Compare notes</span>
     </button>
     <!-- Mobile-only divider between the wheel controls and the utilities
          (hidden on desktop; grid-placed in the mobile tray). -->
@@ -3390,6 +3921,27 @@
   <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
   <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">☰</button>
 </header>
+<section id="global-compare-panel" class="aroma-compare-panel"
+  aria-label="Compare two culinary aroma notes" hidden>
+  <div class="taxonomy-compare-pickers">
+    <label>Note A
+      <select id="global-compare-a" aria-label="First aroma note"
+        aria-describedby="global-compare-result"></select>
+    </label>
+    <button type="button" id="global-compare-swap" class="taxonomy-compare-swap"
+      aria-label="Swap compared notes" title="Swap notes">⇄</button>
+    <label>Note B
+      <select id="global-compare-b" aria-label="Second aroma note"
+        aria-describedby="global-compare-result"></select>
+    </label>
+    <button type="button" id="global-compare-clear" class="taxonomy-compare-clear">Clear</button>
+    <button type="button" id="global-compare-expand" class="taxonomy-compare-expand"
+      aria-expanded="false" title="Open a larger comparison and compound graph">
+      <span aria-hidden="true">↗</span><span>Expand analysis</span>
+    </button>
+  </div>
+  <div id="global-compare-result" class="taxonomy-compare-result" aria-live="polite"></div>
+</section>
 <aside class="notes" id="left-panel">
   <div class="legend collapsed" id="legend">
     <div class="legend-header" id="legend-toggle">
@@ -3482,6 +4034,21 @@
     <div class="lap-stack" id="lap-stack"></div>
     <p class="lap-empty" id="lap-empty">No snapshots yet. Save one for this session, or copy a link to keep it for later.</p>
   </div>
+  <!-- Controls that alter only this visualization live with the Wheel rather
+       than in the global HUD. "Radar" is intentionally distinct from the Map
+       workspace's separate geographic bearing compass. -->
+  <div id="wheel-view-tools" class="wheel-view-tools" aria-label="Wheel display tools">
+    <div class="tabs" id="organize-tabs" title="Organize the Wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
+      <span class="tabs-label">Organize</span>
+      <button data-organize="scent" class="active">Scent</button>
+      <button data-organize="chemistry">Chemistry</button>
+    </div>
+    <button id="compass-toggle" aria-label="Toggle Wheel Radar"
+      title="Wheel Radar: a draggable profile of your strongest notes or compounds. This is separate from the Map's geographic bearing compass.">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
+      Radar
+    </button>
+  </div>
   <!-- Go Deeper "vines" — a decorative climbing vine grown into the wheel's
        empty bottom-left corner only while body.go-deeper is on. Ecobrutalism:
        the hard UI stays, the plant breaks in at the edges. Lives inside
@@ -3547,8 +4114,8 @@
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
   <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
-  <!-- Perception Compass: a small draggable, resizable radar, toggled from
-       the settings gear. Three axis modes (see #compass-mode-tabs): Notes /
+  <!-- Radar: a small draggable, resizable aroma profile, toggled from the
+       Wheel-local display toolbar. Three axis modes (see #compass-mode-tabs): Notes /
        Compounds — the user's own top-10 active items, live — and Class, a
        fixed axis set over one chemical class at a time (dropdown-selectable;
        defaults to terpene, a nod to the predecessor prototype), where every
@@ -3560,8 +4127,8 @@
   <div id="aroma-compass" class="aroma-compass">
     <div id="compass-content" class="compass-content">
       <div class="compass-header" id="compass-drag-handle">
-        <span title="Perception Compass">Compass</span>
-        <button type="button" id="compass-close-btn" aria-label="Hide compass" title="Hide compass">×</button>
+        <span title="Wheel Radar">Radar</span>
+        <button type="button" id="compass-close-btn" aria-label="Hide Radar" title="Hide Radar">×</button>
       </div>
       <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Class: a fixed set over one chemical class, same axes for everyone.">
         <button data-compass-mode="notes" class="active">Notes</button>
@@ -3572,7 +4139,7 @@
       <svg id="compass-svg" viewBox="0 0 200 200"></svg>
       <div class="compass-caption" id="compass-caption"></div>
     </div>
-    <button type="button" id="compass-resize-handle" class="compass-resize-handle" aria-label="Resize compass" title="Drag to resize">
+    <button type="button" id="compass-resize-handle" class="compass-resize-handle" aria-label="Resize Radar" title="Drag to resize Radar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M13 6h5v5M11 18H6v-5"/></svg>
     </button>
   </div>
@@ -3748,8 +4315,8 @@
         </div>
       </div>
       <button type="button" id="map-bearing-compass" hidden
-        aria-label="Move the map bearing compass. Arrow keys reposition it." title="Drag to move; arrow keys reposition">
-        <svg viewBox="0 0 120 120" role="img" aria-label="Tasting-note bearings from this point">
+        aria-label="Move the Map bearing compass. Arrow keys reposition it." title="Map bearing compass · drag to move; arrow keys reposition">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Geographic tasting-note bearings from this point">
           <circle class="map-bearing-ring" cx="60" cy="60" r="49"></circle>
           <circle class="map-bearing-inner" cx="60" cy="60" r="30"></circle>
           <line class="map-bearing-cross" x1="60" y1="9" x2="60" y2="111"></line>
@@ -3864,6 +4431,26 @@
     <strong>Flavor notes are the fruit.</strong>
     <span id="taxonomy-path-readout">Plants bloom upward, fungal lineages root downward, and ecological visitors float beside the stems without joining them.</span>
   </div>
+  <section id="taxonomy-compare-panel" aria-label="Compare two culinary aroma notes" hidden>
+    <div class="taxonomy-compare-pickers">
+      <label>Note A
+        <select id="taxonomy-compare-a" aria-label="First aroma note"
+          aria-describedby="taxonomy-compare-result"></select>
+      </label>
+      <button type="button" id="taxonomy-compare-swap" class="taxonomy-compare-swap"
+        aria-label="Swap compared notes" title="Swap notes">⇄</button>
+      <label>Note B
+        <select id="taxonomy-compare-b" aria-label="Second aroma note"
+          aria-describedby="taxonomy-compare-result"></select>
+      </label>
+      <button type="button" id="taxonomy-compare-clear" class="taxonomy-compare-clear">Clear</button>
+      <button type="button" id="taxonomy-compare-expand" class="taxonomy-compare-expand"
+        aria-expanded="false" title="Open a larger comparison and compound graph">
+        <span aria-hidden="true">↗</span><span>Expand analysis</span>
+      </button>
+    </div>
+    <div id="taxonomy-compare-result" class="taxonomy-compare-result" aria-live="polite"></div>
+  </section>
   <div class="taxonomy-encoding-key" aria-label="How to read the branch diagram">
     <details class="taxonomy-layer-legend" id="taxonomy-layer-legend">
       <summary>
@@ -4076,6 +4663,12 @@
     </div>
     <div class="warp-layer warp-layer-5"></div>
   </div>
+</div>
+
+<!-- The highlighted Wheel rim contracts into this temporary visual copy of
+     the HUD switch, then crossfades to the real interactive control. -->
+<div id="workspace-reveal-morph" aria-hidden="true" hidden>
+  <div class="workspace-reveal-options"></div>
 </div>
 
 
@@ -6619,7 +7212,7 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
-  compassVisible: true,    // Perception Compass widget shown/hidden
+  compassVisible: true,    // Wheel Radar widget shown/hidden
   compassMode: "notes",      // "notes" | "compounds" | "class" — which axis set the compass shows
   compassClass: "terpene",  // chemical class shown in "class" mode (dropdown-selectable)
   compassPos: null,         // {x,y} once dragged; null = default corner position
@@ -7821,12 +8414,11 @@ function updateSimulationCenter() {
 //            sector and the note→compound edge fan stays short and readable
 //            (this is what shows a molecule's relationship to the flavor
 //            note(s) feeding it, even when several notes share it).
-//   radius — how STRONG the compound's evidence is. The strongest compounds
-//            sink toward the center; the weakest sit near the outer edge of
-//            the float zone (and render dimmer — see FLOAT_DIM_FLOOR below),
-//            so intensity reads as depth: confident, well-supported
-//            chemistry pools in the middle, faint/marginal evidence stays
-//            near the rim. FLOAT_ZONE_R is deliberately well inside the
+//   radius — support momentum first, then evidence strength. A compound with
+//            only one active note stays in that parent's outer gravity band;
+//            two or more unique active notes give it "escape velocity" into
+//            shared Wheel space. Within each band, stronger evidence still
+//            sinks further inward. FLOAT_ZONE_R is deliberately well inside the
 //            dotted center-ring (itself inside the note ring) — see
 //            boundForce()'s matching ceiling — so floats never crowd into
 //            the band between the dotted line and the note ring even under
@@ -7864,6 +8456,22 @@ function seedFloatAtHome(d) {
   else { d.x = CX + jit(); d.y = CY + jit(); }
   d.vx = 0; d.vy = 0;
 }
+// Count the distinct notes in the CURRENT tasting that support a compound.
+// Varietals inherit a parent's base profile exactly as effectiveNoteSignal()
+// does, but still count as their own entered note: Lemon + Yuzu is two pieces
+// of culinary evidence even when Yuzu reaches a shared compound through Lemon.
+function compoundActiveSupportNoteIds(cpdId) {
+  const supporting = [];
+  NOTES.forEach(note => {
+    if (!isNoteVisible(note.id) || noteSignal(note.id) <= 0) return;
+    const direct = (NOTE_EDGES[note.id] || []).some(edge => edge.cpd === cpdId);
+    if (direct) { supporting.push(note.id); return; }
+    if (!note.subOf) return;
+    const inherited = (NOTE_EDGES[note.subOf] || []).some(edge => edge.cpd === cpdId);
+    if (inherited) supporting.push(note.id);
+  });
+  return supporting;
+}
 function computeFloatHomes() {
   updateCollideScale();
   if (inChemistry()) {
@@ -7897,6 +8505,9 @@ function computeFloatHomes() {
   const placed = [];
   floatNodes().forEach(node => {
     let wx = 0, wy = 0, wsum = 0;
+    const supportNoteIds = compoundActiveSupportNoteIds(node.id);
+    node.supportNoteIds = supportNoteIds;
+    node.supportCount = supportNoteIds.length;
     CPD_EDGES[node.id].forEach(e => {
       if (!isNoteVisible(e.note)) return;
       const noteW = effectiveNoteSignal(e.note, node.id);
@@ -7915,7 +8526,14 @@ function computeFloatHomes() {
     // compoundGlyphSize()/the token's fill-opacity already use elsewhere.
     const strength = Math.min(1, node.score || 0);
     const zone = FLOAT_ZONE_R();
-    const r = zone * 0.15 + zone * 0.7 * (1 - strength);
+    const supportCount = node.supportCount || 1;
+    const r = supportCount === 1
+      // One source: retain the molecule near its parent note's gravity band.
+      ? zone * (0.72 + 0.16 * (1 - strength))
+      // Corroboration: cross into shared space, with more sources supplying
+      // progressively more inward momentum. Strength differentiates the orbit.
+      : zone * Math.max(0.15,
+          0.53 - 0.14 * Math.min(3, supportCount - 2) - 0.22 * strength);
     // A single shared contributor gives every one of its compounds the
     // EXACT same centroid direction — a real coffee-alone bloom starts a
     // dozen compounds perfectly colinear on one ray from center. Collide
@@ -8197,14 +8815,25 @@ function renderCompoundFloats() {
   enter.append("circle").attr("class", "cpd-token");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
+  enter.append("title");
 
   const merged = sel.merge(enter)
     .attr("transform", d => `translate(${d.x},${d.y})`)
     .attr("role", "button")
     .attr("tabindex", "0")
+    .attr("data-support-count", d => d.supportCount || 1)
+    .attr("data-home-radius", d => Math.hypot(d._homeX - CX, d._homeY - CY).toFixed(2))
     .attr("aria-label", d =>
-      `${d.label}, aroma compound, ${Math.round(Math.min(1, d.score || 0) * 100)}% evidence. Open details.`)
+      `${d.label}, aroma compound, supported by ${d.supportCount || 1} active ${(d.supportCount || 1) === 1 ? "note" : "notes"}, ${Math.round(Math.min(1, d.score || 0) * 100)}% evidence. Open details.`)
     .classed("selected", d => d.id === state.selectedCompound);
+
+  merged.select("title").text(d => {
+    const count = d.supportCount || 1;
+    const sources = (d.supportNoteIds || []).map(id => NOTE_BY_ID[id]?.label).filter(Boolean).join(", ");
+    return count >= 2
+      ? `${d.label} · shared orbit · ${count} active notes${sources ? `: ${sources}` : ""}`
+      : `${d.label} · held near its source note${sources ? `: ${sources}` : ""}`;
+  });
 
   // Class-glyph molecule token: a class-colored ring (sized by score) with the
   // chemical-class emoji inside. Shape (the glyph) reads the class; the ring's
@@ -8678,7 +9307,7 @@ function recompute() {
   if (sim) { sim.alpha(0.32).restart(); applyFreezeMode(); }   // gentle nudge per input change, not a big kick;
                                                                 // also re-evaluates whether the idle simmer should be on
   renderDetail();
-  // Perception Compass draws synchronously here rather than via the sim's
+  // Wheel Radar draws synchronously here rather than via the sim's
   // tick — its axes are a pure function of scores, no physics involved.
   if (typeof renderCompass === "function") renderCompass();
   if (typeof renderMapBearingCompass === "function") renderMapBearingCompass();
@@ -10093,13 +10722,13 @@ hudToggleBtn.addEventListener("click", () => {
 // The overlay tray dismisses like a menu, not a mode: a tap anywhere outside
 // the header closes it (the wheel underneath is right there — tapping it means
 // "back to the wheel"), and picking any control that changes what's on screen
-// (workspace / panel / organize tab, Start Over) closes it too so the change
-// is immediately visible rather than hidden behind the tray. The settings gear
-// and Go Deeper stay open — their effect happens inside the tray itself.
+// (workspace / panel tab, Start Over) closes it too so the change
+// is immediately visible rather than hidden behind the tray. Go Deeper stays
+// open because its effect happens from the persistent header button.
 document.addEventListener("click", (e) => {
   if (!headerEl.classList.contains("hud-open")) return;
   if (!headerEl.contains(e.target)) { setHudOpen(false); return; }
-  if (e.target.closest("#workspace-tabs button, #view-tabs button, #organize-tabs button, #reset, #compass-toggle, #godeeper-toggle, #share-open-btn, #info-open-btn")) {
+  if (e.target.closest("#workspace-tabs button, #view-tabs button, #reset, #godeeper-toggle, #share-open-btn, #info-open-btn")) {
     setHudOpen(false);
   }
 });
@@ -10147,7 +10776,7 @@ document.querySelectorAll("#organize-tabs button").forEach(b => {
 const WHEEL_HINTS = {
   scent: {
     short: "Wheel · by scent family — molecules bloom from the notes you add.",
-    long: "Wheel, organized by scent family. Slide a flavor note and the aroma molecules it contains bloom onto the ring, each sized by how much evidence supports it. Tap any molecule to see the notes and citations behind it. Use the Organize control to switch the ring to Chemistry — grouped by molecule class — instead."
+    long: "Wheel, organized by scent family. Slide a flavor note and its aroma molecules bloom nearby. A molecule supported by only one active note stays in that note's gravity; support from two or more unique notes gives it enough momentum to move into shared Wheel space. Size still shows evidence strength. Tap any molecule for its notes and citations, or switch Organize to Chemistry for molecule classes."
   },
   chemistry: {
     short: "Wheel · by chemistry — molecules float toward their chemical class.",
@@ -11027,6 +11656,7 @@ let cxState = { lens: "chemistry", minWeight: 0.15, tags: {}, selected: null, tr
 let cxStarEls = {};
 let cxCurrentEdgeGroup = "A";
 let cxInitialized = false;
+let cxOverlapSpectrumCache = null;
 
 const CX_CX = 450, CX_CY = 300, CX_R = 230;
 function cxPolar(cx, cy, angDeg, rad) { const a = (angDeg - 90) * Math.PI / 180; return { x: cx + Math.cos(a) * rad, y: cy + Math.sin(a) * rad }; }
@@ -11465,9 +12095,118 @@ function cxUpdateDimming() {
   Object.keys(cxStarEls).forEach(id => cxStarEls[id].group.classList.toggle("dimmed", !!lit && !lit.has(id)));
 }
 
+// A graph-wide spectrum, not a handpicked leaderboard. Each pair uses the
+// comparison tool's weighted Jaccard score, including the same inherited
+// culinary-parent profile for hidden varietals. Summing those pair scores
+// captures both breadth and strength; the displayed bar normalizes that sum
+// to the most-connected note so true zero-overlap notes can share one scale.
+function cxOverlapSpectrum() {
+  if (cxOverlapSpectrumCache) return cxOverlapSpectrumCache;
+  const rows = NOTES.map(note => ({ note, total: 0, relatedCount: 0, strongest: null }));
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = i + 1; j < rows.length; j++) {
+      const pair = taxonomyComparisonData(rows[i].note.id, rows[j].note.id);
+      if (!pair.shared.length) continue;
+      rows[i].total += pair.score;
+      rows[j].total += pair.score;
+      rows[i].relatedCount++;
+      rows[j].relatedCount++;
+      if (!rows[i].strongest || pair.score > rows[i].strongest.score) {
+        rows[i].strongest = { note: rows[j].note, score: pair.score };
+      }
+      if (!rows[j].strongest || pair.score > rows[j].strongest.score) {
+        rows[j].strongest = { note: rows[i].note, score: pair.score };
+      }
+    }
+  }
+  const maxTotal = Math.max(...rows.map(row => row.total), 1);
+  rows.forEach(row => { row.normalized = row.total / maxTotal; });
+  rows.sort((a, b) => b.total - a.total
+    || b.relatedCount - a.relatedCount
+    || a.note.label.localeCompare(b.note.label));
+  cxOverlapSpectrumCache = rows;
+  return rows;
+}
+
+function cxRenderOverlapGraph() {
+  const rows = cxOverlapSpectrum();
+  const connected = rows.filter(row => row.relatedCount);
+  const isolated = rows.filter(row => !row.relatedCount);
+  const rowHtml = row => {
+    const strongest = row.strongest
+      ? `Strongest: ${row.strongest.note.label} · ${Math.round(row.strongest.score * 100)}%`
+      : "No shared compound with another note";
+    const links = row.relatedCount
+      ? `${row.relatedCount} link${row.relatedCount === 1 ? "" : "s"}` : "none";
+    const aria = row.relatedCount
+      ? `${row.note.label}: ${Math.round(row.normalized * 100)} percent of the top graph connectedness, ${links}; ${strongest}`
+      : `${row.note.label}: no compound overlap with any other note in the current evidence graph`;
+    return `<button type="button" class="cx-overlap-row${row.relatedCount ? "" : " is-isolated"}${cxIsActive(row.note.id) ? " is-active" : ""}"
+        data-cx-overlap-note="${row.note.id}" aria-label="${aria}">
+      <span class="cx-overlap-row-top">
+        <span class="cx-overlap-name">${noteIcon(row.note)} ${row.note.label}</span>
+        <span class="cx-overlap-links">${links}</span>
+      </span>
+      <span class="cx-overlap-track" aria-hidden="true"><span class="cx-overlap-fill"
+        style="width:${Math.max(0, row.normalized * 100).toFixed(1)}%;background:var(--grp-${row.note.group})"></span></span>
+      <span class="cx-overlap-best">${strongest}</span>
+    </button>`;
+  };
+  cxEls.side.innerHTML = `
+    <div class="cx-overlap-head">
+      <h3>Aroma overlap spectrum</h3>
+      <p>Bar = total weighted compound overlap with every other note, normalized to the most-connected note. This is chemical correlation, not ancestry.</p>
+      <div class="cx-overlap-summary"><span>${connected.length} connected</span><span>${isolated.length} isolated</span></div>
+    </div>
+    <div class="cx-overlap-list" role="list" aria-label="Notes ranked by shared aroma-compound overlap">
+      ${connected.map(rowHtml).join("")}
+      ${isolated.length ? `<div class="cx-overlap-divider">No overlap with any other note</div>${isolated.map(rowHtml).join("")}` : ""}
+    </div>`;
+  cxEls.side.querySelectorAll("[data-cx-overlap-note]").forEach(button => {
+    button.addEventListener("click", () => cxSelect(button.dataset.cxOverlapNote));
+  });
+}
+
+function cxNoteOverlapMatches(noteId) {
+  return NOTES.filter(note => note.id !== noteId).map(note => {
+    const data = taxonomyComparisonData(noteId, note.id);
+    return { note, data };
+  }).filter(match => match.data.shared.length)
+    .sort((a, b) => b.data.score - a.data.score
+      || b.data.shared.length - a.data.shared.length
+      || a.note.label.localeCompare(b.note.label));
+}
+
+function cxNoteOverlapHtml(noteId) {
+  const matches = cxNoteOverlapMatches(noteId);
+  if (!matches.length) return `<section class="cx-note-overlaps">
+    <h4>No compound-overlap matches</h4>
+    <p>This note shares no linked aroma compound with another note in the current evidence graph. That is an evidence gap, not proof of chemical uniqueness.</p>
+  </section>`;
+  const rows = matches.map(({ note, data }) => {
+    const compounds = data.shared.map(item => item.cpd.label).join(" · ");
+    const percent = Math.round(data.score * 100);
+    return `<button type="button" class="cx-note-overlap-row" data-cx-overlap-match="${note.id}"
+        aria-label="Open ${note.label}: ${percent} percent weighted overlap through ${data.shared.length} shared compounds">
+      <span class="cx-note-overlap-top">
+        <span class="cx-note-overlap-name">${noteIcon(note)} ${note.label}</span>
+        <span class="cx-note-overlap-score">${percent}%</span>
+      </span>
+      <span class="cx-overlap-track" aria-hidden="true"><span class="cx-overlap-fill"
+        style="width:${percent}%;background:var(--grp-${note.group})"></span></span>
+      <span class="cx-note-overlap-compounds">${data.shared.length} shared: ${compounds}</span>
+    </button>`;
+  }).join("");
+  return `<section class="cx-note-overlaps">
+    <h4>Overlaps with ${matches.length} note${matches.length === 1 ? "" : "s"}</h4>
+    <p>Ranked by weighted Jaccard overlap. Every current match is shown; compound names are the exact shared evidence.</p>
+    <div class="cx-note-overlap-list">${rows}</div>
+  </section>`;
+}
+
 function cxRenderSide() {
   const id = cxState.selected;
-  if (!id || !cxStarEls[id]) { cxEls.side.innerHTML = `<p class="cx-empty">Select a star to read it. Click empty space, or press Escape, to clear.</p>`; return; }
+  if (!id || !cxStarEls[id]) { cxRenderOverlapGraph(); return; }
   const isC = id.startsWith("cpd:");
   if (isC) {
     const c = cxCpdById[id.slice(4)];
@@ -11479,7 +12218,7 @@ function cxRenderSide() {
     }).join("");
     const overflow = story.carriers.length > 25 ? `<div class="cx-cpd-row" style="color:var(--ink-dim)">+ ${story.carriers.length - 25} more</div>` : "";
     cxEls.side.innerHTML = `
-      <button class="cx-side-close" id="cxCloseBtn">Clear selection</button>
+      <button class="cx-side-close" id="cxCloseBtn">← Overlap spectrum</button>
       <h3>${c.label}${c.commonName ? ` <span style="font-size:12px;color:var(--ink-dim);">(${c.commonName})</span>` : ""}</h3>
       <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--ink-dim)"></span>${c.class}${c.specificity ? ` · catalogued as ${c.specificity}` : ""}</span>
       ${cxIsChemesthetic(c) ? `<div class="cx-lineage">Its own note text in the app claims a real chemesthetic effect.</div>` : ""}
@@ -11504,11 +12243,12 @@ function cxRenderSide() {
   const tagLocked = cxTagIsReal(n.id);
   const active = cxIsActive(n.id);
   cxEls.side.innerHTML = `
-    <button class="cx-side-close" id="cxCloseBtn">Clear selection</button>
+    <button class="cx-side-close" id="cxCloseBtn">← Overlap spectrum</button>
     <h3>${n.label}</h3>
     <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}${active ? ' · <span style="color:var(--accent)">active in your tasting</span>' : ""}</span>
     <div class="cx-lineage"><span class="cx-rank">Lineage</span>${path.join(" → ")}</div>
     ${o ? `<div class="cx-origin">${o.region}<br><span class="cx-coord">${o.lat}°, ${o.lon}°</span></div>` : `<div class="cx-origin">No origin on record in the app.</div>`}
+    ${cxNoteOverlapHtml(n.id)}
     <div class="cx-cpd-list">${rows || '<div class="cx-cpd-row" style="color:var(--ink-dim)">No edges for this note yet.</div>'}</div>
     ${cxState.lens === "embodied" ? (tagLocked ? `
       <div class="cx-lineage"><span class="cx-rank">Phase</span>Tagged ${tag} in your actual tasting — not editable here.</div>` : `
@@ -11520,6 +12260,9 @@ function cxRenderSide() {
       </div>`) : ""}
   `;
   const closeBtn = document.getElementById("cxCloseBtn"); if (closeBtn) closeBtn.addEventListener("click", () => cxSelect(null));
+  cxEls.side.querySelectorAll("[data-cx-overlap-match]").forEach(button => {
+    button.addEventListener("click", () => cxSelect(button.dataset.cxOverlapMatch));
+  });
   if (cxState.lens === "embodied" && !tagLocked) {
     cxEls.side.querySelectorAll(".cx-tag-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -11647,6 +12390,7 @@ function cxInit() {
   wireCxZoom();
   cxEnsureStars();
   cxSwitchLens("chemistry", true);
+  cxRenderSide();
   cxInitialized = true;
 }
 function openConstellation() {
@@ -11665,6 +12409,14 @@ function setGoDeeper(on) {
   const wasOn = state.goDeeper;
   state.goDeeper = !!on;
   document.body.classList.toggle("go-deeper", state.goDeeper);
+  if (!state.goDeeper) cancelWorkspaceReveal();
+  // Map and Tree are revealed by Go Deeper. Collapsing that layer while one is
+  // active returns to the always-available Wheel instead of leaving the user
+  // on a workspace whose navigation entry has just disappeared.
+  if (!state.goDeeper && (document.body.classList.contains("origins-mode") ||
+      document.body.classList.contains("taxonomy-mode"))) {
+    setWorkspace("wheel");
+  }
   // Tree follows the same progressive-disclosure contract as the rest of the
   // app: ordinary mode starts with readable Kingdom choices; Go Deeper grows
   // the complete all-notes atlas.
@@ -11702,6 +12454,106 @@ const deeperWarpEl = document.getElementById("deeper-warp");
 // band fills the viewport, not partway down the trunk.
 const WARP_SCALE_MS = 840;
 const WARP_FADE_MS = 380;
+const WORKSPACE_RING_HOLD_MS = 420;
+const WORKSPACE_MORPH_MS = 720;
+const workspaceRevealEl = document.getElementById("workspace-reveal-morph");
+const workspaceRevealOptionsEl = workspaceRevealEl.querySelector(".workspace-reveal-options");
+const workspaceTabsEl = document.getElementById("workspace-tabs");
+let workspaceRevealTimers = [];
+
+function workspaceRevealLater(fn, delay) {
+  const timer = window.setTimeout(fn, delay);
+  workspaceRevealTimers.push(timer);
+  return timer;
+}
+function clearWorkspaceRevealTimers() {
+  workspaceRevealTimers.forEach(window.clearTimeout);
+  workspaceRevealTimers = [];
+}
+function setWorkspaceRevealRect(rect) {
+  workspaceRevealEl.style.left = `${rect.left}px`;
+  workspaceRevealEl.style.top = `${rect.top}px`;
+  workspaceRevealEl.style.width = `${rect.width}px`;
+  workspaceRevealEl.style.height = `${rect.height}px`;
+}
+function wheelRevealRingRect() {
+  const svgRect = document.getElementById("svg").getBoundingClientRect();
+  const scaleX = svgRect.width / Math.max(1, W);
+  const scaleY = svgRect.height / Math.max(1, H);
+  const radius = R_NOTE + 12;
+  return {
+    left: svgRect.left + (CX - radius) * scaleX,
+    top: svgRect.top + (CY - radius) * scaleY,
+    width: radius * 2 * scaleX,
+    height: radius * 2 * scaleY,
+  };
+}
+function syncWorkspaceRevealCopy() {
+  workspaceRevealOptionsEl.replaceChildren();
+  workspaceTabsEl.querySelectorAll("button").forEach(button => {
+    const option = document.createElement("span");
+    option.className = "workspace-reveal-option";
+    option.innerHTML = button.innerHTML;
+    workspaceRevealOptionsEl.appendChild(option);
+  });
+}
+function cancelWorkspaceReveal() {
+  clearWorkspaceRevealTimers();
+  document.body.classList.remove("workspace-reveal-active");
+  workspaceTabsEl.style.removeProperty("opacity");
+  workspaceTabsEl.style.removeProperty("pointer-events");
+  workspaceRevealEl.className = "";
+  workspaceRevealEl.removeAttribute("style");
+  workspaceRevealEl.hidden = true;
+}
+function finishWorkspaceReveal() {
+  document.body.classList.remove("workspace-reveal-active");
+  workspaceTabsEl.style.removeProperty("opacity");
+  workspaceTabsEl.style.removeProperty("pointer-events");
+  workspaceTabsEl.classList.remove("workspace-tabs-attention");
+  void workspaceTabsEl.offsetWidth;
+  workspaceTabsEl.classList.add("workspace-tabs-attention");
+  workspaceRevealEl.classList.add("is-arrived");
+  workspaceRevealLater(() => {
+    workspaceRevealEl.hidden = true;
+    workspaceRevealEl.className = "";
+    workspaceRevealEl.removeAttribute("style");
+  }, 190);
+  workspaceRevealLater(() => workspaceTabsEl.classList.remove("workspace-tabs-attention"), 650);
+}
+function revealWorkspaceTabsWithoutMotion() {
+  cancelWorkspaceReveal();
+  if (isMobileViewport()) setHudOpen(true);
+  workspaceTabsEl.classList.add("workspace-tabs-attention");
+  workspaceRevealLater(() => workspaceTabsEl.classList.remove("workspace-tabs-attention"), 900);
+}
+function morphWorkspaceRingToHud() {
+  if (isMobileViewport()) setHudOpen(true);
+  // The phone HUD changes from display:none to a grid. Two frames let that
+  // layout settle before its real workspace switch becomes the morph target.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const target = workspaceTabsEl.getBoundingClientRect();
+    if (!target.width || !target.height) { revealWorkspaceTabsWithoutMotion(); return; }
+    workspaceRevealEl.classList.remove("is-ring");
+    workspaceRevealEl.classList.add("is-morphing");
+    requestAnimationFrame(() => setWorkspaceRevealRect(target));
+    workspaceRevealLater(finishWorkspaceReveal, WORKSPACE_MORPH_MS + 40);
+  }));
+}
+function playWorkspaceReveal() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    revealWorkspaceTabsWithoutMotion();
+    return;
+  }
+  clearWorkspaceRevealTimers();
+  syncWorkspaceRevealCopy();
+  setWorkspaceRevealRect(wheelRevealRingRect());
+  workspaceRevealEl.className = "";
+  workspaceRevealEl.hidden = false;
+  void workspaceRevealEl.offsetWidth;
+  workspaceRevealEl.classList.add("is-ring");
+  workspaceRevealLater(morphWorkspaceRingToHud, WORKSPACE_RING_HOLD_MS);
+}
 function playDeeperWarp(onComplete) {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onComplete(); return; }
   deeperWarpEl.hidden = false;
@@ -11729,7 +12581,17 @@ function playDeeperWarp(onComplete) {
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   if (state.goDeeper) { setGoDeeper(false); return; }
-  playDeeperWarp(() => setGoDeeper(true));
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  playDeeperWarp(() => {
+    document.body.classList.add("workspace-reveal-active");
+    workspaceTabsEl.style.opacity = "0";
+    workspaceTabsEl.style.pointerEvents = "none";
+    setGoDeeper(true);
+    workspaceRevealLater(playWorkspaceReveal, reducedMotion ? 0 : WARP_FADE_MS + 30);
+  });
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !workspaceRevealEl.hidden) finishWorkspaceReveal();
 });
 
 // ---------- LEGIBLE / CALM DEFAULT ----------
@@ -11761,7 +12623,7 @@ function applyLegibleCalmDefault() {
   if (typeof applyFreezeMode === "function") applyFreezeMode();
 }
 
-// ---------- PERCEPTION COMPASS ----------
+// ---------- WHEEL RADAR ----------
 // A small, draggable, resizable radar with three axis modes:
 //   - Notes / Compounds: the user's OWN top-10 active items by score, live —
 //     a personal-fingerprint shape. Axes themselves change as input changes,
@@ -13216,8 +14078,8 @@ function renderMapBearingCompass() {
     return `${item.note.label} ${compassCardinal(bearing)}`;
   }).join(", ");
   compass.setAttribute("aria-label", items.length
-    ? `Move bearing compass. ${summary}${items.length > 4 ? `, and ${items.length - 4} more` : ""}. Arrow keys reposition it.`
-    : "Move bearing compass. Add tasting notes to show their directions. Arrow keys reposition it.");
+    ? `Move Map bearing compass. ${summary}${items.length > 4 ? `, and ${items.length - 4} more` : ""}. Arrow keys reposition it.`
+    : "Move Map bearing compass. Add tasting notes to show their directions. Arrow keys reposition it.");
 }
 
 function setupMapBearingCompass() {
@@ -14577,6 +15439,7 @@ function refreshOriginMarkers() {
   // Selection highlight is re-applied here so it survives zoom refreshes and
   // full marker rebuilds (both call refreshOriginMarkers at the end).
   applyOriginSelection();
+  renderOriginComparisonOverlay();
 }
 
 // ---------- MAP MARKER SELECTION ----------
@@ -14605,12 +15468,12 @@ function applyOriginSelection() {
   });
 }
 
-// Single HUD button switches between the wheel, the origins map, and the
-// taxonomy tree. Lives in the header rather than floating on the wheel
-// canvas, since a floating version used to collide with the mobile-only
-// "Show compound labels" toggle (both pinned to the same top-left corner).
+// Go Deeper reveals the HUD workspace switch's Map and Tree choices. Wheel is
+// always available; entering either deeper explorer also enforces the deeper
+// state for programmatic links and narrative depth-card shortcuts.
 let _preTreeDetailHidden = null;
 function setWorkspace(mode) {
+  if (mode !== "wheel" && !state.goDeeper) setGoDeeper(true);
   // The Tree is meant to be read alongside your compound results, so entering it
   // always shows the results/detail pane on the side. Remember the prior pane
   // state so leaving the Tree restores the wheel's own layout instead of
@@ -14638,7 +15501,11 @@ function setWorkspace(mode) {
   document.querySelectorAll("#workspace-tabs button").forEach(b =>
     b.classList.toggle("active", b.dataset.workspace === mode));
   if (mode === "map") loadOrigins();
-  if (mode === "tree") loadTaxonomyTree();
+  if (mode === "tree") {
+    loadTaxonomyTree();
+    if (taxonomyCompareActive) expandAllTaxonomy();
+  }
+  renderTaxonomyComparePanel();
   renderMapBearingCompass();
 }
 function showTaxonomyDetail() {
@@ -14701,6 +15568,10 @@ function setTaxonomySheetSnap(snap) {
 // them — otherwise the px written above goes stale.
 window.addEventListener("resize", () => {
   if (!document.body.classList.contains("taxonomy-mode")) return;
+  if (taxonomyCompareActive && isMobileViewport() && !state.detailHidden) {
+    state.detailHidden = true;
+    applyPaneState();
+  }
   applyTaxonomySheetHeight();
   if (taxonomyTreeLoaded) {
     if (isMobileViewport() && taxonomyZoom > 1) taxonomyZoom = 1;
@@ -14807,6 +15678,10 @@ function loadTaxonomyTree() {
 let taxonomyZoom = 1;
 let taxonomyFitActive = false;
 let taxonomyEcologyLabelFamily = null;
+let taxonomyCompareActive = false;
+let taxonomyCompareExpanded = false;
+let taxonomyCompareChartOrientation = "columns";
+let taxonomyCompareIds = [null, null];
 const TAX_ZOOM_FLOOR = 0.02, TAX_ZOOM_MAX = 3;
 const taxonomyLayerVisibility = {
   lineageLandmarks: true,
@@ -14837,6 +15712,546 @@ function updateTaxonomyLayerSummary() {
     taxonomyLayerVisibility.pollinators && "pollinators",
   ].filter(Boolean);
   summary.textContent = shown.length ? shown.join(" · ") : "structure only";
+}
+
+// Culinary comparison deliberately follows the literature-linked aroma graph,
+// not tree proximity. A hidden varietal inherits its parent's base profile and
+// then overrides any duplicate compound with its own more-specific edge.
+function taxonomyComparisonEdges(noteId) {
+  const note = NOTE_BY_ID[noteId];
+  const byCompound = new Map();
+  if (note?.subOf) {
+    (NOTE_EDGES[note.subOf] || []).forEach(edge => byCompound.set(edge.cpd, { ...edge, inherited: true }));
+  }
+  (NOTE_EDGES[noteId] || []).forEach(edge => byCompound.set(edge.cpd, { ...edge, inherited: false }));
+  return byCompound;
+}
+function taxonomyComparisonContext(a, b) {
+  if (!a || !b) return "";
+  const context = [];
+  if (a.subOf === b.id) context.push(`${a.label} is grouped beneath ${b.label} as a culinary varietal in this wheel.`);
+  else if (b.subOf === a.id) context.push(`${b.label} is grouped beneath ${a.label} as a culinary varietal in this wheel.`);
+  else if ((a.subOf || a.id) === (b.subOf || b.id) && (a.subOf || b.subOf)) {
+    context.push(`Both are grouped beneath ${NOTE_BY_ID[a.subOf || b.subOf]?.label || "the same culinary umbrella"} in this wheel.`);
+  }
+  if (document.body.classList.contains("taxonomy-mode")) {
+    if (a.genus && b.genus && a.genus === b.genus) {
+      context.push(`Botanical link: both are represented in genus ${a.genus}${a.family ? ` (${a.family})` : ""}.`);
+    } else if (a.family && b.family && a.family === b.family) {
+      context.push(`Botanical link: both are represented in ${a.family}${TAXON_COMMON[a.family] ? ` (${TAXON_COMMON[a.family]})` : ""}.`);
+    } else if (a.order && b.order && a.order === b.order) {
+      context.push(`Botanical link: both are represented in Order ${a.order}, but not the same represented family.`);
+    } else {
+      context.push("Botanical context: no shared represented genus, family, or Order in this Tree.");
+    }
+  }
+  if (document.body.classList.contains("origins-mode")) context.push(taxonomyComparisonMapContext(a, b));
+  return context.filter(Boolean).join(" ");
+}
+function taxonomyOriginDistance(a, b) {
+  const ao = NOTE_ORIGINS[a?.id], bo = NOTE_ORIGINS[b?.id];
+  if (!ao || !bo) return null;
+  const radians = degrees => degrees * Math.PI / 180;
+  const dLat = radians(bo.lat - ao.lat), dLon = radians(bo.lon - ao.lon);
+  const lat1 = radians(ao.lat), lat2 = radians(bo.lat);
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return { a: ao, b: bo, km: 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)) };
+}
+function taxonomyComparisonMapContext(a, b) {
+  const parts = [];
+  const distance = taxonomyOriginDistance(a, b);
+  if (distance) {
+    parts.push(`Historical-origin markers: ${a.label} — ${distance.a.region}; ${b.label} — ${distance.b.region}; approximately ${Math.round(distance.km).toLocaleString()} km apart.`);
+  } else {
+    parts.push("Historical-origin markers: one or both notes lack a defensible single mapped origin.");
+  }
+  const aGeo = GEOGRAPHY_PILOT[a.id], bGeo = GEOGRAPHY_PILOT[b.id];
+  if (aGeo?.production && bGeo?.production) {
+    const bCountries = new Set(bGeo.production.countries.map(item => item.name));
+    const shared = aGeo.production.countries.map(item => item.name).filter(name => bCountries.has(name));
+    parts.push(shared.length
+      ? `Shared present-day production markers: ${shared.join(", ")}.`
+      : "No shared country appears in both current top-five production marker sets.");
+  }
+  if (aGeo?.traditions && bGeo?.traditions) {
+    const bPlaces = new Set(bGeo.traditions.map(item => item.place));
+    const shared = aGeo.traditions.map(item => item.place).filter(place => bPlaces.has(place));
+    if (shared.length) parts.push(`Shared documented cultural markers: ${shared.join(", ")}.`);
+  }
+  return `Map context: ${parts.join(" ")}`;
+}
+function renderOriginComparisonOverlay() {
+  const svg = document.getElementById("markers-svg");
+  if (!svg) return;
+  svg.querySelectorAll(".origin-compare-overlay").forEach(el => el.remove());
+  if (!taxonomyCompareActive || !document.body.classList.contains("origins-mode")
+      || state.geographyLens !== "origin") return;
+  const [aId, bId] = taxonomyCompareIds;
+  if (!aId || !bId || aId === bId) return;
+  const a = NOTE_BY_ID[aId], b = NOTE_BY_ID[bId];
+  const distance = taxonomyOriginDistance(a, b);
+  if (!distance) return;
+  const [x1, y1] = latLonToXY(distance.a.lat, distance.a.lon);
+  const [x2, y2] = latLonToXY(distance.b.lat, distance.b.lon);
+  const midpointX = (x1 + x2) / 2;
+  const bend = Math.min(140, 34 + Math.hypot(x2 - x1, y2 - y1) * .11);
+  const midpointY = (y1 + y2) / 2 - bend;
+  const pxPerUnit = mapPxPerUnit();
+  const ns = "http://www.w3.org/2000/svg";
+  const group = document.createElementNS(ns, "g");
+  group.classList.add("origin-compare-overlay");
+  group.setAttribute("aria-hidden", "true");
+  const route = document.createElementNS(ns, "path");
+  route.classList.add("origin-compare-route");
+  route.setAttribute("d", `M ${x1} ${y1} Q ${midpointX} ${midpointY} ${x2} ${y2}`);
+  group.appendChild(route);
+  [[x1, y1, "a"], [x2, y2, "b"]].forEach(([x, y, slot]) => {
+    const endpoint = document.createElementNS(ns, "circle");
+    endpoint.classList.add("origin-compare-endpoint", `origin-compare-endpoint-${slot}`);
+    endpoint.setAttribute("cx", x);
+    endpoint.setAttribute("cy", y);
+    endpoint.setAttribute("r", 7 / pxPerUnit);
+    group.appendChild(endpoint);
+  });
+  const label = document.createElementNS(ns, "text");
+  label.classList.add("origin-compare-distance-label");
+  label.setAttribute("x", midpointX);
+  label.setAttribute("y", midpointY - 8 / pxPerUnit);
+  label.setAttribute("font-size", 12 / pxPerUnit);
+  label.textContent = `${Math.round(distance.km).toLocaleString()} km between represented origins`;
+  group.appendChild(label);
+  svg.appendChild(group);
+}
+function taxonomyComparisonData(aId, bId) {
+  const aEdges = taxonomyComparisonEdges(aId), bEdges = taxonomyComparisonEdges(bId);
+  const ids = new Set([...aEdges.keys(), ...bEdges.keys()]);
+  let sharedWeight = 0, unionWeight = 0;
+  const shared = [];
+  ids.forEach(cpdId => {
+    const a = aEdges.get(cpdId), b = bEdges.get(cpdId);
+    const aw = a?.w || 0, bw = b?.w || 0;
+    sharedWeight += Math.min(aw, bw);
+    unionWeight += Math.max(aw, bw);
+    if (a && b) shared.push({ cpd: CPD_BY_ID[cpdId], a, b, strength: Math.min(aw, bw) });
+  });
+  shared.sort((x, y) => y.strength - x.strength
+    || ((y.a.w + y.b.w) - (x.a.w + x.b.w))
+    || x.cpd.label.localeCompare(y.cpd.label));
+  return { aEdges, bEdges, shared, score: unionWeight ? sharedWeight / unionWeight : 0 };
+}
+function taxonomyComparisonAffinity(aId, bId) {
+  const a = NOTE_BY_ID[aId], b = NOTE_BY_ID[bId];
+  if (!a || !b) return { related: false, sharedCompounds: 0, culinary: false };
+  const sharedCompounds = taxonomyComparisonData(aId, bId).shared.length;
+  const aRoot = a.subOf || a.id, bRoot = b.subOf || b.id;
+  // Broad wheel groups such as Fruity are navigation categories, not evidence
+  // that two aromas are related. Only a real shared culinary parent/varietal
+  // umbrella keeps a zero-compound choice bright.
+  const culinary = aRoot === bRoot || a.subOf === b.id || b.subOf === a.id;
+  return { related: sharedCompounds > 0 || culinary, sharedCompounds, culinary };
+}
+function populateTaxonomyCompareSelects() {
+  const options = [...NOTES].sort((a, b) => a.label.localeCompare(b.label));
+  ["taxonomy-compare-a", "taxonomy-compare-b", "global-compare-a", "global-compare-b"].forEach((id, index) => {
+    const select = document.getElementById(id);
+    if (!select || select.options.length) return;
+    select.appendChild(new Option(index % 2 === 0 ? "Choose first note…" : "Choose second note…", ""));
+    options.forEach((note, optionIndex) => {
+      const option = new Option(`${noteIcon(note)} ${note.label}`, note.id);
+      option.dataset.compareOrder = String(optionIndex);
+      select.appendChild(option);
+    });
+  });
+}
+function updateTaxonomyCompareOptionGuidance() {
+  const [aId, bId] = taxonomyCompareIds;
+  [
+    [document.getElementById("taxonomy-compare-a"), bId],
+    [document.getElementById("taxonomy-compare-b"), aId],
+    [document.getElementById("global-compare-a"), bId],
+    [document.getElementById("global-compare-b"), aId],
+  ].forEach(([select, anchorId]) => {
+    if (!select) return;
+    const selectedValue = select.value;
+    [...select.options].forEach(option => {
+      option.classList.remove("taxonomy-compare-related", "taxonomy-compare-unrelated");
+      option.removeAttribute("data-compare-affinity");
+      option.removeAttribute("title");
+      option.removeAttribute("aria-label");
+      if (!anchorId || !option.value) return;
+      const affinity = taxonomyComparisonAffinity(anchorId, option.value);
+      option.classList.add(affinity.related
+        ? "taxonomy-compare-related" : "taxonomy-compare-unrelated");
+      option.dataset.compareAffinity = affinity.related ? "related" : "unrelated";
+      const note = NOTE_BY_ID[option.value];
+      if (affinity.related) {
+        const reasons = [
+          affinity.sharedCompounds && `${affinity.sharedCompounds} shared compound${affinity.sharedCompounds === 1 ? "" : "s"}`,
+          affinity.culinary && "shared culinary parent or varietal umbrella",
+        ].filter(Boolean).join(" and ");
+        option.title = `${note.label}: ${reasons}`;
+        option.setAttribute("aria-label", `${note.label}, ${reasons}`);
+      } else {
+        option.title = `${note.label}: no shared compound or culinary aroma relationship in the current evidence set`;
+        option.setAttribute("aria-label", `${note.label}, dimmed, no known overlap yet`);
+      }
+    });
+    const placeholder = [...select.options].find(option => !option.value);
+    const choices = [...select.options].filter(option => option.value);
+    choices.sort((a, b) => {
+      if (anchorId) {
+        const aRank = a.dataset.compareAffinity === "unrelated" ? 1 : 0;
+        const bRank = b.dataset.compareAffinity === "unrelated" ? 1 : 0;
+        if (aRank !== bRank) return aRank - bRank;
+      }
+      return Number(a.dataset.compareOrder) - Number(b.dataset.compareOrder);
+    });
+    select.replaceChildren(placeholder, ...choices);
+    select.value = selectedValue;
+  });
+}
+function taxonomyCompoundSensoryAnchor(cpd) {
+  if (cpd?.note) return cpd.note;
+  if (cpd?.commonName) return `${cpd.commonName}; ${cpd.class} aroma compound.`;
+  return `${cpd?.class || "Aroma"} compound; no concise sensory description is recorded yet.`;
+}
+function renderTaxonomyCompoundDefinition(result, cpdId, opener) {
+  const cpd = CPD_BY_ID[cpdId];
+  const popover = result.querySelector(".taxonomy-compare-definition-popover");
+  if (!cpd || !popover) return;
+  if (!popover.hidden && popover.dataset.cpd === cpdId) {
+    popover.hidden = true;
+    opener.focus();
+    return;
+  }
+  const thresholdStrength = { high: 1, medium: 2, low: 3, "very-low": 4 }[cpd.threshold] || 1;
+  const node = CPD_NODE_BY_ID[cpdId];
+  const edges = (CPD_EDGES[cpdId] || []).slice().sort((a, b) => {
+    const aw = effectiveNoteSignal(a.note, cpdId) * a.w;
+    const bw = effectiveNoteSignal(b.note, cpdId) * b.w;
+    return bw - aw || b.w - a.w;
+  });
+  const carriers = edges.map(edge => NOTE_BY_ID[edge.note]).filter(Boolean);
+  const shown = carriers.slice(0, 8);
+  const common = cpd.commonName ? ` · ${cpd.commonName}` : "";
+  const pct = value => Math.round(Math.min(1, value || 0) * 100);
+  const evidence = edges.map(edge => {
+    const note = NOTE_BY_ID[edge.note];
+    if (!note) return "";
+    const signal = effectiveNoteSignal(edge.note, cpdId);
+    const live = signal > 0;
+    const phases = PHASES.filter(phase => !state.hiddenPhases.has(phase)
+      && getEntry(edge.note, phase) !== undefined)
+      .map(phase => `${phase}: ${getEntry(edge.note, phase)}`).join(" · ");
+    const refId = refIdForCite(edge.cite);
+    const ref = refId ? REFERENCES[refId] : null;
+    const citation = ref ? formatRefFull(ref) : edge.cite;
+    return `<article class="taxonomy-compare-evidence-row">
+      <div class="taxonomy-compare-evidence-note"><span>${noteIcon(note)} ${note.label}</span>
+        <span class="taxonomy-compare-evidence-weight">${live ? (signal * edge.w).toFixed(2) : "—"} · base ${edge.w.toFixed(2)}</span></div>
+      ${phases ? `<div class="taxonomy-compare-evidence-phase">${phases}</div>` : ""}
+      <span class="cite cite-full">${citation}</span>
+    </article>`;
+  }).join("");
+  popover.dataset.cpd = cpdId;
+  popover.innerHTML = `
+    <button type="button" class="taxonomy-compare-definition-close" aria-label="Close compound definition">×</button>
+    <div class="taxonomy-compare-definition-kicker">Sensory definition</div>
+    <h4>${cpd.label}</h4>
+    <div class="taxonomy-compare-definition-meta">${cpd.class}${common}</div>
+    <p class="taxonomy-compare-definition-copy">${taxonomyCompoundSensoryAnchor(cpd)}</p>
+    <div class="taxonomy-compare-definition-scores">
+      <span>Intensity</span><span class="taxonomy-compare-definition-score-track"><i style="width:${pct(node?.intensity)}%"></i></span>
+      <span class="taxonomy-compare-definition-score-value">${pct(node?.intensity)}</span>
+      <span>Confidence</span><span class="taxonomy-compare-definition-score-track confidence"><i style="width:${pct(node?.confidence)}%"></i></span>
+      <span class="taxonomy-compare-definition-score-value">${pct(node?.confidence)}</span>
+    </div>
+    <div class="taxonomy-compare-threshold">
+      <div class="taxonomy-compare-threshold-head"><span>Detection sensitivity</span><strong>${cpd.threshold} threshold</strong></div>
+      <div class="taxonomy-compare-threshold-scale" aria-label="${cpd.threshold} odor threshold">
+        ${[1,2,3,4].map(level => `<i class="${level <= thresholdStrength ? "is-on" : ""}"></i>`).join("")}
+      </div>
+      <p class="taxonomy-compare-threshold-source">${cpd.thresholdSrc}</p>
+    </div>
+    <div class="taxonomy-compare-found-label">Recorded in this aroma graph</div>
+    <div class="taxonomy-compare-found">
+      ${shown.length ? shown.map(note => `<span>${noteIcon(note)} ${note.label}</span>`).join("")
+        : `<span>No carrier note recorded yet</span>`}
+      ${carriers.length > shown.length ? `<span>+${carriers.length - shown.length} more</span>` : ""}
+    </div>
+    <section class="taxonomy-compare-evidence">
+      <h5>Contributing notes · literature evidence</h5>
+      <div class="taxonomy-compare-evidence-list">${evidence || `<div class="taxonomy-compare-empty">No contributing-note edge is recorded.</div>`}</div>
+    </section>`;
+  popover.hidden = false;
+  const close = popover.querySelector(".taxonomy-compare-definition-close");
+  close.addEventListener("click", () => { popover.hidden = true; opener.focus(); });
+  close.focus();
+}
+function taxonomyComparisonChartHtml(aNote, bNote, data) {
+  const sharedIds = new Set(data.shared.map(item => item.cpd.id));
+  const shared = data.shared.map(item => ({
+    cpd: item.cpd, aWeight: item.a.w, bWeight: item.b.w, shared: true,
+  }));
+  const uniqueA = [...data.aEdges.entries()]
+    .filter(([cpdId]) => !sharedIds.has(cpdId))
+    .map(([cpdId, edge]) => ({ cpd: CPD_BY_ID[cpdId], aWeight: edge.w, bWeight: 0, shared: false }))
+    .sort((a, b) => b.aWeight - a.aWeight);
+  const uniqueB = [...data.bEdges.entries()]
+    .filter(([cpdId]) => !sharedIds.has(cpdId))
+    .map(([cpdId, edge]) => ({ cpd: CPD_BY_ID[cpdId], aWeight: 0, bWeight: edge.w, shared: false }))
+    .sort((a, b) => b.bWeight - a.bWeight);
+  const other = [...uniqueA, ...uniqueB];
+  const row = item => `<div class="taxonomy-compare-chart-row${item.shared ? " is-shared" : " is-unmatched"}"
+      title="${item.cpd.label}: ${taxonomyCompoundSensoryAnchor(item.cpd)} ${aNote.label} ${item.aWeight.toFixed(2)}, ${bNote.label} ${item.bWeight.toFixed(2)}">
+      <span class="taxonomy-compare-chart-bar a"><span style="width:${Math.round(item.aWeight * 100)}%"></span></span>
+      <span class="taxonomy-compare-chart-label"><button type="button"
+        class="taxonomy-compare-definition taxonomy-compare-chart-definition"
+        data-compare-definition="${item.cpd.id}">${item.cpd.label}</button>
+        <span class="taxonomy-compare-chart-aroma">${taxonomyCompoundSensoryAnchor(item.cpd)}</span>
+        <small>${item.aWeight ? item.aWeight.toFixed(2) : "—"} / ${item.bWeight ? item.bWeight.toFixed(2) : "—"}</small>
+      </span>
+      <span class="taxonomy-compare-chart-bar b"><span style="width:${Math.round(item.bWeight * 100)}%"></span></span>
+    </div>`;
+  const verticalItem = item => `<div class="taxonomy-compare-vertical-item${item.shared ? " is-shared" : " is-unmatched"}"
+      title="${item.cpd.label}: ${taxonomyCompoundSensoryAnchor(item.cpd)} ${aNote.label} ${item.aWeight.toFixed(2)}, ${bNote.label} ${item.bWeight.toFixed(2)}">
+      <div class="taxonomy-compare-vertical-bars" aria-hidden="true">
+        <span class="taxonomy-compare-vertical-bar a" style="height:${Math.round(item.aWeight * 100)}%"><small>${item.aWeight ? item.aWeight.toFixed(2) : "—"}</small></span>
+        <span class="taxonomy-compare-vertical-bar b" style="height:${Math.round(item.bWeight * 100)}%"><small>${item.bWeight ? item.bWeight.toFixed(2) : "—"}</small></span>
+      </div>
+      <div class="taxonomy-compare-vertical-label"><button type="button"
+        class="taxonomy-compare-definition taxonomy-compare-chart-definition"
+        data-compare-definition="${item.cpd.id}">${item.cpd.label}</button>
+        <span class="taxonomy-compare-chart-aroma">${taxonomyCompoundSensoryAnchor(item.cpd)}</span>
+      </div>
+    </div>`;
+  const verticalGroup = (label, items) => `<section class="taxonomy-compare-vertical-group">
+      <h5>${label}</h5>
+      <div class="taxonomy-compare-vertical-grid" style="--compound-count:${Math.max(items.length, 1)}">
+        ${items.length ? items.map(verticalItem).join("") : `<div class="taxonomy-compare-empty">No overlapping rows</div>`}
+      </div>
+    </section>`;
+  return `<figure class="taxonomy-compare-chart is-${taxonomyCompareChartOrientation}"
+      aria-label="Mirrored compound evidence bars for ${aNote.label} and ${bNote.label}">
+    <figcaption>
+      <span class="taxonomy-compare-chart-heading"><span>Compound contribution profile</span><span>${shared.length} shared</span></span>
+      <span class="taxonomy-compare-chart-layout" role="group" aria-label="Compound chart orientation">
+        <button type="button" data-compare-chart-orientation="rows"
+          aria-pressed="${taxonomyCompareChartOrientation === "rows"}">Horizontal</button>
+        <button type="button" data-compare-chart-orientation="columns"
+          aria-pressed="${taxonomyCompareChartOrientation === "columns"}">Vertical</button>
+      </span>
+    </figcaption>
+    <div class="taxonomy-compare-chart-rows">
+      <div class="taxonomy-compare-chart-axis">
+        <span>${aNote.label}</span><span>compound</span><span>${bNote.label}</span>
+      </div>
+      ${shared.map(row).join("") || `<div class="taxonomy-compare-empty">No overlapping rows</div>`}
+      ${other.length ? `<div class="taxonomy-compare-chart-divider">other linked compounds</div>
+        ${other.map(row).join("")}` : ""}
+    </div>
+    <div class="taxonomy-compare-chart-columns">
+      <div class="taxonomy-compare-chart-axis">
+        <span>${aNote.label}</span><span>vertical evidence weight</span><span>${bNote.label}</span>
+      </div>
+      <div class="taxonomy-compare-vertical-sections${other.length ? "" : " is-single"}">
+        ${verticalGroup("Shared compounds", shared)}
+        ${other.length ? verticalGroup("Other linked compounds", other) : ""}
+      </div>
+    </div>
+    <p class="taxonomy-compare-chart-note">Bar length = literature-linked evidence weight in this model, not measured concentration.</p>
+  </figure>`;
+}
+function taxonomyComparisonExpandedLayersHtml(aNote, bNote, data) {
+  const workspaceLens = document.body.classList.contains("origins-mode") ? "geography"
+    : document.body.classList.contains("taxonomy-mode") ? "taxonomy" : "compounds";
+  const activeClass = lens => workspaceLens === lens ? " is-workspace-lens" : "";
+  const groupLabel = note => GROUPS.find(group => group.id === note.group)?.label || note.group;
+  const aRoot = aNote.subOf || aNote.id, bRoot = bNote.subOf || bNote.id;
+  const culinaryLink = aNote.group === bNote.group
+    ? `Both sit in the ${groupLabel(aNote)} culinary aroma family.`
+    : aRoot === bRoot
+      ? `Both sit beneath ${NOTE_BY_ID[aRoot]?.label || "the same culinary umbrella"}.`
+      : `${groupLabel(aNote)} and ${groupLabel(bNote)} remain distinct culinary families.`;
+  let botanicalLink = "No shared represented genus, family, or Order.";
+  if (aNote.genus && aNote.genus === bNote.genus) {
+    botanicalLink = `Shared genus ${aNote.genus}${aNote.family ? ` (${aNote.family})` : ""}.`;
+  } else if (aNote.family && aNote.family === bNote.family) {
+    botanicalLink = `Shared family ${aNote.family}${TAXON_COMMON[aNote.family] ? ` — ${TAXON_COMMON[aNote.family]}` : ""}.`;
+  } else if (aNote.order && aNote.order === bNote.order) {
+    botanicalLink = `Shared Order ${aNote.order}; represented families differ.`;
+  }
+  const distance = taxonomyOriginDistance(aNote, bNote);
+  const originLink = distance
+    ? `${aNote.label}: ${distance.a.region}. ${bNote.label}: ${distance.b.region}. ${Math.round(distance.km).toLocaleString()} km between represented points.`
+    : "One or both notes lack a defensible single historical-origin marker.";
+  const aGeo = GEOGRAPHY_PILOT[aNote.id], bGeo = GEOGRAPHY_PILOT[bNote.id];
+  let productionHtml = "Current production comparison is available only when both notes are in the coffee/cacao/vanilla pilot.";
+  if (aGeo?.production && bGeo?.production) {
+    const bCountries = new Map(bGeo.production.countries.map(item => [item.name, item]));
+    const shared = aGeo.production.countries
+      .filter(item => bCountries.has(item.name))
+      .map(aItem => ({ aItem, bItem: bCountries.get(aItem.name) }));
+    const aTotal = aGeo.production.countries.reduce((sum, item) => sum + item.tonnes, 0);
+    const bTotal = bGeo.production.countries.reduce((sum, item) => sum + item.tonnes, 0);
+    productionHtml = shared.length ? shared.map(({ aItem, bItem }) => {
+      const aShare = aItem.tonnes / aTotal, bShare = bItem.tonnes / bTotal;
+      return `<div class="taxonomy-compare-production-row" title="Share within each note's displayed top-five production markers">
+        <span class="taxonomy-compare-chart-bar a"><span style="width:${Math.round(aShare * 100)}%"></span></span>
+        <span class="taxonomy-compare-chart-label">${aItem.name}</span>
+        <span class="taxonomy-compare-chart-bar b"><span style="width:${Math.round(bShare * 100)}%"></span></span>
+      </div>`;
+    }).join("") : "No country is shared by both displayed top-five production sets.";
+  }
+  const culturalPlaces = aGeo?.traditions && bGeo?.traditions
+    ? aGeo.traditions.map(item => item.place)
+      .filter(place => bGeo.traditions.some(item => item.place === place)) : [];
+  const culturalLine = culturalPlaces.length
+    ? ` Shared documented cultural markers: ${culturalPlaces.join(", ")}.`
+    : " No exact shared documented cultural marker in the current pilot.";
+  return `<div class="taxonomy-compare-expanded-layers" aria-label="Cross-workspace comparison layers">
+    <article class="taxonomy-compare-layer-card${activeClass("compounds")}">
+      <h4>Compounds ${workspaceLens === "compounds" ? "<span>active workspace</span>" : ""}</h4>
+      <p>${data.shared.length} shared compound${data.shared.length === 1 ? "" : "s"}; ${Math.round(data.score * 100)}% weighted overlap.</p>
+      <p class="taxonomy-compare-layer-caveat">The graph above uses literature-linked evidence weight, not concentration.</p>
+    </article>
+    <article class="taxonomy-compare-layer-card">
+      <h4>Culinary</h4><p>${culinaryLink}</p>
+      <p class="taxonomy-compare-layer-caveat">Everyday flavor grouping, not botanical classification.</p>
+    </article>
+    <article class="taxonomy-compare-layer-card${activeClass("taxonomy")}">
+      <h4>Taxonomy ${workspaceLens === "taxonomy" ? "<span>active workspace</span>" : ""}</h4><p>${botanicalLink}</p>
+      <p class="taxonomy-compare-layer-caveat">Placement context only; it does not prove why aromas overlap.</p>
+    </article>
+    <article class="taxonomy-compare-layer-card${activeClass("geography")}">
+      <h4>Origins &amp; culture ${workspaceLens === "geography" ? "<span>active workspace</span>" : ""}</h4><p>${originLink}${culturalLine}</p>
+    </article>
+    <article class="taxonomy-compare-layer-card">
+      <h4>Production / economy</h4>${typeof productionHtml === "string" && productionHtml.startsWith("<div") ? productionHtml : `<p>${productionHtml}</p>`}
+      <p class="taxonomy-compare-layer-caveat">Bars are shares within each note's displayed top five by tonnes—not price, value, or market importance.</p>
+    </article>
+    <article class="taxonomy-compare-layer-card">
+      <h4>Climate</h4><p>Awaiting sourced species-level growing-climate and range data.</p>
+      <p class="taxonomy-compare-layer-caveat">Climate is not inferred from a single origin point.</p>
+    </article>
+  </div>`;
+}
+function renderTaxonomyCompareResult(result) {
+  const [aId, bId] = taxonomyCompareIds;
+  result.classList.toggle("taxonomy-compare-columns-active",
+    taxonomyCompareExpanded && taxonomyCompareChartOrientation === "columns");
+  if (!aId && !bId) {
+    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two culinary aroma notes. The active workspace adds its own chemistry, botanical, or geographic lens.</div>`;
+    return;
+  }
+  if (!aId || !bId) {
+    const chosen = NOTE_BY_ID[aId || bId];
+    const relatedCount = NOTES.filter(note => note.id !== chosen.id
+      && taxonomyComparisonAffinity(chosen.id, note.id).related).length;
+    result.innerHTML = `<div class="taxonomy-compare-empty"><strong>${noteIcon(chosen)} ${chosen.label}</strong> selected. ${relatedCount} choices with shared chemistry or culinary aroma context stay bright; dim choices have no known link yet, but remain selectable.</div>`;
+    return;
+  }
+  if (aId === bId) {
+    result.innerHTML = `<div class="taxonomy-compare-empty">Choose two different notes.</div>`;
+    return;
+  }
+  const aNote = NOTE_BY_ID[aId], bNote = NOTE_BY_ID[bId];
+  const data = taxonomyComparisonData(aId, bId);
+  const context = taxonomyComparisonContext(aNote, bNote);
+  const percent = Math.round(data.score * 100);
+  result.innerHTML = `
+    <div class="taxonomy-compare-summary">
+      <span class="taxonomy-compare-score">${percent}% weighted aroma overlap</span>
+      <span>${data.shared.length} shared of ${new Set([...data.aEdges.keys(), ...data.bEdges.keys()]).size} linked compounds</span>
+      <span class="taxonomy-compare-badge">correlation view</span>
+    </div>
+    <div class="taxonomy-compare-detail-grid">
+      <div class="taxonomy-compare-explanation">
+        <div class="taxonomy-compare-compounds">
+          ${data.shared.length ? data.shared.map(item => `
+            <div class="taxonomy-compare-compound">
+              <button type="button" class="taxonomy-compare-definition" data-compare-definition="${item.cpd.id}"
+                title="Define ${item.cpd.label}">${item.cpd.label} · ${item.a.w.toFixed(2)}/${item.b.w.toFixed(2)}</button>
+              <span>${taxonomyCompoundSensoryAnchor(item.cpd)}</span>
+            </div>`).join("")
+            : `<span class="taxonomy-compare-empty">No shared compounds in the current evidence set—not evidence that none exist.</span>`}
+        </div>
+        <p class="taxonomy-compare-context"><strong>Culinary reading:</strong> chemical overlap is correlation—not causation or ancestry.${context ? ` <strong>Related context:</strong> ${context}` : ""}</p>
+      </div>
+      ${taxonomyComparisonChartHtml(aNote, bNote, data)}
+    </div>
+    ${taxonomyComparisonExpandedLayersHtml(aNote, bNote, data)}
+    <aside class="taxonomy-compare-definition-popover" role="dialog"
+      aria-label="Compound sensory definition" hidden></aside>`;
+  result.querySelectorAll("[data-compare-definition]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      renderTaxonomyCompoundDefinition(result, button.dataset.compareDefinition, button);
+    });
+  });
+  result.querySelectorAll("[data-compare-chart-orientation]").forEach(button => {
+    button.addEventListener("click", () => {
+      taxonomyCompareChartOrientation = button.dataset.compareChartOrientation;
+      renderTaxonomyComparePanel();
+    });
+  });
+}
+function renderTaxonomyComparePanel() {
+  const view = document.getElementById("taxonomy-view");
+  const panel = document.getElementById("taxonomy-compare-panel");
+  const globalPanel = document.getElementById("global-compare-panel");
+  const button = document.getElementById("taxonomy-compare-toggle");
+  if (!view || !panel || !globalPanel || !button) return;
+  populateTaxonomyCompareSelects();
+  view.classList.toggle("taxonomy-compare-active", taxonomyCompareActive);
+  const inTree = document.body.classList.contains("taxonomy-mode");
+  panel.hidden = !taxonomyCompareActive || !inTree || taxonomyCompareExpanded;
+  globalPanel.hidden = !taxonomyCompareActive || (inTree && !taxonomyCompareExpanded);
+  globalPanel.classList.toggle("taxonomy-compare-expanded", taxonomyCompareActive && taxonomyCompareExpanded);
+  document.body.classList.toggle("taxonomy-compare-expanded", taxonomyCompareActive && taxonomyCompareExpanded);
+  if (taxonomyCompareActive && taxonomyCompareExpanded) {
+    const headerBottom = Math.ceil(document.querySelector("header").getBoundingClientRect().bottom);
+    document.documentElement.style.setProperty("--compare-pane-top", `${headerBottom}px`);
+  } else {
+    document.documentElement.style.removeProperty("--compare-pane-top");
+  }
+  button.setAttribute("aria-pressed", taxonomyCompareActive ? "true" : "false");
+  document.getElementById("taxonomy-compare-toggle-label").textContent = taxonomyCompareActive
+    ? "Close comparison" : "Compare notes";
+  ["taxonomy-compare-a", "global-compare-a"].forEach(id => {
+    document.getElementById(id).value = taxonomyCompareIds[0] || "";
+  });
+  ["taxonomy-compare-b", "global-compare-b"].forEach(id => {
+    document.getElementById(id).value = taxonomyCompareIds[1] || "";
+  });
+  ["taxonomy-compare-expand", "global-compare-expand"].forEach(id => {
+    const expandButton = document.getElementById(id);
+    expandButton.setAttribute("aria-expanded", String(taxonomyCompareExpanded));
+    expandButton.firstElementChild.textContent = taxonomyCompareExpanded ? "↙" : "↗";
+    expandButton.lastElementChild.textContent = taxonomyCompareExpanded ? "Compact view" : "Expand analysis";
+    expandButton.title = taxonomyCompareExpanded
+      ? "Return to the compact comparison"
+      : "Open a larger comparison and compound graph";
+  });
+  updateTaxonomyCompareOptionGuidance();
+  if (!taxonomyCompareActive) {
+    renderOriginComparisonOverlay();
+    return;
+  }
+  [document.getElementById("taxonomy-compare-result"), document.getElementById("global-compare-result")]
+    .forEach(renderTaxonomyCompareResult);
+  renderOriginComparisonOverlay();
+}
+function chooseTaxonomyCompareNote(noteId) {
+  if (!noteId || !NOTE_BY_ID[noteId]) return;
+  const [a, b] = taxonomyCompareIds;
+  if (noteId === a) taxonomyCompareIds = [null, b];
+  else if (noteId === b) taxonomyCompareIds = [a, null];
+  else if (!a) taxonomyCompareIds = [noteId, b];
+  else if (!b) taxonomyCompareIds = [a, noteId];
+  else taxonomyCompareIds = [b, noteId];
+  renderTaxonomyComparePanel();
 }
 function clearTaxonomyFitAlignment() {
   const svg = document.getElementById("taxonomy-svg");
@@ -15153,16 +16568,6 @@ function applyTaxonomyDepthDefault() {
 // grows that one branch through Families to flavor-note fruit while its sibling
 // Orders remain visible as context.
 function focusTaxonomyBranchKingdom(kingdom) {
-  if (useTaxonomyOrderDirectory()) {
-    state.taxonomyView = "circles";
-    state.taxonomyFocus = { rank: "kingdom", name: kingdom.data.name };
-    state.selectedFamily = null;
-    state.selectedNote = null;
-    taxonomyBranchFocusNode = null;
-    taxonomyBranchFocusNeedsCenter = false;
-    taxonomyZoom = 1;
-    return;
-  }
   taxonomyChildren(taxTreeRoot).forEach(candidate => {
     if (candidate === kingdom) {
       expandTaxonomyNode(candidate);
@@ -15515,10 +16920,9 @@ function useTaxonomyOrderDirectory() {
   return isMobileViewport() || window.innerHeight > window.innerWidth;
 }
 
-// A phone cannot explain Plantae by drawing Orders, Families, and ~100 note
-// marks at once. This directory shows one card per Order, with just two familiar
-// examples as recognition cues. Choosing an Order reveals Families; choosing a
-// Family is where individual notes finally appear.
+// When a user explicitly chooses Circles on a portrait screen, this directory
+// keeps that alternate view compact. Branches never redirects here: the actual
+// tree and its florets remain the mobile navigation surface too.
 function renderTaxonomyMobileKingdomOrders(
   svg, scrollEl, focusNode, orders, functionalNotes, looseNotes, notes, path
 ) {
@@ -16445,6 +17849,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
 
 function renderTaxonomyTree() {
   const svg = d3.select("#taxonomy-svg");
+  renderTaxonomyComparePanel();
   applyTaxonomyLayerVisibility(svg);
   svg.classed("tx-mobile-order-directory", false);
   const scrollEl = document.getElementById("taxonomy-tree-scroll");
@@ -17253,6 +18658,11 @@ function renderTaxonomyTree() {
       updateTaxonomyFitControl();
       taxonomyZoom = 1;
     }
+    if (rank === "note" && taxonomyCompareActive) {
+      chooseTaxonomyCompareNote(d.data.noteId);
+      renderTaxonomyTree();
+      return;
+    }
     if (rank === "kingdom") {
       focusTaxonomyBranchKingdom(d);
       renderTaxonomyTree();
@@ -17385,6 +18795,8 @@ function renderTaxonomyTree() {
   const merged = node.merge(enter);
   merged.attr("class", d =>
     `${nodeClass(d)}${selectedPath.has(d) ? " tx-path" : ""}`
+    + `${d.data.noteId && taxonomyCompareIds[0] === d.data.noteId ? " tx-compare-a" : ""}`
+    + `${d.data.noteId && taxonomyCompareIds[1] === d.data.noteId ? " tx-compare-b" : ""}`
     + `${d === selectedTarget ? " tx-selected" : ""}`
     + `${d === visibleBranchFocus ? " tx-branch-focus" : ""}`
     + `${visibleBranchFocus && taxonomyBranchRank(visibleBranchFocus) === "order"
@@ -17395,7 +18807,8 @@ function renderTaxonomyTree() {
     .attr("aria-label", d => {
       const rank = taxonomyBranchRank(d);
       const total = countTaxonomyLeaves(d);
-      if (rank === "note") return `Open flavor note ${d.data.name}`;
+      if (rank === "note") return taxonomyCompareActive
+        ? `Add ${d.data.name} to aroma comparison` : `Open flavor note ${d.data.name}`;
       if (rank === "root") return "Biologically placed flavor notes taxonomy root";
       if (rank === "kingdom") {
         return `Focus kingdom ${d.data.name}, ${total} note${total === 1 ? "" : "s"}`;
@@ -17741,6 +19154,15 @@ function setTaxonomySearchActive(index) {
 }
 
 function openTaxonomySearchMatch(target) {
+  if (taxonomyCompareActive) {
+    chooseTaxonomyCompareNote(target.data.noteId);
+    renderTaxonomyTree();
+    const countEl = document.getElementById("taxonomy-search-count");
+    countEl.textContent = `Added ${target.data.name} to aroma comparison`;
+    countEl.classList.add("tx-search-opened");
+    closeTaxonomySearchResults();
+    return;
+  }
   setTaxonomyFocus("note", target.data.name, target.data.noteId);
   const countEl = document.getElementById("taxonomy-search-count");
   countEl.textContent = `Opened ${target.data.name} - lineage and details updated`;
@@ -17865,6 +19287,76 @@ document.getElementById("taxonomy-expand-all").setAttribute("aria-label", "Show 
 document.getElementById("taxonomy-expand-all").addEventListener("click", expandAllTaxonomy);
 document.getElementById("taxonomy-collapse-all").addEventListener("click", collapseTaxonomyToKingdoms);
 document.getElementById("taxonomy-back-tree").addEventListener("click", taxonomyUpOneLevel);
+document.getElementById("taxonomy-compare-toggle").addEventListener("click", () => {
+  taxonomyCompareActive = !taxonomyCompareActive;
+  if (taxonomyCompareActive) {
+    setHudOpen(false);
+    if (document.body.classList.contains("taxonomy-mode")) {
+      state.taxonomyView = "branches";
+      state.taxonomyFocus = null;
+      state.selectedFamily = null;
+      state.selectedNote = null;
+      state.selectedCompound = null;
+      taxonomyZoom = 1;
+      taxonomyBranchFocusNode = null;
+      if (!state.detailHidden && isMobileViewport()) {
+        state.detailHidden = true;
+        applyPaneState();
+      }
+      expandAllTaxonomy();
+    } else {
+      renderTaxonomyComparePanel();
+    }
+  } else {
+    taxonomyCompareExpanded = false;
+    renderTaxonomyComparePanel();
+    if (taxonomyTreeLoaded) renderTaxonomyTree();
+  }
+});
+[["taxonomy-compare-a", 0], ["global-compare-a", 0],
+ ["taxonomy-compare-b", 1], ["global-compare-b", 1]].forEach(([id, index]) => {
+  document.getElementById(id).addEventListener("change", event => {
+    taxonomyCompareIds[index] = event.target.value || null;
+    renderTaxonomyComparePanel();
+    if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
+  });
+});
+['taxonomy-compare-swap', 'global-compare-swap'].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    taxonomyCompareIds = [taxonomyCompareIds[1], taxonomyCompareIds[0]];
+    renderTaxonomyComparePanel();
+    if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
+  });
+});
+['taxonomy-compare-clear', 'global-compare-clear'].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    taxonomyCompareIds = [null, null];
+    renderTaxonomyComparePanel();
+    if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
+  });
+});
+['taxonomy-compare-expand', 'global-compare-expand'].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    taxonomyCompareExpanded = !taxonomyCompareExpanded;
+    renderTaxonomyComparePanel();
+  });
+});
+document.addEventListener("keydown", event => {
+  if (event.key !== "Escape") return;
+  const definition = [...document.querySelectorAll(".taxonomy-compare-definition-popover")]
+    .find(popover => !popover.hidden);
+  if (definition) {
+    definition.hidden = true;
+    event.stopPropagation();
+    return;
+  }
+  if (!taxonomyCompareActive || !taxonomyCompareExpanded) return;
+  taxonomyCompareExpanded = false;
+  renderTaxonomyComparePanel();
+});
+window.addEventListener("resize", () => {
+  if (taxonomyCompareActive && taxonomyCompareExpanded) renderTaxonomyComparePanel();
+});
 document.querySelectorAll("[data-taxonomy-layer]").forEach(input => {
   input.checked = !!taxonomyLayerVisibility[input.dataset.taxonomyLayer];
   input.addEventListener("change", () => {

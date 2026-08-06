@@ -1,5 +1,250 @@
 # Codex branch check-in
 
+## Codex follow-up: Go Deeper Wheel-to-HUD morph + compound gravity (2026-08-05)
+
+- Go Deeper's existing canopy-to-soil descent now hands off to the actual workspace
+  navigation instead of simply making Map and Tree appear. After the soil overlay clears, a
+  gold outline traces the live Wheel rim, holds for one readable beat, then contracts into a
+  temporary visual copy of the real `Wheel / Map / Tree` HUD switch and crossfades to that
+  interactive control.
+- The morph uses the rendered Wheel radius and the HUD switch's live client rectangle, so it
+  lands on the genuine target after desktop header wrapping. On phones it opens the HUD tray
+  immediately before the contraction, waits two animation frames for the grid to settle, then
+  targets the visible three-option switch. Escape ends the flourish at the usable menu.
+- Reduced-motion mode skips both the descent and geometric morph: it opens the phone HUD if
+  needed and gives the final workspace switch a static attention outline.
+- Scent-mode compounds now obey a support-count gravity rule. One unique active note keeps a
+  compound in an outer 72-88% parent-gravity band. At two active notes the compound crosses
+  into shared Wheel space; further unique notes add inward momentum. Evidence strength still
+  differentiates radius inside each band and continues to control token size/opacity.
+- Support counting follows the current tasting, group visibility, and the comparison model's
+  culinary-varietal inheritance. Each entered varietal remains a unique source even when it
+  reaches a shared compound through its culinary parent. Chemistry organization is unchanged.
+- Compound controls now report support count in their accessible label and expose a hover title
+  naming either the source-note gravity relationship or every active note in the shared orbit.
+  The expanded Wheel hint explains the same visual law in plain language.
+
+### Verification
+
+- Chrome localhost at 1440x1000: the post-warp highlight measured about 688x671 around the
+  rendered Wheel and contracted onto the 219x29 desktop HUD switch. The settled state exposes
+  Wheel, Map, and Tree, restores full target opacity, and leaves the temporary overlay hidden.
+- Chrome localhost at 360x760: the 244px Wheel highlight targets the open HUD's 231x46 workspace
+  switch at x=12/y=69. The HUD remains open on the real three-option menu after the crossfade;
+  page overflow remains zero.
+- Desktop Lemon at intensity 8 gives Limonene one source and a 108.8px outer home. Adding Orange
+  changes Limonene to two named sources and a 43.43px shared-space home; the remaining one-source
+  Linalool target stays at 117.01px. The rendered shared compound settles inside the single-source
+  compound rather than merely changing metadata.
+- At 360x760 the same threshold moves Limonene from a 41.23px one-source home to 16.46px with
+  Lemon + Orange, while the one-source compound remains at least 44.34px out. Both states have
+  zero horizontal overflow and the tooltip names `Lemon, Orange` as the shared support.
+
+## Codex follow-up: Wheel-local controls + Go Deeper explorer reveal (2026-08-05)
+
+- Moved `Organize · Scent / Chemistry` and the Radar toggle out of the
+  global HUD and into a compact frosted toolbar inside `main.wheel`. Map and Tree hide
+  that toolbar with the Wheel itself, so neither control lingers as an inert global setting.
+- Renamed the Wheel aroma-profile tool to `Radar`, reserving `compass` exclusively for Map.
+  Map's independent control now identifies itself in its title, SVG description, and live accessible
+  label as the `Map bearing compass` / geographic tasting-note bearings.
+- Phone placement accounts for the empty-state nudge, compound-label toggle, context hint,
+  and saved-lap ribbon. An expanded lap ribbon temporarily hides the Wheel toolbar; a collapsed
+  non-empty ribbon shifts the toolbar and its following helpers down together.
+- Map and Tree now follow Go Deeper's progressive-disclosure hierarchy. Before Go Deeper,
+  Wheel is the sole visible workspace choice; opening Go Deeper reveals Map and Tree. Entering
+  either explorer enforces the deeper state, while collapsing Go Deeper from an explorer returns
+  to Wheel before hiding those choices.
+- Added a compass, hierarchical-tree, and sparkle glyph cluster directly beside the
+  `Go Deeper` label. The glyphs are inline line-art rather than separate controls and remain
+  visible beside the label at the compact-phone breakpoint.
+
+### Verification
+
+- Chrome localhost at 360x760: the Wheel toolbar is 329x52 inside the 345px content width;
+  Scent/Chemistry and Radar fit without horizontal overflow. The
+  empty-state nudge begins four pixels below it, and the active-state compound toggle/context
+  hint occupy separate rows. The open mobile HUD contains neither moved control.
+- At 360x760 the Go Deeper button is 124x44 with all three glyphs, does not intersect the
+  110px brand or 44px menu target, and introduces zero page overflow. Go Deeper reveals all
+  three workspace choices in a 231px-wide HUD group.
+- Chrome localhost at 1440x1000: the Wheel toolbar is 389x41 at the visualization's upper-left;
+  Radar opens beneath it with its own title. Map hides the Wheel and
+  toolbar while retaining its large cardinal-direction bearing compass.
+- Interaction check: initial workspace visibility is Wheel / hidden Map / hidden Tree; Go Deeper
+  changes that to all three visible. Collapsing Go Deeper while Map is active returns to Wheel,
+  clears Map/Tree mode, and restores Wheel as the sole visible workspace entry.
+
+## Codex follow-up: comparison compound definitions in-place (2026-08-05)
+
+- Every compound emitted by the two-note comparison now carries a plain-language sensory anchor
+  from the compound library, including the shared-compound cards and both chart orientations.
+- Compound names in the overlap chips and weighted graph are underlined, keyboard-accessible
+  definition controls. Selecting one opens an evidence card inside the comparison pane instead
+  of sending the user away to the separate Results panel.
+- The in-place card reuses the Results detail model: common name / chemical class, sensory
+  description, intensity and confidence scores, odor threshold with source, aroma-graph carrier
+  notes, and the full contributing-note literature evidence list with formatted citations.
+- Escape closes the evidence card before it closes or contracts the comparison itself. Expanded
+  desktop uses a 760px, two-column evidence surface; phone uses one column constrained to the
+  visible pane and retains internal scrolling.
+
+### Verification
+
+- Chrome localhost at 1440x1000: Lemon / Orange -> Linalool displayed 16 evidence rows, the
+  expected floral-citrus sensory description, threshold source, and citations in a 760x848 card
+  with no horizontal overflow.
+- Chrome localhost at 360x760: the same Linalool card measured 327px client and scroll width,
+  stayed within x=1..345 and y=68..748, and rendered all 16 evidence rows in one column.
+- Compact comparison was also checked at 858px: sensory descriptions remain visible and the
+  comparison panel has no horizontal overflow.
+
+## Codex follow-up: comparison highlight precision (2026-08-05)
+
+- Removed the broad wheel-group shortcut from comparison affinity. Sharing a navigation family
+  such as `Fruity` no longer keeps two choices bright; a note must share a compound or a genuine
+  culinary parent/varietal umbrella.
+- Reproduced with Apple / pear and Bergamot: they have no shared compound and no shared culinary
+  parent, but both previously stayed bright solely because both are Fruity. Bergamot now sorts
+  into the dimmed/unrelated block.
+
+### Verification
+
+- Chrome localhost at 1440x1000: Apple has 24 bright choices, all with shared-compound reasons;
+  Bergamot is unrelated and begins after the related block. Console warnings/errors were empty.
+- Chrome localhost at 360x760: Bergamot remains dimmed/unrelated and the comparison panel has no
+  horizontal overflow (327px scroll width and client width).
+
+## Codex follow-up: Constellation aroma-overlap spectrum (2026-08-05)
+
+- Constellation's default side panel is now a full 127-note bar graph ranked from the
+  strongest graph-wide compound connectedness to notes with zero known overlap. Each note's
+  connectedness is the sum of its weighted-Jaccard scores against every other note, normalized
+  to the top note; varietals use the comparison tool's same inherited culinary-parent profile.
+- Every bar reports how many other notes share at least one compound and names its strongest
+  individual match with that pair's exact weighted-overlap percentage. Bar color retains the
+  note's culinary aroma family. Notes active in the current tasting receive a bordered row.
+- The seven current zero-overlap notes appear in an explicit final section with empty tracks:
+  Arugula, Buttery, Carrot, Celery, Garlic, Skunky, and Taro. Copy frames zero as the current
+  evidence graph's state rather than proof that the notes are chemically unique.
+- Selecting any spectrum row now opens a complete overlap profile for that note: every matching
+  note, ranked by weighted overlap, with an exact percentage and the full list of shared compound
+  names. Each relationship row pivots selection to that note; `Overlap spectrum` returns to the
+  full graph. The profile persists while changing Chemistry/Taxonomy/Geography/Embodied lenses.
+
+### Verification
+
+- Chrome localhost at 1440x1000: 127 bars render in a 317px side pane with no horizontal
+  overflow; 120 are connected and seven isolated. The top bar is Red currant with 26 links.
+  The graph header remains sticky while scrolling to the separated zero-overlap section.
+- Red currant drill-down shows all 26 relationships. Berry ranks first at 98% through five named
+  compounds; selecting it pivots the selected star and redraws Berry's full 26-note list. The
+  relationship panel remains intact after switching to the Taxonomy lens.
+- Chrome localhost at 360x760: the graph uses the existing 258px scrollable Constellation side
+  region with all 127 rows, no horizontal overflow, and two readable leading rows beneath the
+  sticky explanation. Drill-down also fits without sideways overflow. No browser console
+  warnings or errors were observed at either viewport.
+
+## Codex follow-up: mobile Branches + expanded comparison legibility (2026-08-05)
+
+- Mobile and portrait navigation no longer redirects a Branches Kingdom click into the
+  square Order directory. Plantae and Fungi now remain in the actual curved SVG tree; Orders
+  grow their Family florets in place. `View circles` remains available only as an explicit
+  alternate view.
+- The full-window desktop comparison now defaults to a vertical compound contribution graph.
+  Shared compounds and lower-confidence unmatched compounds occupy separately labelled groups;
+  paired orange/blue columns display exact A/B evidence weights and use up to 430px of viewport
+  height. A `Horizontal / Vertical` control switches chart orientation without losing the pair.
+- Expanded desktop typography and hit areas are substantially larger across the note pickers,
+  overlap summary, compound chips, chart labels, explanation, and all six cross-workspace cards.
+  The compact HUD card keeps its dense footprint, and phone expansion continues to use the
+  horizontal chart so narrow screens do not inherit the desktop column layout.
+
+### Verification
+
+- Chrome localhost at 360x760: Tree opens in Branches (`View circles` is the offered action).
+  Plantae expands to 28 Order nodes with zero directory cards; Rosales then renders its real
+  Rosaceae floret, 10 note petals, and 13 curved links while remaining in Branches.
+- Chrome localhost at 1440x1000: expanded Coffee / Chocolate fills the 1440x932 area beneath
+  the HUD. Eight vertical compound items render with 380px plotting height; result text is
+  14px, chart labels 13px, and context cards 12.5px. Horizontal mode restores all eight
+  mirrored rows.
+- Expanded comparison at 360x760 begins at the 56px HUD and ends at the viewport bottom. It
+  forces the horizontal graph, hides the desktop orientation switch, and has no horizontal
+  panel or picker overflow. Browser console warnings/errors were empty at both viewports.
+
+## Codex follow-up: culinary two-note aroma comparison (2026-08-05)
+
+Added a persistent `A ⇄ B Compare notes` tool to the global header for exploring two
+culinary notes from Wheel, Map, or Tree. The result deliberately distinguishes evidence
+overlap from relationship: the Tree's orange/blue marks identify two observations without
+drawing a causal branch, while each workspace adds only the context it can support.
+
+- Both selectors use the complete note vocabulary, including culinary umbrellas, hidden
+  varietals, and process descriptors; the feature is not limited to botanical Tree leaves.
+- Shared compounds come from the existing evidence graph. A hidden `subOf` varietal inherits
+  its culinary parent's base aroma profile, while its own direct compound edges override
+  duplicate parent edges.
+- The overlap percentage is a weighted Jaccard comparison: shared evidence uses the lower of
+  the two note weights and the total uses the higher weight for each linked compound.
+- Shared-compound chips display both evidence weights and open the existing compound detail,
+  so users can inspect literature-linked contributing notes instead of treating the score as
+  a causal claim.
+- After either note is chosen, the other selector reorders itself: notes with a shared
+  compound or culinary aroma-group relationship remain bright and sort first; choices with
+  no known link move below them, render dimmer, and remain selectable for honest 0% checks.
+- A mirrored contribution graph sits at the result's lower right on desktop and below the
+  explanation on a phone. Shared compounds align first in bright A/B bars; unmatched edges
+  sit beneath a divider at lower contrast. Bar length is explicitly labelled as this model's
+  literature-linked evidence weight, not measured concentration.
+- `Expand analysis` promotes the compact card into the only full-workspace takeover in the
+  app: it covers every pixel beneath the persistent HUD, edge to edge, while preserving the
+  active Wheel/Map/Tree state behind it. `Compact view`, Escape, or the HUD control restores
+  the compact card without losing either selected note; the HUD can close either state.
+- The expanded compound graph grows to 12px bars / 26px rows on desktop and adds exact A/B
+  evidence weights beneath every compound name. Six cross-tool context cards appear below:
+  Compounds, Culinary, Taxonomy, Origins & culture, Production / economy, and Climate. The
+  active workspace's card is highlighted automatically when moving among Wheel, Tree, and Map.
+- Quantitative dimensions keep separate scales. The production pilot adds mirrored bars for
+  shared current top-five countries, normalized within each note's displayed five markers;
+  its copy explicitly says tonnes are not price, value, or market importance. Climate and
+  economic-value claims remain marked as awaiting sourced data rather than being inferred.
+- Tree adds the most specific represented botanical link available (genus, family, then
+  Order), or explicitly says none is represented. It never converts that context into a
+  causal claim.
+- Map adds the great-circle distance between the two represented historical-origin points
+  and draws a dashed A-to-B arc with colored endpoints. For the three-note geography pilot,
+  it also reports shared current top-five production countries and exact shared documented
+  cultural markers when present.
+- Tree-note clicks and search results fill the two slots while compare mode is active; swap
+  and clear controls are included. Selecting a third Tree note rolls the pair forward.
+
+### Verification
+
+- Chrome localhost desktop: Berry / Cranberry renders a 5-shared/1-unmatched mirrored graph
+  in a 340px right column with no panel overflow. Lemon / Orange reports 73% weighted overlap
+  through Limonene and a represented Citrus/Rutaceae genus link in Tree.
+- Expanded desktop Coffee / Chocolate: pane measured 1,987x1,235 beneath a 69px HUD and covered
+  the complete remaining viewport. The graph grew to 744px in the initial bounded check and
+  wider again after the edge-to-edge takeover; eight rows rendered at 26px, all six layer cards
+  appeared, and Indonesia rendered as the shared production-bar dimension.
+- Chrome localhost at 360x760: Berry / Cranberry reports 78%, five shared compounds, and the
+  culinary parent/varietal context. The full global comparison and six-row contribution graph
+  fit in a 377px panel with no internal overflow; Tree retains a separate 330px ceiling.
+- Expanded 360x760 Coffee / Chocolate: the dedicated pane begins exactly at the 56px HUD and
+  ends at the viewport bottom, with a 314px graph and six scroll-reachable context cards. The
+  mobile HUD opened above the pane and closed the comparison successfully; no state or console
+  errors were observed.
+- Selector guidance checked with Lemon: 48 related choices sort first, followed by 79 dimmed
+  no-known-link choices; both groups remain alphabetical and selectable.
+- Map checked with Lemon / Orange: a dashed two-endpoint overlay and `2,473 km between
+  represented origins` label render, matching the textual origin context. Coffee / Chocolate
+  reports Indonesia as a shared present-day production marker and a 14,504 km origin distance.
+- Buttery / Skunky reports 0% without claiming that no shared compounds can exist beyond the
+  current evidence graph.
+- A shared-compound chip was opened on mobile; beta-Damascenone displayed its existing detail
+  and literature-linked contributing-note evidence in the bottom sheet.
+
 ## Codex follow-up: bounded, biologically scoped Tree viewport (2026-08-05)
 
 Kept the Branches tree as the detailed, gently curving fan rather than replacing it with
