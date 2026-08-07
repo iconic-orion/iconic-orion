@@ -291,6 +291,24 @@
     display: inline-flex; align-items: center; gap: 6px; }
   .bq-combo-blurb { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
 
+  /* "How your notes connect" — the live crossover readout. Same cloud shell as
+     the rest of the bouquet, with a route button per row. */
+  .bouquet-relations { border-color: color-mix(in srgb, var(--accent-2) 38%, var(--line)); }
+  .bq-relation-list { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+  .bq-relation { background: var(--bg); border: 1px solid var(--line); border-radius: 11px;
+    padding: 9px 11px; display: flex; flex-direction: column; gap: 3px; }
+  .bq-relation-kicker { font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-dim); display: inline-flex; align-items: center; gap: 5px; }
+  .bq-relation-name { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+  .bq-relation-why { font-size: 11px; color: var(--ink-dim); line-height: 1.45; }
+  .bq-relation-go { align-self: flex-start; margin-top: 4px; background: transparent;
+    border: 1px solid color-mix(in srgb, var(--accent-2) 55%, var(--line));
+    color: var(--accent-2); border-radius: 8px; padding: 4px 9px;
+    font: inherit; font-size: 11px; cursor: pointer; }
+  .bq-relation-go:hover, .bq-relation-go:focus-visible {
+    background: color-mix(in srgb, var(--accent-2) 14%, transparent); color: var(--ink); }
+  @media (max-width: 760px) { .bq-relation-go { min-height: 44px; padding: 6px 12px; } }
+
   /* Section 1 — Your inputs → arrows to key compounds */
   .input-arrows { list-style: none; padding: 0; margin: 0;
     display: flex; flex-direction: column; gap: 8px; }
@@ -10390,6 +10408,190 @@ function detectFlavorCombos(activeSet) {
     || b.matched - a.matched);
   return matches.slice(0, 3);
 }
+// ---------- TASTING RELATIONSHIPS ----------
+// One engine, several surfaces. "How do the notes in this tasting relate?" was
+// being answered in five places with five implementations and five vocabularies:
+// the bouquet knew compound classes, Constellation knew compound overlap, the
+// Compare panel knew botany and geography, the Map and Tree knew their own
+// coverage. None of them could see the others' answer, and the Wheel -- where
+// the tasting is actually built -- could see none of it.
+//
+// The axes below deliberately mirror Constellation's lenses, so a relationship
+// reads the same wherever the user meets it, and each one carries the route to
+// the workspace that shows it properly. Everything here is derived from data the
+// app already loads. Nothing new is asserted.
+function activeTastingNotes() {
+  return NOTES.map(note => ({
+    note,
+    total: INPUT_PHASES.reduce((sum, phase) => sum + (getEntry(note.id, phase) || 0), 0),
+  })).filter(item => item.total > 0 && isNoteScoreable(item.note.id))
+    .sort((a, b) => b.total - a.total || a.note.label.localeCompare(b.note.label));
+}
+// Pairs of entered notes that share at least one compound, strongest first.
+function tastingCompoundPairs(active) {
+  const pairs = [];
+  for (let i = 0; i < active.length; i++) {
+    for (let j = i + 1; j < active.length; j++) {
+      const data = taxonomyComparisonData(active[i].note.id, active[j].note.id);
+      if (data.shared.length) pairs.push({ a: active[i].note, b: active[j].note, data });
+    }
+  }
+  return pairs.sort((a, b) => b.data.score - a.data.score
+    || b.data.shared.length - a.data.shared.length
+    || a.a.label.localeCompare(b.a.label)
+    || a.b.label.localeCompare(b.b.label));
+}
+// "Lemon and Orange" / "Lemon, Orange, and Mint" / "Lemon, Orange, and 2 more"
+function relationNoteList(notes, max = 3) {
+  const names = notes.map(n => n.label.split(" / ")[0]);
+  const shown = names.length > max ? names.slice(0, max).concat(`${names.length - max} more`) : names;
+  if (shown.length === 1) return shown[0];
+  if (shown.length === 2) return `${shown[0]} and ${shown[1]}`;
+  return `${shown.slice(0, -1).join(", ")}, and ${shown[shown.length - 1]}`;
+}
+// Botanical ties among the entered notes. A family spanning two scent families
+// ranks above one inside a single scent family: it is the more surprising fact,
+// and it is the case the wheel's own layout actively hides.
+function tastingTaxonomyTies(notes) {
+  const byFamily = new Map();
+  notes.forEach(n => {
+    if (!n.family) return;
+    if (!byFamily.has(n.family)) byFamily.set(n.family, []);
+    byFamily.get(n.family).push(n);
+  });
+  return [...byFamily.entries()]
+    .filter(([, members]) => members.length > 1)
+    .map(([family, members]) => {
+      const genera = new Set(members.map(n => n.genus).filter(Boolean));
+      const sameGenus = genera.size === 1 && members.every(n => n.genus);
+      return {
+        family, members, sameGenus, genus: [...genera][0],
+        crossScent: new Set(members.map(n => n.group)).size > 1,
+      };
+    })
+    .sort((a, b) => (b.crossScent - a.crossScent) || (b.members.length - a.members.length));
+}
+// Entered notes whose recorded cultivation origins fall in the same world region.
+function tastingGeographyTies(notes) {
+  const byRegion = new Map();
+  notes.forEach(n => {
+    const origin = NOTE_ORIGINS[n.id];
+    const region = origin && taxonomyOriginRegion(origin);
+    if (!region) return;
+    if (!byRegion.has(region)) byRegion.set(region, []);
+    byRegion.get(region).push(n);
+  });
+  return [...byRegion.entries()]
+    .filter(([, members]) => members.length > 1)
+    .map(([region, members]) => ({ region, members, label: TAXONOMY_GEO_BY_ID.get(region)?.label || region }))
+    .sort((a, b) => b.members.length - a.members.length);
+}
+// At most one row per axis, at most three rows. Each carries a plain-text twin
+// for the screen-reader announcement, which cannot read the markup.
+function tastingRelationships() {
+  const active = activeTastingNotes();
+  if (active.length < 2) return [];
+  const notes = active.map(item => item.note);
+  const rows = [];
+
+  const pair = tastingCompoundPairs(active)[0];
+  if (pair) {
+    const cpd = pair.data.shared[0].cpd;
+    const both = `${pair.a.label.split(" / ")[0]} and ${pair.b.label.split(" / ")[0]}`;
+    rows.push({
+      axis: "chemistry", icon: "🧪", kicker: "Shared compound",
+      headline: `${both} both point to ${cpd.label}`,
+      why: `Two notes landing on one compound is what raises its confidence in your results. ${pair.data.shared.length > 1 ? `They share ${pair.data.shared.length} compounds in all.` : ""}`.trim(),
+      plain: `${both} both point to ${cpd.label}.`,
+      cpdId: cpd.id, route: "constellation-chemistry", routeLabel: "See it in Constellation",
+    });
+  }
+
+  const tie = tastingTaxonomyTies(notes)[0];
+  if (tie) {
+    const common = TAXON_COMMON[tie.family];
+    const placed = tie.sameGenus
+      ? `are both in genus ${tie.genus} (${tie.family})`
+      : `are both in ${tie.family}${common ? `, the ${common.toLowerCase()}` : ""}`;
+    rows.push({
+      axis: "taxonomy", icon: "🌿", kicker: tie.crossScent ? "Related across scent families" : "Shared botanical family",
+      headline: `${relationNoteList(tie.members)} ${placed}`,
+      why: tie.crossScent
+        ? "The wheel files these apart by smell and the botany puts them together. Relatives often run the same enzyme pathways, so a shared family is a reason to expect shared chemistry even where no compound overlaps yet."
+        : "Relatives often run the same enzyme pathways, which is part of why these read as neighbors.",
+      plain: `${relationNoteList(tie.members)} ${placed}.`,
+      family: tie.family, route: "tree", routeLabel: "See it on the Tree",
+    });
+  }
+
+  const geo = tastingGeographyTies(notes)[0];
+  if (geo) {
+    let why = "Shared origin is a fact about cultivation history rather than about chemistry, so treat it as context.";
+    if (geo.members.length === 2) {
+      const d = taxonomyOriginDistance(geo.members[0], geo.members[1]);
+      if (d) why = `Their recorded origins sit about ${Math.round(d.km).toLocaleString()} km apart. ${why}`;
+    }
+    rows.push({
+      axis: "geography", icon: "🗺️", kicker: "Shared origin region",
+      headline: `${relationNoteList(geo.members)} were first cultivated in ${geo.label}`,
+      why,
+      plain: `${relationNoteList(geo.members)} were first cultivated in ${geo.label}.`,
+      noteId: geo.members[0].id, route: "map", routeLabel: "See it on the Map",
+    });
+  }
+
+  if (rows.length < 3) {
+    const process = notes.filter(n => n.taxonBucket === "process");
+    if (process.length > 1) {
+      rows.push({
+        axis: "process", icon: "🔥", kicker: "Made rather than grown",
+        headline: `${relationNoteList(process)} come from a process`,
+        why: "No single organism carries these, so they have no branch on the Tree and no cultivation origin on the Map. Their crossover lives in the chemistry.",
+        plain: `${relationNoteList(process)} come from a process rather than from one organism.`,
+        route: "constellation-taxonomy", routeLabel: "See it in Constellation",
+      });
+    }
+  }
+
+  return rows.slice(0, 3);
+}
+// Open Constellation on a named lens, optionally selecting a star.
+function openConstellationAt(lens, selectId) {
+  openConstellation();
+  if (lens) cxSwitchLens(lens, true, true);
+  if (selectId) cxSelect(selectId);
+}
+function runRelationshipRoute(row) {
+  if (row.route === "tree") {
+    setWorkspace("tree");
+    if (row.family) setTaxonomyFocus("family", row.family);
+    return;
+  }
+  if (row.route === "map") {
+    setWorkspace("map");
+    if (row.noteId) selectOriginNote(row.noteId);
+    return;
+  }
+  if (row.route === "constellation-chemistry") { openConstellationAt("chemistry", row.cpdId ? "cpd:" + row.cpdId : null); return; }
+  if (row.route === "constellation-taxonomy") { openConstellationAt("taxonomy", null); return; }
+}
+function renderRelationshipsHtml(rows) {
+  if (!rows.length) return "";
+  return `
+    <div class="bouquet-cloud bouquet-relations">
+      <div class="bouquet-kicker">How your notes connect</div>
+      <div class="bq-relation-list">
+        ${rows.map((r, i) => `
+          <div class="bq-relation">
+            <div class="bq-relation-kicker"><span aria-hidden="true">${r.icon}</span> ${r.kicker}</div>
+            <div class="bq-relation-name">${r.headline}</div>
+            ${r.why ? `<div class="bq-relation-why">${r.why}</div>` : ""}
+            <button type="button" class="bq-relation-go" data-relation="${i}">${r.routeLabel} →</button>
+          </div>`).join("")}
+      </div>
+    </div>`;
+}
+
 function renderBouquetHtml(activeNotes, allActive) {
   if (!allActive || allActive.length === 0) return "";
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -10431,7 +10633,7 @@ function renderBouquetHtml(activeNotes, allActive) {
       </div>
     </div>`;
 
-  return `<div class="bouquet">${mainCloud}${comboCloud}</div>`;
+  return `<div class="bouquet">${mainCloud}${renderRelationshipsHtml(tastingRelationships())}${comboCloud}</div>`;
 }
 
 function renderAnalysisGrid() {
@@ -10589,6 +10791,16 @@ function renderAnalysisGrid() {
 
     ${disclaimerLine}
   `;
+
+  // Relationship route buttons: each row hands off to the workspace that shows
+  // that relationship properly. Rebuilt with the pane, so the index is stable.
+  const relationRows = tastingRelationships();
+  detailPanel.querySelectorAll("[data-relation]").forEach(el => {
+    el.addEventListener("click", () => {
+      const row = relationRows[Number(el.dataset.relation)];
+      if (row) runRelationshipRoute(row);
+    });
+  });
 
   // Wire all compound-target clicks (cards in section 2, compact rows in
   // section 3, arrow targets in section 1) → select that compound.
@@ -12182,27 +12394,12 @@ function cxOverlapSpectrum() {
 // Keep Constellation's first explanation anchored to what the person actually
 // entered. The full graph remains available below, but it should not make a
 // six-note tasting feel like a 127-note catalog exercise.
-function cxActiveTastingNotes() {
-  return NOTES.map(note => ({
-    note,
-    total: INPUT_PHASES.reduce((sum, phase) => sum + (getEntry(note.id, phase) || 0), 0),
-  })).filter(item => item.total > 0)
-    .sort((a, b) => b.total - a.total || a.note.label.localeCompare(b.note.label));
-}
+// Constellation reads the shared tasting-relationship engine rather than keeping
+// its own copy, so the Wheel results pane and this overlay can never drift into
+// disagreeing about which of your notes are related. See activeTastingNotes().
+function cxActiveTastingNotes() { return activeTastingNotes(); }
 
-function cxTastingOverlapPairs(active) {
-  const pairs = [];
-  for (let i = 0; i < active.length; i++) {
-    for (let j = i + 1; j < active.length; j++) {
-      const data = taxonomyComparisonData(active[i].note.id, active[j].note.id);
-      if (data.shared.length) pairs.push({ a: active[i].note, b: active[j].note, data });
-    }
-  }
-  return pairs.sort((a, b) => b.data.score - a.data.score
-    || b.data.shared.length - a.data.shared.length
-    || a.a.label.localeCompare(b.a.label)
-    || a.b.label.localeCompare(b.b.label));
-}
+function cxTastingOverlapPairs(active) { return tastingCompoundPairs(active); }
 
 function cxRenderOverlapGraph() {
   const rows = cxOverlapSpectrum();
@@ -16653,6 +16850,12 @@ function taxonomyOriginRegion(origin) {
   if (!origin) return null;
   if (origin.lon < -30) return "americas";
   if (origin.lon > 110 && origin.lat < -10) return "oceania";
+  // West Asia has to be claimed before the broad lon >= 45 sweep, or Iran, the
+  // Caucasus, and Central Asia all get filed as "South / East Asia". That was
+  // tolerable while this only tinted Tree pips, but the tasting-relationship
+  // readout now names the region in copy the user reads, so Rose and Almond
+  // were being reported as first cultivated in South / East Asia.
+  if (origin.lon >= 45 && origin.lon < 75 && origin.lat >= 25) return "europe-west-asia";
   if (origin.lon >= 45) return "south-east-asia";
   if (origin.lat < 30 && origin.lon >= -20 && origin.lon < 55) return "africa";
   return "europe-west-asia";
