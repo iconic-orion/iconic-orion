@@ -183,10 +183,11 @@
   .workspace-tabs button { display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; padding: 6px 12px; }
   .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
-  /* Map and Tree are deeper explanatory lenses, not peer entry points on the
-     first-use HUD. Go Deeper grows them into this workspace switch. */
-  body:not(.go-deeper) #workspace-tabs button[data-workspace="map"],
-  body:not(.go-deeper) #workspace-tabs button[data-workspace="tree"] { display: none; }
+  /* Wheel, Map, and Tree are all peer entry points and stay reachable from the
+     first load, which on a phone means all three sit in the ☰ tray. Progressive
+     disclosure belongs on meaning, not on navigation: hiding two of the three
+     workspaces behind Go Deeper made the tools undiscoverable. Go Deeper's job
+     is to open the layer that explains how these tools relate to each other. */
   /* Desktop-only vertical divider between workspace switch and wheel controls. */
   .hud-vdivider { width: 1px; align-self: stretch; margin: 6px 2px;
     background: var(--line); }
@@ -4281,10 +4282,10 @@
     </aside>
   </div>
   <footer class="cx-foot">
-    Chemistry and Taxonomy are computed live from this app's own NOTES/COMPOUNDS/EDGES graph — nothing
-    here is a separate or simplified dataset. Geography plots real NOTE_ORIGINS coordinates only;
-    notes without a recorded origin collect in an explicit tray rather than getting a guessed position.
-    Embodied only places a note once you tag it this session — nothing is asserted as a fixed fact
+    Chemistry and Taxonomy are computed live from the same note, compound, and citation graph the wheel uses. Nothing
+    here is a separate or simplified dataset. Geography plots recorded cultivation coordinates only.
+    Notes without a recorded origin collect in an explicit tray rather than getting a guessed position.
+    Embodied only places a note once you tag it this session, so nothing is asserted as a fixed fact
     about the note itself.
   </footer>
 </div>
@@ -4869,7 +4870,16 @@ const NOTES = [
   // iconic enough on its own); the taxonomy tree/cross-group badges still
   // surface the honest "not actually related to pine" fact via family/order.
   { id: "eucalyptus",  label: "Eucalyptus",         group: "earthy",   common: true,  genus: "Eucalyptus", family: "Myrtaceae", order: "Myrtales" },
-  { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false, kingdom: "Fungi" },
+  // Mushroom was the one note that reached the Tree with an incomplete lineage:
+  // Fungi and nothing below it, so it hung off the kingdom disc as an orphan
+  // while every other branched note runs Kingdom → Order → Family → note. Placed
+  // on Agaricus bisporus, the button/cremini/portobello species, on the same
+  // grounds the wheel already uses for Cereal → Poaceae: the slider stands for
+  // the everyday culinary register, and that species is what "mushroom" means in
+  // a kitchen. Edible fungi genuinely span many families, and 1-octen-3-ol (the
+  // compound this note is built on) is common across most of them, so this is a
+  // representative placement rather than a claim about all mushrooms.
+  { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false, kingdom: "Fungi", genus: "Agaricus", family: "Agaricaceae", order: "Agaricales" },
   { id: "green",       label: "Green / grassy",     group: "earthy",   common: true,  taxonBucket: "umbrella" },
   { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true,  family: "Solanaceae", order: "Solanales" },
   { id: "mint",        label: "Mint",               group: "earthy",   common: true,  family: "Lamiaceae", order: "Lamiales" },
@@ -12042,8 +12052,8 @@ function cxLegendFor(lens) {
     return `<div>Four rings: Kingdom → Order → Family → Note.</div>` +
       groups.map(k => `<div><span class="legend-swatch" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-2);margin-right:6px;"></span>${k}</div>`).join("") + activeNote;
   }
-  if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below = no NOTE_ORIGINS record in the app.</div>${activeNote}`;
-  return `<div>Y = felt temperature, from the app's own GUIDE_MOUTH cooling/warming tags.</div><div>X = orthonasal / retronasal — real phase tags from your actual tasting are locked in; chips let you place anything else hypothetically for this session only.</div>`;
+  if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below are notes with no recorded cultivation origin.</div>${activeNote}`;
+  return `<div>Y = felt temperature, from the cooling and warming tags in the Guide me flow.</div><div>X = orthonasal or retronasal. Real phase tags from your actual tasting are locked in. Chips let you place anything else hypothetically for this session only.</div>`;
 }
 
 function cxCurrentLayout() {
@@ -12530,13 +12540,10 @@ function setGoDeeper(on) {
   state.goDeeper = !!on;
   document.body.classList.toggle("go-deeper", state.goDeeper);
   if (!state.goDeeper) cancelWorkspaceReveal();
-  // Map and Tree are revealed by Go Deeper. Collapsing that layer while one is
-  // active returns to the always-available Wheel instead of leaving the user
-  // on a workspace whose navigation entry has just disappeared.
-  if (!state.goDeeper && (document.body.classList.contains("origins-mode") ||
-      document.body.classList.contains("taxonomy-mode"))) {
-    setWorkspace("wheel");
-  }
+  // Map and Tree are no longer revealed by Go Deeper, so collapsing that layer
+  // no longer strands anyone on a workspace whose navigation entry vanished.
+  // Standing in the Tree or the Map with Go Deeper off is a legal state and the
+  // user stays where they are.
   // Tree follows the same progressive-disclosure contract as the rest of the
   // app: ordinary mode starts with readable Kingdom choices; Go Deeper grows
   // the complete all-notes atlas.
@@ -13157,7 +13164,7 @@ function renderAbout() {
     <p>This tool comes from a background in UI/UX design, museum education, science communication, GIS and systems analysis, and creative engineering. That background shapes a few choices here that differ from how a professional tasting wheel usually works.</p>
     <p>Before this had any code, it was a spreadsheet: aromas listed against eight terpenes, each cell a 1 to 10 guess at how strongly that terpene would need to show up to produce that smell. The current compound graph grew out of checking that early guesswork against real GC-MS literature, keeping what held up and replacing what the literature contradicted.</p>
     <p>Confidence here is a convergence score: how many of your own independently-reported notes point at the same compound, and how strong those links are in the literature. Two sittings of the same coffee can produce different notes, each reflecting what was perceived in that moment.</p>
-    <p>The wheel, the Compass, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, a fixed set of axes in the Compass so two tastings sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
+    <p>The wheel, the Tree, the Map, the Radar, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, botanical lineage in the Tree, cultivation origins on the Map, a fixed set of axes in the Radar so two tastings sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
     <p>Terms like retronasal, odor threshold, and furanone stay in the copy because they are the words the literature actually uses. The reference points lean toward things most people have tasted, since a lot of this audience is sober or non-drinking. Citations point to real published sources, and Methodology → What counts as a source here lists the exact criteria.</p>
     <p>Expert tasting skill comes from years of repetition and calibration against a shared vocabulary. What this tool maps is closer to precision: how well a personal, in-the-moment perception lines up with what is published about a compound's known aroma. That gap, between perceiving something and pinning down its chemistry, is what makes sensory perception worth paying attention to.</p>
 
@@ -13198,9 +13205,9 @@ function renderMethodology() {
     <h3 id="meth-data">The data model</h3>
     <p>The tool ships with three kinds of data baked in:</p>
     <ul>
-      <li><strong>Notes</strong> (~44 descriptors across 8 groups). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>.</li>
-      <li><strong>Compounds</strong> (53 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
-      <li><strong>Edges</strong> (120 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
+      <li><strong>Notes</strong> (127 across 9 scent families, 83 of them with their own slider). Things like <em>lemon</em>, <em>vanilla</em>, <em>toast</em>, <em>clove</em>. The rest are varietals that open from a parent note.</li>
+      <li><strong>Compounds</strong> (94 aromatic compounds curated from the flavor-chemistry literature). Things like <em>limonene</em>, <em>furfural</em>, <em>eugenol</em>. Each carries a chemical class, an odor-threshold tier, and a literature source for that threshold.</li>
+      <li><strong>Edges</strong> (262 connections between notes and compounds). Each edge has a weight indicating how strongly that note maps to that compound in published GC-MS work, plus a citation pointing at the paper supporting the link.</li>
     </ul>
     <p>That's the knowledge graph. When you log a note, the tool walks the edges from that note to find compounds and adds weighted contributions to them. (Re-organizing the wheel by Scent or Chemistry changes only the picture, never these numbers.)</p>
 
@@ -13309,7 +13316,7 @@ function renderHowToUse() {
       <li><strong>Tree.</strong> Biologically placeable plant and fungal notes arranged by represented lineage. Culinary umbrellas and process/fault descriptors stay on the Wheel rather than becoming invented branches. Use relatives as comparison leads, then check their compound links; shared ancestry alone does not prove an aroma relationship.</li>
       <li><strong>Compare notes.</strong> Put any two notes side by side. Shared compounds give you a sensory crossover to investigate; culinary, botanical, and geographic cards provide context without treating correlation as causation.</li>
       <li><strong>Constellation.</strong> Starts with crossover inside your current tasting, then lets you open the whole note system through chemistry, taxonomy, geography, or embodied perception. Brighter stars are notes you actually entered.</li>
-      <li><strong>Compass.</strong> A small draggable, resizable radar, a shareable snapshot of your tasting. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different tastings are directly comparable.</li>
+      <li><strong>Radar.</strong> A small draggable, resizable profile of your tasting, pinned to the wheel. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different tastings are directly comparable. The Map has its own separate bearing compass.</li>
       <li><strong>Share.</strong> Opens a tasting-card preview with image and PDF downloads and a URL that preserves the current tasting.</li>
       <li><strong>Legend.</strong> Visibility filters and a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
@@ -15610,12 +15617,13 @@ function applyOriginSelection() {
   });
 }
 
-// Go Deeper reveals the HUD workspace switch's Map and Tree choices. Wheel is
-// always available; entering either deeper explorer also enforces the deeper
-// state for programmatic links and narrative depth-card shortcuts.
+// Wheel, Map, and Tree are peer workspaces, all three reachable from the HUD
+// switch at first load. Switching workspace no longer forces Go Deeper on: that
+// side effect existed only because the Map and Tree tabs used to be hidden, and
+// it meant a shared exact-view link to the Map silently flipped the recipient
+// into a mode they never chose.
 let _preTreeDetailHidden = null;
 function setWorkspace(mode) {
-  if (mode !== "wheel" && !state.goDeeper) setGoDeeper(true);
   // The Tree is meant to be read alongside your compound results, so entering it
   // always shows the results/detail pane on the side. Remember the prior pane
   // state so leaving the Tree restores the wheel's own layout instead of
@@ -15876,18 +15884,20 @@ function taxonomyComparisonContext(a, b) {
   else if ((a.subOf || a.id) === (b.subOf || b.id) && (a.subOf || b.subOf)) {
     context.push(`Both are grouped beneath ${NOTE_BY_ID[a.subOf || b.subOf]?.label || "the same culinary umbrella"} in this wheel.`);
   }
-  if (document.body.classList.contains("taxonomy-mode")) {
-    if (a.genus && b.genus && a.genus === b.genus) {
-      context.push(`Botanical link: both are represented in genus ${a.genus}${a.family ? ` (${a.family})` : ""}.`);
-    } else if (a.family && b.family && a.family === b.family) {
-      context.push(`Botanical link: both are represented in ${a.family}${TAXON_COMMON[a.family] ? ` (${TAXON_COMMON[a.family]})` : ""}.`);
-    } else if (a.order && b.order && a.order === b.order) {
-      context.push(`Botanical link: both are represented in Order ${a.order}, but not the same represented family.`);
-    } else {
-      context.push("Botanical context: no shared represented genus, family, or Order in this Tree.");
-    }
+  // Botanical and geographic context used to be gated on already standing in the
+  // Tree or the Map, which meant comparing two notes from the Wheel returned an
+  // empty string. That is backwards: a shared family or a shared origin region is
+  // the reason to open those workspaces, not a reward for having opened them.
+  if (a.genus && b.genus && a.genus === b.genus) {
+    context.push(`Botanical link: both are represented in genus ${a.genus}${a.family ? ` (${a.family})` : ""}.`);
+  } else if (a.family && b.family && a.family === b.family) {
+    context.push(`Botanical link: both are represented in ${a.family}${TAXON_COMMON[a.family] ? ` (${TAXON_COMMON[a.family]})` : ""}.`);
+  } else if (a.order && b.order && a.order === b.order) {
+    context.push(`Botanical link: both are represented in Order ${a.order}, though not in the same represented family.`);
+  } else {
+    context.push("Botanical context: no shared represented genus, family, or Order in this Tree.");
   }
-  if (document.body.classList.contains("origins-mode")) context.push(taxonomyComparisonMapContext(a, b));
+  context.push(taxonomyComparisonMapContext(a, b));
   return context.filter(Boolean).join(" ");
 }
 function taxonomyOriginDistance(a, b) {
@@ -15904,7 +15914,7 @@ function taxonomyComparisonMapContext(a, b) {
   const parts = [];
   const distance = taxonomyOriginDistance(a, b);
   if (distance) {
-    parts.push(`Historical-origin markers: ${a.label} — ${distance.a.region}; ${b.label} — ${distance.b.region}; approximately ${Math.round(distance.km).toLocaleString()} km apart.`);
+    parts.push(`Historical-origin markers. ${a.label}: ${distance.a.region}. ${b.label}: ${distance.b.region}. About ${Math.round(distance.km).toLocaleString()} km apart.`);
   } else {
     parts.push("Historical-origin markers: one or both notes lack a defensible single mapped origin.");
   }
