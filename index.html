@@ -115,20 +115,6 @@
   header button:hover { border-color: var(--accent); color: var(--accent); }
   header button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* Go Deeper button: centered in flex layout without covering other controls */
-  #godeeper-toggle.header-center-btn {
-    background: var(--accent); color: #1a1810; border-color: var(--accent);
-    font-weight: 600; margin: 0 auto; display: inline-flex; align-items: center;
-    justify-content: center; gap: 6px; }
-  .godeeper-glyphs { display: inline-flex; align-items: center; gap: 3px;
-    padding-left: 5px; border-left: 1px solid rgba(26,24,16,.3); }
-  #godeeper-toggle .godeeper-glyph { width: 13px; height: 13px;
-    display: block; flex: 0 0 auto; }
-  #godeeper-toggle.header-center-btn:hover {
-    background: #e7bd7d; border-color: #e7bd7d; color: #1a1810; }
-  body.go-deeper #godeeper-toggle.header-center-btn {
-    background: var(--accent); border-color: var(--accent); }
-
   /* Feedback CTA — filled gold so it reads clearly as the primary call to
      action, both in the HUD and at the foot of the About → maker section.
      Opens the Google feedback form in a new tab. */
@@ -856,11 +842,10 @@
   .phase-btn .added-intensity { font-variant-numeric: tabular-nums; color: var(--ink);
     font-weight: 600; margin-left: 2px; }
 
-  /* Go Deeper top-menu toggle (active state has a subtle accent) */
-  #godeeper-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-  #godeeper-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  body.go-deeper #godeeper-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  /* Go Deeper's old top-menu styling lived here. It is a seed at the root of
+     the wheel's vine now, styled by .wheel-seed-btn further down. The ID rule
+     is gone rather than left in place, because at specificity 100 it silently
+     beat the class rule and kept the seed on the header's palette. */
 
   /* "Event horizon" transition on Go Deeper switching on (playDeeperWarp()).
      main.wheel normally clips its SVG at the panel edge; while warping it's
@@ -969,10 +954,48 @@
   }
   .vine-fiddlehead .vine-floret-heart { fill: #d8a657; }
 
+  /* Go Deeper as a seed on the soil line, sitting at the vine's root (the stem
+     starts near x=16 of main.wheel, so the seed is centred under it). Off, the
+     sprout leaves are folded away and only the seed body shows. On, the leaves
+     open and the vine above takes over the growth. */
+  .wheel-seed-btn { position: absolute; left: 8px; bottom: 8px; z-index: 10;
+    display: inline-flex; align-items: center; gap: 7px;
+    min-height: 40px; padding: 6px 13px 6px 9px;
+    background: rgba(23, 22, 27, 0.86); color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--line));
+    border-radius: 999px; font: inherit; font-size: 12px; font-weight: 600;
+    cursor: pointer; backdrop-filter: blur(6px);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.4);
+    transition: background .25s ease, border-color .25s ease, color .25s ease,
+      box-shadow .25s ease, transform .25s ease; }
+  .wheel-seed-btn:hover, .wheel-seed-btn:focus-visible {
+    border-color: var(--accent); transform: translateY(-1px);
+    box-shadow: 0 7px 22px rgba(0, 0, 0, 0.46); }
+  .wheel-seed-btn .seed-glyph { display: block; flex: 0 0 auto; }
+  .wheel-seed-btn .seed-glyph svg { width: 18px; height: 18px; display: block; }
+  /* Folded seed: leaves scaled to nothing, stem hidden, seed body sitting low. */
+  .seed-sprout-leaf, .seed-sprout-stem { transform-origin: 9px 13px;
+    transition: transform .45s cubic-bezier(.2,.8,.2,1), opacity .35s ease; }
+  .wheel-seed-btn .seed-sprout-leaf { transform: scale(0); opacity: 0; }
+  .wheel-seed-btn .seed-sprout-stem { transform: scaleY(0); opacity: 0; }
+  /* Germinated. */
+  body.go-deeper .wheel-seed-btn { background: var(--accent); color: #1a1810;
+    border-color: var(--accent); }
+  body.go-deeper .wheel-seed-btn .seed-sprout-leaf { transform: scale(1); opacity: 1; }
+  body.go-deeper .wheel-seed-btn .seed-sprout-stem { transform: scaleY(1); opacity: 1; }
+  body.go-deeper .wheel-seed-btn .seed-body { opacity: .55; }
+  @media (prefers-reduced-motion: reduce) {
+    .seed-sprout-leaf, .seed-sprout-stem { transition: none; }
+    .wheel-seed-btn { transition: none; }
+    .wheel-seed-btn:hover, .wheel-seed-btn:focus-visible { transform: none; }
+  }
+
   /* wheel corner vine — climbs the wheel's empty bottom-left corner */
   #deeper-vines { position: absolute; left: -6px; bottom: 0; z-index: 9; pointer-events: none;
     opacity: 0; transform: translateY(14px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
-  body.go-deeper #deeper-vines { opacity: 0.82; transform: none; pointer-events: auto; }
+  /* Lifted clear of the seed so the stem reads as emerging from behind it and
+     the first leaf stops abutting the button's top edge. */
+  body.go-deeper #deeper-vines { opacity: 0.82; transform: translateY(-34px); pointer-events: auto; }
   #deeper-vines .vine-leaf { cursor: pointer; pointer-events: all; outline: none; }
   #deeper-vines .vine-leaf-hit { fill: transparent; pointer-events: all; }
   #deeper-vines .vine-leaf path { transition: filter .2s ease, stroke .2s ease, transform .2s ease; }
@@ -1293,7 +1316,7 @@
 
   @media (max-width: 760px) {
     #deeper-vines { transform:scale(.82) translateY(14px); transform-origin:left bottom; }
-    body.go-deeper #deeper-vines { transform:scale(.82); }
+    body.go-deeper #deeper-vines { transform:scale(.82) translateY(-42px); }
     .depth-card { position:fixed; left:10px; right:10px; bottom:74px; width:auto;
       padding:15px 16px 13px; z-index:175; border-radius:20px; transform-origin:center bottom; }
     .depth-card h3 { font-size:17px; padding-right:24px; }
@@ -3630,13 +3653,10 @@
     header { min-height: 56px; padding: 7px calc(54px + env(safe-area-inset-right)) 7px
       calc(16px + env(safe-area-inset-left)); flex-wrap: nowrap; overflow: visible; }
     header .brand { position: absolute; top: 9px; left: calc(16px + env(safe-area-inset-left));
-      min-width: 0; max-width: calc(100% - 136px); }
+      min-width: 0; max-width: calc(100% - 70px); }
     header h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #godeeper-toggle.header-center-btn { position: absolute; top: 6px;
-      right: calc(56px + env(safe-area-inset-right)); width: 124px; height: 44px;
-      margin: 0; padding: 0 7px; gap: 4px; font-size: 10px; white-space: nowrap; }
-    .godeeper-glyphs { gap: 2px; padding-left: 4px; }
-    #godeeper-toggle .godeeper-glyph { width: 11px; height: 11px; }
+    /* Go Deeper vacated the header, so the brand may run to the ☰ button. */
+    .wheel-seed-btn { min-height: 44px; left: calc(8px + env(safe-area-inset-left)); }
     #hud-toggle { top: 6px; right: calc(6px + env(safe-area-inset-right));
       width: 44px; height: 44px; }
     .site-footer { top: 34px; left: calc(17px + env(safe-area-inset-left)); right: auto;
@@ -3801,8 +3821,7 @@
   }
 
   @media (max-width: 390px) {
-    header .brand { max-width: calc(100% - 194px); }
-    #godeeper-toggle.header-center-btn { width: 124px; font-size: 9.5px; }
+    header .brand { max-width: calc(100% - 70px); }
   }
 </style>
 </head>
@@ -3819,22 +3838,8 @@
     <h1>Aroma Wheel</h1>
     <p class="tagline">Describe what you notice. Explore the chemistry it may point to.</p>
   </div>
-  <!-- Go Deeper: centered in the header, between brand and right utilities -->
-  <button id="godeeper-toggle" class="header-center-btn"
-    title="Follow this tasting into note comparison, Constellation, Map, and Tree">
-    <span>Go Deeper</span>
-    <span class="godeeper-glyphs" aria-hidden="true">
-      <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25">
-        <circle cx="8" cy="8" r="6.2"/><path d="m10.6 5.4-1.4 3.8-3.8 1.4 1.4-3.8z" fill="currentColor" stroke="none"/>
-      </svg>
-      <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
-        <circle cx="8" cy="2.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.2" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="12.8" cy="13" r="1.2" fill="currentColor" stroke="none"/><path d="M8 3.8v4M3.2 10.2h9.6M3.2 10.2V12M8 7.8V12M12.8 10.2V12"/>
-      </svg>
-      <svg class="godeeper-glyph" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M8 1.2c.55 3.85 1.05 4.35 4.9 4.9-3.85.55-4.35 1.05-4.9 4.9-.55-3.85-1.05-4.35-4.9-4.9C6.95 5.55 7.45 5.05 8 1.2Z"/><path d="M12.7 10.1c.25 1.75.5 2 2.25 2.25-1.75.25-2 .5-2.25 2.25-.25-1.75-.5-2-2.25-2.25 1.75-.25 2-.5 2.25-2.25Z" opacity=".7"/>
-      </svg>
-    </span>
-  </button>
+  <!-- Go Deeper now lives at the root of the wheel's corner vine, not here.
+       See #godeeper-toggle inside main.wheel. -->
   <!-- All controls: always inline on desktop (display:contents makes children
        direct flex items); on mobile hidden until ••• expands them as a tray.
        The desktop left/right split is done by .hud-spacer inside this group. -->
@@ -4053,6 +4058,24 @@
        main.wheel so it frames the wheel (never the sliders) and vanishes in
        Map/Tree. Non-interactive; the stem draw-on is gated on
        prefers-reduced-motion (reduced = it just appears, already grown). -->
+  <!-- Go Deeper, planted at the root of the vine rather than sitting in the HUD.
+       Off, it reads as a seed on the soil line. Pressing it sprouts the vine that
+       grows out of this exact point, so the control and the thing it grows are
+       one gesture. Wheel-local by consequence: main.wheel is display:none in Map
+       and Tree, which follows the pattern already set for Organize and Radar,
+       controls that disappear with the wheel rather than lingering inert. -->
+  <button id="godeeper-toggle" class="wheel-seed-btn"
+    title="Plant this tasting deeper. Grows the vine, and opens ortho and retro tagging on every note.">
+    <span class="seed-glyph" aria-hidden="true">
+      <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+        <path class="seed-sprout-stem" d="M9 15.5V9"/>
+        <path class="seed-sprout-leaf" d="M9 10.5C6.4 10.5 5 9 5 6.8c2.6 0 4 1.5 4 3.7Z" fill="currentColor" stroke="none"/>
+        <path class="seed-sprout-leaf" d="M9 9.2c2.6 0 4-1.5 4-3.7-2.6 0-4 1.5-4 3.7Z" fill="currentColor" stroke="none"/>
+        <ellipse class="seed-body" cx="9" cy="14" rx="4.1" ry="3" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
+    <span class="seed-label">Go Deeper</span>
+  </button>
   <div id="deeper-vines" aria-label="Five depths of aroma science">
     <svg viewBox="0 0 120 270" width="120" height="270" fill="none" preserveAspectRatio="xMinYMax meet">
       <path class="vine-stem" d="M22 270 C8 224 54 208 34 162 C18 124 58 108 38 68 C28 44 48 32 40 10"
