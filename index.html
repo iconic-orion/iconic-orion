@@ -906,54 +906,6 @@
   #deeper-warp.warp-show { opacity: 1; }
   #deeper-warp.warp-fade { opacity: 0; transition: opacity 380ms ease-out; }
 
-  /* Go Deeper handoff: after the strata descent clears, a gold outline traces
-     the live Wheel rim, then contracts into the real Wheel / Map / Tree switch
-     in the HUD. Geometry is supplied in client pixels by playWorkspaceReveal()
-     because the starting ring and ending HUD control use different layouts. */
-  #workspace-reveal-morph { position: fixed; z-index: 290; box-sizing: border-box;
-    pointer-events: none; overflow: hidden; opacity: 0;
-    border: 2px solid var(--accent); border-radius: 50%; background: transparent;
-    box-shadow: 0 0 0 1px rgba(216,166,87,.34),
-      0 0 26px rgba(216,166,87,.58), inset 0 0 20px rgba(216,166,87,.08); }
-  #workspace-reveal-morph[hidden] { display: none; }
-  #workspace-reveal-morph.is-ring { opacity: 1;
-    animation: workspace-ring-arrive 420ms cubic-bezier(.2,.8,.2,1) both; }
-  #workspace-reveal-morph.is-morphing { opacity: 1; border-radius: 6px;
-    background: var(--panel); box-shadow: 0 0 0 2px rgba(216,166,87,.22),
-      0 7px 24px rgba(0,0,0,.42);
-    transition: left 720ms cubic-bezier(.2,.82,.2,1),
-      top 720ms cubic-bezier(.2,.82,.2,1),
-      width 720ms cubic-bezier(.2,.82,.2,1),
-      height 720ms cubic-bezier(.2,.82,.2,1),
-      border-radius 720ms cubic-bezier(.2,.82,.2,1),
-      background 420ms ease 260ms, box-shadow 420ms ease 260ms; }
-  #workspace-reveal-morph.is-arrived { opacity: 0;
-    transition: opacity 180ms ease-out; }
-  .workspace-reveal-options { position: absolute; inset: 0; display: grid;
-    grid-template-columns: repeat(3, 1fr); opacity: 0; color: var(--ink);
-    font-size: 12px; }
-  #workspace-reveal-morph.is-morphing .workspace-reveal-options { opacity: 1;
-    transition: opacity 180ms ease 500ms; }
-  .workspace-reveal-option { min-width: 0; display: flex; align-items: center;
-    justify-content: center; gap: 5px; border-right: 1px solid var(--line);
-    white-space: nowrap; }
-  .workspace-reveal-option:last-child { border-right: none; }
-  .workspace-reveal-option:first-child { background: var(--accent); color: #1a1810; }
-  .workspace-reveal-option svg { width: 14px; height: 14px; flex: 0 0 auto; }
-  /* The real target keeps its geometry but waits invisibly for the outline to
-     arrive. Removing this class crossfades the genuine interactive menu in. */
-  body.workspace-reveal-active #workspace-tabs { opacity: 0; pointer-events: none;
-    transition: opacity 150ms ease-out; }
-  #workspace-tabs.workspace-tabs-attention { animation: workspace-tabs-attention 620ms ease-out; }
-  @keyframes workspace-ring-arrive {
-    from { opacity: 0; transform: scale(.94); box-shadow: 0 0 0 0 rgba(216,166,87,0); }
-    62% { opacity: 1; transform: scale(1.012); }
-    to { opacity: 1; transform: none; }
-  }
-  @keyframes workspace-tabs-attention {
-    0% { box-shadow: 0 0 0 0 rgba(216,166,87,.75); }
-    100% { box-shadow: 0 0 0 8px rgba(216,166,87,0); }
-  }
   /* One tall column of five horizontal strata, slid upward past the viewport so
      the eye reads it as sinking. Bands are stacked oldest/deepest LAST, so the
      descent runs canopy -> understory -> bark -> root -> soil, matching the same
@@ -1352,9 +1304,6 @@
     .depth-card { animation:none; }
     .depth-card::before { animation:none; display:none; }
     .tx-note-focus-plot { animation:none; }
-    #workspace-reveal-morph { display: none !important; }
-    #workspace-tabs.workspace-tabs-attention { animation: none;
-      box-shadow: 0 0 0 2px rgba(216,166,87,.45); }
   }
 
   /* ── Reading / dyslexia mode ──────────────────────────────────────────
@@ -4728,9 +4677,6 @@
 
 <!-- The highlighted Wheel rim contracts into this temporary visual copy of
      the HUD switch, then crossfades to the real interactive control. -->
-<div id="workspace-reveal-morph" aria-hidden="true" hidden>
-  <div class="workspace-reveal-options"></div>
-</div>
 
 
 <script>
@@ -12783,7 +12729,6 @@ function setGoDeeper(on) {
   const wasOn = state.goDeeper;
   state.goDeeper = !!on;
   document.body.classList.toggle("go-deeper", state.goDeeper);
-  if (!state.goDeeper) cancelWorkspaceReveal();
   // Map and Tree are no longer revealed by Go Deeper, so collapsing that layer
   // no longer strands anyone on a workspace whose navigation entry vanished.
   // Standing in the Tree or the Map with Go Deeper off is a legal state and the
@@ -12825,106 +12770,6 @@ const deeperWarpEl = document.getElementById("deeper-warp");
 // band fills the viewport, not partway down the trunk.
 const WARP_SCALE_MS = 840;
 const WARP_FADE_MS = 380;
-const WORKSPACE_RING_HOLD_MS = 420;
-const WORKSPACE_MORPH_MS = 720;
-const workspaceRevealEl = document.getElementById("workspace-reveal-morph");
-const workspaceRevealOptionsEl = workspaceRevealEl.querySelector(".workspace-reveal-options");
-const workspaceTabsEl = document.getElementById("workspace-tabs");
-let workspaceRevealTimers = [];
-
-function workspaceRevealLater(fn, delay) {
-  const timer = window.setTimeout(fn, delay);
-  workspaceRevealTimers.push(timer);
-  return timer;
-}
-function clearWorkspaceRevealTimers() {
-  workspaceRevealTimers.forEach(window.clearTimeout);
-  workspaceRevealTimers = [];
-}
-function setWorkspaceRevealRect(rect) {
-  workspaceRevealEl.style.left = `${rect.left}px`;
-  workspaceRevealEl.style.top = `${rect.top}px`;
-  workspaceRevealEl.style.width = `${rect.width}px`;
-  workspaceRevealEl.style.height = `${rect.height}px`;
-}
-function wheelRevealRingRect() {
-  const svgRect = document.getElementById("svg").getBoundingClientRect();
-  const scaleX = svgRect.width / Math.max(1, W);
-  const scaleY = svgRect.height / Math.max(1, H);
-  const radius = R_NOTE + 12;
-  return {
-    left: svgRect.left + (CX - radius) * scaleX,
-    top: svgRect.top + (CY - radius) * scaleY,
-    width: radius * 2 * scaleX,
-    height: radius * 2 * scaleY,
-  };
-}
-function syncWorkspaceRevealCopy() {
-  workspaceRevealOptionsEl.replaceChildren();
-  workspaceTabsEl.querySelectorAll("button").forEach(button => {
-    const option = document.createElement("span");
-    option.className = "workspace-reveal-option";
-    option.innerHTML = button.innerHTML;
-    workspaceRevealOptionsEl.appendChild(option);
-  });
-}
-function cancelWorkspaceReveal() {
-  clearWorkspaceRevealTimers();
-  document.body.classList.remove("workspace-reveal-active");
-  workspaceTabsEl.style.removeProperty("opacity");
-  workspaceTabsEl.style.removeProperty("pointer-events");
-  workspaceRevealEl.className = "";
-  workspaceRevealEl.removeAttribute("style");
-  workspaceRevealEl.hidden = true;
-}
-function finishWorkspaceReveal() {
-  document.body.classList.remove("workspace-reveal-active");
-  workspaceTabsEl.style.removeProperty("opacity");
-  workspaceTabsEl.style.removeProperty("pointer-events");
-  workspaceTabsEl.classList.remove("workspace-tabs-attention");
-  void workspaceTabsEl.offsetWidth;
-  workspaceTabsEl.classList.add("workspace-tabs-attention");
-  workspaceRevealEl.classList.add("is-arrived");
-  workspaceRevealLater(() => {
-    workspaceRevealEl.hidden = true;
-    workspaceRevealEl.className = "";
-    workspaceRevealEl.removeAttribute("style");
-  }, 190);
-  workspaceRevealLater(() => workspaceTabsEl.classList.remove("workspace-tabs-attention"), 650);
-}
-function revealWorkspaceTabsWithoutMotion() {
-  cancelWorkspaceReveal();
-  if (isMobileViewport()) setHudOpen(true);
-  workspaceTabsEl.classList.add("workspace-tabs-attention");
-  workspaceRevealLater(() => workspaceTabsEl.classList.remove("workspace-tabs-attention"), 900);
-}
-function morphWorkspaceRingToHud() {
-  if (isMobileViewport()) setHudOpen(true);
-  // The phone HUD changes from display:none to a grid. Two frames let that
-  // layout settle before its real workspace switch becomes the morph target.
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const target = workspaceTabsEl.getBoundingClientRect();
-    if (!target.width || !target.height) { revealWorkspaceTabsWithoutMotion(); return; }
-    workspaceRevealEl.classList.remove("is-ring");
-    workspaceRevealEl.classList.add("is-morphing");
-    requestAnimationFrame(() => setWorkspaceRevealRect(target));
-    workspaceRevealLater(finishWorkspaceReveal, WORKSPACE_MORPH_MS + 40);
-  }));
-}
-function playWorkspaceReveal() {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    revealWorkspaceTabsWithoutMotion();
-    return;
-  }
-  clearWorkspaceRevealTimers();
-  syncWorkspaceRevealCopy();
-  setWorkspaceRevealRect(wheelRevealRingRect());
-  workspaceRevealEl.className = "";
-  workspaceRevealEl.hidden = false;
-  void workspaceRevealEl.offsetWidth;
-  workspaceRevealEl.classList.add("is-ring");
-  workspaceRevealLater(morphWorkspaceRingToHud, WORKSPACE_RING_HOLD_MS);
-}
 function playDeeperWarp(onComplete) {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onComplete(); return; }
   deeperWarpEl.hidden = false;
@@ -12952,17 +12797,7 @@ function playDeeperWarp(onComplete) {
 }
 document.getElementById("godeeper-toggle").addEventListener("click", () => {
   if (state.goDeeper) { setGoDeeper(false); return; }
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  playDeeperWarp(() => {
-    document.body.classList.add("workspace-reveal-active");
-    workspaceTabsEl.style.opacity = "0";
-    workspaceTabsEl.style.pointerEvents = "none";
-    setGoDeeper(true);
-    workspaceRevealLater(playWorkspaceReveal, reducedMotion ? 0 : WARP_FADE_MS + 30);
-  });
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !workspaceRevealEl.hidden) finishWorkspaceReveal();
+  playDeeperWarp(() => setGoDeeper(true));
 });
 
 // ---------- LEGIBLE / CALM DEFAULT ----------
