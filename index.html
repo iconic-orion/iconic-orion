@@ -996,6 +996,52 @@
   /* Lifted clear of the seed so the stem reads as emerging from behind it and
      the first leaf stops abutting the button's top edge. */
   body.go-deeper #deeper-vines { opacity: 0.82; transform: translateY(-34px); pointer-events: auto; }
+  /* Dew rings: a slow staggered pulse marking each leaf as touchable. Purely
+     decorative, so pointer-events stay off and the leaf hit circles still own
+     the interaction. Gone once a leaf has been opened, and never animated under
+     prefers-reduced-motion (the static ring still marks the target). */
+  .vine-dew { pointer-events: none; }
+  .vine-dew-ring { fill: none; stroke: #d9c487; stroke-width: 1.1; opacity: 0;
+    transform-box: fill-box; transform-origin: center;
+    animation: vine-dew-pulse 2.8s ease-out infinite; }
+  .vine-dew-ring:nth-child(2) { animation-delay: .34s; }
+  .vine-dew-ring:nth-child(3) { animation-delay: .68s; }
+  .vine-dew-ring:nth-child(4) { animation-delay: 1.02s; }
+  .vine-dew-ring:nth-child(5) { animation-delay: 1.36s; }
+  @keyframes vine-dew-pulse {
+    0%   { opacity: 0;   transform: scale(.55); }
+    22%  { opacity: .85; }
+    70%  { opacity: 0;   transform: scale(1.15); }
+    100% { opacity: 0;   transform: scale(1.15); }
+  }
+  body.vine-tapped .vine-dew { display: none; }
+
+  /* One-time pointer beside the first leaf. */
+  .vine-tap-hint { position: absolute; left: 52px; bottom: 92px; z-index: 11;
+    display: none; align-items: center; gap: 6px; pointer-events: none;
+    padding: 4px 10px 4px 8px; border-radius: 999px; font-size: 11px;
+    color: var(--ink); background: rgba(23, 22, 27, 0.88);
+    border: 1px solid color-mix(in srgb, #d9c487 45%, var(--line));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); white-space: nowrap;
+    animation: vine-hint-in .5s ease-out both; }
+  body.go-deeper .vine-tap-hint { display: inline-flex; }
+  body.vine-tapped .vine-tap-hint { display: none; }
+  .vine-tap-dot { width: 7px; height: 7px; border-radius: 50%; background: #d9c487;
+    flex: 0 0 auto; animation: vine-dot-throb 1.5s ease-in-out infinite; }
+  @keyframes vine-hint-in {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes vine-dot-throb {
+    0%, 100% { transform: scale(1);   opacity: 1; }
+    50%      { transform: scale(1.5); opacity: .55; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vine-dew-ring { animation: none; opacity: .5; }
+    .vine-tap-hint { animation: none; }
+    .vine-tap-dot { animation: none; }
+  }
+
   #deeper-vines .vine-leaf { cursor: pointer; pointer-events: all; outline: none; }
   #deeper-vines .vine-leaf-hit { fill: transparent; pointer-events: all; }
   #deeper-vines .vine-leaf path { transition: filter .2s ease, stroke .2s ease, transform .2s ease; }
@@ -4087,7 +4133,24 @@
       <g class="vine-leaf vine-leaf-4" data-depth="4" role="button" tabindex="0" aria-label="Depth 4: Cultivation has a geography" fill="#7fc275"><circle class="vine-leaf-hit" cx="47" cy="84" r="15"/><path d="M42 80 C54 72 58 86 48 96 C36 90 32 86 42 80 Z"/></g>
       <g class="vine-leaf vine-leaf-5" data-depth="5" role="button" tabindex="0" aria-label="Depth 5: Evolution writes the recipe" fill="#5a9c4f"><circle class="vine-leaf-hit" cx="31" cy="51" r="15"/><path d="M36 44 C24 36 20 50 30 60 C42 54 46 50 36 44 Z"/></g>
       <circle class="vine-bud" cx="40" cy="9" r="3.6" fill="#d8a657"/>
+      <!-- Dew: a slow staggered pulse on each leaf so the vine reads as
+           touchable. Nothing indicated the leaves were interactive, which on a
+           phone meant no hover to discover it either. Retired for the session
+           once any leaf has been opened (body.vine-tapped). -->
+      <g class="vine-dew" aria-hidden="true">
+        <circle class="vine-dew-ring" cx="31" cy="207" r="12"/>
+        <circle class="vine-dew-ring" cx="45" cy="162" r="12"/>
+        <circle class="vine-dew-ring" cx="31" cy="125" r="12"/>
+        <circle class="vine-dew-ring" cx="47" cy="84"  r="12"/>
+        <circle class="vine-dew-ring" cx="31" cy="51"  r="12"/>
+      </g>
     </svg>
+  </div>
+  <!-- One-time pointer at the first leaf. Disappears for the session as soon as
+       any depth opens, so it invites once instead of nagging. -->
+  <div id="vine-tap-hint" class="vine-tap-hint" aria-hidden="true">
+    <span class="vine-tap-dot"></span>
+    <span>Tap a leaf</span>
   </div>
   <!-- First-run nudge: shown only while the wheel is empty (no entries). Names the
        core loop (slide a note → odorants surface) and offers one-click examples.
@@ -11908,7 +11971,9 @@ DEPTH_STORIES.forEach((story, i) => {
   b.addEventListener("click", () => openDepthCard(i + 1)); depthProgress.appendChild(b);
 });
 depthLeaves.forEach(leaf => {
-  const open = () => openDepthCard(+leaf.dataset.depth);
+  // First leaf opened retires the dew pulse and the "Tap a leaf" pointer for
+  // the session. The invitation is only useful until it has been accepted.
+  const open = () => { document.body.classList.add("vine-tapped"); openDepthCard(+leaf.dataset.depth); };
   leaf.addEventListener("click", open);
   leaf.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
 });
