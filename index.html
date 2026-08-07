@@ -582,6 +582,17 @@
     border-radius: 999px; padding: 5px 7px 5px 13px;
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.42); backdrop-filter: blur(6px); }
   .tasting-tray[hidden] { display: none; }
+  /* Relationship line: the pin-hint pill, tinted and made actionable. */
+  /* A <button> shrinks to min-content by default, which stacked this into a tall
+     narrow block instead of a pill. max-content lets it grow to its natural
+     single-line width and only wrap once it reaches the shared max-width. */
+  .relation-hint { cursor: pointer; text-align: left; font: inherit;
+    width: max-content; line-height: 1.35;
+    border-color: color-mix(in srgb, var(--accent-2) 42%, var(--line)); }
+  .relation-hint:hover, .relation-hint:focus-visible {
+    border-color: var(--accent-2); }
+  .relation-hint #relation-hint-text { color: var(--ink); }
+  .relation-hint-more { color: var(--accent-2); white-space: nowrap; flex-shrink: 0; }
   /* Pin-hint cloud — same pill language as the tray, floated just above it. */
   .pin-hint { position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%);
     z-index: 8; max-width: min(440px, calc(100% - 24px));
@@ -4192,6 +4203,17 @@
        fixed spot and double-tapped to release. Shown once the wheel has floats,
        dismissible, and auto-dismissed the first time the user actually drags a
        float (they've discovered it). Sits just above the tasting tray. -->
+  <!-- The live relationship line. Shares the pin-hint's slot just above the
+       tasting tray and outranks it: a fact about the notes you actually entered
+       beats a generic tip about dragging. Full cards with routes live in the
+       Results panel, which is closed on first load, so this is what carries the
+       finding in real time while someone is still building the tasting. -->
+  <button type="button" id="relation-hint" class="pin-hint relation-hint" hidden
+    aria-label="How your notes connect. Opens the results panel.">
+    <span class="pin-hint-icon" id="relation-hint-icon" aria-hidden="true">🌿</span>
+    <span id="relation-hint-text"></span>
+    <span class="relation-hint-more" aria-hidden="true">See how ›</span>
+  </button>
   <div id="pin-hint" class="pin-hint" hidden>
     <span class="pin-hint-icon" aria-hidden="true">✋</span>
     <span>Something stand out? <strong>Drag</strong> it to pin it where you want — double-tap to free it.</span>
@@ -11810,8 +11832,33 @@ function updateNudge() {
 // Pin-hint cloud: show once the wheel has floats (so there's something to pin),
 // until the user dismisses it or drags a float for the first time.
 const pinHintEl = document.getElementById("pin-hint");
+// The top relationship, shown live above the tasting tray while the user is
+// still entering notes. Clicking it opens the Results panel, where the full set
+// of rows carries the routes into Tree, Map, and Constellation.
+const relationHintEl = document.getElementById("relation-hint");
+const relationHintTextEl = document.getElementById("relation-hint-text");
+const relationHintIconEl = document.getElementById("relation-hint-icon");
+let relationHintRow = null;
+function updateRelationHint() {
+  relationHintRow = state.dismissedHelpers.has("relation") ? null : (tastingRelationships()[0] || null);
+  if (!relationHintRow) { relationHintEl.hidden = true; return; }
+  relationHintIconEl.textContent = relationHintRow.icon;
+  relationHintTextEl.textContent = relationHintRow.headline;
+  relationHintEl.hidden = false;
+}
+relationHintEl.addEventListener("click", () => {
+  ensureDetailVisible();
+  requestAnimationFrame(() => {
+    document.querySelector(".bouquet-relations")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+});
 function updatePinHint() {
-  pinHintEl.hidden = state.entries.size === 0 || state.dismissedHelpers.has("pin");
+  // Relationship line and pin tip share one slot above the tray. The
+  // relationship wins while it has something to say, and the pin tip returns
+  // once it does not.
+  updateRelationHint();
+  pinHintEl.hidden = state.entries.size === 0 || state.dismissedHelpers.has("pin")
+    || !relationHintEl.hidden;
 }
 pinHintEl.addEventListener("click", (e) => { if (e.target.closest(".helper-dismiss")) dismissHelper("pin"); });
 wheelNudgeEl.querySelectorAll(".nudge-demo").forEach(b =>
