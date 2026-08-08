@@ -9582,9 +9582,14 @@ function announceResults() {
     const top = active.slice().sort((a, b) => b.score - a.score)[0];
     const topLabel = CPD_BY_ID[top.id].label;
     const confPct = Math.round(top.confidence * 100);
+    // The relationship rows are the most interesting thing on screen and were
+    // reaching sighted users only. Each row carries a markup-free twin for
+    // exactly this. Announced after the counts so the headline stays first.
+    const top1 = tastingRelationships()[0];
     resultsAnnouncerEl.textContent =
       `${active.length} compound${active.length === 1 ? "" : "s"} active. ` +
-      `Top compound: ${topLabel}, ${confPct}% confidence.`;
+      `Top compound: ${topLabel}, ${confPct}% confidence.` +
+      (top1 ? ` ${top1.plain}` : "");
   }, 500);
 }
 
