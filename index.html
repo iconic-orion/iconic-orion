@@ -2689,6 +2689,14 @@
   #origins-detail-content .origin-sources li { font-size: 11px; line-height: 1.5;
     color: var(--ink-dim); margin-bottom: 8px; padding-left: 14px; position: relative; }
   #origins-detail-content .origin-sources li::before { content: "•"; position: absolute; left: 0; }
+  /* Lore sits at a visibly lower evidence tier than the sourced facts: no
+     accent bullet, a muted rule down the side, italic. It should never be
+     mistaken for a finding at a glance. */
+  #origins-detail-content .origin-lore { font-size: 12px; line-height: 1.55;
+    color: var(--ink-dim); font-style: italic; margin: 6px 0 0;
+    padding: 2px 0 2px 11px; border-left: 2px solid var(--line); }
+  #origins-detail-content .origin-lore-flag { font-size: 10.5px; line-height: 1.45;
+    color: var(--ink-dim); opacity: .8; margin: 6px 0 0; padding-left: 11px; }
   #origins-detail-content .origin-facts { list-style: none; margin: 6px 0 0; padding: 0; }
   #origins-detail-content .origin-facts li { font-size: 12px; line-height: 1.5; color: var(--ink-dim);
     margin-bottom: 6px; padding-left: 14px; position: relative; }
@@ -5785,7 +5793,14 @@ const NOTE_ORIGINS = {
                   citeKeys: ["cornille2012apple"] },
   banana:       { region: "New Guinea / Southeast Asia", lat: -6, lon: 145, certainty: "known",
                   cultivationDate: "Banana cultivation at Kuk Swamp in highland New Guinea dates to at least 6950 to 6440 years before present, with possible plant management as early as 10220 to 9910 years before present.",
-                  modernNote: "Most modern eating bananas are seedless triploid hybrids bred to lack the hard seeds found in wild and traditionally cultivated forms.",
+                  modernNote: "Most modern eating bananas are seedless triploid hybrids bred to lack the hard seeds found in wild and traditionally cultivated forms. The dominant export cultivar for the first half of the twentieth century was Gros Michel. Panama disease, a Fusarium wilt, destroyed commercial Gros Michel plantings, and Cavendish replaced it as the export standard.",
+                  // `lore` is the tier below modernNote: a claim that circulates
+                  // widely enough to be worth recording, with nothing in this
+                  // library measuring it either way. Recording it labelled beats
+                  // staying silent, because the belief itself shapes what people
+                  // expect to taste. See renderOriginLore().
+                  lore: "Banana candy is often said to taste artificial because the flavoring matches Gros Michel rather than the Cavendish most people can actually buy. The cultivar replacement is documented. The flavor comparison is the part that is not. Isoamyl acetate is a real banana ester in both, and whether the two fruits differ enough in it to explain the gap has no measurement here. Recorded because enough people who work with flavor repeat it that it shapes what a taster expects before they smell anything.",
+                  loreNeedsSource: true,
                   citeKeys: ["denham2003banana"] },
   pineapple:    { region: "South America (Guiana Shield / western Amazon)", lat: -20, lon: -55, certainty: "known",
                   cultivationDate: "Archaeobotanical remains in South America date to roughly 3500 years ago, with genetic evidence pointing to domestication well before that.",
@@ -15448,6 +15463,27 @@ function openOriginDetail(note, origin) {
 
   content.append(h3, regionLine);
 
+  // Claims that circulate widely without being measured. Kept visually separate
+  // from the sourced facts above so the tier is never ambiguous, and stated as
+  // "people say this" rather than as a finding. A belief that shapes what a
+  // taster expects is worth recording even when nothing here can settle it.
+  function renderOriginLore(target, origin) {
+    if (!origin.lore) return;
+    const label = document.createElement("div");
+    label.className = "section-label";
+    label.textContent = "Widely repeated, not measured here";
+    const p = document.createElement("p");
+    p.className = "origin-lore";
+    p.textContent = origin.lore;
+    target.append(label, p);
+    if (origin.loreNeedsSource) {
+      const flag = document.createElement("p");
+      flag.className = "origin-lore-flag";
+      flag.textContent = "No citation in this library supports or refutes it.";
+      target.append(flag);
+    }
+  }
+
   if (origin.fullExplanation) {
     const p = document.createElement("p");
     p.textContent = origin.fullExplanation;
@@ -15472,6 +15508,7 @@ function openOriginDetail(note, origin) {
     });
     content.append(label, list);
   }
+  renderOriginLore(content, origin);
 
   // Lineage -> geography, the last link of the thesis chain and the one this
   // panel was missing: it had the note object in scope the whole time and
