@@ -234,6 +234,20 @@
     font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
   .back-to-grid:hover { color: var(--accent); }
 
+  /* Collapse bar for the compound side of the graph. Desktop shows both panes
+     side by side already, so this is mobile-only (revealed in the ≤760px block). */
+  .compounds-bar { display: none; grid-area: cbar; align-items: center; gap: 8px;
+    width: 100%; padding: 11px 14px; min-height: 48px; text-align: left;
+    background: var(--panel-2); color: var(--ink); font: inherit; font-size: 12.5px;
+    font-weight: 600; border: none; border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); cursor: pointer; }
+  .compounds-bar-caret { color: var(--accent); flex: 0 0 auto;
+    transition: transform .2s ease; }
+  body:not(.compounds-collapsed) .compounds-bar-caret { transform: rotate(90deg); }
+  .compounds-bar-summary { margin-left: auto; color: var(--ink-dim);
+    font-weight: 400; font-size: 11.5px; text-align: right; }
+  @media (prefers-reduced-motion: reduce) { .compounds-bar-caret { transition: none; } }
+
   /* Default Compounds pane: three stacked sections (Your inputs / Top compounds /
      All possible compounds). Each section has its own heading + help line. */
   .results-section { margin-bottom: 22px; }
@@ -1806,8 +1820,11 @@
     body,
     body.notes-hidden, body.detail-hidden, body.notes-hidden.detail-hidden {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 46vh 1fr auto;
-      grid-template-areas: "head" "wheel" "panel" "foot";
+      /* "cbar" and "second" carry the compound side of the graph below the
+         notes, so both halves are reachable in one scroll instead of being
+         mutually exclusive tabs. */
+      grid-template-rows: auto 46vh 1fr auto auto auto;
+      grid-template-areas: "head" "wheel" "panel" "cbar" "second" "foot";
     }
     /* Wheel workspace on mobile: let the PAGE scroll rather than trap a tall
        compound/slider list in the short bottom cell (measured 2026px of content
@@ -1949,7 +1966,31 @@
        the analysis panel shows only in the Compounds view (notes hidden). */
     aside.notes, aside.detail { grid-area: panel; width: auto;
       border-left: none; border-right: none; border-top: 1px solid var(--line); }
-    body:not(.notes-hidden) aside.detail { display: none; }
+    /* Notes and compounds stop being either/or. With the notes panel up, the
+       compound side sits below it behind its own collapse bar, so the second
+       half of the graph is always represented rather than hidden behind a tab
+       switch most people never make. */
+    aside.notes { grid-area: panel; }
+    body:not(.notes-hidden) aside.detail { grid-area: second; }
+    body:not(.notes-hidden) .compounds-bar { display: flex; }
+    /* Beats the base body.detail-hidden rule, which would otherwise keep the
+       pane hidden even once the bar has been expanded. On mobile the collapse
+       bar owns this pane's visibility, not the desktop pane-toggle state. */
+    body:not(.notes-hidden):not(.compounds-collapsed) aside.detail { display: block; }
+    body:not(.notes-hidden).compounds-collapsed aside.detail { display: none; }
+    /* The note list runs to roughly 9000px on a phone, so a bar sitting after it
+       in flow would be unreachable without scrolling the entire library. While
+       collapsed it rides the bottom of the viewport instead, clearing the fixed
+       tasting tray. Expanded, it releases and behaves as the section's header. */
+    body:not(.notes-hidden).compounds-collapsed .compounds-bar {
+      position: sticky; bottom: 74px; z-index: 89; }
+    /* Compounds view: the bar has nothing to reveal, the panel is already it. */
+    body.notes-hidden aside.detail { grid-area: panel; display: block; }
+    body.notes-hidden .compounds-bar { display: none; }
+    /* Tree and Map own the whole canvas and use the detail pane as their own
+       bottom sheet, so the wheel's stacking does not apply there. */
+    body.taxonomy-mode .compounds-bar, body.origins-mode .compounds-bar { display: none; }
+    body.taxonomy-mode aside.detail, body.origins-mode aside.detail { grid-area: panel; }
     /* Taxonomy mode has no notes pane to toggle from. Keep the detail panel
        hidden until a tree node is actually chosen, then show it as the same
        bottom-sheet detail surface used elsewhere on mobile. */
@@ -3908,11 +3949,14 @@
     </div>
     <!-- Desktop-only divider separating the workspace switch from wheel controls. -->
     <div class="hud-vdivider" aria-hidden="true"></div>
-    <div class="tabs" id="view-tabs" title="Which side panels are open around the wheel.">
+    <!-- Notes and compounds are two ends of one graph, not input and output, so
+         the panel names the object on each side rather than calling one of them
+         "Results". -->
+    <div class="tabs" id="view-tabs" title="Which side of the graph is open around the wheel.">
       <span class="tabs-label">Panels</span>
       <button data-view="note-input" class="active">Notes</button>
-      <button data-view="dashboard" title="Show the notes sliders and the results side by side">Notes + Results</button>
-      <button data-view="analysis">Results</button>
+      <button data-view="dashboard" title="Show the notes and the compounds side by side">Both</button>
+      <button data-view="analysis">Compounds</button>
     </div>
     <!-- Constellation: Go Deeper's subjective hemisphere, opened directly —
          see #constellation-overlay. The Sixth-lens depth card still exists as
@@ -4197,7 +4241,7 @@
        visible whether the corresponding side pane is shown or hidden. Click to
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
-  <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide / show the analysis pane" aria-label="Toggle analysis pane">›</button>
+  <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide or show the Compounds panel" aria-label="Toggle Compounds panel">›</button>
   <!-- Radar: a small draggable, resizable aroma profile, toggled from the
        Wheel-local display toolbar. Three axis modes (see #compass-mode-tabs): Notes /
        Compounds — the user's own top-10 active items, live — and Class, a
@@ -4596,6 +4640,17 @@
 <button type="button" id="taxonomy-sheet-handle" aria-label="Resize Tree detail panel" aria-valuetext="Half height" title="Drag to resize detail; tap to change height">
   <span class="taxonomy-sheet-grip" aria-hidden="true"></span>
   <span id="taxonomy-sheet-label">Details</span>
+</button>
+<!-- Mobile-only header for the compound side of the graph. Lives OUTSIDE
+     aside.detail because that element is the innerHTML target for every detail
+     render, so anything inside it gets wiped. Collapsed by default: the summary
+     keeps the second half of the graph represented without spending the screen,
+     and it stays live while collapsed. -->
+<button type="button" id="compounds-bar" class="compounds-bar" aria-expanded="false"
+  aria-controls="detail-panel">
+  <span class="compounds-bar-caret" aria-hidden="true">▸</span>
+  <span class="compounds-bar-title">Compounds</span>
+  <span class="compounds-bar-summary" id="compounds-bar-summary"></span>
 </button>
 <aside class="detail" id="detail-panel">
   <div class="empty">Click a compound to see linked notes and citations. Slide notes on the left to register what you're noticing. The results are literature-guided possibilities, not a chemical measurement.</div>
@@ -7295,7 +7350,8 @@ const state = {
   infoTab: "about",       // "about" | "how-to-use" | "types-of-aroma"
   infoSearch: "",         // current search query in Types of Aroma
   notesHidden:  false,   // is the left sliders pane hidden via toggle / view preset
-  detailHidden: false,   // is the right analysis pane hidden via toggle / view preset
+  detailHidden: false,   // is the Compounds panel hidden via toggle / view preset
+  compoundsCollapsed: true,  // mobile: compound side folded below the notes (bar still shows a live summary)
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
   // Origins-map display filters (the map legend's checkboxes). Deliberately
@@ -9444,6 +9500,7 @@ function recompute() {
   // so an off-screen tree can never go stale.
   if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
   refreshGhostRows();
+  updateCompoundsBar();
   announceResults();
 }
 
@@ -9453,6 +9510,28 @@ function recompute() {
 // buffer — only the settled end state gets spoken.
 const resultsAnnouncerEl = document.getElementById("results-announcer");
 let announceResultsTimer = null;
+// The compound side's collapse bar. Its summary stays live while folded, so the
+// half of the graph you cannot currently see still reports what it holds.
+const compoundsBarEl = document.getElementById("compounds-bar");
+const compoundsBarSummaryEl = document.getElementById("compounds-bar-summary");
+function updateCompoundsBar() {
+  document.body.classList.toggle("compounds-collapsed", state.compoundsCollapsed);
+  compoundsBarEl.setAttribute("aria-expanded", String(!state.compoundsCollapsed));
+  const active = compoundNodes.filter(n => isCompoundVisible(n.id) && n.intensity_raw > 0).length;
+  const links = tastingRelationships().length;
+  const parts = [];
+  if (active) parts.push(`${active} in play`);
+  if (links) parts.push(`${links} connection${links === 1 ? "" : "s"}`);
+  compoundsBarSummaryEl.textContent = parts.length ? parts.join(" · ") : "Browse the library";
+}
+compoundsBarEl.addEventListener("click", () => {
+  state.compoundsCollapsed = !state.compoundsCollapsed;
+  updateCompoundsBar();
+  if (!state.compoundsCollapsed) {
+    requestAnimationFrame(() => compoundsBarEl.scrollIntoView({ block: "start", behavior: "smooth" }));
+  }
+});
+
 function announceResults() {
   clearTimeout(announceResultsTimer);
   announceResultsTimer = setTimeout(() => {
@@ -13465,9 +13544,9 @@ function renderHowToUse() {
     <h3 id="use-flow">The basic flow</h3>
     <p>Find a descriptor you are noticing (lemon, vanilla, toast, smoky—whatever fits) and drag its slider from 0 to 10. The note registers <em>the moment you slide</em>. Move it again to revise the intensity, or return it to 0 to remove it. Each descriptor has sourced links to specific compounds; several notes pointing to the same compound make that possibility more prominent in the model.</p>
 
-    <h3 id="use-views">The Wheel and Results</h3>
+    <h3 id="use-views">The Wheel and the Compounds panel</h3>
     <p>The <strong>wheel</strong> is spatial: descriptors sit around the rim, compounds float toward the center pulled by whichever descriptors point to them, and edges light up between active pairs. In the default <em>Scent</em> layout each compound is tinted by the scent family it leans toward, so "the fruity compounds" read as a cohort wherever they land. Hover a compound for a bigger label, click for its full detail. Click a note for its inverse, the compounds it maps to. You can also flip how the whole wheel is built (see <em>Organize the wheel</em> below).</p>
-    <p>The <strong>Results pane</strong> is the same model in ranked, textual form: possible compounds with intensity and confidence bars. Click any card for its sensory anchor, odor threshold, contributing notes, and the citations behind each link.</p>
+    <p>The <strong>Compounds panel</strong> is the same graph read from the other end: possible compounds with intensity and confidence bars. Click any card for its sensory anchor, odor threshold, contributing notes, and the citations behind each link. Notes and compounds are two ends of one graph rather than input and output, so you can start from either side. What differs is that only notes take a score, because a note is something you can report perceiving and a compound is what the literature says might be behind it.</p>
 
     <h3 id="use-organize">Organize the wheel: Scent vs Chemistry</h3>
     <p>The header's <strong>Organize</strong> toggle decides what the ring is built from: two views of the same note-to-compound web. The scoring never changes. Only the layout and coloring do.</p>
