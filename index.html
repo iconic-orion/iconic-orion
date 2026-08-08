@@ -1031,7 +1031,9 @@
   body.vine-tapped .vine-dew { display: none; }
 
   /* One-time pointer beside the first leaf. */
-  .vine-tap-hint { position: absolute; left: 52px; bottom: 92px; z-index: 11;
+  /* Sits above the relationship line, which is centred and full-width, so any
+     horizontal placement inside its vertical band collides with it. */
+  .vine-tap-hint { position: absolute; left: 52px; bottom: 118px; z-index: 11;
     display: none; align-items: center; gap: 6px; pointer-events: none;
     padding: 4px 10px 4px 8px; border-radius: 999px; font-size: 11px;
     color: var(--ink); background: rgba(23, 22, 27, 0.88);
@@ -1843,6 +1845,16 @@
        without backdrop-filter. */
     body:not(.origins-mode):not(.taxonomy-mode) header {
       position: sticky; top: 0; z-index: 100; }
+    /* Rides in the sticky header beside ☰ rather than adding a third
+       bottom-anchored layer over the tray and the compounds bar. */
+    #back-to-wheel { position: absolute; top: 6px;
+      right: calc(56px + env(safe-area-inset-right)); z-index: 101;
+      display: inline-flex; align-items: center; gap: 4px; height: 44px;
+      padding: 0 12px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+      background: var(--panel-2); color: var(--accent);
+      border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+      cursor: pointer; }
+    #back-to-wheel[hidden] { display: none; }
     /* :not(.hud-open) matters: backdrop-filter turns the header into a
        backdrop root, so the open tray's own backdrop-filter (below) would
        sample only the header's contents instead of the wheel behind it —
@@ -4012,6 +4024,14 @@
     </div>
   </div>
   <!-- Mobile-only HUD expander (hidden on desktop via CSS). -->
+  <!-- Mobile only. The phone layout is one long scroll (wheel band, then the
+       full note library, then the compound side), and the sticky header and
+       scent-family chips were the only fixed anchors. Neither gets you back to
+       the wheel. Appears once the wheel has scrolled away. -->
+  <button id="back-to-wheel" type="button" hidden
+    aria-label="Back to the wheel" title="Back to the wheel">
+    <span aria-hidden="true">↑</span> Wheel
+  </button>
   <button id="hud-toggle" type="button" aria-label="Show more controls" aria-expanded="false" title="More controls">☰</button>
 </header>
 <section id="global-compare-panel" class="aroma-compare-panel"
@@ -9530,6 +9550,28 @@ compoundsBarEl.addEventListener("click", () => {
   if (!state.compoundsCollapsed) {
     requestAnimationFrame(() => compoundsBarEl.scrollIntoView({ block: "start", behavior: "smooth" }));
   }
+});
+
+// Back-to-wheel: the phone layout scrolls for thousands of pixels and nothing
+// returned you to the top. Shown only once the wheel band has actually scrolled
+// away, and only in the Wheel workspace, since Map and Tree own their canvas.
+const backToWheelEl = document.getElementById("back-to-wheel");
+let backToWheelQueued = false;
+function syncBackToWheel() {
+  backToWheelQueued = false;
+  const onWheel = !document.body.classList.contains("origins-mode")
+    && !document.body.classList.contains("taxonomy-mode");
+  backToWheelEl.hidden = !(onWheel && isMobileViewport() && window.scrollY > 220);
+}
+window.addEventListener("scroll", () => {
+  if (backToWheelQueued) return;
+  backToWheelQueued = true;
+  requestAnimationFrame(syncBackToWheel);
+}, { passive: true });
+window.addEventListener("resize", syncBackToWheel);
+backToWheelEl.addEventListener("click", () => {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
 });
 
 function announceResults() {
@@ -15903,6 +15945,7 @@ function setWorkspace(mode) {
   }
   renderTaxonomyComparePanel();
   renderMapBearingCompass();
+  syncBackToWheel();
 }
 function showTaxonomyDetail() {
   if (isMobileViewport() && document.body.classList.contains("taxonomy-mode") && state.taxonomySheetSnap === "peek") {
