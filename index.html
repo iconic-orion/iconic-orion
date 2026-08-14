@@ -1983,19 +1983,34 @@
        half of the graph is always represented rather than hidden behind a tab
        switch most people never make. */
     aside.notes { grid-area: panel; }
-    body:not(.notes-hidden) aside.detail { grid-area: second; }
-    body:not(.notes-hidden) .compounds-bar { display: flex; }
-    /* Beats the base body.detail-hidden rule, which would otherwise keep the
-       pane hidden even once the bar has been expanded. On mobile the collapse
-       bar owns this pane's visibility, not the desktop pane-toggle state. */
-    body:not(.notes-hidden):not(.compounds-collapsed) aside.detail { display: block; }
-    body:not(.notes-hidden).compounds-collapsed aside.detail { display: none; }
-    /* The note list runs to roughly 9000px on a phone, so a bar sitting after it
-       in flow would be unreachable without scrolling the entire library. While
-       collapsed it rides the bottom of the viewport instead, clearing the fixed
-       tasting tray. Expanded, it releases and behaves as the section's header. */
-    body:not(.notes-hidden).compounds-collapsed .compounds-bar {
-      position: sticky; bottom: 74px; z-index: 89; }
+    /* The compound side is a bottom drawer, pinned to the screen rather than
+       placed in the scroll. You keep scrolling the note list behind it and drag
+       the bar to trade screen between the two halves, watching compounds change
+       as you slide notes. Same snap and drag mechanics as the Tree's detail
+       sheet so there is one bottom-sheet language, not two. */
+    body:not(.notes-hidden) .compounds-bar {
+      display: flex; position: fixed; left: 0; right: 0;
+      bottom: var(--compounds-h, 0px); z-index: 92; }
+    body:not(.notes-hidden) aside.detail {
+      display: block; position: fixed; left: 0; right: 0; bottom: 0;
+      height: var(--compounds-h, 0px); width: auto; z-index: 91;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      border-top: none; box-shadow: 0 -10px 26px rgba(0,0,0,.4); }
+    body:not(.notes-hidden).compounds-peek aside.detail { display: none; }
+    body:not(.notes-hidden):not(.sheet-dragging) .compounds-bar,
+    body:not(.notes-hidden):not(.sheet-dragging) aside.detail {
+      transition: bottom .22s ease, height .22s ease; }
+    /* The tasting tray rides above the closed drawer, and steps aside once the
+       drawer is actually open, since the compound list is what is being read. */
+    body:not(.origins-mode):not(.taxonomy-mode).compounds-peek #tasting-tray { bottom: 60px; }
+    body:not(.origins-mode):not(.taxonomy-mode):not(.compounds-peek) #tasting-tray {
+      opacity: 0; pointer-events: none; }
+    /* Keep the last note rows reachable above the pinned drawer. */
+    body:not(.notes-hidden) aside.notes { padding-bottom: 128px; }
+    @media (prefers-reduced-motion: reduce) {
+      body:not(.notes-hidden) .compounds-bar,
+      body:not(.notes-hidden) aside.detail { transition: none; }
+    }
     /* Compounds view: the bar has nothing to reveal, the panel is already it. */
     body.notes-hidden aside.detail { grid-area: panel; display: block; }
     body.notes-hidden .compounds-bar { display: none; }
@@ -7386,7 +7401,7 @@ const state = {
   infoSearch: "",         // current search query in Types of Aroma
   notesHidden:  false,   // is the left sliders pane hidden via toggle / view preset
   detailHidden: false,   // is the Compounds panel hidden via toggle / view preset
-  compoundsCollapsed: true,  // mobile: compound side folded below the notes (bar still shows a live summary)
+  compoundsSnap: "peek",  // mobile compound drawer: peek | half | full
   sortBy: "intensity",   // "intensity" | "confidence" | "class"
   hiddenGroups: new Set(),   // note-group ids hidden via legend
   // Origins-map display filters (the map legend's checkboxes). Deliberately
@@ -9549,23 +9564,90 @@ let announceResultsTimer = null;
 // half of the graph you cannot currently see still reports what it holds.
 const compoundsBarEl = document.getElementById("compounds-bar");
 const compoundsBarSummaryEl = document.getElementById("compounds-bar-summary");
+const COMPOUNDS_SNAPS = ["peek", "half", "full"];
+function compoundsHeightFor(snap) {
+  if (snap === "peek") return 0;
+  if (snap === "full") return Math.max(280, window.innerHeight - 150);
+  return Math.max(220, Math.round(window.innerHeight * 0.44));
+}
+// Height is written straight onto the panel in px as well as into the custom
+// property. The property alone positions the bar, but a panel height derived
+// from a variable does not retrigger its own transition, which is the bug the
+// Tree sheet hit and documented.
+function applyCompoundsSheet() {
+  const drawer = isMobileViewport()
+    && !document.body.classList.contains("origins-mode")
+    && !document.body.classList.contains("taxonomy-mode")
+    && !state.notesHidden;
+  if (!drawer) {
+    document.body.style.removeProperty("--compounds-h");
+    detailPanel.style.removeProperty("height");
+    return;
+  }
+  const px = Math.round(compoundsHeightFor(state.compoundsSnap));
+  document.body.style.setProperty("--compounds-h", `${px}px`);
+  detailPanel.style.height = `${px}px`;
+}
 function updateCompoundsBar() {
-  document.body.classList.toggle("compounds-collapsed", state.compoundsCollapsed);
-  compoundsBarEl.setAttribute("aria-expanded", String(!state.compoundsCollapsed));
+  COMPOUNDS_SNAPS.forEach(s => document.body.classList.toggle(`compounds-${s}`, state.compoundsSnap === s));
+  compoundsBarEl.setAttribute("aria-expanded", String(state.compoundsSnap !== "peek"));
+  const label = state.compoundsSnap === "peek" ? "Minimized"
+    : state.compoundsSnap === "full" ? "Expanded" : "Half height";
+  compoundsBarEl.setAttribute("aria-valuetext", label);
+  compoundsBarEl.title = `${label}. Drag to resize the compound drawer, or tap to change height.`;
   const active = compoundNodes.filter(n => isCompoundVisible(n.id) && n.intensity_raw > 0).length;
   const links = tastingRelationships().length;
   const parts = [];
   if (active) parts.push(`${active} in play`);
   if (links) parts.push(`${links} connection${links === 1 ? "" : "s"}`);
   compoundsBarSummaryEl.textContent = parts.length ? parts.join(" · ") : "Browse the library";
+  applyCompoundsSheet();
 }
-compoundsBarEl.addEventListener("click", () => {
-  state.compoundsCollapsed = !state.compoundsCollapsed;
+function setCompoundsSnap(snap) {
+  if (!COMPOUNDS_SNAPS.includes(snap)) return;
+  state.compoundsSnap = snap;
   updateCompoundsBar();
-  if (!state.compoundsCollapsed) {
-    requestAnimationFrame(() => compoundsBarEl.scrollIntoView({ block: "start", behavior: "smooth" }));
-  }
-});
+}
+// Drag to resize, tap to cycle. Mirrors the Tree sheet's handle exactly.
+(function wireCompoundsDrawer() {
+  let dragging = false, moved = false, startY = 0, startHeight = 0, suppressClick = false;
+  compoundsBarEl.addEventListener("pointerdown", (e) => {
+    if (!isMobileViewport()) return;
+    dragging = true; moved = false; startY = e.clientY;
+    startHeight = compoundsHeightFor(state.compoundsSnap);
+    document.body.classList.add("sheet-dragging");
+    compoundsBarEl.setPointerCapture(e.pointerId);
+  });
+  compoundsBarEl.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const delta = startY - e.clientY;
+    if (Math.abs(delta) > 4) moved = true;
+    const height = Math.max(0, Math.min(window.innerHeight - 110, startHeight + delta));
+    document.body.classList.toggle("compounds-peek", height < 8);
+    document.body.style.setProperty("--compounds-h", `${height}px`);
+    detailPanel.style.height = `${height}px`;
+  });
+  const finish = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.classList.remove("sheet-dragging");
+    try { compoundsBarEl.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (!moved) return;   // a tap falls through to the click handler below
+    suppressClick = true;
+    const height = detailPanel.getBoundingClientRect().height;
+    const nearest = COMPOUNDS_SNAPS.reduce((best, snap) =>
+      Math.abs(compoundsHeightFor(snap) - height) < Math.abs(compoundsHeightFor(best) - height) ? snap : best, "peek");
+    setCompoundsSnap(nearest);
+  };
+  compoundsBarEl.addEventListener("pointerup", finish);
+  compoundsBarEl.addEventListener("pointercancel", finish);
+  compoundsBarEl.addEventListener("click", () => {
+    if (suppressClick) { suppressClick = false; return; }
+    const i = COMPOUNDS_SNAPS.indexOf(state.compoundsSnap);
+    setCompoundsSnap(COMPOUNDS_SNAPS[(i + 1) % COMPOUNDS_SNAPS.length]);
+  });
+  window.addEventListener("resize", applyCompoundsSheet);
+})();
 
 // Back-to-wheel: the phone layout scrolls for thousands of pixels and nothing
 // returned you to the top. Shown only once the wheel band has actually scrolled
