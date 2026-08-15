@@ -14,6 +14,7 @@ the numbers can be re-derived rather than trusted.
 | | Sessions | Prompts | Words |
 |---|---:|---:|---:|
 | Surviving local transcripts (2026-05-22 → 2026-07-27) | 26 | 313 | 17,220 |
+| Surviving local transcripts (2026-05-22 → 2026-08-15) | 34 | 397 | 19,944 |
 
 Filter, stated so the number is reproducible: records with `type: "user"` and
 `origin.kind: "human"`, where the message content is a plain string. Content
@@ -23,6 +24,16 @@ excluded, as are synthetic user-role injections — `<system-reminder>`,
 different filter yields a different total; an earlier pass using a looser rule
 counted 349. Neither is wrong, but a count without its filter is not a fact.
 
+**Addendum, 2026-08-15:** a second extraction pass covering 2026-07-26 through
+2026-08-15 (the run-up to PR #20, "Tree, Map, Constellation, Laps & Delivery,"
+merging into `prototype`, and PR #21, "Promote prototype to main") added 8
+sessions / 84 prompts / 2,724 words under the same filter above, entries 38–45.
+The word count for this addendum was derived directly from the `raw/` files
+rather than re-parsed from the source transcripts (each prompt block's own text,
+summed per file) — consistent with the same filter in spirit, but a different
+mechanical path than the original 26-session count, named here rather than
+left implicit.
+
 Excluded on purpose: two sessions under a separate `-Ideas` project directory.
 That is the Glacier Line prototype, fenced out of this repo, not Aroma Wheel work.
 
@@ -30,7 +41,9 @@ That is the Glacier Line prototype, fenced out of this repo, not Aroma Wheel wor
 
 **Tier A — transcript-backed.** The original session transcript still exists
 locally, so every prompt here can be re-extracted verbatim and re-verified today.
-Entries 14–37 are all Tier A, generated directly from those transcripts.
+Entries 14–37 are all Tier A, generated directly from those transcripts. Entries
+38–45 (session ids `def702be`, `ddb8c662`, `5c9bc8de`, `86663bc9`, `583a1a7e`,
+`fc6150a0`, `e7282965`, `bc2d11f1`; extracted 2026-08-15) are Tier A as well.
 
 **Tier B — archive-only.** The transcript is **gone**. The file in
 [`raw/`](raw/) is now the only surviving record of that session, and nothing can
