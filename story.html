@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Development Story — Aroma Wheel</title>
+<meta name="description" content="How Aroma Wheel actually got built, chapter by chapter, and how six of its ideas mutated from first mention to shipped feature, quoted at each step.">
+<style>
+  :root {
+    --bg: #0e0d10;
+    --panel: #17161b;
+    --panel-2: #1f1d23;
+    --ink: #e9e6df;
+    --ink-dim: #8a8579;
+    --line: #2a2730;
+    --accent: #d8a657;
+    --accent-2: #7daea3;
+    --warn: #ea6962;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { min-height: 100vh; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 100px; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: none; }
+
+  header.top { border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex;
+    align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  header.top .back { font-size: 13px; color: var(--ink-dim); text-decoration: none; }
+  header.top .back:hover { color: var(--accent); }
+  header.top .wordmark { font-size: 13px; letter-spacing: 0.04em; color: var(--ink-dim); }
+
+  h1 { font: 400 30px/1.2 Georgia, "Times New Roman", serif; margin: 0 0 6px; color: var(--ink); }
+  p.lede { font-size: 15px; color: var(--ink); line-height: 1.6; margin: 0 0 28px; }
+
+  .draft-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+    color: var(--accent-2); border: 1px solid var(--accent-2); border-radius: 999px;
+    padding: 4px 10px; margin: 0 0 24px; letter-spacing: 0.02em; }
+  .draft-badge::before { content: "◐"; }
+
+  h2 { font: 400 20px/1.25 Georgia, "Times New Roman", serif; margin: 40px 0 12px; color: var(--ink); }
+  h2:first-of-type { margin-top: 0; }
+  h3 { font: 400 17px/1.3 Georgia, "Times New Roman", serif; margin: 30px 0 8px; color: var(--ink); }
+  h4.chapter-title { font: 400 16px/1.3 Georgia, "Times New Roman", serif; margin: 0 0 4px; color: var(--accent); }
+  p { font-size: 14px; line-height: 1.65; margin: 0 0 14px; color: var(--ink); }
+  em { color: var(--ink-dim); font-style: italic; }
+  strong { color: var(--ink); }
+
+  .evidence { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin: 18px 0; }
+  .evidence dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
+  .evidence dt { color: var(--ink-dim); }
+  .evidence dd { margin: 0; color: var(--ink); }
+  .evidence .as-of { display: block; margin-top: 10px; font-size: 11px; color: var(--ink-dim); }
+
+  ul.links { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.links li { font-size: 13px; }
+  ul.links a { display: inline-block; }
+  ul.links .hint { color: var(--ink-dim); font-size: 12px; margin-left: 6px; }
+
+  blockquote { margin: 0 0 16px; padding: 10px 16px; border-left: 2px solid var(--line);
+    color: var(--ink-dim); font-size: 13px; font-style: italic; }
+
+  footer.page { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
+    font-size: 12px; color: var(--ink-dim); }
+
+  /* --- story-specific additions --- */
+  nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin: 0 0 28px; font-size: 13px; }
+  nav.toc .toc-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 0.04em;
+    text-transform: uppercase; margin-bottom: 8px; display: block; }
+  nav.toc ol { margin: 0; padding-left: 18px; columns: 2; column-gap: 24px; }
+  nav.toc li { margin-bottom: 4px; break-inside: avoid; }
+  nav.toc a { font-size: 13px; }
+
+  .chapter { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 18px 20px; margin: 0 0 18px; }
+  .chapter .meta { font-size: 11px; color: var(--ink-dim); margin-bottom: 10px; letter-spacing: 0.01em; }
+  .chapter p:last-child { margin-bottom: 0; }
+  .chapter code { background: var(--panel-2); border-radius: 4px; padding: 1px 5px;
+    font-size: 12px; color: var(--accent-2); }
+
+  .thread { margin: 0 0 40px; }
+  .thread h3 { margin-top: 0; }
+  .thread .thread-note { font-size: 13px; color: var(--ink-dim); margin: 0 0 16px; }
+
+  .timeline { position: relative; margin: 0 0 6px; padding-left: 22px; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px;
+    width: 1px; background: var(--line); }
+  .step { position: relative; margin: 0 0 18px; }
+  .step::before { content: ""; position: absolute; left: -22px; top: 6px; width: 9px; height: 9px;
+    border-radius: 50%; background: var(--bg); border: 1px solid var(--accent); }
+  .step .when { font-size: 11px; color: var(--ink-dim); margin: 0 0 4px; letter-spacing: 0.01em; }
+  .step blockquote { margin: 0 0 6px; }
+  .step .link { font-size: 12px; }
+  .connector { font-size: 13px; color: var(--ink); line-height: 1.6; margin: 0 0 18px 0;
+    padding-left: 4px; }
+
+  code.hash { background: var(--panel-2); border-radius: 4px; padding: 1px 5px; font-size: 12px;
+    color: var(--accent-2); }
+
+  .dropped { font-size: 13px; color: var(--ink-dim); border-left: 2px solid var(--line);
+    padding: 4px 14px; margin: 0 0 10px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="back" href="index.html">&larr; Back to Aroma Wheel</a>
+  <span class="wordmark">aromawheel.net</span>
+</header>
+
+<main>
+  <h1>The Development Story</h1>
+  <p class="lede">The curated <a href="docs/prompt-log/README.md">prompt log</a> is 45 entries long — accurate, but not exactly readable in one sitting. This page is that same record, reorganized into two views: a chronological narrative, and a set of ideas traced from their first mention to where they actually landed.</p>
+
+  <div class="draft-badge">Drafted by Claude, not yet reviewed by Nolan &mdash; treat this page as a first pass, the same way an unverified citation sits under review elsewhere in this tool</div>
+
+  <nav class="toc">
+    <span class="toc-label">On this page</span>
+    <ol>
+      <li><a href="#the-story">The Story</a> — ten chapters, chronological</li>
+      <li><a href="#how-ideas-evolved">How ideas evolved</a> — six threads, quoted</li>
+      <li><a href="#full-archive">Full archive</a> — the unabridged source files</li>
+    </ol>
+  </nav>
+
+  <h2 id="the-story">The Story</h2>
+  <p>Everything below is built from the entries in the <a href="docs/prompt-log/README.md">curated prompt log</a>, grouped into the rough eras the work actually fell into. Entry numbers, dates, and commit hashes are cited so every claim traces back to something checkable — see the log itself, or the raw transcripts underneath it, for the receipts.</p>
+
+  <div class="chapter">
+    <h4 class="chapter-title">1. Setting the guardrails</h4>
+    <p class="meta">Entries 1&ndash;2, 14 &middot; 2026-05-21 &middot; branches <code>dev</code>, <code>claude/frosty-hoover-765d4c</code></p>
+    <p>Before any code existed, the first session (entry 1) was a security conversation: restrict the agent to the <code>D:\Git_NAE</code> directory, nothing else, and don't change anything yet — just look. The second session that same day (entry 2) stood up the actual git workflow: commits <code class="hash">4c52d9e</code> (CI + branching docs) and <code class="hash">158d285</code> (a <code>.gitignore</code> covering Windows, editors, Claude Code, and secrets). This is where the <code>main</code> / <code>prototype</code> / <code>feature/*</code> flow that still governs the repo was first written down.</p>
+    <p>A third same-day session (entry 14) added the GitHub-side enforcement: branch protection on <code>prototype</code>, required status checks, pull requests required before merging. No commit trail survives for that branch specifically &mdash; it was UI configuration, not code &mdash; but the ruleset it set is the one still active. Three sessions, one day, and the fence was up before the first prototype existed.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">2. First prototype through V2</h4>
+    <p class="meta">Entries 3&ndash;7 &middot; 2026-05-21 &rarr; 05-26 &middot; branches <code>claude/frosty-driscoll-15130d</code>, <code>claude/determined-williams-8ac428</code>, <code>claude/blissful-franklin-a7b245</code> &rarr; <code>claude/vigilant-lovelace-2cb582</code></p>
+    <p>Entry 3 is a single "stop planning, start building" prompt that produced <code class="hash">237f7b7</code>, the seed of what would be tagged <code>v1</code>. Entry 4 built the actual scent-mapper over 19 prompts &mdash; and a lot of the product's lasting DNA got set here: blackcurrant got rejected as a reference flavor because most people have never tasted it, a checkbox legend replaced an opaque toggle, and the self-reported "smeller profile" idea was killed as unhelpful. It shipped as PRs #1 and #2, tag <code>v1</code>. Entry 5 was a deliberately no-code session &mdash; checking α-terpineol, black-tea, and elderflower compounds against the literature before adding them &mdash; setting a pattern of vetting sources before they entered the data that the project never dropped.</p>
+    <p>Entry 6 is the biggest single session in the log: 86 prompts, two stories braided together. First, a security fix &mdash; API and SSH keys spotted in a repo about to go public, pulled out, with the rule that secrets live outside the repo on the D drive. Second, the full V2 redesign, shipped in slices: the ortho/retro input contract (<code class="hash">a1053bf</code>), three view modes replacing an earlier sensory/compounds split (<code class="hash">1a3a173</code>), the "i" info tab (<code class="hash">aa88323</code>), a Methodology tab with citations, the Note Suggester modal (<code class="hash">e4b03b1</code>, <code class="hash">38abf30</code>, <code class="hash">11ff598</code>), a copy pass (<code class="hash">fc4b3cd</code>), and a compound-library expansion (<code class="hash">e315ce2</code>). It merged at <code class="hash">20643d3</code>, tagged <code>v2</code>, via PR #4. This is also where the project's voice got decided &mdash; more on that in Section 2. Entry 7, a one-line confirmation that <code>prototype/index.html</code> was canonical, closes out the chapter.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">3. Scoping the audience and the stance</h4>
+    <p class="meta">Entries 8&ndash;13 &middot; 2026-05-23 &rarr; 06-12 &middot; branches <code>main</code>, <code>prototype</code>, <code>claude/header-cleanup</code> &rarr; <code>feature/compound-lens</code>, <code>feature/prompt-log</code></p>
+    <p>Entry 8 is a no-code design session that re-litigated the core stance and landed a durable rule: real compound names should always be present somewhere, even at low confidence, whether or not the wheel splits notes from taste-alikes. Entry 9 audited the scent library for gaps a quick search would surface (rose, oak-barrel compounds), and is where a guardrail that gets repeated throughout the log first shows up on the record: the tone was drifting too wine-specific and got pulled back.</p>
+    <p>Entry 10 caught <code>main</code> up to <code>prototype</code> via PR #5 (<code class="hash">74bd1ef</code>) and built the ortho/retro 101 explainer, with heavy copy correction along the way. Entry 11 fixed a stubborn wheel-label collision problem through several rounds of pixel-level tuning (<code class="hash">79ebf6b</code>, <code class="hash">c1758c0</code>, <code class="hash">e07e6ab</code>, <code class="hash">c99e00d</code>) &mdash; the kind of iteration invisible in the finished product but that was most of the actual work. Entry 12 shipped compound common-names on hover (<code class="hash">aa326b7</code>) after a real "why does 1,8-Cineole also say eucalyptol?" moment of confusion on the live site, and renamed the Results pane to Compounds. Entry 13 is the session that built the first version of this very log &mdash; auto-extracting 192 prompts from local transcripts into a curated record.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">4. The UX grade, citations, and the Compass</h4>
+    <p class="meta">Entries 15&ndash;18 &middot; 2026-06-09 &rarr; 06-26 &middot; branches <code>claude/thirsty-dijkstra-de159b</code>, <code>claude/compound-library</code>/<code>claude/citation-audit</code>, <code>claude/upbeat-mendel-6ef2f6</code></p>
+    <p>Entry 15 opened by grading the app itself &mdash; usability, discoverability, audience &mdash; before touching any code, then worked the resulting list start to finish: a first-run nudge, a 760px mobile breakpoint, a saturated data palette, label-clipping fixes, and an em-dash/AI-isms copy strip. It shipped as PR #8. Entry 16 pushed hard on citation legitimacy ("are there not citations we can get from within the last decade?"), landing PR #11's fix of eight unverifiable citations plus new SOURCES and SCOPE docs, and added dedicated strawberry/blueberry/blackberry notes after noticing the Note Suggester was flattening real flavor differences into one generic "berry."</p>
+    <p>Entry 17 turned a live Netlify-preview review into a full onboarding pass: a tagline, explicit scope statement, seven example demos, and <code>INFERENCE.md</code>. It also walked back an over-literal "cotton candy" input in favor of staying compound-forward with a parenthetical common-name gloss &mdash; a good early example of the compound-forward stance actually getting enforced against itself. Entry 18, 30 prompts over two days, recovered a compound-library expansion that had gone missing in a stray commit, decoupled full citations from the Go Deeper toggle, built device-motion Jiggle, a five-ring "event horizon" transition, and &mdash; from the user sharing screenshots of an earlier personal prototype &mdash; the Perception Compass, merged via PR #14.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">5. Varietals, taxonomy, and the birth of Tree</h4>
+    <p class="meta">Entries 19&ndash;22 &middot; 2026-06-27 &rarr; 07-01 &middot; branch <code>claude/mobile-ui-pass-3</code></p>
+    <p>Entry 19 opened by modeling the app at Galaxy S10e portrait dimensions "because that's honestly how it will be demoed irl," then built the first Go Deeper varietal-distinction table for citrus, extended to berry and mint &mdash; each backed by a real distinguishing compound where the literature actually supported one. Entry 20 is where the Tree workspace itself was born, from a direct request to put every flavor note on a taxonomy tree as a third viewer alongside Wheel and Map (<code class="hash">fcdd956</code>). The same session also made varietal children independently scoreable rather than locked to their parent's slider, and fixed a precise bug report about Cranberry's compounds not lighting up correctly when scored alone.</p>
+    <p>Entry 21 was one long, open-ended UI brief ("Opus you have such taste above chatgpt, own it") that produced a saturation-as-evidence palette, a reading/dyslexia mode, and a "you might also smell" bouquet readout &mdash; then a self-correction when mobile hadn't gotten the same attention as desktop. Entry 22 spent seven prompts purely on the wheel's float physics, working from the user's own gas-molecules-in-a-balloon metaphor through an overcorrection into "rave mode" and back to a calmer settled state.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">6. Mobile ideas, the honesty policy, and an identity</h4>
+    <p class="meta">Entries 23&ndash;26 &middot; 2026-07-01 &rarr; 07-04 &middot; branch <code>claude/mobile-ui-pass-3</code> &rarr; <code>feature/favicon-polish</code></p>
+    <p>Entries 23 and 24 opened within the same minute with near-identical prompts &mdash; one a deliberately code-free ideas workbench, the other where the actual work landed: touch-reachable explanatory text for users without hover, and the citation honesty policy that still governs <code>UNVERIFIED_REFS</code> today. Entry 25 pushed the Tree further &mdash; a real physics rework with cached "home" positions, a polar layout where angle encodes which notes feed a compound and radius encodes evidence strength, vertical rotation, and family detail pages &mdash; closing with PR #15 merging 48 commits into <code>prototype</code>.</p>
+    <p>Entry 26, 34 prompts, is a genuine identity/branding session: whether to put a legal name on a public repo, working through a privacy tension that ended on "Nolan [Æ]" and the brand name <code>iconic-orion</code>, distinct from the generic "aroma wheel" term since someone already holds a claim on "wine aroma wheel." It also fixed a real mobile bug &mdash; dismissible helper boxes that were impossible to close on a phone.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">7. feature/bloom, and letting ChatGPT into the room</h4>
+    <p class="meta">Entries 27&ndash;34 &middot; 2026-07-04 &rarr; 07-11 &middot; branches <code>feature/bloom</code>, <code>codex/aroma-wheel-responsive-ux-pass</code></p>
+    <p>Entry 27 stated the thesis for <code>feature/bloom</code> directly: quick-use should be just as powerful as Go Deeper, and Go Deeper should "bloom" into extended science rather than gate basic use. That thesis produced the naturalist canopy-to-soil reframing of Go Deeper's transition (<code class="hash">0102cb4</code>, <code class="hash">6d4689a</code>) and a client-side, backend-free shareable tasting-card export. Entry 28 built the map inset for that card's flip layout and made Reading Mode the default state, collapsing a growing settings surface back down on the explicit principle that "too many options" was itself the problem.</p>
+    <p>Entry 29 is where the <code>codex/*</code> containment policy now in <code>CLAUDE.md</code> was set: one branch namespace ChatGPT may touch, motivated by keeping any new model's bugs contained rather than by distrust of its work quality. Entry 30 was the first post-hoc review of ChatGPT's actual output there, formalizing the working agreement. Entries 32&ndash;34 scoped and ran a tightly bounded review of the shareable-card UI specifically, correcting the card's "More stunning" style to drop everything but flavor notes and dominant compounds, and extended Claude's own commit access to the codex branch as a standing rule rather than a one-off. In between, entry 31 closed the meats/eggs/stocks idea that had been queued since entry 20 &mdash; "i dont want to explore meats anymore. i think i want to keep this mostly botanical focused" &mdash; and marked <code>feature/bloom</code> itself as a historical baseline predating the dual-agent era.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">8. Systems thinking: laps, strata, and the GIS turn</h4>
+    <p class="meta">Entries 35&ndash;38 &middot; 2026-07-25 &rarr; 07-26 &middot; branch <code>codex/aroma-wheel-responsive-ux-pass</code></p>
+    <p>Entry 35, 33 prompts, opened as an orientation check on a branch that had drifted, then made a real design correction: Map was demoted from a peer pane in a three-way switcher to its own dedicated button, because a flat tab switch understated the link between the family tree and the chemical analysis. It documented the mobile-first product-design contract (<code class="hash">17c7fdd</code>), shipped Laps &mdash; timestamped tasting snapshots stacking like geological strata &mdash; and Delivery as a third sensory dimension, and kicked off the prompt-log integrity effort that produced entries 14&ndash;37 of this very log, from a direct ask for a "defensible 'here is the human work.'"</p>
+    <p>Entries 36 and 37 are parallel continuation sessions working from a written handoff doc, both largely in an explicit watch-not-touch mode while ChatGPT live-edited the map's data layers. Entry 37 diverges at the end with a concrete design idea relayed from a conversation with ChatGPT: the Tree "might do better if when you zoom to family level it looks more like a wreath." Entry 38, a short same-evening tail, greenlit reading the Tree's family scale as leaves rather than branches &mdash; landing as <code class="hash">060519e</code> and <code class="hash">1a557ee</code>.</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">9. Trusting codex, the conical helix, and Constellation</h4>
+    <p class="meta">Entries 39&ndash;41 &middot; 2026-07-27 &rarr; 08-01 &middot; branch <code>codex/aroma-wheel-responsive-ux-pass</code></p>
+    <p>Entry 39 is short but structurally important: a direct correction of Claude's own caution, overriding the pre-existing extraction/re-implementation gate on <code>codex/*</code> merges after hands-on testing of ChatGPT's newest model. That's the origin of the policy update now recorded in <code>CLAUDE.md</code>. Entry 40 treated codex's prior mobile-visualization work as a running start, landed a purely visual pass on the Tree (<code class="hash">bd00f53</code>), then, after a correction that desktop was still cramped, the conical-helix layout itself (<code class="hash">61d069f</code>).</p>
+    <p>Entry 41 is where Constellation &mdash; Go Deeper's subjective "maker's mind" hemisphere &mdash; got built, largely in the user's own words describing three lenses: chemistry, taxonomy, and world-map geography, as a separate space from the wheel's practical, citation-based mode. It shipped as <code class="hash">482729a</code>, was promoted to a direct header toggle after a "wait, where is it?" correction (<code class="hash">d8dc2a3</code>), and had a real functional bug &mdash; not updating with active tasting notes &mdash; fixed the same session (<code class="hash">f980b88</code>).</p>
+  </div>
+
+  <div class="chapter">
+    <h4 class="chapter-title">10. The merge checkup, the honest voice, and the relationships</h4>
+    <p class="meta">Entries 42&ndash;45 &middot; 2026-08-04 &rarr; 08-15 &middot; branches <code>codex/aroma-wheel-responsive-ux-pass</code> &rarr; <code>codex/tasting-relationship-guidance</code></p>
+    <p>Entry 42, 24 prompts, was a pre-merge usability and language checkup keyed toward the audience Go Deeper is actually for, and included a real structural pivot mid-session: the working branch itself was renamed to reflect a shift toward surfacing relationships between notes rather than just responsive polish. It ungated Map and Tree from behind Go Deeper, built one shared relationship engine behind Wheel and Constellation, and &mdash; from a question about whether banana's aroma compounds reflect modern cultivars or older varieties that no longer exist &mdash; added a "widely-repeated claims" evidence tier distinct from verified sourcing.</p>
+    <p>Entry 43 walked back the citation honesty policy's own copy as counterproductive (more on this in Section 2) and ran a voice pass: no idioms unless the user's own, minimal em dashes, no semicolons, no contractions outside quoted literature. Entry 44 shipped a proportional Venn diagram for compound overlap between notes, born from the user noticing "Strongest: Lychee" under a rose tasting and wanting a shape to reason with rather than a bare percentage &mdash; plus a run of mobile fixes and the always-accessible Enter tasting button, closing with the PR to <code>prototype</code> that became PR #20. Entry 45, a single one-line prompt, promoted that work from <code>prototype</code> to <code>main</code> as PR #21 &mdash; the second time this exact request has been made, after entry 39's PR #19.</p>
+  </div>
+
+  <h2 id="how-ideas-evolved">How ideas evolved</h2>
+  <p>The chapters above show the shape of the project. This section does something narrower: it picks specific ideas that visibly changed over time and traces each one through the actual words that changed it, in order. Every quote below is pulled directly from the prompt log &mdash; either from the curated <a href="docs/prompt-log/README.md">README</a>'s own quoted fragments, or, where noted, verified against the verbatim <a href="docs/prompt-log/raw/">raw transcripts</a>. Dates and entry numbers sit next to each one so the chain can be checked.</p>
+
+  <div class="thread">
+    <h3>"Your perceptions are real, and they change"</h3>
+    <p class="thread-note">The project's core stance, stated once, then tested, then lived out.</p>
+    <div class="timeline">
+      <div class="step">
+        <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
+        <blockquote>"Yes the tone of the entire project is. Your perceptions are real, and they are going to change depending on what exact moment you use the tool. It's gustatory agnostic&hellip;"</blockquote>
+      </div>
+      <div class="connector">The stance is stated flatly, as a direct answer to a question about tone &mdash; and immediately scoped: gustatory-agnostic in principle, but edible-only in practice for now.</div>
+      <div class="step">
+        <div class="when">Entry 8 &middot; 2026-05-23</div>
+        <blockquote>"Let's really think about if this is the right stance? : ('here's the chemistry your perception implies')&hellip;"</blockquote>
+      </div>
+      <div class="connector">Days later, the same idea gets re-litigated rather than assumed &mdash; the stance survives its own stress test, reframed as "here's the chemistry your perception implies" instead of a claim about ground truth.</div>
+      <div class="step">
+        <div class="when">Entry 44 &middot; 2026-08-14</div>
+        <blockquote>"that's kind of neat if I start saying I smell 'lychee' when I'm smelling rose"</blockquote>
+      </div>
+      <div class="connector">Three months later, the abstract stance shows up as a lived reaction to the tool's own output &mdash; scoring a rose tasting and finding "Strongest: Lychee," and treating that as an invitation rather than a correction.</div>
+    </div>
+  </div>
+
+  <div class="thread">
+    <h3>The citation honesty rule</h3>
+    <p class="thread-note">Pushed for, then built as an explicit policy, then rewritten because the policy's own wording undermined it.</p>
+    <div class="timeline">
+      <div class="step">
+        <div class="when">Entry 15 &middot; 2026-06-09 &rarr; 06-11</div>
+        <blockquote>"are there not citations we can get from within the last decade?"</blockquote>
+      </div>
+      <div class="connector">The earliest push is simple: are these sources actually current. That question is what starts the project interrogating its own citations rather than just adding them.</div>
+      <div class="step">
+        <div class="when">Entry 24 &middot; 2026-07-01</div>
+        <blockquote>"i think i also need an honesty policy in here where all citations have a 'under human review' until I personally review them"</blockquote>
+      </div>
+      <div class="connector">That becomes an explicit rule (<code class="hash">50996dd</code>): unverified sources render as under review rather than getting silently trusted. This is still the mechanism behind <code>UNVERIFIED_REFS</code> today.</div>
+      <div class="step">
+        <div class="when">Entry 43 &middot; 2026-08-04 &rarr; 08-05</div>
+        <blockquote>"it makes it sound dishonest and possibly completely false&hellip; just say what criteria was considered for choosing works cited to rely on"</blockquote>
+      </div>
+      <div class="connector">A month later, the underlying practice doesn't change &mdash; but the copy describing it does (<code class="hash">850afa1</code>). The honesty policy had started reading as an admission of doubt instead of a description of a process, and got rewritten to state the actual selection criteria instead.</div>
+    </div>
+  </div>
+
+  <div class="thread">
+    <h3>The mobile-first pivot</h3>
+    <p class="thread-note">From "test it at phone size" to a documented product-design contract.</p>
+    <div class="timeline">
+      <div class="step">
+        <div class="when">Entry 19 &middot; 2026-06-27 &rarr; 06-28</div>
+        <blockquote>"&hellip;because that's honestly how it will be demoed irl"</blockquote>
+      </div>
+      <div class="connector">The Galaxy S10e portrait viewport becomes the working reference size for a very practical reason &mdash; that's the actual demo conditions &mdash; not an abstract accessibility ideal.</div>
+      <div class="step">
+        <div class="when">Entry 21 &middot; 2026-06-29 &rarr; 07-01</div>
+        <blockquote>"argh, mobile ui didn't get the same attention"</blockquote>
+      </div>
+      <div class="connector">A long open-ended desktop UI brief gets self-corrected mid-session once the gap becomes visible &mdash; mobile gets its own matching treatment (natural page scroll, a fixed Tasting Tray) in the same session rather than a later pass.</div>
+      <div class="step">
+        <div class="when">Entry 35 &middot; 2026-07-25 &rarr; 07-26</div>
+        <blockquote>"i know overall i was working on ui design for both desktop and mobile versions and trying to figure out how to clean up the overall transitions between different features&hellip; so that it is more seamless when someone is in the middle of a tasting session&hellip;"</blockquote>
+      </div>
+      <div class="connector">What had been recurring in-session corrections finally gets written down as a standing rule: the mobile-first product-design contract now in <code>CLAUDE.md</code> (<code class="hash">17c7fdd</code>) &mdash; named viewport classes, no critical control may clip, pane ownership belongs to the user.</div>
+    </div>
+  </div>
+
+  <div class="thread">
+    <h3>The Tree's taxonomy: tags to a real tree to a spiral to leaves</h3>
+    <p class="thread-note">The longest-running visual-design thread in the project.</p>
+    <div class="timeline">
+      <div class="step">
+        <div class="when">Entry 20 &middot; 2026-06-28 &rarr; 06-29</div>
+        <blockquote>"can we put all of the flavor notes on a taxonomy tree? this is the third viewer along with wheel and map"</blockquote>
+      </div>
+      <div class="connector">A Phase 1 family-tag layer (added earlier the same session) becomes a full Kingdom&rarr;Order&rarr;Family&rarr;Note dendrogram &mdash; a real phylogenetic depth, not just a label on a note.</div>
+      <div class="step">
+        <div class="when">Entry 37 &middot; 2026-07-26</div>
+        <blockquote>"might do better if when you zoom to family level it looks more like a wreath&hellip; to carry over the circle design of aroma wheel"</blockquote>
+      </div>
+      <div class="connector">A design idea relayed from a conversation with ChatGPT reframes the family level visually, tying the Tree's shape back to the Wheel's.</div>
+      <div class="step">
+        <div class="when">Entry 40 &middot; 2026-07-30</div>
+        <blockquote>"desktop view is still pretty unviewable because its a super side but short interactive&hellip; is there another way to show hierarchy while spiraling?"</blockquote>
+      </div>
+      <div class="connector">A purely visual pass turns out not to use the desktop screen well; naming that problem directly produces the conical-helix layout (<code class="hash">61d069f</code>).</div>
+      <div class="step">
+        <div class="when">Entry 38 &middot; 2026-07-26</div>
+        <blockquote>"yeah maybe it should read as leaves at that point yes you go for it with your ui artistry"</blockquote>
+      </div>
+      <div class="connector">The family scale gets read as leaves rather than branches (<code class="hash">060519e</code>), then as growth rings (<code class="hash">1a557ee</code>) &mdash; the wreath idea from entry 37 finding its literal shape.</div>
+    </div>
+  </div>
+
+  <div class="thread">
+    <h3>ChatGPT and the codex branch: quarantine to trust</h3>
+    <p class="thread-note">From containment to an explicit reversal of Claude's own caution.</p>
+    <div class="timeline">
+      <div class="step">
+        <div class="when">Entry 29 &middot; 2026-07-11</div>
+        <blockquote>"in case any new openai models hopefully will keep whatever bugs or snips inside its own area and we keep most of the repo supported solely by claudel"</blockquote>
+      </div>
+      <div class="connector">The <code>codex/*</code> policy starts as containment, stated plainly as such &mdash; not a judgment about ChatGPT's work quality, a fence around risk.</div>
+      <div class="step">
+        <div class="when">Entry 34 &middot; 2026-07-11</div>
+        <blockquote>"update the rule where you can also update this branch. this is just the only one i want chatgpt touching"</blockquote>
+      </div>
+      <div class="connector">Claude's access to the codex branch, previously a one-off exception, becomes a standing rule &mdash; the fence stays, but it stops being one-directional.</div>
+      <div class="step">
+        <div class="when">Entry 39 &middot; 2026-07-27</div>
+        <blockquote>"that's against the branching rule in CLAUDE.md&hellip; I trust codex to do everything claude can do now that Ive had time to test their newest model. its trustworthy."</blockquote>
+      </div>
+      <div class="connector">The extraction/re-implementation gate &mdash; a rule Claude had cited back defensively &mdash; gets explicitly overridden. <code>codex/*</code> can merge directly into <code>prototype</code>; Claude's review moves from a pre-merge gate to periodic post-hoc review, as it still is today.</div>
+    </div>
+  </div>
+
+  <div class="thread">
+    <h3>Go Deeper's ortho/retro mechanism</h3>
+    <p class="thread-note">From a data-logging toggle to a framing for a whole audience.</p>
+    <div class="timeline">
+      <div class="step">
+        <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
+        <blockquote>"So yes being able to click either ortho (sniff) or retro (swallow) and that option should always be available for the user to flag for themselves. and that can be another visibility toggle in the legend."</blockquote>
+      </div>
+      <div class="connector">Ortho/retro starts as an always-visible flag on every note, sitting in the legend alongside other visibility toggles.</div>
+      <div class="step">
+        <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
+        <blockquote>"ortho nasal is fine behind an advanced frame"</blockquote>
+      </div>
+      <div class="connector">Within the same session, the mechanism gets pulled back behind an advanced frame &mdash; the first move toward what becomes Go Deeper.</div>
+      <div class="step">
+        <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
+        <blockquote>"every taste note on the left pane can have ortho/retro on there and that is what confirms the note's presence on the central wheel and in the analysis. to confirm you need to select ortho(sniff) or retro(Swallow)."</blockquote>
+      </div>
+      <div class="connector">It generalizes further &mdash; from an optional flag to the actual confirmation mechanism for entering a note at all, with a checkmark indicator so a user knows what they've already logged.</div>
+      <div class="step">
+        <div class="when">Entry 42 &middot; 2026-08-06 &rarr; 08-07</div>
+        <blockquote>"im really trying to key into the people that will use go deeper because they are inquisitive and want to go deeper into how these notes relate and how to detect these different compounds by inferring from detecting flavors/aromas with our senses."</blockquote>
+      </div>
+      <div class="connector">Months later, Go Deeper stops being framed as a data-input mechanism at all and gets explicitly redefined around an audience &mdash; people curious about relationships between notes, not just a stricter logging mode. Map and Tree get ungated from behind it the same session.</div>
+    </div>
+  </div>
+
+  <p class="thread-note" style="margin-top: -8px;">Two threads worth naming were considered and dropped. The "no invented distinguishing compound" pattern (<code>noStandoutNote</code>) is real and consistently applied &mdash; but the log only carries one clean verbatim quote for it (entry 19's berry table framing), not enough steps to call an evolution rather than a single decision. The economic-cultivation and cultural-value map layers mentioned in <code>CLAUDE.md</code> are explicitly still unstarted, pending design approval, so there's no mutation to trace yet.</p>
+
+  <h2 id="full-archive">Full archive</h2>
+  <p>Everything above is a synthesis. If you want the unabridged, unstyled version &mdash; the actual record this page was built from &mdash; it lives in the repo as plain markdown. These links render as raw text in a browser, no formatting, because there's no markdown renderer on this static site. That's expected, not a bug.</p>
+  <ul class="links">
+    <li><a href="docs/prompt-log/README.md">The curated prompt log</a><span class="hint">one entry per session, all 45, what was asked and what shipped</span></li>
+    <li><a href="docs/prompt-log/raw/06-remove-sensitive-credentials-from-public-r.md">Raw transcript, entry 6</a><span class="hint">the V2 epic, 86 prompts verbatim &mdash; a representative long session</span></li>
+    <li><a href="docs/prompt-log/raw/44-venn-overlap-and-enter-tasting-button.md">Raw transcript, entry 44</a><span class="hint">the most recent full session, verbatim, no summaries</span></li>
+    <li><a href="docs/prompt-log/raw/">The full raw/ directory</a><span class="hint">all 45 verbatim transcripts</span></li>
+    <li><a href="docs/prompt-log/orchestration/README.md">The orchestration log</a><span class="hint">what Claude asked its own sub-agents to do, kept separate as a different author</span></li>
+    <li><a href="docs/prompt-log/PROVENANCE.md">Provenance notes</a><span class="hint">what's still verifiable, what isn't anymore, and why</span></li>
+  </ul>
+
+  <blockquote>This page, like <a href="process.html">The Human Record</a> it extends, was drafted by Claude at Nolan's request, to be corrected into his own voice. The chapter groupings and connecting sentences are Claude's synthesis; the quotes themselves are not.</blockquote>
+
+  <footer class="page">
+    <p>Part of <a href="index.html">Aroma Wheel</a>, an educational artifact by Nolan [&AElig;] &middot; Portland, OR.</p>
+  </footer>
+</main>
+</body>
+</html>
