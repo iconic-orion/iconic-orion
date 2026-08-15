@@ -3063,6 +3063,18 @@
   #compass-center-notes:disabled { opacity: 1; color: var(--ink-dim); border-color: var(--line);
     cursor: default; }
 
+  /* Position (left/top) is computed in JS by positionMapCompassMinimizeBtn,
+     alongside the dial itself, since the dial's own position is draggable. */
+  #map-bearing-minimize {
+    position: absolute; z-index: 8; width: 22px; height: 22px; padding: 0;
+    border-radius: 50%; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); font-size: 10px; line-height: 1;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  #map-bearing-minimize[hidden] { display: none; }
+  #map-bearing-minimize:hover { border-color: var(--accent-2); color: var(--accent-2); }
+  #map-bearing-minimize:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
   #origins-map-controls {
     position: absolute; bottom: 10px; right: 10px; z-index: 5;
     display: flex; align-items: flex-end; gap: 8px;
@@ -3078,7 +3090,7 @@
      below needs its own bump. */
   #map-bearing-compass {
     position: absolute; left: 16px; bottom: 16px; z-index: 7;
-    width: 284px; padding: 6px 7px 7px;
+    width: 142px; padding: 6px 7px 7px;
     color: var(--ink); background: color-mix(in srgb, var(--panel) 88%, transparent);
     border: 1px solid var(--line); border-radius: 50%;
     cursor: grab; touch-action: none; user-select: none;
@@ -3086,7 +3098,7 @@
   #map-bearing-compass[hidden] { display: none; }
   #map-bearing-compass:active { cursor: grabbing; }
   #map-bearing-compass:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-  #map-bearing-compass svg { display: block; width: 100%; aspect-ratio: 1; overflow: visible; }
+  #map-bearing-compass svg.map-bearing-full { display: block; width: 100%; aspect-ratio: 1; overflow: visible; }
   .map-bearing-ring, .map-bearing-inner {
     fill: none; stroke: var(--line); vector-effect: non-scaling-stroke;
   }
@@ -3109,6 +3121,28 @@
   @media (max-width: 760px) {
     #map-bearing-caption { font-size: 9.5px; }
   }
+  /* Minimized: a plain, unmistakable north-arrow badge parked in a fixed
+     corner -- the spot a map's compass control sits at before you ever touch
+     it, not a shrunken version of the full dial (whose N/E/S/W labels and
+     bearing spokes just turn to noise at icon size). Not draggable; tap to
+     open the full, draggable, positionable dial elsewhere on the map.
+     Bottom-left: the one corner search (top-left), the lens switcher
+     (top-center), reset-view (top-right) and the pan/zoom cluster
+     (bottom-right) all leave alone. */
+  #map-bearing-compass.compass-minimized {
+    position: absolute; left: 10px; top: auto; right: auto; bottom: 10px;
+    width: 40px; height: 40px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; touch-action: manipulation;
+  }
+  svg.map-bearing-mini { display: none; }
+  #map-bearing-compass.compass-minimized svg.map-bearing-full,
+  #map-bearing-compass.compass-minimized #map-bearing-caption { display: none; }
+  #map-bearing-compass.compass-minimized svg.map-bearing-mini { display: block; width: 100%; height: 100%; }
+  .map-bearing-mini-ring { fill: none; stroke: var(--line); }
+  .map-bearing-mini-n-half { fill: var(--accent); }
+  .map-bearing-mini-s-half { fill: var(--ink-dim); }
+  .map-bearing-mini-label { fill: var(--ink-dim); font-size: 8px; font-weight: 700; text-anchor: middle; }
   .omc-pan {
     display: grid; grid-template-columns: 26px 26px 26px; grid-template-rows: 26px 26px 26px;
     gap: 2px;
@@ -4571,9 +4605,17 @@
           <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
         </div>
       </div>
-      <button type="button" id="map-bearing-compass" hidden
-        aria-label="Move the Map bearing compass. Arrow keys reposition it." title="Map bearing compass · drag to move; arrow keys reposition">
-        <svg viewBox="0 0 120 120" role="img" aria-label="Geographic tasting-note bearings from this point">
+      <button type="button" id="map-bearing-compass" class="compass-minimized" hidden
+        aria-label="Show the Map bearing compass" title="Map bearing compass · tap to open">
+        <svg class="map-bearing-mini" viewBox="0 0 40 40" aria-hidden="true">
+          <circle class="map-bearing-mini-ring" cx="20" cy="20" r="17"></circle>
+          <path class="map-bearing-mini-n-half" d="M20 5 L25 20 L20 20 Z"></path>
+          <path class="map-bearing-mini-n-half" d="M20 5 L15 20 L20 20 Z"></path>
+          <path class="map-bearing-mini-s-half" d="M20 35 L25 20 L20 20 Z"></path>
+          <path class="map-bearing-mini-s-half" d="M20 35 L15 20 L20 20 Z"></path>
+          <text class="map-bearing-mini-label" x="20" y="4.5">N</text>
+        </svg>
+        <svg class="map-bearing-full" viewBox="0 0 120 120" role="img" aria-label="Geographic tasting-note bearings from this point">
           <circle class="map-bearing-ring" cx="60" cy="60" r="49"></circle>
           <circle class="map-bearing-inner" cx="60" cy="60" r="30"></circle>
           <line class="map-bearing-cross" x1="60" y1="9" x2="60" y2="111"></line>
@@ -4587,6 +4629,14 @@
         </svg>
         <span id="map-bearing-caption">Add tasting notes to orient the compass</span>
       </button>
+      <!-- A separate control, not a tap-the-dial toggle: the compass is a
+           <button> already handling drag and cannot nest one, and a whole-dial
+           tap-to-minimize surprised more than it helped -- it vanished with no
+           warning mid-drag-adjustment. This sits pinned to the dial's own
+           bottom edge (see positionMapCompassMinimizeBtn) so minimizing is a
+           deliberate, visible action instead of an implicit side effect. -->
+      <button type="button" id="map-bearing-minimize" hidden
+        title="Minimize compass" aria-label="Minimize the Map bearing compass">&#9660;</button>
     </div>
     <aside id="origins-detail-panel" hidden>
       <button type="button" id="origins-detail-close" aria-label="Close">×</button>
@@ -7488,6 +7538,7 @@ const state = {
   geographyLens: "origin",          // "origin" | "production" | "traditions"; only one mark system renders at once
   geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the tasting
   mapCompassPos: null,              // {left,top} in map-wrap CSS pixels; null chooses a responsive default
+  mapCompassMinimized: true,        // Map: bearing compass starts as a small fixed north-arrow badge, expands on tap
   hiddenClasses: new Set(),  // compound-class names hidden via legend
   openCalloutKey: null,      // currently-open edit/delete callout's entry key, if any
   // Wheel organizing principle. "scent": note-group arcs on the ring, compounds
@@ -14533,6 +14584,19 @@ function setMapCompassPosition(left, top) {
   compass.style.left = `${state.mapCompassPos.left}px`;
   compass.style.top = `${state.mapCompassPos.top}px`;
   compass.style.bottom = "auto";
+  positionMapCompassMinimizeBtn();
+}
+
+// Pinned to the dial's own bottom edge, centered horizontally -- follows the
+// dial wherever it's been dragged rather than sitting at a fixed spot on the
+// pane. Sibling element, not a child: the dial is itself a <button> handling
+// drag and cannot nest another interactive control.
+function positionMapCompassMinimizeBtn() {
+  const compass = document.getElementById("map-bearing-compass");
+  const btn = document.getElementById("map-bearing-minimize");
+  if (!compass || !btn || state.mapCompassMinimized) return;
+  btn.style.left = `${compass.offsetLeft + compass.offsetWidth / 2 - btn.offsetWidth / 2}px`;
+  btn.style.top = `${compass.offsetTop + compass.offsetHeight - btn.offsetHeight / 2}px`;
 }
 
 // Grow the compass to the biggest size the map pane can actually hold, capped
@@ -14542,18 +14606,19 @@ function setMapCompassPosition(left, top) {
 // compass's own original 142px. So it sized itself over the panel below rather
 // than fitting. Sizing to the room available means "as large as it can be here"
 // instead of one number that is wrong in one state or the other.
-const COMPASS_MAX_W = 284;   // matches the CSS width; the roomy-screen size
+const COMPASS_MAX_W = 142;   // matches the CSS width; half the original roomy-screen size
 function sizeMapCompass() {
   const wrap = document.getElementById("origins-map-wrap");
   const compass = document.getElementById("map-bearing-compass");
-  if (!wrap || !compass) return;
+  if (!wrap || !compass || state.mapCompassMinimized) return;
   const clearance = isMobileViewport() ? 120 : 66;   // mirrors setMapCompassPosition
   const CHROME = 32;   // caption line + vertical padding, i.e. height beyond the dial
   const room = wrap.clientHeight - clearance - 16 - CHROME;
-  compass.style.width = `${Math.round(Math.max(112, Math.min(COMPASS_MAX_W, room)))}px`;
+  compass.style.width = `${Math.round(Math.max(84, Math.min(COMPASS_MAX_W, room)))}px`;
 }
 
 function ensureMapCompassPosition() {
+  if (state.mapCompassMinimized) return;
   sizeMapCompass();
   const wrap = document.getElementById("origins-map-wrap");
   const compass = document.getElementById("map-bearing-compass");
@@ -14789,10 +14854,23 @@ function centerCompassOnTasting() {
 function renderMapBearingCompass() {
   const compass = document.getElementById("map-bearing-compass");
   const centerBtn = document.getElementById("compass-center-notes");
+  const minimizeBtn = document.getElementById("map-bearing-minimize");
   const active = document.body.classList.contains("origins-mode") && state.geographyLens === "origin";
   compass.hidden = !active;
-  if (centerBtn) centerBtn.hidden = !active;
+  if (centerBtn) centerBtn.hidden = !active || state.mapCompassMinimized;
+  if (minimizeBtn) minimizeBtn.hidden = !active || state.mapCompassMinimized;
+  compass.classList.toggle("compass-minimized", state.mapCompassMinimized);
   if (!active) return;
+  if (state.mapCompassMinimized) {
+    // Inline left/top/bottom/width from a previous expanded, dragged session
+    // would otherwise outrank the minimized CSS rule's fixed corner and size
+    // -- inline style always wins over a class selector regardless of
+    // specificity -- so clear them and let the badge sit where the rule puts it.
+    compass.style.left = compass.style.top = compass.style.bottom = compass.style.width = "";
+    compass.title = "Map bearing compass · tap to open";
+    compass.setAttribute("aria-label", "Show the Map bearing compass");
+    return;
+  }
   ensureMapCompassPosition();
   const anchor = mapCompassGeoAnchor();
   const items = mapCompassTastingItems();
@@ -14850,23 +14928,30 @@ function renderMapBearingCompass() {
   compass.setAttribute("aria-label", items.length
     ? `Move Map bearing compass. ${summary}${items.length > 4 ? `, and ${items.length - 4} more` : ""}. Arrow keys reposition it.`
     : "Move Map bearing compass. Add tasting notes to show their directions. Arrow keys reposition it.");
+  compass.title = "Map bearing compass · drag to move, tap to minimize; arrow keys reposition";
 }
 
+// Tap toggles minimized <-> expanded; drag (expanded only) repositions the
+// dial. Both live on the same element, so a "moved" flag is what tells a
+// real drag apart from a tap that happens to fire on pointerup -- the same
+// distinction the compounds drawer and the Origins map's own drag already
+// make, just applied to expand/collapse instead of resize/pan.
 function setupMapBearingCompass() {
   const compass = document.getElementById("map-bearing-compass");
   const wrap = document.getElementById("origins-map-wrap");
-  let dragging = false, offsetX = 0, offsetY = 0;
+  let dragging = false, moved = false, offsetX = 0, offsetY = 0;
   compass.addEventListener("pointerdown", e => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || state.mapCompassMinimized) return;
     e.preventDefault();
     e.stopPropagation();
-    dragging = true;
+    dragging = true; moved = false;
     const rect = compass.getBoundingClientRect();
     offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
     compass.setPointerCapture(e.pointerId);
   });
   compass.addEventListener("pointermove", e => {
     if (!dragging) return;
+    moved = true;
     const rect = wrap.getBoundingClientRect();
     setMapCompassPosition(e.clientX - rect.left - offsetX, e.clientY - rect.top - offsetY);
     renderMapBearingCompass();
@@ -14878,7 +14963,20 @@ function setupMapBearingCompass() {
   };
   compass.addEventListener("pointerup", stop);
   compass.addEventListener("pointercancel", stop);
+  // Tapping the minimized badge expands it. Tapping the EXPANDED dial does
+  // nothing by itself anymore -- it used to also minimize, and minimizing
+  // was one accidental tap away with no warning, easy to trigger while just
+  // trying to nudge the dial. Minimizing now only happens through the
+  // explicit button pinned to the dial's own bottom edge.
+  compass.addEventListener("click", () => {
+    if (moved) return;   // that click ended a drag, not a tap
+    if (!state.mapCompassMinimized) return;
+    state.mapCompassMinimized = false;
+    renderMapBearingCompass();
+    compass.focus();
+  });
   compass.addEventListener("keydown", e => {
+    if (state.mapCompassMinimized) return;
     const delta = e.shiftKey ? 32 : 12;
     const move = {
       ArrowLeft: [-delta, 0], ArrowRight: [delta, 0],
@@ -14888,6 +14986,11 @@ function setupMapBearingCompass() {
     e.preventDefault();
     ensureMapCompassPosition();
     setMapCompassPosition(state.mapCompassPos.left + move[0], state.mapCompassPos.top + move[1]);
+    renderMapBearingCompass();
+  });
+  const minimizeBtn = document.getElementById("map-bearing-minimize");
+  minimizeBtn.addEventListener("click", () => {
+    state.mapCompassMinimized = true;
     renderMapBearingCompass();
   });
 }
