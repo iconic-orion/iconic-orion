@@ -13001,13 +13001,27 @@ function cxVennSvg(aId, bId) {
   const uniqueADots = uniqueDots(uniqueA, cxA - d * 0.18 - rA * 0.22, rA, a.label);
   const uniqueBDots = uniqueDots(uniqueB, cxB + d * 0.18 + rB * 0.22, rB, b.label);
   const labelY = cy + Math.max(rA, rB) + 13;
-  return `<svg class="cx-venn" viewBox="0 0 180 ${Math.ceil(labelY + 10)}" role="img"
+  // At high overlap the circles (and so their centers, cxA/cxB) sit close
+  // enough that two side-by-side, center-anchored labels print on top of
+  // each other rather than next to each other -- exactly the pairs the
+  // diagram is built to spotlight, so this isn't a rare edge case. Below a
+  // width estimate for the two labels combined, stack them as two lines
+  // under the shared midpoint instead of fighting for the same x position.
+  const estLabelW = s => 6 + s.length * 4.3;
+  const stackLabels = d < (estLabelW(a.label) + estLabelW(b.label)) / 2 + 6;
+  const lineGap = 10.5;
+  const labelsHtml = stackLabels
+    ? `<text class="cx-venn-label" x="${midX}" y="${labelY}" text-anchor="middle">${cxEsc(a.label)}</text>
+       <text class="cx-venn-label" x="${midX}" y="${labelY + lineGap}" text-anchor="middle">${cxEsc(b.label)}</text>`
+    : `<text class="cx-venn-label" x="${cxA.toFixed(1)}" y="${labelY}" text-anchor="middle">${cxEsc(a.label)}</text>
+       <text class="cx-venn-label" x="${cxB.toFixed(1)}" y="${labelY}" text-anchor="middle">${cxEsc(b.label)}</text>`;
+  const viewH = Math.ceil(labelY + 10 + (stackLabels ? lineGap : 0));
+  return `<svg class="cx-venn" viewBox="0 0 180 ${viewH}" role="img"
       aria-label="${cxEsc(a.label)} and ${cxEsc(b.label)}: ${Math.round(t * 100)} percent weighted overlap, ${data.shared.length} shared compounds, ${uniqueA.length} unique to ${a.label}, ${uniqueB.length} unique to ${b.label}">
     <circle class="cx-venn-circle" cx="${cxA.toFixed(1)}" cy="${cy}" r="${rA.toFixed(1)}" fill="var(--grp-${a.group})"/>
     <circle class="cx-venn-circle" cx="${cxB.toFixed(1)}" cy="${cy}" r="${rB.toFixed(1)}" fill="var(--grp-${b.group})"/>
     ${uniqueADots}${sharedDots}${uniqueBDots}
-    <text class="cx-venn-label" x="${cxA.toFixed(1)}" y="${labelY}" text-anchor="middle">${cxEsc(a.label)}</text>
-    <text class="cx-venn-label" x="${cxB.toFixed(1)}" y="${labelY}" text-anchor="middle">${cxEsc(b.label)}</text>
+    ${labelsHtml}
   </svg>`;
 }
 function cxVennBlockHtml(aId, bId, size) {
