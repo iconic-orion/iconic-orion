@@ -1287,6 +1287,20 @@
   .cx-note-overlap-row .cx-overlap-track { height: 5px; margin-top: 6px; }
   .cx-note-overlap-compounds { display: block; margin-top: 6px; color: var(--ink-dim);
     font-size: 9.5px; line-height: 1.35; }
+  /* The Venn: circle size = each note's own compound signature, distance
+     between centers = how much of it this pair shares. Semi-transparent fills
+     so the actual overlap zone reads as a blended third color where the two
+     circles cross, with no clip-path math required for that part. */
+  .cx-venn-wrap { margin: 4px 0 10px; padding: 8px 4px 6px; border: 1px solid var(--line);
+    border-radius: 8px; background: #111914; text-align: center; }
+  .cx-venn { display: block; width: 100%; max-width: 260px; margin: 0 auto; }
+  .cx-venn-circle { fill-opacity: .5; stroke-width: 1; stroke-opacity: .8; stroke: var(--ink-dim); }
+  .cx-venn-dot { fill: var(--ink-dim); stroke: var(--bg); stroke-width: .6; }
+  .cx-venn-dot-shared { fill: var(--accent); }
+  .cx-venn-label { fill: var(--ink-dim); font-size: 8.5px; letter-spacing: .02em; }
+  .cx-venn-wrap figcaption { margin-top: 4px; color: var(--ink-dim); font-size: 9.5px; line-height: 1.35; }
+  .cx-venn-sm { padding: 6px 4px 5px; }
+  .cx-venn-sm .cx-venn { max-width: 200px; }
   .cx-grp-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim);
     text-transform: uppercase; letter-spacing: .05em; }
   .cx-grp-dot { width: 9px; height: 9px; border-radius: 50%; }
@@ -12856,15 +12870,12 @@ function cxRenderOverlapGraph() {
   };
   const tastingPairHtml = ({ a, b, data }) => {
     const percent = Math.round(data.score * 100);
-    const shared = data.shared.slice(0, 4).map(item => item.cpd.label).join(" · ");
     return `<article class="cx-overlap-row cx-tasting-pair">
       <span class="cx-overlap-row-top">
         <span class="cx-overlap-name">${noteIcon(a)} ${a.label} ↔ ${noteIcon(b)} ${b.label}</span>
         <span class="cx-overlap-links">${percent}%</span>
       </span>
-      <span class="cx-overlap-track" aria-hidden="true"><span class="cx-overlap-fill"
-        style="width:${percent}%;background:linear-gradient(90deg,var(--grp-${a.group}),var(--grp-${b.group}))"></span></span>
-      <span class="cx-overlap-best">${data.shared.length} shared: ${shared}</span>
+      ${cxVennBlockHtml(a.id, b.id, "sm")}
       <span class="cx-tasting-pair-actions">
         <button type="button" data-cx-overlap-note="${a.id}">Open ${a.label}</button>
         <button type="button" data-cx-overlap-note="${b.id}">Open ${b.label}</button>
@@ -12931,6 +12942,79 @@ function cxNoteOverlapMatches(noteId) {
       || a.note.label.localeCompare(b.note.label));
 }
 
+function cxEsc(s) { return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+
+// A proportional two-circle Euler diagram for a note pair, built for the
+// exact question "strongest: X% -- what does that actually mean." Circle
+// size reflects each note's own total compound signature (all of its edges,
+// not just the shared ones); the distance between centers reflects how much
+// of that signature this pair actually shares (taxonomyComparisonData's
+// weighted-Jaccard score). Heavy real overlap reads as two circles nearly
+// fused into one; a mostly-distinct pair reads as two circles pulled apart to
+// a single touching point. The center distance is a smooth interpolation
+// from "just touching" to "concentric" driven by score, not a solve for exact
+// set-theoretic lens area -- position carries the score, not literal area --
+// but every dot placed on it is a real, sourced compound edge, not decoration.
+function cxVennSvg(aId, bId) {
+  const a = cxNoteById[aId], b = cxNoteById[bId];
+  if (!a || !b) return "";
+  const data = taxonomyComparisonData(aId, bId);
+  const totalA = Array.from(data.aEdges.values()).reduce((s, e) => s + e.w, 0);
+  const totalB = Array.from(data.bEdges.values()).reduce((s, e) => s + e.w, 0);
+  const maxT = Math.max(totalA, totalB, 0.5);
+  const rA = 16 + 22 * Math.sqrt(totalA / maxT);
+  const rB = 16 + 22 * Math.sqrt(totalB / maxT);
+  const t = Math.max(0, Math.min(1, data.score));
+  const d = (rA + rB) * (1 - t) + Math.abs(rA - rB) * t;
+  const cy = 46, midX = 90;
+  const cxA = midX - d / 2, cxB = midX + d / 2;
+  const sharedIds = new Set(data.shared.map(item => item.cpd.id));
+  const uniqueA = Array.from(data.aEdges.entries()).filter(([id]) => !sharedIds.has(id))
+    .map(([, e]) => ({ cpd: CPD_BY_ID[e.cpd], w: e.w })).sort((x, y) => y.w - x.w);
+  const uniqueB = Array.from(data.bEdges.entries()).filter(([id]) => !sharedIds.has(id))
+    .map(([, e]) => ({ cpd: CPD_BY_ID[e.cpd], w: e.w })).sort((x, y) => y.w - x.w);
+  const dotR = w => 2 + 2.6 * Math.min(1, w);
+  // Deterministic spiral spread so a cluster of dots reads as a cluster
+  // instead of stacking in a straight overlapping line.
+  const spot = (i, n, spanX, spanY, seedX, seedY) => {
+    const ang = (i / Math.max(1, n)) * Math.PI * 2 + i * 0.75;
+    const k = 0.35 + 0.55 * ((i % 3) / 2);
+    return { x: seedX + Math.cos(ang) * spanX * k, y: seedY + Math.sin(ang) * spanY * k };
+  };
+  const sharedDots = data.shared.slice(0, 8).map((item, i) => {
+    const p = spot(i, Math.min(8, data.shared.length), 9, 11, midX, cy);
+    return `<circle class="cx-venn-dot cx-venn-dot-shared" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR(item.strength).toFixed(1)}"><title>${cxEsc(item.cpd.label)} — shared, ${Math.round(item.strength * 100)}% strength</title></circle>`;
+  }).join("");
+  const uniqueDots = (list, seedX, r, ownerLabel) => list.slice(0, 6).map((item, i) => {
+    const p = spot(i, Math.min(6, list.length), r * 0.45, r * 0.55, seedX, cy);
+    return `<circle class="cx-venn-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR(item.w).toFixed(1)}"><title>${cxEsc(item.cpd.label)} — only in ${cxEsc(ownerLabel)}</title></circle>`;
+  }).join("");
+  const uniqueADots = uniqueDots(uniqueA, cxA - d * 0.18 - rA * 0.22, rA, a.label);
+  const uniqueBDots = uniqueDots(uniqueB, cxB + d * 0.18 + rB * 0.22, rB, b.label);
+  const labelY = cy + Math.max(rA, rB) + 13;
+  return `<svg class="cx-venn" viewBox="0 0 180 ${Math.ceil(labelY + 10)}" role="img"
+      aria-label="${cxEsc(a.label)} and ${cxEsc(b.label)}: ${Math.round(t * 100)} percent weighted overlap, ${data.shared.length} shared compounds, ${uniqueA.length} unique to ${a.label}, ${uniqueB.length} unique to ${b.label}">
+    <circle class="cx-venn-circle" cx="${cxA.toFixed(1)}" cy="${cy}" r="${rA.toFixed(1)}" fill="var(--grp-${a.group})"/>
+    <circle class="cx-venn-circle" cx="${cxB.toFixed(1)}" cy="${cy}" r="${rB.toFixed(1)}" fill="var(--grp-${b.group})"/>
+    ${uniqueADots}${sharedDots}${uniqueBDots}
+    <text class="cx-venn-label" x="${cxA.toFixed(1)}" y="${labelY}" text-anchor="middle">${cxEsc(a.label)}</text>
+    <text class="cx-venn-label" x="${cxB.toFixed(1)}" y="${labelY}" text-anchor="middle">${cxEsc(b.label)}</text>
+  </svg>`;
+}
+function cxVennBlockHtml(aId, bId, size) {
+  const a = cxNoteById[aId], b = cxNoteById[bId];
+  if (!a || !b) return "";
+  const data = taxonomyComparisonData(aId, bId);
+  const sharedIds = new Set(data.shared.map(item => item.cpd.id));
+  const uniqueACount = Array.from(data.aEdges.keys()).filter(id => !sharedIds.has(id)).length;
+  const uniqueBCount = Array.from(data.bEdges.keys()).filter(id => !sharedIds.has(id)).length;
+  return `<figure class="cx-venn-wrap${size === "sm" ? " cx-venn-sm" : ""}">
+    ${cxVennSvg(aId, bId)}
+    <figcaption>${Math.round(Math.max(0, Math.min(1, data.score)) * 100)}% weighted overlap · ${data.shared.length} shared ·
+      ${uniqueACount} only in ${cxEsc(a.label)} · ${uniqueBCount} only in ${cxEsc(b.label)}</figcaption>
+  </figure>`;
+}
+
 function cxNoteOverlapHtml(noteId) {
   const matches = cxNoteOverlapMatches(noteId);
   if (!matches.length) return `<section class="cx-note-overlaps">
@@ -12953,6 +13037,10 @@ function cxNoteOverlapHtml(noteId) {
   }).join("");
   return `<section class="cx-note-overlaps">
     <h4>Overlaps with ${matches.length} note${matches.length === 1 ? "" : "s"}</h4>
+    <p>Closest match: ${matches[0].note.label}. Circle size is each note's own compound signature; how close the
+      circles sit is how much of that signature this pair actually shares. Not a claim that one note is what the
+      other "really" is -- the dots outside the overlap are just as real as the ones inside it.</p>
+    ${cxVennBlockHtml(noteId, matches[0].note.id)}
     <p>Ranked by weighted overlap in this model. Every current match is shown; the compound names are the literature-linked crossover to investigate with your senses.</p>
     <div class="cx-note-overlap-list">${rows}</div>
   </section>`;
