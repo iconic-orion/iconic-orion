@@ -4398,7 +4398,7 @@
       <button type="button" class="nudge-demo" data-demo="marinara">Marinara</button>
       <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
-    <div class="nudge-sub">Your notes surface literature-linked compound clues. Works with coffee, tea, wine, beer, botanicals, and food. Sensory exploration only—not medical advice.</div>
+    <div class="nudge-sub">Your notes surface literature-linked compound clues. Works with coffee, tea, wine, beer, botanicals, and food. Sensory exploration only. Not medical advice.</div>
   </div>
   <!-- Persistent, tap-expandable context caption (see .wheel-hint CSS). Always
        says what the wheel is showing and updates with the Organize mode, so the
@@ -11100,7 +11100,7 @@ function renderAnalysisGrid() {
   const topByConf = byConfidence.slice(0, 6);
   const byIntensity = allActive.slice().sort((a, b) => b.intensity - a.intensity);
 
-  const disclaimerLine = `<div class="results-disclaimer"><strong>Not medical advice.</strong> Sensory suggestions only—not chemical analysis. Never use this tool to judge allergies, toxicity, food safety, exposure, diagnosis, or treatment. <button type="button" class="inline-link" data-open-info="about">Read the safety boundary →</button></div>`;
+  const disclaimerLine = `<div class="results-disclaimer"><strong>Sensory exploration only. Not medical advice.</strong> Not chemical analysis. Never use this tool to judge allergies, toxicity, food safety, exposure, diagnosis, or treatment. <button type="button" class="inline-link" data-open-info="about">Read the safety boundary →</button></div>`;
 
   // Empty state — nothing logged yet. Still render a browseable list of every
   // compound in the library so users can click into them on their own without
@@ -20529,7 +20529,7 @@ updateTaxonomyLayerSummary();
     function appendFooter() {
       svg.appendChild(sEl("line", { x1: PAD, y1: footerTop, x2: W - PAD, y2: footerTop, stroke: "#26242b", "stroke-width": 1 }));
       svg.appendChild(sEl("text", { x: PAD, y: footerTop + 40, fill: "#d8a657", "font-size": 24, "font-weight": 700, "font-family": SANS }, "aromawheel.net"));
-      svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Sensory exploration only · not chemical analysis or medical advice."));
+      svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Sensory exploration only. Not medical advice."));
     }
 
     // Title
