@@ -14,6 +14,11 @@ Line numbers regenerated **2026-08-07** against commit `a6bdf5e`.
 
 ## Status
 
+**2026-08-14: items 1-3 closed.** See the "Claude follow-up: merge-checkup items closed +
+mobile polish pass" entry in `.claude/codex-handoff.md` for full detail, plus a batch of
+mobile-polish fixes found via live user testing along the way (Venn overlap diagram, compounds
+drawer scroll bug, Map compass resize, Enter-tasting button). Items 4 and 5 below remain open.
+
 Four commits have landed against this plan.
 
 | Commit | What |
@@ -89,7 +94,7 @@ failed probe will look like a live one. Open a fresh tab to be sure.
 
 ## Remaining work, in priority order
 
-### 1. Constellation's lenses link out to the tools — ⚠️ not built
+### 1. Constellation's lenses link out to the tools — ✅ DONE (2026-08-14)
 
 Decision 4 above. Each lens should hand off to the tool that does it properly. The routing helpers
 already exist and are used by the relationship rows: `runRelationshipRoute` (near
@@ -100,13 +105,13 @@ Embodied is the interesting one. `cxLegendFor` already states that its X axis re
 tags from your actual tasting"* — the exact data the Go Deeper commit buttons produce. Pointing it
 at the phase-tagging input closes a loop that already exists in the code and is simply not drawn.
 
-### 2. Go Deeper still explains nothing — ⚠️ CLAIMED
+### 2. Go Deeper still explains nothing — ✅ DONE (2026-08-14)
 
 `openDepthCard` is never called from the toggle. Pressing Go Deeper now plays the warp and sets the
 mode, and that is all. Proposal: call `openDepthCard(1)` once on the first off→on flip, gated on
 `state.dismissedHelpers`. Handler is at the foot of the warp block, `setGoDeeper` **12728**.
 
-### 3. The sixth depth has no entry point — ⚠️ CLAIMED
+### 3. The sixth depth has no entry point — ✅ DONE (2026-08-14, as the vine's Asteraceae bloom)
 
 `DEPTH_STORIES` (**11824**) has six entries. `#deeper-vines` (**4056**) has five
 `.vine-leaf[data-depth]` elements, and its `aria-label` says "Five depths". The sixth is the one

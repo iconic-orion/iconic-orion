@@ -1,5 +1,68 @@
 # Codex branch check-in
 
+## Claude follow-up: merge-checkup items closed + mobile polish pass (2026-08-14)
+
+Worked most of the way through `.claude/merge-checkup-plan.md`'s remaining-work list, plus
+several rounds of live user feedback on the running preview. All items verified in-browser
+(console clean on a fresh tab, not just code review) before commit.
+
+- **Constellation lens routing** (checkup item 1): each of the four lenses now hands off to
+  the tool that reads that dimension for real -- Chemistry to the Wheel's chemistry organize
+  mode, Taxonomy to the Tree (carrying the selected note's focus), Geography to the Map
+  (carrying the selected note's origin pin), Embodied to the delivery strip and phase-tagging
+  controls. New `cxOpenToolBtn` / `cxOpenToolAction`. Fixed a real layout bug found along the
+  way: the handoff button's centered-on-viewport math overlapped the legend plate at 360px
+  under Embodied's longer label; replaced three independently-absolute-positioned elements
+  with a real flex row (`cx-stage-controls`).
+- **Taxonomy trace, on user feedback**: "Trace X on Taxonomy" previously only dimmed
+  non-carrier notes with nothing showing why. `cxLayoutTaxonomy` now captures each note's
+  actual Kingdom/Order/Family ring waypoints and `cxDrawTraceBolts` draws a lit, glowing path
+  along them per carrier, one color per distinct lineage -- a convergent compound now visibly
+  shows several bolts arriving independently.
+- **Go Deeper explains itself** (checkup item 2): `setGoDeeper` opens the first depth story on
+  the first off-on flip each session, gated on `state.dismissedHelpers` so it fires once.
+- **Sixth depth has an entry point** (checkup item 3): the vine's tip now blooms into an
+  Asteraceae flower for depth 6 (Constellation) instead of a plain bud -- playing out the
+  aster/star/constellation pun as the vine's climax. Idle ray-spin, reduced-motion guarded.
+- **Aroma overlap Venn**, on user feedback: "Strongest: X%" read like a claim that one note is
+  what another "really" is. New `cxVennSvg`/`cxVennBlockHtml` draw a real two-circle Euler
+  diagram instead -- circle size is each note's own compound signature, center distance
+  interpolates from just-touching to concentric driven by the pair's actual weighted-Jaccard
+  score, every dot is a real sourced edge. Verified against the dataset's actual extremes
+  (7% almost-touching, 100% fully concentric). Follow-up fix: labels stack vertically instead
+  of printing on top of each other when the circles converge (Oats/Pecan at 100% was the
+  worst case).
+- **Compounds drawer scroll bug**: a pre-drawer-conversion rule
+  (`body:not(.origins-mode):not(.taxonomy-mode) aside.detail { overflow: visible }`) had two
+  `:not()` clauses versus the drawer's one, so it silently won the `overflow` property back
+  every time -- the drawer had a fixed height and no scrollport. Not an emulation artifact;
+  would have been broken on a real phone too. Fixed by matching specificity.
+- **Map bearing compass, two rounds of user feedback**: halved from a fixed 284px dial to
+  142px, and it now starts as a small 40px north-arrow badge in the map's one free corner
+  (bottom-left) instead of the full draggable dial. Second round: tapping the expanded dial
+  used to also re-minimize it, which could vanish it with no warning mid-drag-adjustment --
+  replaced with an explicit minimize button pinned to the dial's own bottom edge.
+- **Enter tasting button**: Wheel with the Notes panel is the only surface that can actually
+  add or edit a tasting; Map and Tree hide it outright and the only way back was the workspace
+  switch (buried in the ☰ tray on mobile). New always-on-top `#enter-tasting-btn`, visible
+  whenever the Notes panel isn't on screen, hidden/repositioned around the Tree's own mobile
+  detail sheet so the two don't collide.
+- **Disclaimer copy**: "Sensory exploration only. Not medical advice." had drifted into three
+  different phrasings across the nudge, results disclaimer, and shared-card export.
+  Standardized the wording and gave it its own line in both HTML contexts.
+- Also closed a branch-wide stale-code sweep (6 dead CSS/state leftovers from superseded
+  features) unrelated to the checkup plan but found while auditing this area.
+
+**Not done this pass, still open**: checkup item 4 (compare panel follow-ons -- dead Climate
+card, Escape-focus-restore-focus bug, unrouted layer cards) and item 5 (canonical vocabulary
+sweep, deliberately deferred per the plan's own note not to combine it with feature work).
+
+**Verified before this check-in**: fresh-tab console clean; the checkup plan's data-integrity
+and relationship-engine probes all pass (127/94/262/83/9, all four relationship shapes fire,
+zero broken Tree paths); Wheel, Map, Tree, and Constellation all load and switch cleanly at
+360 × 760 with zero console errors, tested by dispatching real state transitions, not just
+visual inspection.
+
 ## Codex follow-up: Go Deeper Wheel-to-HUD morph + compound gravity (2026-08-05)
 
 - Go Deeper's existing canopy-to-soil descent now hands off to the actual workspace
