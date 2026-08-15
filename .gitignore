@@ -30,3 +30,10 @@ $RECYCLE.BIN/
 *.log
 tmp/
 temp/
+
+# Ideas/ is a SEPARATE PROJECT with its own git repository (Glacier Line).
+# It lives inside this folder only for convenience. Ignoring it here keeps the
+# two histories completely independent and stops `git add .` from staging it as
+# a stray gitlink. Do not commit it to the Aroma Wheel repo — commit inside
+# Ideas/ instead, where it has its own history.
+Ideas/

@@ -34,7 +34,10 @@ List by impact, not by file:
 
 What did you test? How did you verify it works?
 
-- Opened mobile view (375x812)
+- Opened each applicable named viewport class, including compact-phone 360 × 760
+- Checked the compact HUD for no overlap, clipping, or unreachable controls
+- For Tree changes: checked the detail sheet's drag/snap/minimize behavior without
+  losing tree selection or pan/zoom context
 - Tested [feature X] on [device/viewport]
 - Checked console for errors
 - ...
@@ -60,6 +63,14 @@ What should be done next on this branch?
 - Polish the origins-map label opacity on mobile (currently fades too aggressively)
 - Explore responsive tree search/controls layout
 - ...
+
+## Mobile-first design contract check
+
+- Is the phone interaction the designed default, with desktop only adding room?
+- Which named viewport classes were inspected, and which remain unverified?
+- Does the Tree still read as a connected hierarchy with family-level meaning, rather
+  than a diagram that requires horizontal scrolling to decipher?
+- If detail is open on a phone, can the user resize or minimize it immediately?
 
 ---
 
