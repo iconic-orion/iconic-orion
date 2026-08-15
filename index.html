@@ -1048,12 +1048,27 @@
 
   #deeper-vines .vine-leaf { cursor: pointer; pointer-events: all; outline: none; }
   #deeper-vines .vine-leaf-hit { fill: transparent; pointer-events: all; }
-  #deeper-vines .vine-leaf path { transition: filter .2s ease, stroke .2s ease, transform .2s ease; }
+  #deeper-vines .vine-leaf path,
+  #deeper-vines .vine-leaf ellipse:not(.vine-leaf-hit),
+  #deeper-vines .vine-leaf circle:not(.vine-leaf-hit) { transition: filter .2s ease, stroke .2s ease, transform .2s ease; }
   #deeper-vines .vine-leaf:hover path,
   #deeper-vines .vine-leaf:focus-visible path,
-  #deeper-vines .vine-leaf.active path { stroke: #d9c487; stroke-width: 1.2px;
+  #deeper-vines .vine-leaf.active path,
+  #deeper-vines .vine-leaf:hover ellipse:not(.vine-leaf-hit),
+  #deeper-vines .vine-leaf:focus-visible ellipse:not(.vine-leaf-hit),
+  #deeper-vines .vine-leaf.active ellipse:not(.vine-leaf-hit),
+  #deeper-vines .vine-leaf:hover circle:not(.vine-leaf-hit),
+  #deeper-vines .vine-leaf:focus-visible circle:not(.vine-leaf-hit),
+  #deeper-vines .vine-leaf.active circle:not(.vine-leaf-hit) { stroke: #d9c487; stroke-width: 1.2px;
     filter: drop-shadow(0 0 5px rgba(217,196,135,.9)) drop-shadow(0 0 12px rgba(127,194,117,.55));
     transform: scale(1.08); }
+  /* Bloom's ray petals spin slowly around the disc -- a constellation of its
+     own, and the one animated flourish that reads at rest (not just on hover),
+     since it's the tip the whole vine has been building to. */
+  #deeper-vines .vine-bloom-rays { transform-box: fill-box; transform-origin: center;
+    animation: vine-bloom-spin 18s linear infinite; }
+  @keyframes vine-bloom-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #deeper-vines .vine-bloom-rays { animation: none; } }
 
   /* Opaque plate, not a frosted one: the background gradient was already
      ~90% opaque, so the backdrop-filter blur it carried was doing almost no
@@ -1163,7 +1178,16 @@
     opacity: 0; transition: opacity .12s ease; z-index: 5; }
   .cx-floating-label.show { opacity: 1; }
   .cx-floating-label .cx-fl-group { color: var(--ink-dim); font-size: 10.5px; margin-left: 5px; }
-  .cx-legend-plate { position: absolute; left: 14px; bottom: 12px; max-width: 320px;
+  /* The legend, the per-lens "open in tool" handoff, and zoom controls used to
+     each be independently absolute-positioned (legend left, zoom right, handoff
+     centered on the viewport). At 360px with the Embodied lens's longer label
+     that centered-on-viewport math overlapped the legend, since the free gap
+     between legend and zoom isn't centered on the viewport itself. A shared flex
+     row, anchored once, lets all three negotiate the same space instead of each
+     guessing at it — and wraps rather than collides if a label ever runs long. */
+  .cx-stage-controls { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 5;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .cx-legend-plate { max-width: 320px; flex: 0 1 auto; min-width: 0;
     background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
   .cx-legend-plate summary { cursor: pointer; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--accent-2); list-style: none; display: flex; align-items: center; gap: 6px; }
@@ -1175,10 +1199,23 @@
   .cx-legend-toggle-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
   .cx-legend-toggle-row input { accent-color: var(--accent); }
 
+  /* Each lens hands off to the tool that reads it properly (decision: Chemistry
+     to the Wheel's chemistry organize mode, Taxonomy to the Tree, Geography to
+     the Map, Embodied to delivery/phase controls). */
+  .cx-open-tool-btn { flex: 1 1 auto; min-width: 0; order: 2;
+    background: var(--accent); color: var(--bg); border: none; border-radius: 999px;
+    padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer;
+    white-space: normal; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .cx-open-tool-btn:hover { filter: brightness(1.08); }
+  .cx-open-tool-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (max-width: 760px) {
+    .cx-open-tool-btn { padding: 7px 13px; font-size: 11px; }
+  }
+
   /* Pan/zoom over the stage's fixed 900x680 coordinate space, the same
      viewBox-window technique the Origins map uses (see zoomMapAt()) — so
      stars can be studied up close the same way map markers can. */
-  .cx-zoom-controls { position: absolute; right: 14px; bottom: 12px; z-index: 4; }
+  .cx-zoom-controls { order: 3; flex: 0 0 auto; }
   .cx-zoom-controls button { width: 30px; height: 30px; border-radius: 4px; font-size: 15px; font-weight: 600;
     background: var(--panel); color: var(--ink); border: 1px solid var(--line); cursor: pointer; }
   .cx-zoom-controls button:last-child { font-size: 13px; }
@@ -1286,6 +1323,15 @@
   .cx-chrome-label { fill: var(--ink-dim); font-size: 9.5px; letter-spacing: .04em; }
   .cx-chrome-label.strong { fill: var(--ink); font-size: 10.5px; }
   .cx-edge-line { stroke: var(--accent-2); fill: none; }
+  /* The traced lineage bolt for "Trace X on Taxonomy" -- a lit path through the
+     ring waypoints a compound's carriers actually share, ending at each one.
+     Drawn into the chrome layer (see cxDrawTraceBolts), so it fades in/out with
+     the same crossfade the rest of the chrome already uses. */
+  .cx-trace-bolt { stroke-width: 2px; opacity: .85; stroke-linejoin: round; stroke-linecap: round;
+    filter: drop-shadow(0 0 3px currentColor); animation: cx-bolt-pulse 2.2s ease-in-out infinite; }
+  .cx-trace-spark { stroke-width: 1.6px; fill: none; opacity: .9; }
+  @keyframes cx-bolt-pulse { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .cx-trace-bolt { animation: none; opacity: .85; } }
   .cx-star { cursor: pointer; }
   .cx-star-ring-focus { fill: none; stroke: var(--accent-2); stroke-width: 1.4; opacity: 0; pointer-events: none; }
   .cx-star:focus-visible + .cx-star-ring-focus { opacity: .9; }
@@ -1333,6 +1379,7 @@
     .vine-leaf-3 { animation-delay: 700ms; }
     .vine-leaf-4 { animation-delay: 880ms; }
     .vine-leaf-5 { animation-delay: 1020ms; }
+    .vine-leaf-6 { animation-delay: 1160ms; }
     body.go-deeper #deeper-vines .vine-bud,
     body.taxonomy-mode #tree-vines .vine-bud { animation: vine-bud-in 460ms cubic-bezier(0.34,1.5,0.6,1) 1140ms both; }
     body.taxonomy-mode #tree-vines .vine-fiddlehead-up {
@@ -4191,9 +4238,9 @@
     </span>
     <span class="seed-label">Go Deeper</span>
   </button>
-  <div id="deeper-vines" aria-label="Five depths of aroma science">
-    <svg viewBox="0 0 120 270" width="120" height="270" fill="none" preserveAspectRatio="xMinYMax meet">
-      <path class="vine-stem" d="M22 270 C8 224 54 208 34 162 C18 124 58 108 38 68 C28 44 48 32 40 10"
+  <div id="deeper-vines" aria-label="Six depths of aroma science">
+    <svg viewBox="0 -34 120 304" width="120" height="304" fill="none" preserveAspectRatio="xMinYMax meet">
+      <path class="vine-stem" d="M22 270 C8 224 54 208 34 162 C18 124 58 108 38 68 C28 44 48 32 40 -6"
         stroke="#5a9c4f" stroke-width="3.6" stroke-linecap="round"/>
       <path class="vine-curl" d="M48 152 C64 148 66 164 52 166 C44 167 46 156 54 158" stroke="#6a9a4e" stroke-width="2" stroke-linecap="round"/>
       <g class="vine-leaf vine-leaf-1" data-depth="1" role="button" tabindex="0" aria-label="Depth 1: Perception becomes evidence" fill="#5a9c4f"><circle class="vine-leaf-hit" cx="31" cy="207" r="15"/><path d="M34 200 C22 192 18 206 28 216 C40 210 44 206 34 200 Z"/></g>
@@ -4201,7 +4248,27 @@
       <g class="vine-leaf vine-leaf-3" data-depth="3" role="button" tabindex="0" aria-label="Depth 3: Aromas have family trees" fill="#4f7a3a"><circle class="vine-leaf-hit" cx="31" cy="125" r="15"/><path d="M34 118 C22 110 18 124 28 134 C40 128 44 124 34 118 Z"/></g>
       <g class="vine-leaf vine-leaf-4" data-depth="4" role="button" tabindex="0" aria-label="Depth 4: Cultivation has a geography" fill="#7fc275"><circle class="vine-leaf-hit" cx="47" cy="84" r="15"/><path d="M42 80 C54 72 58 86 48 96 C36 90 32 86 42 80 Z"/></g>
       <g class="vine-leaf vine-leaf-5" data-depth="5" role="button" tabindex="0" aria-label="Depth 5: Evolution writes the recipe" fill="#5a9c4f"><circle class="vine-leaf-hit" cx="31" cy="51" r="15"/><path d="M36 44 C24 36 20 50 30 60 C42 54 46 50 36 44 Z"/></g>
-      <circle class="vine-bud" cx="40" cy="9" r="3.6" fill="#d8a657"/>
+      <!-- The vine's sixth depth is its own bloom rather than a sixth leaf --
+           Constellation is Go Deeper's "maker's mind," not one more measured
+           fact, so it gets the flower the whole climb was building to instead
+           of just another leaf shape. Asteraceae (the daisy/aster family) is
+           the pun made literal: aster is Greek for star, so the vine's own
+           star-shaped flower is what blooms into a Constellation. -->
+      <g class="vine-leaf vine-bloom vine-leaf-6" data-depth="6" role="button" tabindex="0"
+        aria-label="Depth 6: The maker's mind — the vine's own bloom, Asteraceae, the aster (star) family">
+        <circle class="vine-leaf-hit" cx="40" cy="-12" r="16"/>
+        <g class="vine-bloom-rays" fill="#e8c375">
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(45 40 -12)"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(90 40 -12)"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(135 40 -12)"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(180 40 -12)"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(225 40 -12)"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(270 40 -12)"/>
+          <ellipse cx="40" cy="-21" rx="2.3" ry="7.5" transform="rotate(315 40 -12)"/>
+        </g>
+        <circle cx="40" cy="-12" r="4.6" fill="#8a5a2f"/>
+      </g>
       <!-- Dew: a slow staggered pulse on each leaf so the vine reads as
            touchable. Nothing indicated the leaves were interactive, which on a
            phone meant no hover to discover it either. Retired for the session
@@ -4406,14 +4473,17 @@
         <div class="cx-caption-line" id="cxCaption"></div>
         <div class="cx-badge" id="cxBadge"></div>
         <div class="cx-floating-label" id="cxFloatLabel"></div>
-        <details class="cx-legend-plate" id="cxLegendPlate">
-          <summary>Legend</summary>
-          <div class="cx-legend-body" id="cxLegendBody"></div>
-        </details>
-        <div class="omc-zoom cx-zoom-controls">
-          <button type="button" id="cx-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
-          <button type="button" id="cx-zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
-          <button type="button" id="cx-zoom-reset" aria-label="Reset view" title="Reset view">⤾</button>
+        <div class="cx-stage-controls">
+          <details class="cx-legend-plate" id="cxLegendPlate">
+            <summary>Legend</summary>
+            <div class="cx-legend-body" id="cxLegendBody"></div>
+          </details>
+          <button type="button" id="cxOpenToolBtn" class="cx-open-tool-btn"></button>
+          <div class="omc-zoom cx-zoom-controls">
+            <button type="button" id="cx-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+            <button type="button" id="cx-zoom-out" aria-label="Zoom out" title="Zoom out">-</button>
+            <button type="button" id="cx-zoom-reset" aria-label="Reset view" title="Reset view">⤾</button>
+          </div>
         </div>
       </div>
       <div class="cx-tray" id="cxTray" hidden>
@@ -12329,7 +12399,11 @@ function cxLayoutTaxonomy() {
   const kKeys = Object.keys(groups).sort();
   const total = NOTES.length;
   let a = 0;
-  const notePos = {}, connectors = [], ringLabels = [];
+  // waypoints[noteId] = the actual Kingdom/Order/Family ring points this note's
+  // lineage passes through -- captured here (not just left as ring labels) so a
+  // traced compound can draw a real path along them, converging where notes
+  // share ancestry and forking where they don't, instead of a straight spoke.
+  const notePos = {}, connectors = [], ringLabels = [], waypoints = {};
   kKeys.forEach(k => {
     const kNotes = Object.values(groups[k]).flatMap(o => Object.values(o).flat());
     const kWidth = (kNotes.length / total) * 360;
@@ -12342,14 +12416,16 @@ function cxLayoutTaxonomy() {
       const oNotes = Object.values(groups[k][o]).flat();
       const oWidth = (oNotes.length / kNotes.length) * kWidth;
       const oA0 = oa, oA1 = oa + oWidth; oa += oWidth;
-      if (o !== "—") { const oMid = cxPolar(CX_CX, CX_CY, (oA0 + oA1) / 2, rO); ringLabels.push({ x: oMid.x, y: oMid.y, label: o, strong: false }); }
+      const oMid = cxPolar(CX_CX, CX_CY, (oA0 + oA1) / 2, rO);
+      if (o !== "—") ringLabels.push({ x: oMid.x, y: oMid.y, label: o, strong: false });
       const fKeys = Object.keys(groups[k][o]).sort();
       let fa = oA0;
       fKeys.forEach(f => {
         const fNotes = groups[k][o][f];
         const fWidth = (fNotes.length / oNotes.length) * oWidth;
         const fA0 = fa, fA1 = fa + fWidth; fa += fWidth;
-        if (f !== "—") { const fMid = cxPolar(CX_CX, CX_CY, (fA0 + fA1) / 2, rF); ringLabels.push({ x: fMid.x, y: fMid.y, label: f, strong: false }); }
+        const fMid = cxPolar(CX_CX, CX_CY, (fA0 + fA1) / 2, rF);
+        if (f !== "—") ringLabels.push({ x: fMid.x, y: fMid.y, label: f, strong: false });
         fNotes.forEach((n, ni) => {
           const nAng = fA0 + fWidth * ((ni + 0.5) / fNotes.length);
           const p = cxPolar(CX_CX, CX_CY, nAng, rN);
@@ -12357,6 +12433,7 @@ function cxLayoutTaxonomy() {
           const full = o !== "—" && f !== "—";
           const kp = cxPolar(CX_CX, CX_CY, nAng, rK);
           connectors.push({ x1: kp.x, y1: kp.y, x2: p.x, y2: p.y, dashed: !full });
+          waypoints[n.id] = [kMid, oMid, fMid, p];
         });
       });
     });
@@ -12364,8 +12441,38 @@ function cxLayoutTaxonomy() {
   function chrome(g) {
     [rK, rO, rF, rN].forEach(r => cxAddCircle(g, CX_CX, CX_CY, r, "cx-chrome-line"));
     ringLabels.forEach(l => cxAddText(g, l.x, l.y, l.label, "cx-chrome-label" + (l.strong ? " strong" : ""), true));
+    cxDrawTraceBolts(g, waypoints);
   }
   return { notePos, cpdPos: {}, edgeLines: [], chrome, taxEdges: connectors, trayIds: [] };
+}
+// "Trace X on Taxonomy" draws the real lineage a compound's carrier notes
+// share -- a lit path through the Kingdom/Order/Family rings that converges
+// where ancestry is shared and forks where it isn't, ending at each carrier.
+// One color per distinct order (lineage); a signature compound (one order)
+// reads as a single bolt, a convergent one as several arriving independently.
+const CX_TRACE_COLORS = ["var(--accent)", "var(--accent-2)", "#e0b34f", "#7fc275", "#e07a5f"];
+function cxDrawTraceBolts(g, waypoints) {
+  if (cxState.lens !== "taxonomy" || !cxState.traceCompound) return;
+  const carriers = cxCompoundCarriers(cxState.traceCompound);
+  const orderOf = n => { const p = taxonPath(n); return p[1] || p[0]; };
+  const orders = Array.from(new Set(carriers.map(orderOf))).sort();
+  carriers.forEach(n => {
+    const pts = waypoints[n.id];
+    if (!pts) return;
+    const color = CX_TRACE_COLORS[orders.indexOf(orderOf(n)) % CX_TRACE_COLORS.length];
+    const d = "M " + pts.map(p => `${p.x} ${p.y}`).join(" L ");
+    const path = document.createElementNS(CXNS, "path");
+    path.setAttribute("d", d);
+    path.setAttribute("class", "cx-trace-bolt");
+    path.setAttribute("fill", "none");
+    path.style.stroke = color; path.style.color = color;   // color feeds currentColor in the glow filter
+    g.appendChild(path);
+    pts.forEach((p, i) => {
+      if (i === 0) return;
+      const spark = cxAddCircle(g, p.x, p.y, 2.6, "cx-trace-spark");
+      spark.style.stroke = color;
+    });
+  });
 }
 
 function cxLayoutGeography() {
@@ -12520,8 +12627,43 @@ const cxEls = {
   caption: document.getElementById("cxCaption"), badge: document.getElementById("cxBadge"),
   legendBody: document.getElementById("cxLegendBody"), floatLabel: document.getElementById("cxFloatLabel"),
   side: document.getElementById("cxSide"), lensSelect: document.getElementById("cxLensSelect"),
-  tray: document.getElementById("cxTray"), trayLabel: document.getElementById("cxTrayLabel"), trayChips: document.getElementById("cxTrayChips")
+  tray: document.getElementById("cxTray"), trayLabel: document.getElementById("cxTrayLabel"), trayChips: document.getElementById("cxTrayChips"),
+  openTool: document.getElementById("cxOpenToolBtn")
 };
+const CX_OPEN_TOOL_LABEL = {
+  chemistry: "Open in Wheel · Chemistry →",
+  taxonomy: "Open in Tree →",
+  geography: "Open in Map →",
+  embodied: "Open phase & delivery controls →"
+};
+// Each lens hands off to the tool that reads that dimension for real, rather
+// than just re-reading the same graph inside Constellation. Reads cxState
+// live at click time (not baked into the label update) so it reflects
+// whatever star is selected right up to the moment you press it.
+function cxOpenToolAction() {
+  const lens = cxState.lens;
+  const id = cxState.selected;
+  const note = id && cxStarEls[id] && cxStarEls[id].kind === "note" ? cxNoteById[id] : null;
+  closeConstellation();
+  if (lens === "chemistry") {
+    setOrganizeBy("chemistry");
+  } else if (lens === "taxonomy") {
+    setWorkspace("tree");
+    if (note) setTaxonomyFocus("note", note.label, note.id);
+  } else if (lens === "geography") {
+    setWorkspace("map");
+    if (note && NOTE_ORIGINS[note.id]) selectOriginNote(note.id);
+  } else if (lens === "embodied") {
+    setView("note-input");
+    const strip = document.getElementById("delivery-strip");
+    if (strip) {
+      strip.open = true;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      requestAnimationFrame(() => strip.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }));
+    }
+  }
+}
+cxEls.openTool.addEventListener("click", cxOpenToolAction);
 const CX_CAPTIONS = {
   chemistry: "Angle = shared compounds · Radius = how strongly characterized",
   taxonomy: "Rings = Kingdom → Order → Family → Note · dashed spokes = missing rank in the data",
@@ -12920,6 +13062,7 @@ function cxSwitchLens(lens, silent, keepSelection) {
   }
   cxEls.badge.textContent = cxBadgeText(lens, L);
   cxEls.legendBody.innerHTML = cxLegendFor(lens);
+  cxEls.openTool.textContent = CX_OPEN_TOOL_LABEL[lens];
   const wt = document.getElementById("cxWtToggle");
   if (wt) wt.addEventListener("change", () => { cxState.minWeight = wt.checked ? 0 : 0.15; cxSwitchLens(cxState.lens, true, true); });
   cxRenderTray(lens, L.trayIds);
@@ -13030,6 +13173,14 @@ function setGoDeeper(on) {
   // the complete all-notes atlas.
   if (wasOn !== state.goDeeper && taxonomyTreeLoaded && taxTreeRoot) {
     applyTaxonomyDepthDefault();
+  }
+  // First off→on flip this session: Go Deeper otherwise just plays the warp
+  // and reveals the phase buttons with no explanation of what it's for. Open
+  // the first depth story once, unprompted; state.dismissedHelpers records it
+  // immediately (not on close) so it fires exactly once even if closed at once.
+  if (!wasOn && state.goDeeper && !state.dismissedHelpers.has("depth-intro")) {
+    state.dismissedHelpers.add("depth-intro");
+    openDepthCard(1);
   }
   // Switching Go Deeper OFF: re-sync the slider working values to the
   // existing null-phase entries so the slider faithfully represents the
