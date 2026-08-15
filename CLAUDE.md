@@ -13,19 +13,101 @@ Source of truth for how branches, tags, and PRs flow in this repo. Update this f
 
 ## External-tool branches (ChatGPT experimental lab)
 
-**`codex/*` branches are experimental labs where ChatGPT explores ideas freely. Claude reviews the work, learns from ChatGPT's different thinking lens, and cherry-picks valuable features to integrate into `feature/bloom` and proper PRs.**
+**`codex/*` branches are experimental labs where ChatGPT explores ideas freely.**
+
+**Policy update (2026-07-27):** after hands-on testing of ChatGPT's newest model, Nolan extended it the same trust as Claude. `codex/*` work may now merge **directly into `prototype` or `feature/bloom`** — the prior extraction/re-implementation gate is dropped. Claude's review moves from a pre-merge gate to **periodic post-hoc review**: read what landed, test it, and follow up with fix/refactor commits if something needs correcting, rather than blocking the merge itself.
 
 - **`codex/aroma-wheel-responsive-ux-pass`** — ChatGPT's experimental UX lab, and the **one branch ChatGPT is allowed to touch**. ChatGPT works here without constraints; Claude periodically reviews, evaluates ideas, integrates the best work into the main feature branches, **and may also commit directly to this branch** — it's a shared experimental space, not ChatGPT-exclusive.
 - **Handoff protocol**: ChatGPT uses `.claude/codex-handoff-template.md` to document each batch of work — what was done, why, testing approach, questions/blockers, and next priorities. Claude uses `.claude/codex-example-checkin.md` as a reference for what a good check-in looks like. This replaces ad-hoc commit messages with structured handoffs.
 - **Rules**: 
   - ChatGPT has explicit permission to work **only on `codex/*` branches** — that is the sole branch namespace it may touch.
   - Claude works on `main`, `prototype`, `feature/*`, `claude/*`, and long-running dev branches, **and may also commit directly to `codex/*`**. The codex confinement is **one-directional**: ChatGPT may touch *only* `codex/*`, but Claude is not fenced *out* of it — Claude simply isn't limited *to* it.
-  - **Claude's review workflow**: Check this branch regularly when ChatGPT posts a check-in. Read the handoff, test changes, learn from the different thinking lens. Cherry-pick good ideas (via new commits on `feature/bloom` or isolated feature PRs), reject or refactor bad ones.
-  - Do **not** merge `codex/*` directly to `prototype` or `feature/bloom`. Move work onward by extracting/re-implementing (or cherry-picking) it onto a proper branch and opening a PR — this holds whether ChatGPT or Claude authored the codex commits.
+  - **`codex/*` may merge directly into `prototype` or `feature/bloom`** (via PR) — this holds whether ChatGPT or Claude authored the codex commits. No extraction/re-implementation step is required first.
+  - **Claude's review workflow (post-hoc)**: Check this branch regularly when ChatGPT posts a check-in, and periodically re-check `prototype`/`feature/bloom` after a codex merge lands. Read the handoff, test changes, learn from the different thinking lens. Fix, refactor, or extend via follow-up commits when something needs correcting — don't gate the merge on this review.
   - If `codex/*` drifts out of sync with `prototype`, **merge `prototype` into it** (`git merge prototype`) to keep it current for ChatGPT to build on. **Merge, never rebase** — rebasing rewrites history that an external agent is actively holding refs to, and never merge in the other direction. Syncing happens when Nolan asks for it, not on an agent's own judgment.
-  - **What "explicitly instructed otherwise" means**: a written directive from Nolan, in the current session, naming **both the target branch and the specific change**. Implication, inference, and passing remarks are not authorization. If it's uncertain, it wasn't authorization — ask.
-  - **Failure protocol**: on any boundary crossing or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
+  - **What "explicitly instructed otherwise" means**: a written directive from Nolan, in the current session, naming **both the target branch and the specific change**. Implication, inference, and passing remarks are not authorization. If it's uncertain, it wasn't authorization — ask. (This still governs anything outside the rules above — e.g. ChatGPT touching a non-`codex/*` branch remains a boundary crossing.)
+  - **Failure protocol**: on any boundary crossing (ChatGPT touching a branch outside `codex/*`) or failed sync, **stop immediately, do not self-repair**. Write current state into the handoff and flag it for Nolan. A documented mess is recoverable; a quietly repaired one may not be.
   - **Claude's reviewer stance**: treat the handoff's testing/verification section as **claims to check, not conclusions to trust**. Re-run what it says it ran.
+
+### Current status (checked 2026-08-04)
+
+`codex/aroma-wheel-responsive-ux-pass` is 41 commits ahead of `prototype` (which hasn't moved
+since 2026-07-11) and holds a large, coherent body of shipped work: the mobile-first HUD/Tree
+bottom-sheet pass, the full plant-taxonomy Tree redesign (conical-helix layout, clickable
+lineage rings, family wreaths), the Origins Map's radial-bloom cluster glyphs and three-note
+geography pilot (production + cultural-tradition lenses for coffee/cacao/vanilla), Laps
+(temporal tasting snapshots), Delivery conditions (a third sensory dimension), and Constellation
+(Go Deeper's subjective "maker's mind" hemisphere — 4 lenses over the live 127-note/94-compound/
+262-edge dataset). Verified 2026-08-04: Wheel, Tree, Map, and Constellation all load and switch
+cleanly at the 360×760 mobile reference viewport with zero console errors.
+
+Genuine open items, not blockers:
+- Two citation keys await Nolan's personal review in `UNVERIFIED_REFS`
+  (`buttery1995furaneol`, `usda1991cookedtomato`) — render as "under human review" until cleared,
+  which is the system working as designed, not a bug.
+- Constellation's Chemistry lens hasn't had a dedicated visual-density pass at full dataset scale
+  (structurally verified — 226 groups/667 circles render with no errors — but crowding at that
+  scale is unassessed).
+- No physical-device / social-in-app-browser check has been run on recent Tree/Map/Constellation
+  work, only the in-app browser at reference viewports.
+- The cross-workspace "Insights inbox" idea and the map's economic-cultivation/cultural-value
+  layers (beyond the 3-note pilot) are deliberately unstarted, pending explicit design approval —
+  not in-progress work.
+
+Not yet done, and not required to do now: porting this work to `prototype`. Per the policy above,
+`codex/*` may PR directly into `prototype` or `feature/bloom` when Nolan says it's time — this
+branch is coherent enough to be ready when he does, but no PR should be opened without an explicit
+go-ahead naming this branch and the target.
+
+## Product design contract — mobile first
+
+This is the standing product-design priority for the Aroma Wheel. It applies to every
+future UI change, especially work on the Codex experimental branch.
+
+- **Mobile is the canonical experience.** Most people will arrive from a social-app
+  in-app browser, often in portrait. Design the primary interaction and information
+  hierarchy for a phone first; desktop is the same experience with additional room,
+  not a separate desktop-first layout squeezed down later.
+- **Use named viewport classes, not one generic “mobile” layout.** Treat the Galaxy
+  S10e portrait class (360 × 760 CSS px) as a required compact-phone reference.
+  Establish and document additional compact, standard, and large-phone reference
+  viewports before introducing breakpoints. A breakpoint must represent a deliberate
+  layout/design change, not an emergency response to clipping.
+- **No critical control may collide, clip, or become unreachable at a reference
+  viewport.** This includes the `aeckhart` HUD wordmark, workspace/panel controls,
+  and the Go Deeper control. Prefer a compact, intentional mobile HUD (clear primary
+  action plus an explicit overflow/control tray) over wrapped or overlapping buttons.
+  Respect safe-area insets and the reduced visible area common in social in-app
+  browsers.
+- **Pane ownership belongs to the user on mobile.** When Tree detail/compounds are
+  open, they must be a draggable bottom sheet: a visible grab handle, direct drag up
+  to expand, drag down to minimize, sensible snap points, and a fully minimized state
+  that restores the tree. It must update live without losing the selected tree node
+  or scroll/zoom context. Do not permanently reserve most of the screen for detail.
+- **The Tree must read as a connected explanation, not a giant horizontal diagram.**
+  Show the hierarchy and links as the primary object; make Kingdom → Order → Family →
+  note legible in the default mobile framing. Use the family as the meaningful bridge:
+  explain that relatives often share aromatic pathways and therefore hint at likely
+  molecular structures/aroma families. Pan/zoom/scroll support is secondary to a
+  useful initial framing, obvious directionality, and an accessible selected path.
+- **Validate, then document.** For each responsive change, inspect every named
+  reference viewport in portrait, record the dimensions and interaction checked in
+  `.claude/codex-handoff.md`, and call out any in-app-browser uncertainty. Do not
+  claim a physical-device result unless it was tested on that device.
+
+### Current mobile-first roadmap (2026-07-14)
+
+1. Audit the HUD at 360 × 760 first: inventory intrinsic button/wordmark widths,
+   define compact-phone header composition, and remove `aeckhart` / Go Deeper
+   overlap before visual polish.
+2. Replace the Tree mobile detail behavior with a resizable bottom sheet. Preserve
+   selection, tree pan/zoom, and open/closed state across workspace changes; provide
+   touch, pointer, keyboard, and reduced-motion-friendly behavior.
+3. Reframe the Tree mobile layout around visible parent–child connections and a
+   concise “what this family predicts” explanation. Reduce dependence on horizontal
+   scrolling; retain pan/zoom as enhancement rather than the only way to understand it.
+4. Define the viewport matrix and test checklist (starting with 360 × 760), then
+   make desktop adaptations only after the mobile state is complete and stable.
 
 ## Long-running dev branches (for multi-slice work)
 
