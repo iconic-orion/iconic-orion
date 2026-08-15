@@ -2035,17 +2035,26 @@
        the bar to trade screen between the two halves, watching compounds change
        as you slide notes. Same snap and drag mechanics as the Tree's detail
        sheet so there is one bottom-sheet language, not two. */
-    body:not(.notes-hidden) .compounds-bar {
+    /* :not(.origins-mode):not(.taxonomy-mode) on every rule in this block is
+       load-bearing, not decorative: the older single-column rule above
+       (body:not(.origins-mode):not(.taxonomy-mode) aside.detail, overflow:
+       visible) matches the exact same element here and outranks a selector
+       with only one :not() clause on specificity, silently winning the
+       overflow property back to "visible" no matter what this block says --
+       which is exactly what made the compounds drawer unscrollable. Matching
+       its two :not() clauses (and coming later in the sheet) is what lets
+       this block's own overflow-y: auto actually take effect. */
+    body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) .compounds-bar {
       display: flex; position: fixed; left: 0; right: 0;
       bottom: var(--compounds-h, 0px); z-index: 92; }
-    body:not(.notes-hidden) aside.detail {
+    body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) aside.detail {
       display: block; position: fixed; left: 0; right: 0; bottom: 0;
       height: var(--compounds-h, 0px); width: auto; z-index: 91;
       overflow-y: auto; -webkit-overflow-scrolling: touch;
       border-top: none; box-shadow: 0 -10px 26px rgba(0,0,0,.4); }
-    body:not(.notes-hidden).compounds-peek aside.detail { display: none; }
-    body:not(.notes-hidden):not(.sheet-dragging) .compounds-bar,
-    body:not(.notes-hidden):not(.sheet-dragging) aside.detail {
+    body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode).compounds-peek aside.detail { display: none; }
+    body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode):not(.sheet-dragging) .compounds-bar,
+    body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode):not(.sheet-dragging) aside.detail {
       transition: bottom .22s ease, height .22s ease; }
     /* The tasting tray rides above the closed drawer, and steps aside once the
        drawer is actually open, since the compound list is what is being read. */
@@ -2053,10 +2062,10 @@
     body:not(.origins-mode):not(.taxonomy-mode):not(.compounds-peek) #tasting-tray {
       opacity: 0; pointer-events: none; }
     /* Keep the last note rows reachable above the pinned drawer. */
-    body:not(.notes-hidden) aside.notes { padding-bottom: 128px; }
+    body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) aside.notes { padding-bottom: 128px; }
     @media (prefers-reduced-motion: reduce) {
-      body:not(.notes-hidden) .compounds-bar,
-      body:not(.notes-hidden) aside.detail { transition: none; }
+      body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) .compounds-bar,
+      body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) aside.detail { transition: none; }
     }
     /* Compounds view: the bar has nothing to reveal, the panel is already it. */
     body.notes-hidden aside.detail { grid-area: panel; display: block; }
