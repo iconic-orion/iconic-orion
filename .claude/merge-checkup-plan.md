@@ -117,19 +117,19 @@ mode, and that is all. Proposal: call `openDepthCard(1)` once on the first off�
 `.vine-leaf[data-depth]` elements, and its `aria-label` says "Five depths". The sixth is the one
 that explains Constellation.
 
-### 4. Compare panel follow-ons — ⚠️ CLAIMED
+### 4. Compare panel follow-ons — ✅ DONE (2026-08-14)
 
-Its crossover is unhidden now, but the panel still has gaps.
+Re-verified each claim against the current code before fixing (line numbers had drifted, and
+one item was already stale -- see below). All fixed and verified live in-browser.
 
-| Item | Anchor |
+| Item | Status |
 |---|---|
-| Six layer cards name Tree, Map, and Constellation and route to none of them | `taxonomyComparisonExpandedLayersHtml` **16297** |
-| Never reads the live tasting, so it is a detached lookup | `renderTaxonomyCompareResult` **16371** |
-| Never seeds from the tasting just built | `renderTaxonomyComparePanel` **16432** |
-| Zero-overlap is a disclaimer, not a finding. Compare compound classes instead | **16410** |
-| Dead "Climate — awaiting sourced data" card on every comparison | **16366** |
-| Unescaped `"` inside a `title=` attribute. Four compounds contain literal quotes | `taxonomyComparisonChartHtml` **16223** |
-| Escape closes the definition popover without restoring focus. **The one finding that survived adversarial verification** | `renderTaxonomyCompoundDefinition` **16150** |
+| Dead "Climate — awaiting sourced data" card on every comparison | Fixed: card removed |
+| Zero-overlap is a disclaimer, not a finding. Compare compound classes instead | Fixed: falls back to shared compound *classes* when no exact compound overlaps |
+| Escape closes the definition popover without restoring focus | Fixed: `popover._opener.focus()` on Escape, matching the click-to-close path |
+| Never seeds from the tasting just built | Fixed: opening cold now seeds the strongest-sharing active pair (or the two strongest by intensity if none share) |
+| Unescaped `"` inside a `title=` attribute | Fixed: wrapped in `cxEsc()`. The plan's specific "four compounds contain literal quotes" claim couldn't be reproduced against current `COMPOUNDS` data (may be stale) -- fixed the structural gap regardless, since it doesn't depend on which labels currently happen to have one |
+| "Six layer cards name Tree, Map, and Constellation and route to none of them" | **Was already stale** -- cards are named by data layer (Compounds/Culinary/Taxonomy/Origins & culture/Production-economy), not by tool name, and show a passive "active workspace" badge. Still don't click-route anywhere; not treated as a new finding since routing was never what this item described |
 
 ### 5. Canonical vocabulary, then one sweep — ⚠️ CLAIMED
 

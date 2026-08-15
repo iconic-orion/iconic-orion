@@ -16940,6 +16940,7 @@ function renderTaxonomyCompoundDefinition(result, cpdId, opener) {
     </article>`;
   }).join("");
   popover.dataset.cpd = cpdId;
+  popover._opener = opener;   // Escape's own close path needs this to restore focus; see the keydown handler below
   popover.innerHTML = `
     <button type="button" class="taxonomy-compare-definition-close" aria-label="Close compound definition">×</button>
     <div class="taxonomy-compare-definition-kicker">Sensory definition</div>
@@ -16988,8 +16989,13 @@ function taxonomyComparisonChartHtml(aNote, bNote, data) {
     .map(([cpdId, edge]) => ({ cpd: CPD_BY_ID[cpdId], aWeight: 0, bWeight: edge.w, shared: false }))
     .sort((a, b) => b.bWeight - a.bWeight);
   const other = [...uniqueA, ...uniqueB];
+  // Compound and note labels land in a title="..." attribute below. Both come
+  // from real data, not user input, but an unescaped literal `"` in either
+  // would still break out of the attribute -- cxEsc is the same escape
+  // Constellation's Venn diagram uses for the same reason.
+  const itemTitle = item => cxEsc(`${item.cpd.label}: ${taxonomyCompoundSensoryAnchor(item.cpd)} ${aNote.label} ${item.aWeight.toFixed(2)}, ${bNote.label} ${item.bWeight.toFixed(2)}`);
   const row = item => `<div class="taxonomy-compare-chart-row${item.shared ? " is-shared" : " is-unmatched"}"
-      title="${item.cpd.label}: ${taxonomyCompoundSensoryAnchor(item.cpd)} ${aNote.label} ${item.aWeight.toFixed(2)}, ${bNote.label} ${item.bWeight.toFixed(2)}">
+      title="${itemTitle(item)}">
       <span class="taxonomy-compare-chart-bar a"><span style="width:${Math.round(item.aWeight * 100)}%"></span></span>
       <span class="taxonomy-compare-chart-label"><button type="button"
         class="taxonomy-compare-definition taxonomy-compare-chart-definition"
@@ -17000,7 +17006,7 @@ function taxonomyComparisonChartHtml(aNote, bNote, data) {
       <span class="taxonomy-compare-chart-bar b"><span style="width:${Math.round(item.bWeight * 100)}%"></span></span>
     </div>`;
   const verticalItem = item => `<div class="taxonomy-compare-vertical-item${item.shared ? " is-shared" : " is-unmatched"}"
-      title="${item.cpd.label}: ${taxonomyCompoundSensoryAnchor(item.cpd)} ${aNote.label} ${item.aWeight.toFixed(2)}, ${bNote.label} ${item.bWeight.toFixed(2)}">
+      title="${itemTitle(item)}">
       <div class="taxonomy-compare-vertical-bars" aria-hidden="true">
         <span class="taxonomy-compare-vertical-bar a" style="height:${Math.round(item.aWeight * 100)}%"><small>${item.aWeight ? item.aWeight.toFixed(2) : "—"}</small></span>
         <span class="taxonomy-compare-vertical-bar b" style="height:${Math.round(item.bWeight * 100)}%"><small>${item.bWeight ? item.bWeight.toFixed(2) : "—"}</small></span>
@@ -17116,10 +17122,6 @@ function taxonomyComparisonExpandedLayersHtml(aNote, bNote, data) {
       <h4>Production / economy</h4>${typeof productionHtml === "string" && productionHtml.startsWith("<div") ? productionHtml : `<p>${productionHtml}</p>`}
       <p class="taxonomy-compare-layer-caveat">Bars are shares within each note's displayed top five by tonnes—not price, value, or market importance.</p>
     </article>
-    <article class="taxonomy-compare-layer-card">
-      <h4>Climate</h4><p>Awaiting sourced species-level growing-climate and range data.</p>
-      <p class="taxonomy-compare-layer-caveat">Climate is not inferred from a single origin point.</p>
-    </article>
   </div>`;
 }
 function renderTaxonomyCompareResult(result) {
@@ -17146,6 +17148,14 @@ function renderTaxonomyCompareResult(result) {
   const data = taxonomyComparisonData(aId, bId);
   const context = taxonomyComparisonContext(aNote, bNote);
   const percent = Math.round(data.score * 100);
+  // Zero exact-compound overlap used to just print a disclaimer and stop --
+  // technically honest, but it throws away a real, cheaper signal that's
+  // sitting right there: even without a shared compound, the two notes can
+  // still share a chemical CLASS (both carry esters, both carry pyrazines),
+  // which is still a real crossover to go smell for.
+  const sharedClasses = data.shared.length ? [] : [...new Set(
+    [...data.aEdges.values()].map(e => CPD_BY_ID[e.cpd].class)
+  )].filter(cls => [...data.bEdges.values()].some(e => CPD_BY_ID[e.cpd].class === cls)).sort();
   result.innerHTML = `
     <div class="taxonomy-compare-summary">
       <span class="taxonomy-compare-score">${percent}% weighted overlap in this model</span>
@@ -17158,10 +17168,12 @@ function renderTaxonomyCompareResult(result) {
           ${data.shared.length ? data.shared.map(item => `
             <div class="taxonomy-compare-compound">
               <button type="button" class="taxonomy-compare-definition" data-compare-definition="${item.cpd.id}"
-                title="Define ${item.cpd.label}">${item.cpd.label} · ${item.a.w.toFixed(2)}/${item.b.w.toFixed(2)}</button>
+                title="${cxEsc(`Define ${item.cpd.label}`)}">${item.cpd.label} · ${item.a.w.toFixed(2)}/${item.b.w.toFixed(2)}</button>
               <span>${taxonomyCompoundSensoryAnchor(item.cpd)}</span>
             </div>`).join("")
-            : `<span class="taxonomy-compare-empty">No shared compounds in the current evidence set—not evidence that none exist.</span>`}
+            : sharedClasses.length
+              ? `<span class="taxonomy-compare-empty">No shared exact compounds in the current evidence set—not evidence that none exist. Both do carry ${sharedClasses.join(", ")} compounds, just not the same ones.</span>`
+              : `<span class="taxonomy-compare-empty">No shared compounds in the current evidence set—not evidence that none exist.</span>`}
         </div>
         <p class="taxonomy-compare-context"><strong>Sensory question:</strong> do the shared compound descriptions help you notice a crossover when you smell these separately, then together? A shared link is correlation—not proof of presence, causation, or ancestry.${context ? ` <strong>Related context:</strong> ${context}` : ""}</p>
       </div>
@@ -20282,6 +20294,19 @@ document.getElementById("taxonomy-back-tree").addEventListener("click", taxonomy
 document.getElementById("taxonomy-compare-toggle").addEventListener("click", () => {
   taxonomyCompareActive = !taxonomyCompareActive;
   if (taxonomyCompareActive) {
+    // Opening cold (no pair chosen yet, none carried over from elsewhere,
+    // e.g. Constellation's own Compare button) used to just show two empty
+    // pickers -- a detached lookup with no connection to the tasting you
+    // just built. Seed from it instead: the strongest-sharing pair among
+    // your active notes if one exists, otherwise the two strongest by
+    // intensity so there's still a real starting comparison, not a blank form.
+    if (taxonomyCompareIds[0] === null && taxonomyCompareIds[1] === null) {
+      const active = activeTastingNotes();
+      if (active.length >= 2) {
+        const pair = tastingCompoundPairs(active)[0];
+        taxonomyCompareIds = pair ? [pair.a.id, pair.b.id] : [active[0].note.id, active[1].note.id];
+      }
+    }
     setHudOpen(false);
     if (document.body.classList.contains("taxonomy-mode")) {
       state.taxonomyView = "branches";
@@ -20339,6 +20364,7 @@ document.addEventListener("keydown", event => {
     .find(popover => !popover.hidden);
   if (definition) {
     definition.hidden = true;
+    definition._opener?.focus();   // the click-to-close path already did this; Escape hadn't
     event.stopPropagation();
     return;
   }
