@@ -4398,7 +4398,7 @@
       <button type="button" class="nudge-demo" data-demo="marinara">Marinara</button>
       <button type="button" class="nudge-demo" data-demo="mocktail">Citrus mocktail ✦</button>
     </div>
-    <div class="nudge-sub">Your notes surface literature-linked compound clues. Works with coffee, tea, wine, beer, botanicals, and food. Sensory exploration only. Not medical advice.</div>
+    <div class="nudge-sub">Your notes surface literature-linked compound clues. Works with coffee, tea, wine, beer, botanicals, and food.<br>Sensory exploration only. Not medical advice.</div>
   </div>
   <!-- Persistent, tap-expandable context caption (see .wheel-hint CSS). Always
        says what the wheel is showing and updates with the Organize mode, so the
@@ -11100,7 +11100,7 @@ function renderAnalysisGrid() {
   const topByConf = byConfidence.slice(0, 6);
   const byIntensity = allActive.slice().sort((a, b) => b.intensity - a.intensity);
 
-  const disclaimerLine = `<div class="results-disclaimer"><strong>Sensory exploration only. Not medical advice.</strong> Not chemical analysis. Never use this tool to judge allergies, toxicity, food safety, exposure, diagnosis, or treatment. <button type="button" class="inline-link" data-open-info="about">Read the safety boundary →</button></div>`;
+  const disclaimerLine = `<div class="results-disclaimer"><strong>Sensory exploration only. Not medical advice.</strong><br>Not chemical analysis. Never use this tool to judge allergies, toxicity, food safety, exposure, diagnosis, or treatment. <button type="button" class="inline-link" data-open-info="about">Read the safety boundary →</button></div>`;
 
   // Empty state — nothing logged yet. Still render a browseable list of every
   // compound in the library so users can click into them on their own without
