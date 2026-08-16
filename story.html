@@ -152,19 +152,19 @@
     <div class="vignette">
       <blockquote>"here's the deal we dont need to expand claude md. just start making the html file first prototype. i believe in your capabilities"</blockquote>
       <p class="v-meta">Entry 3 &middot; 2026-05-21</p>
-      <p>This is the whole session — one line, no back-and-forth, and it's the seed commit of what became <code>v1</code>. The instinct on display is refusing an easy planning detour (expanding <code>claude.md</code> first) in favor of getting something real on screen immediately. The pattern repeats throughout the log: when an agent might default to scaffolding and discussion, Nolan tends to point it at the actual artifact instead.</p>
+      <p>This is the whole session — one line, no back-and-forth, and it's the seed commit of what became <code>v1</code>. The pattern repeats throughout the log: when an agent might default to scaffolding and discussion instead of writing code, Nolan tends to cut straight to pointing it at the actual artifact.</p>
     </div>
 
     <div class="vignette">
       <blockquote>"Too many options is my point. Let's remove these options entirely and make the state be the default experience of the app"</blockquote>
       <p class="v-meta">Entry 28 &middot; 2026-07-10</p>
-      <p>A settings surface (Reading Mode, a separate Jiggle toggle) had grown past what the app needed. Rather than asking for a compromise or a settings redesign, this collapses the decision entirely — the "good" state becomes the only state. It reads as a preference for fewer decisions surfaced to the user over more configurability, even when the agent might default to adding a toggle to satisfy everyone.</p>
+      <p>A settings surface (Reading Mode, a separate Jiggle toggle) had grown past what the app needed. Rather than asking for a compromise, this collapses the decision entirely — a preference for fewer decisions surfaced to the user over more configurability, even where the agent's default move would be adding a toggle to satisfy everyone.</p>
     </div>
 
     <div class="vignette">
       <blockquote>"i think i also need an honesty policy in here where all citations have a 'under human review' until I personally review them and verify that they are indeed not hallucinated"</blockquote>
       <p class="v-meta">Entry 24 &middot; 2026-07-01</p>
-      <p>Nobody asked for this — it surfaces unprompted, mid-session, as a standing rule rather than a one-off fix. It's a good example of Nolan setting policy for the agent to follow rather than reacting to a problem the agent found first, and it's still the mechanism behind <code>UNVERIFIED_REFS</code> today (though its wording later got revisited — see below).</p>
+      <p>Nobody asked for this — it surfaces unprompted, mid-session, as a standing rule rather than a reaction to a problem the agent found first. It's still the mechanism behind <code>UNVERIFIED_REFS</code> today, though its own wording later got revisited (see below).</p>
     </div>
   </div>
 
@@ -175,19 +175,19 @@
     <div class="vignette">
       <blockquote>"im a trained data analyst and and have background in science communication and popularization as well as creative engineering/concept design"</blockquote>
       <p class="v-meta">Entry 43 &middot; 2026-08-04</p>
-      <p>Said directly, in the context of asking the agent to write an About section grounded in the actual information-design decisions behind the wheel rather than industry-standard tasting conventions. It's the one place in the log where the background driving everything else in this cluster is stated outright instead of inferred from a decision.</p>
+      <p>Said directly, while asking the agent to write an About section grounded in his own information-design decisions rather than industry-standard tasting conventions — the one place in the log where the background driving the rest of this cluster is stated outright instead of inferred from a decision.</p>
     </div>
 
     <div class="vignette">
       <blockquote>"it's like bllowing up a balloon with hot air and all of the gas molecules are colliding with each other in the confined space"</blockquote>
       <p class="v-meta">Entry 22 &middot; 2026-07-01</p>
-      <p>A bug report about the wheel's floating compound bubbles resetting unpredictably, phrased as a physical model rather than a UI complaint. The agent's fix (a "forcefield"-style collision system, a softer freeze curve) followed the metaphor almost literally. Reaching for a physical, teachable analogy to describe a UI problem reads as the science-communication instinct at work, not just a description of what looked wrong.</p>
+      <p>A bug report about the wheel's floating compound bubbles resetting unpredictably, phrased as a physical model rather than a UI complaint — and the fix that followed ("forcefield"-style collision, a softer freeze curve) tracked the metaphor almost literally. Reaching for a teachable physical analogy to describe a UI problem reads as the science-communication instinct at work, not just a description of what looked wrong.</p>
     </div>
 
     <div class="vignette">
       <blockquote>"i put you in ultracode so i want you to use the cognition ive upgraded you to in order to think systemicatically about how these multiple steps of thinking im giving you in this thesis are represented y differient feautres of the tool and how they are in fact disparate things but are tied through this narrative"</blockquote>
       <p class="v-meta">Entry 35 &middot; 2026-07-26</p>
-      <p>This follows directly from "here's my gis brain coming online" in the same prompt, laying out multiple map layers (origin, cultivation economics, cultural value) as separate but narratively connected data. The instinct to decompose a fuzzy idea into discrete, tied-together layers before asking for code is a GIS/systems-analysis habit showing up directly in how a feature gets specified, not just what feature gets asked for.</p>
+      <p>This follows directly from "here's my gis brain coming online" earlier in the same prompt, which lays out multiple map layers — origin, cultivation economics, cultural value — as separate but narratively connected data before any code gets discussed. That's a GIS/systems-analysis habit showing up in how the feature gets specified, not just in what gets asked for.</p>
     </div>
   </div>
 
@@ -198,7 +198,7 @@
     <div class="vignette">
       <blockquote>"most people dont know what blackcurrant tastes like here, so perhaps find other analogs that would be apparent to a wider audience."</blockquote>
       <p class="v-meta">Entry 4 &middot; 2026-05-21</p>
-      <p>One line inside a longer feedback pass, but it set a durable rule: a reference flavor only earns a place if the audience can actually recognize it. The correction isn't about the chemistry being wrong, it's about who the tool is legible to — an audience-first instinct that shows up again and again in later scope calls.</p>
+      <p>One line inside a longer feedback pass, but it set a durable rule still visible in later scope calls: a reference flavor only earns a place if the audience can actually recognize it. The correction isn't about the chemistry being wrong, it's about who the tool is legible to.</p>
     </div>
 
     <div class="vignette">
@@ -215,7 +215,7 @@
     <div class="vignette">
       <blockquote>"argh, mobile ui didn't get the same attention. let's make sure the mobile portrait mode gets the same visual upgrades appropriate for the smaller screen size."</blockquote>
       <p class="v-meta">Entry 21 &middot; 2026-06-30</p>
-      <p>This lands partway through a long, open-ended desktop UI brief — the gap gets caught and corrected inside the same session rather than becoming a separate, later pass. It suggests a working style that self-audits mid-stream rather than one that needs an outside prompt to notice an oversight.</p>
+      <p>This lands partway through a long, open-ended desktop UI brief, and the gap gets corrected inside the same session rather than becoming a later pass — a working style that self-audits mid-stream instead of needing an outside nudge to notice an oversight.</p>
     </div>
 
     <div class="vignette">
