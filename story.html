@@ -16,6 +16,12 @@
     --accent: #d8a657;
     --accent-2: #7daea3;
     --warn: #ea6962;
+    /* Provenance-tag colors, borrowed from the wheel's own scent-group palette
+       so this page's color language stays part of the same system. */
+    --tag-verbatim: var(--accent);
+    --tag-concept: #db7e97;
+    --tag-extrapolated: var(--accent-2);
+    --tag-style: #7fc275;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -60,15 +66,56 @@
   ul.links .hint { color: var(--ink-dim); font-size: 12px; margin-left: 6px; }
 
   /* Verbatim human quotes are the primary evidence on this page, not an aside —
-     full-brightness ink, no italic, accent-colored border so they read as the
-     actual voice speaking rather than a muted citation. */
-  blockquote { margin: 0 0 16px; padding: 10px 16px; border-left: 2px solid var(--accent);
+     full-brightness ink, no italic, accent-colored border, and a "Nolan:" tag
+     so it's unmistakable whose words these are versus Claude's own prose. */
+  blockquote { margin: 0 0 16px; padding: 10px 16px; border-left: 2px solid var(--tag-verbatim);
     color: var(--ink); font-size: 14px; line-height: 1.6; font-style: normal; }
+  blockquote:not(.meta)::before { content: "Nolan:"; display: block; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--tag-verbatim); margin-bottom: 4px; opacity: 0.9; }
   blockquote.meta { border-left-color: var(--line); color: var(--ink-dim); font-size: 13px;
     font-style: italic; }
 
   footer.page { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
     font-size: 12px; color: var(--ink-dim); }
+
+  /* --- provenance HUD --- */
+  .prov-hud { position: sticky; top: 12px; z-index: 30; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin: 0 0 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .prov-hud-label { display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-dim);
+    margin-bottom: 9px; }
+  .prov-hud-reset { background: none; border: none; color: var(--ink-dim); font-size: 11px;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 0;
+    font-family: inherit; visibility: hidden; }
+  .prov-hud-reset.show { visibility: visible; }
+  .prov-hud-reset:hover { color: var(--ink); }
+  .prov-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .prov-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px 6px 10px; cursor: pointer;
+    font-size: 12.5px; color: var(--ink); user-select: none; transition: border-color .15s, background .15s;
+    font-family: inherit; }
+  .prov-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: var(--dot); }
+  .prov-chip:hover { border-color: var(--ink-dim); }
+  .prov-chip[aria-pressed="true"] { border-color: var(--dot); background: var(--bg); }
+  .prov-hud-hint { margin-top: 10px; font-size: 11.5px; color: var(--ink-dim); line-height: 1.55; }
+  .prov-hud-hint b { color: var(--ink); font-weight: 600; }
+
+  /* isolate mode: dimming everything not tagged with the active category */
+  body[data-prov-filter] [data-tag] { opacity: 0.22; transition: opacity .18s; }
+  body[data-prov-filter="verbatim"] [data-tag="verbatim"],
+  body[data-prov-filter="concept"] [data-tag="concept"],
+  body[data-prov-filter="extrapolated"] [data-tag="extrapolated"],
+  body[data-prov-filter="style"] [data-tag="style"] { opacity: 1; }
+
+  /* always-on, low-key color coding for the two prose categories, so the map
+     is visible even before anyone touches the HUD */
+  p[data-tag="concept"], div.connector[data-tag="concept"] { border-left: 2px solid var(--tag-concept); padding-left: 10px; }
+  p[data-tag="extrapolated"], div.connector[data-tag="extrapolated"] { border-left: 2px solid var(--tag-extrapolated); padding-left: 10px; }
+  h2[data-tag="style"]::before, h3[data-tag="style"]::before, p.cluster-note[data-tag="style"]::before,
+  p.thread-note[data-tag="style"]::before, p.lede[data-tag="style"]::before {
+    content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--tag-style); margin-right: 7px; vertical-align: middle; }
 
   /* --- story-specific additions --- */
   nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
@@ -142,9 +189,23 @@
 
 <main>
   <h1>The Development Story</h1>
-  <p class="lede">The curated <a href="docs/prompt-log/README.md">prompt log</a> is 45 entries long — accurate, but not exactly readable in one sitting. This page is that same record, reorganized into two views: specific moments that reveal something about how Nolan actually works with the agents, and a set of ideas traced from their first mention to where they actually landed.</p>
+  <p class="lede" data-tag="style">The curated <a href="docs/prompt-log/README.md">prompt log</a> is 45 entries long — accurate, but not exactly readable in one sitting. This page is that same record, reorganized into two views: specific moments that reveal something about how Nolan actually works with the agents, and a set of ideas traced from their first mention to where they actually landed.</p>
 
   <div class="draft-badge">Drafted by Claude, not yet reviewed by Nolan &mdash; treat this page as a first pass, the same way an unverified citation sits under review elsewhere in this tool</div>
+
+  <div class="prov-hud" id="prov-hud">
+    <div class="prov-hud-label">
+      <span>What's whose — click a category to isolate it</span>
+      <button type="button" class="prov-hud-reset" id="prov-reset">show everything</button>
+    </div>
+    <div class="prov-chips" role="group" aria-label="Provenance filter">
+      <button type="button" class="prov-chip" data-filter="verbatim" aria-pressed="false" style="--dot: var(--tag-verbatim)"><span class="dot"></span>Nolan's verbatim words</button>
+      <button type="button" class="prov-chip" data-filter="concept" aria-pressed="false" style="--dot: var(--tag-concept)"><span class="dot"></span>Nolan's concept, paraphrased</button>
+      <button type="button" class="prov-chip" data-filter="extrapolated" aria-pressed="false" style="--dot: var(--tag-extrapolated)"><span class="dot"></span>Claude's read, extrapolated</button>
+      <button type="button" class="prov-chip" data-filter="style" aria-pressed="false" style="--dot: var(--tag-style)"><span class="dot"></span>Claude's structure/voice</button>
+    </div>
+    <p class="prov-hud-hint"><b>Nolan's verbatim words</b> — exact quotes, character for character. <b>Nolan's concept</b> — a fact about what he asked for or decided, restated but not word-for-word. <b>Claude's read</b> — an inference about what a moment reveals, going beyond what was literally said. <b>Claude's structure/voice</b> — section names, groupings, and framing Claude chose in order to present the record at all; a convention borrowed from how documents like this normally get written, not something Nolan asked for.</p>
+  </div>
 
   <nav class="toc">
     <span class="toc-label">On this page</span>
@@ -155,288 +216,288 @@
     </ol>
   </nav>
 
-  <h2 id="the-story">What the back-and-forth reveals</h2>
-  <p>Not a chronicle this time. This section pulls specific prompts out of the <a href="docs/prompt-log/README.md">curated log</a> — moments where what Nolan said, and how he said it, tells you something about how he works: his taste, where his own professional background is doing the driving, when he leads the agent firmly instead of letting it wander into open-ended planning, and where he holds a line versus where he changes course. It is not a record of what shipped (see the archive links at the bottom of this page for that) and it deliberately skips PR numbers and setup mechanics — nobody reading this needs those to see the pattern.</p>
+  <h2 id="the-story" data-tag="style">What the back-and-forth reveals</h2>
+  <p data-tag="style">Not a chronicle this time. This section pulls specific prompts out of the <a href="docs/prompt-log/README.md">curated log</a> — moments where what Nolan said, and how he said it, tells you something about how he works: his taste, where his own professional background is doing the driving, when he leads the agent firmly instead of letting it wander into open-ended planning, and where he holds a line versus where he changes course. It is not a record of what shipped (see the archive links at the bottom of this page for that) and it deliberately skips PR numbers and setup mechanics — nobody reading this needs those to see the pattern.</p>
 
-  <div class="inference-note"><strong>A note on what this section actually is:</strong> everything below the quotes is Claude's reading of a small number of documented moments, not a settled account of Nolan's character. A single prompt can suggest a working style without proving one — these are inferences offered for Nolan to confirm, correct, or cut, the same way an unverified citation sits under review elsewhere in this tool. Treat the interpretation as a claim to check against the quote, not the other way around.</div>
+  <div class="inference-note" data-tag="extrapolated"><strong>A note on what this section actually is:</strong> everything below the quotes is Claude's reading of a small number of documented moments, not a settled account of Nolan's character. A single prompt can suggest a working style without proving one — these are inferences offered for Nolan to confirm, correct, or cut, the same way an unverified citation sits under review elsewhere in this tool. Treat the interpretation as a claim to check against the quote, not the other way around.</div>
 
   <div class="cluster">
-    <h3>Leading, not being led</h3>
-    <p class="cluster-note">Agents left to their own devices tend to spiral into planning. These are moments where Nolan visibly refused to let that happen, or drew a line the agent itself hadn't drawn.</p>
+    <h3 data-tag="style">Leading, not being led</h3>
+    <p class="cluster-note" data-tag="style">Agents left to their own devices tend to spiral into planning. These are moments where Nolan visibly refused to let that happen, or drew a line the agent itself hadn't drawn.</p>
 
     <div class="vignette">
-      <blockquote>"here's the deal we dont need to expand claude md. just start making the html file first prototype. i believe in your capabilities"</blockquote>
-      <p class="v-meta">Entry 3 &middot; 2026-05-21</p>
-      <p>This is the whole session — one line, no back-and-forth, and it's the seed commit of what became <code>v1</code>. The pattern repeats throughout the log: when an agent might default to scaffolding and discussion instead of writing code, Nolan tends to cut straight to pointing it at the actual artifact.</p>
+      <blockquote data-tag="verbatim">"here's the deal we dont need to expand claude md. just start making the html file first prototype. i believe in your capabilities"</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 3 &middot; 2026-05-21</p>
+      <p data-tag="extrapolated">This is the whole session — one line, no back-and-forth, and it's the seed commit of what became <code>v1</code>. The pattern repeats throughout the log: when an agent might default to scaffolding and discussion instead of writing code, Nolan tends to cut straight to pointing it at the actual artifact.</p>
     </div>
 
     <div class="vignette">
-      <p class="v-meta">Entry 28 &middot; 2026-07-10, 18:25 &rarr; 18:38 &mdash; thirteen minutes, three prompts</p>
+      <p class="v-meta" data-tag="concept">Entry 28 &middot; 2026-07-10, 18:25 &rarr; 18:38 &mdash; thirteen minutes, three prompts</p>
       <div class="storyboard">
         <div class="sb-step">
           <div class="sb-when">18:25</div>
-          <blockquote>"Let's have "Reading Mode" Swallow the "Turn Jiggle Off" aspect of the jiggle button. Right now, the flavor notes are all vibrating no matter waht. i need them to rest at equilibrium reasonably timely."</blockquote>
+          <blockquote data-tag="verbatim">"Let's have "Reading Mode" Swallow the "Turn Jiggle Off" aspect of the jiggle button. Right now, the flavor notes are all vibrating no matter waht. i need them to rest at equilibrium reasonably timely."</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">18:35</div>
-          <blockquote>"Let's Make reading mode default. i like the ux of this"</blockquote>
+          <blockquote data-tag="verbatim">"Let's Make reading mode default. i like the ux of this"</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">18:38</div>
-          <blockquote>"Too many options is my point. Let's remove these options entirely and make the state be the default experience of the app"</blockquote>
+          <blockquote data-tag="verbatim">"Too many options is my point. Let's remove these options entirely and make the state be the default experience of the app"</blockquote>
         </div>
       </div>
-      <p>Three asks in a row, each one further than the last: merge two toggles into one, then make that one on by default, then realize a default anyone can still switch off is still a decision being asked of the user — so cut the option itself. Nobody suggested that last move; it's a preference for fewer decisions surfaced at all, arrived at faster than most single UI requests take to resolve.</p>
+      <p data-tag="extrapolated">Three asks in a row, each one further than the last: merge two toggles into one, then make that one on by default, then realize a default anyone can still switch off is still a decision being asked of the user — so cut the option itself. Nobody suggested that last move; it's a preference for fewer decisions surfaced at all, arrived at faster than most single UI requests take to resolve.</p>
     </div>
 
     <div class="vignette">
-      <blockquote>"i think i also need an honesty policy in here where all citations have a 'under human review' until I personally review them and verify that they are indeed not hallucinated"</blockquote>
-      <p class="v-meta">Entry 24 &middot; 2026-07-01</p>
-      <p>Nobody asked for this — it surfaces unprompted, mid-session, as a standing rule rather than a reaction to a problem the agent found first. It's still the mechanism behind <code>UNVERIFIED_REFS</code> today, though its own wording later got revisited (see below).</p>
+      <blockquote data-tag="verbatim">"i think i also need an honesty policy in here where all citations have a 'under human review' until I personally review them and verify that they are indeed not hallucinated"</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 24 &middot; 2026-07-01</p>
+      <p data-tag="concept">Nobody asked for this — it surfaces unprompted, mid-session, as a standing rule rather than a reaction to a problem the agent found first. It's still the mechanism behind <code>UNVERIFIED_REFS</code> today, though its own wording later got revisited (see below).</p>
     </div>
   </div>
 
   <div class="cluster">
-    <h3>Where the expertise shows</h3>
-    <p class="cluster-note">Moments where a specific professional instinct — not just an opinion — is visibly steering the decision.</p>
+    <h3 data-tag="style">Where the expertise shows</h3>
+    <p class="cluster-note" data-tag="style">Moments where a specific professional instinct — not just an opinion — is visibly steering the decision.</p>
 
     <div class="vignette">
-      <blockquote>"im a trained data analyst and and have background in science communication and popularization as well as creative engineering/concept design"</blockquote>
-      <p class="v-meta">Entry 43 &middot; 2026-08-04</p>
-      <p>Said directly, while asking the agent to write an About section grounded in his own information-design decisions rather than industry-standard tasting conventions — the one place in the log where the background driving the rest of this cluster is stated outright instead of inferred from a decision.</p>
+      <blockquote data-tag="verbatim">"im a trained data analyst and and have background in science communication and popularization as well as creative engineering/concept design"</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 43 &middot; 2026-08-04</p>
+      <p data-tag="extrapolated">Said directly, while asking the agent to write an About section grounded in his own information-design decisions rather than industry-standard tasting conventions — the one place in the log where the background driving the rest of this cluster is stated outright instead of inferred from a decision.</p>
     </div>
 
     <div class="vignette">
-      <p class="v-meta">Entry 22 &middot; 2026-07-01, 10:48 &rarr; 19:12 &mdash; one mobile-preview request, six rounds of correction</p>
+      <p class="v-meta" data-tag="concept">Entry 22 &middot; 2026-07-01, 10:48 &rarr; 19:12 &mdash; one mobile-preview request, six rounds of correction</p>
       <div class="storyboard">
         <div class="sb-step">
           <div class="sb-when">10:48</div>
-          <blockquote>"let's load up a preview of the mobile portrait running index.html at the current slice"</blockquote>
+          <blockquote data-tag="verbatim">"let's load up a preview of the mobile portrait running index.html at the current slice"</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">10:51</div>
-          <blockquote>"argh when I try to organize the icons&hellip; the hweel jumbles all over again and it resets its somewhere else entirely&hellip; it's like bllowing up a balloon with hot air and all of the gas molecules are colliding with each other in the confined space."</blockquote>
+          <blockquote data-tag="verbatim">"argh when I try to organize the icons&hellip; the hweel jumbles all over again and it resets its somewhere else entirely&hellip; it's like bllowing up a balloon with hot air and all of the gas molecules are colliding with each other in the confined space."</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">10:56</div>
-          <blockquote>"Mmmm, legibility still lacks, the icons need to be aware of each other and have some sort of forcefield like basil seeds around them"</blockquote>
+          <blockquote data-tag="verbatim">"Mmmm, legibility still lacks, the icons need to be aware of each other and have some sort of forcefield like basil seeds around them"</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">11:11</div>
-          <blockquote>"let's also add a "freeze aroma bubbles" checkbox&hellip; as if the aroma wheel is a fluid in a petri dish."</blockquote>
+          <blockquote data-tag="verbatim">"let's also add a "freeze aroma bubbles" checkbox&hellip; as if the aroma wheel is a fluid in a petri dish."</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">11:19</div>
-          <blockquote>"the physics definitely need to be grounded to the fact that i am mostly working on this on my desktop where i have a massive widescreen monitor but my phone is tiny by comparison."</blockquote>
+          <blockquote data-tag="verbatim">"the physics definitely need to be grounded to the fact that i am mostly working on this on my desktop where i have a massive widescreen monitor but my phone is tiny by comparison."</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">11:23</div>
-          <blockquote>"dude it's rave mode activated! argh and now desktop is dead by comparison!"</blockquote>
+          <blockquote data-tag="verbatim">"dude it's rave mode activated! argh and now desktop is dead by comparison!"</blockquote>
         </div>
         <div class="sb-step">
           <div class="sb-when">19:12</div>
-          <blockquote>"mobile needs to be slower still. the notes are still vibrating at least 7-8 times a second."</blockquote>
+          <blockquote data-tag="verbatim">"mobile needs to be slower still. the notes are still vibrating at least 7-8 times a second."</blockquote>
         </div>
       </div>
-      <p>Every correction here is a physical metaphor, not a UI spec — balloon, basil seeds, fluid in a petri dish, rave mode — and the fix that eventually landed (cached per-viewport home positions, a softened freeze curve, a manual freeze toggle) tracked those metaphors almost literally. It also took a real overcorrection in the middle: tuning for "massive widescreen monitor" produced something so fast on desktop it earned "rave mode activated," which then needed pulling back for both screens separately. The vision wasn't hit on the first pass, or the second — it took naming what was wrong six different ways before the physics actually matched what he meant.</p>
+      <p data-tag="extrapolated">Every correction here is a physical metaphor, not a UI spec — balloon, basil seeds, fluid in a petri dish, rave mode — and the fix that eventually landed (cached per-viewport home positions, a softened freeze curve, a manual freeze toggle) tracked those metaphors almost literally. It also took a real overcorrection in the middle: tuning for "massive widescreen monitor" produced something so fast on desktop it earned "rave mode activated," which then needed pulling back for both screens separately. The vision wasn't hit on the first pass, or the second — it took naming what was wrong six different ways before the physics actually matched what he meant.</p>
     </div>
 
     <div class="vignette">
-      <blockquote>"i put you in ultracode so i want you to use the cognition ive upgraded you to in order to think systemicatically about how these multiple steps of thinking im giving you in this thesis are represented y differient feautres of the tool and how they are in fact disparate things but are tied through this narrative"</blockquote>
-      <p class="v-meta">Entry 35 &middot; 2026-07-26</p>
-      <p>This follows directly from "here's my gis brain coming online" earlier in the same prompt, which lays out multiple map layers — origin, cultivation economics, cultural value — as separate but narratively connected data before any code gets discussed. That's a GIS/systems-analysis habit showing up in how the feature gets specified, not just in what gets asked for.</p>
+      <blockquote data-tag="verbatim">"i put you in ultracode so i want you to use the cognition ive upgraded you to in order to think systemicatically about how these multiple steps of thinking im giving you in this thesis are represented y differient feautres of the tool and how they are in fact disparate things but are tied through this narrative"</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 35 &middot; 2026-07-26</p>
+      <p data-tag="extrapolated">This follows directly from "here's my gis brain coming online" earlier in the same prompt, which lays out multiple map layers — origin, cultivation economics, cultural value — as separate but narratively connected data before any code gets discussed. That's a GIS/systems-analysis habit showing up in how the feature gets specified, not just in what gets asked for.</p>
     </div>
   </div>
 
   <div class="cluster">
-    <h3>The taste calls</h3>
-    <p class="cluster-note">Aesthetic and audience judgment, stated plainly and acted on immediately.</p>
+    <h3 data-tag="style">The taste calls</h3>
+    <p class="cluster-note" data-tag="style">Aesthetic and audience judgment, stated plainly and acted on immediately.</p>
 
     <div class="vignette">
-      <blockquote>"most people dont know what blackcurrant tastes like here, so perhaps find other analogs that would be apparent to a wider audience."</blockquote>
-      <p class="v-meta">Entry 4 &middot; 2026-05-21</p>
-      <p>One line inside a longer feedback pass, but it set a durable rule still visible in later scope calls: a reference flavor only earns a place if the audience can actually recognize it. The correction isn't about the chemistry being wrong, it's about who the tool is legible to.</p>
+      <blockquote data-tag="verbatim">"most people dont know what blackcurrant tastes like here, so perhaps find other analogs that would be apparent to a wider audience."</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 4 &middot; 2026-05-21</p>
+      <p data-tag="concept">One line inside a longer feedback pass, but it set a durable rule still visible in later scope calls: a reference flavor only earns a place if the audience can actually recognize it. The correction isn't about the chemistry being wrong, it's about who the tool is legible to.</p>
     </div>
 
     <div class="vignette">
-      <blockquote>"keep in mind though wine will inspire this, i feel the tone of this is getting too wine specific. remember this needs to be accessible to a non-drinking or sober crowd most of all."</blockquote>
-      <p class="v-meta">Entry 9 &middot; 2026-05-26</p>
-      <p>Caught mid-edit, before the drift became load-bearing. The same prompt draws a careful line rather than a blanket ban — a few sentences later he explicitly carves out an exception for oak-barrel compounds, since those are genuinely interesting chemistry rather than wine-culture framing. That's a taste call with a boundary, not a blunt rule.</p>
+      <blockquote data-tag="verbatim">"keep in mind though wine will inspire this, i feel the tone of this is getting too wine specific. remember this needs to be accessible to a non-drinking or sober crowd most of all."</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 9 &middot; 2026-05-26</p>
+      <p data-tag="concept">Caught mid-edit, before the drift became load-bearing. The same prompt draws a careful line rather than a blanket ban — a few sentences later he explicitly carves out an exception for oak-barrel compounds, since those are genuinely interesting chemistry rather than wine-culture framing. That's a taste call with a boundary, not a blunt rule.</p>
     </div>
   </div>
 
   <div class="cluster">
-    <h3>What he'll actually reconsider</h3>
-    <p class="cluster-note">The flip side of directiveness — moments of catching his own gap, or being visibly surprised into a new idea by something the tool showed him.</p>
+    <h3 data-tag="style">What he'll actually reconsider</h3>
+    <p class="cluster-note" data-tag="style">The flip side of directiveness — moments of catching his own gap, or being visibly surprised into a new idea by something the tool showed him.</p>
 
     <div class="vignette">
-      <blockquote>"argh, mobile ui didn't get the same attention. let's make sure the mobile portrait mode gets the same visual upgrades appropriate for the smaller screen size."</blockquote>
-      <p class="v-meta">Entry 21 &middot; 2026-06-30</p>
-      <p>This lands partway through a long, open-ended desktop UI brief, and the gap gets corrected inside the same session rather than becoming a later pass — a working style that self-audits mid-stream instead of needing an outside nudge to notice an oversight.</p>
+      <blockquote data-tag="verbatim">"argh, mobile ui didn't get the same attention. let's make sure the mobile portrait mode gets the same visual upgrades appropriate for the smaller screen size."</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 21 &middot; 2026-06-30</p>
+      <p data-tag="extrapolated">This lands partway through a long, open-ended desktop UI brief, and the gap gets corrected inside the same session rather than becoming a later pass — a working style that self-audits mid-stream instead of needing an outside nudge to notice an oversight.</p>
     </div>
 
     <div class="vignette">
-      <blockquote>"that is not clear. it makes it seem like 'Lychee' is the 'real' smell of rose. that is pretty cool but is it accurate?"</blockquote>
-      <p class="v-meta">Entry 44 &middot; 2026-08-14</p>
-      <p>Before accepting a surprising result from his own tool, he checked it for accuracy first — the next prompt in the same exchange is "that's kind of neat if I start saying I smell 'lychee' when I'm smelling rose." The order matters: skepticism came before delight, not after. That sequence — verify, then let a genuinely new idea in — reads as a more careful kind of open-mindedness than simply being agreeable.</p>
+      <blockquote data-tag="verbatim">"that is not clear. it makes it seem like 'Lychee' is the 'real' smell of rose. that is pretty cool but is it accurate?"</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 44 &middot; 2026-08-14</p>
+      <p data-tag="extrapolated">Before accepting a surprising result from his own tool, he checked it for accuracy first — the next prompt in the same exchange is "that's kind of neat if I start saying I smell 'lychee' when I'm smelling rose." The order matters: skepticism came before delight, not after. That sequence — verify, then let a genuinely new idea in — reads as a more careful kind of open-mindedness than simply being agreeable.</p>
     </div>
 
     <div class="vignette">
-      <blockquote>"the citation honesty policy does the opposite. it makes it sound dishonest and possibly completly false. remove this entire section and also the flags for under construction. once citations make it in the tool they have been checked because the literature itself is where we got the info in the first place. just say what criteria was considered for choosing works cited to rely on."</blockquote>
-      <p class="v-meta">Entry 43 &middot; 2026-08-04</p>
-      <p>A policy he set himself a month earlier (see entry 24, above) gets reversed here — not because the underlying practice changed, but because seeing it live in copy revealed it was undermining the very trust it was meant to build. Reworking his own earlier decision once he could see its actual effect is a different kind of receptiveness than being talked into something by the agent — this one came from evaluating his own past call against the shipped result.</p>
+      <blockquote data-tag="verbatim">"the citation honesty policy does the opposite. it makes it sound dishonest and possibly completly false. remove this entire section and also the flags for under construction. once citations make it in the tool they have been checked because the literature itself is where we got the info in the first place. just say what criteria was considered for choosing works cited to rely on."</blockquote>
+      <p class="v-meta" data-tag="concept">Entry 43 &middot; 2026-08-04</p>
+      <p data-tag="extrapolated">A policy he set himself a month earlier (see entry 24, above) gets reversed here — not because the underlying practice changed, but because seeing it live in copy revealed it was undermining the very trust it was meant to build. Reworking his own earlier decision once he could see its actual effect is a different kind of receptiveness than being talked into something by the agent — this one came from evaluating his own past call against the shipped result.</p>
     </div>
   </div>
 
-  <h2 id="how-ideas-evolved">How ideas evolved</h2>
-  <p>The moments above show what individual prompts reveal about how Nolan works. This section does something narrower: it picks specific ideas that visibly changed over time and traces each one through the actual words that changed it, in order. Every quote below is pulled directly from the prompt log &mdash; either from the curated <a href="docs/prompt-log/README.md">README</a>'s own quoted fragments, or, where noted, verified against the verbatim <a href="docs/prompt-log/raw/">raw transcripts</a>. Dates and entry numbers sit next to each one so the chain can be checked.</p>
+  <h2 id="how-ideas-evolved" data-tag="style">How ideas evolved</h2>
+  <p data-tag="style">The moments above show what individual prompts reveal about how Nolan works. This section does something narrower: it picks specific ideas that visibly changed over time and traces each one through the actual words that changed it, in order. Every quote below is pulled directly from the prompt log &mdash; either from the curated <a href="docs/prompt-log/README.md">README</a>'s own quoted fragments, or, where noted, verified against the verbatim <a href="docs/prompt-log/raw/">raw transcripts</a>. Dates and entry numbers sit next to each one so the chain can be checked.</p>
 
   <div class="thread">
-    <h3>"Your perceptions are real, and they change"</h3>
-    <p class="thread-note">The project's core stance, stated once, then tested, then lived out.</p>
+    <h3 data-tag="style">"Your perceptions are real, and they change"</h3>
+    <p class="thread-note" data-tag="style">The project's core stance, stated once, then tested, then lived out.</p>
     <div class="timeline">
       <div class="step">
         <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
-        <blockquote>"Yes the tone of the entire project is. Your perceptions are real, and they are going to change depending on what exact moment you use the tool. It's gustatory agnostic&hellip;"</blockquote>
+        <blockquote data-tag="verbatim">"Yes the tone of the entire project is. Your perceptions are real, and they are going to change depending on what exact moment you use the tool. It's gustatory agnostic&hellip;"</blockquote>
       </div>
-      <div class="connector">The stance is stated flatly, as a direct answer to a question about tone &mdash; and immediately scoped: gustatory-agnostic in principle, but edible-only in practice for now.</div>
+      <div class="connector" data-tag="concept">The stance is stated flatly, as a direct answer to a question about tone &mdash; and immediately scoped: gustatory-agnostic in principle, but edible-only in practice for now.</div>
       <div class="step">
         <div class="when">Entry 8 &middot; 2026-05-23</div>
-        <blockquote>"Let's really think about if this is the right stance? : ('here's the chemistry your perception implies')&hellip;"</blockquote>
+        <blockquote data-tag="verbatim">"Let's really think about if this is the right stance? : ('here's the chemistry your perception implies')&hellip;"</blockquote>
       </div>
-      <div class="connector">Days later, the same idea gets re-litigated rather than assumed &mdash; the stance survives its own stress test, reframed as "here's the chemistry your perception implies" instead of a claim about ground truth.</div>
+      <div class="connector" data-tag="extrapolated">Days later, the same idea gets re-litigated rather than assumed &mdash; the stance survives its own stress test, reframed as "here's the chemistry your perception implies" instead of a claim about ground truth.</div>
       <div class="step">
         <div class="when">Entry 44 &middot; 2026-08-14</div>
-        <blockquote>"that's kind of neat if I start saying I smell 'lychee' when I'm smelling rose"</blockquote>
+        <blockquote data-tag="verbatim">"that's kind of neat if I start saying I smell 'lychee' when I'm smelling rose"</blockquote>
       </div>
-      <div class="connector">Three months later, the abstract stance shows up as a lived reaction to the tool's own output &mdash; scoring a rose tasting and finding "Strongest: Lychee," and treating that as an invitation rather than a correction.</div>
+      <div class="connector" data-tag="concept">Three months later, the abstract stance shows up as a lived reaction to the tool's own output &mdash; scoring a rose tasting and finding "Strongest: Lychee," and treating that as an invitation rather than a correction.</div>
     </div>
   </div>
 
   <div class="thread">
-    <h3>The citation honesty rule</h3>
-    <p class="thread-note">Pushed for, then built as an explicit policy, then rewritten because the policy's own wording undermined it.</p>
+    <h3 data-tag="style">The citation honesty rule</h3>
+    <p class="thread-note" data-tag="style">Pushed for, then built as an explicit policy, then rewritten because the policy's own wording undermined it.</p>
     <div class="timeline">
       <div class="step">
         <div class="when">Entry 15 &middot; 2026-06-09 &rarr; 06-11</div>
-        <blockquote>"are there not citations we can get from within the last decade?"</blockquote>
+        <blockquote data-tag="verbatim">"are there not citations we can get from within the last decade?"</blockquote>
       </div>
-      <div class="connector">The earliest push is simple: are these sources actually current. That question is what starts the project interrogating its own citations rather than just adding them.</div>
+      <div class="connector" data-tag="extrapolated">The earliest push is simple: are these sources actually current. That question is what starts the project interrogating its own citations rather than just adding them.</div>
       <div class="step">
         <div class="when">Entry 24 &middot; 2026-07-01</div>
-        <blockquote>"i think i also need an honesty policy in here&hellip;" (full quote above, in "Leading, not being led")</blockquote>
+        <blockquote data-tag="verbatim">"i think i also need an honesty policy in here&hellip;" (full quote above, in "Leading, not being led")</blockquote>
       </div>
-      <div class="connector">That becomes an explicit rule (<code class="hash">50996dd</code>): unverified sources render as under review rather than getting silently trusted. This is still the mechanism behind <code>UNVERIFIED_REFS</code> today.</div>
+      <div class="connector" data-tag="concept">That becomes an explicit rule (<code class="hash">50996dd</code>): unverified sources render as under review rather than getting silently trusted. This is still the mechanism behind <code>UNVERIFIED_REFS</code> today.</div>
       <div class="step">
         <div class="when">Entry 43 &middot; 2026-08-04 &rarr; 08-05</div>
-        <blockquote>"it makes it sound dishonest and possibly completely false&hellip;" (full quote above, in "What he'll actually reconsider")</blockquote>
+        <blockquote data-tag="verbatim">"it makes it sound dishonest and possibly completely false&hellip;" (full quote above, in "What he'll actually reconsider")</blockquote>
       </div>
-      <div class="connector">A month later, the underlying practice doesn't change &mdash; but the copy describing it does (<code class="hash">850afa1</code>). The honesty policy had started reading as an admission of doubt instead of a description of a process, and got rewritten to state the actual selection criteria instead.</div>
+      <div class="connector" data-tag="concept">A month later, the underlying practice doesn't change &mdash; but the copy describing it does (<code class="hash">850afa1</code>). The honesty policy had started reading as an admission of doubt instead of a description of a process, and got rewritten to state the actual selection criteria instead.</div>
     </div>
   </div>
 
   <div class="thread">
-    <h3>The mobile-first pivot</h3>
-    <p class="thread-note">From "test it at phone size" to a documented product-design contract.</p>
+    <h3 data-tag="style">The mobile-first pivot</h3>
+    <p class="thread-note" data-tag="style">From "test it at phone size" to a documented product-design contract.</p>
     <div class="timeline">
       <div class="step">
         <div class="when">Entry 19 &middot; 2026-06-27 &rarr; 06-28</div>
-        <blockquote>"&hellip;because that's honestly how it will be demoed irl"</blockquote>
+        <blockquote data-tag="verbatim">"&hellip;because that's honestly how it will be demoed irl"</blockquote>
       </div>
-      <div class="connector">The Galaxy S10e portrait viewport becomes the working reference size for a very practical reason &mdash; that's the actual demo conditions &mdash; not an abstract accessibility ideal.</div>
+      <div class="connector" data-tag="concept">The Galaxy S10e portrait viewport becomes the working reference size for a very practical reason &mdash; that's the actual demo conditions &mdash; not an abstract accessibility ideal.</div>
       <div class="step">
         <div class="when">Entry 21 &middot; 2026-06-29 &rarr; 07-01</div>
-        <blockquote>"argh, mobile ui didn't get the same attention"</blockquote>
+        <blockquote data-tag="verbatim">"argh, mobile ui didn't get the same attention"</blockquote>
       </div>
-      <div class="connector">A long open-ended desktop UI brief gets self-corrected mid-session once the gap becomes visible &mdash; mobile gets its own matching treatment (natural page scroll, a fixed Tasting Tray) in the same session rather than a later pass.</div>
+      <div class="connector" data-tag="concept">A long open-ended desktop UI brief gets self-corrected mid-session once the gap becomes visible &mdash; mobile gets its own matching treatment (natural page scroll, a fixed Tasting Tray) in the same session rather than a later pass.</div>
       <div class="step">
         <div class="when">Entry 35 &middot; 2026-07-25 &rarr; 07-26</div>
-        <blockquote>"i know overall i was working on ui design for both desktop and mobile versions and trying to figure out how to clean up the overall transitions between different features&hellip; so that it is more seamless when someone is in the middle of a tasting session&hellip;"</blockquote>
+        <blockquote data-tag="verbatim">"i know overall i was working on ui design for both desktop and mobile versions and trying to figure out how to clean up the overall transitions between different features&hellip; so that it is more seamless when someone is in the middle of a tasting session&hellip;"</blockquote>
       </div>
-      <div class="connector">What had been recurring in-session corrections finally gets written down as a standing rule: the mobile-first product-design contract now in <code>CLAUDE.md</code> (<code class="hash">17c7fdd</code>) &mdash; named viewport classes, no critical control may clip, pane ownership belongs to the user.</div>
+      <div class="connector" data-tag="concept">What had been recurring in-session corrections finally gets written down as a standing rule: the mobile-first product-design contract now in <code>CLAUDE.md</code> (<code class="hash">17c7fdd</code>) &mdash; named viewport classes, no critical control may clip, pane ownership belongs to the user.</div>
     </div>
   </div>
 
   <div class="thread">
-    <h3>The Tree's taxonomy: tags to a real tree to a spiral to leaves</h3>
-    <p class="thread-note">The longest-running visual-design thread in the project.</p>
+    <h3 data-tag="style">The Tree's taxonomy: tags to a real tree to a spiral to leaves</h3>
+    <p class="thread-note" data-tag="style">The longest-running visual-design thread in the project.</p>
     <div class="timeline">
       <div class="step">
         <div class="when">Entry 20 &middot; 2026-06-28 &rarr; 06-29</div>
-        <blockquote>"can we put all of the flavor notes on a taxonomy tree? this is the third viewer along with wheel and map"</blockquote>
+        <blockquote data-tag="verbatim">"can we put all of the flavor notes on a taxonomy tree? this is the third viewer along with wheel and map"</blockquote>
       </div>
-      <div class="connector">A Phase 1 family-tag layer (added earlier the same session) becomes a full Kingdom&rarr;Order&rarr;Family&rarr;Note dendrogram &mdash; a real phylogenetic depth, not just a label on a note.</div>
+      <div class="connector" data-tag="concept">A Phase 1 family-tag layer (added earlier the same session) becomes a full Kingdom&rarr;Order&rarr;Family&rarr;Note dendrogram &mdash; a real phylogenetic depth, not just a label on a note.</div>
       <div class="step">
         <div class="when">Entry 37 &middot; 2026-07-26</div>
-        <blockquote>"might do better if when you zoom to family level it looks more like a wreath&hellip; to carry over the circle design of aroma wheel"</blockquote>
+        <blockquote data-tag="verbatim">"might do better if when you zoom to family level it looks more like a wreath&hellip; to carry over the circle design of aroma wheel"</blockquote>
       </div>
-      <div class="connector">A design idea relayed from a conversation with ChatGPT reframes the family level visually, tying the Tree's shape back to the Wheel's.</div>
+      <div class="connector" data-tag="concept">A design idea relayed from a conversation with ChatGPT reframes the family level visually, tying the Tree's shape back to the Wheel's.</div>
       <div class="step">
         <div class="when">Entry 40 &middot; 2026-07-30</div>
-        <blockquote>"desktop view is still pretty unviewable because its a super side but short interactive&hellip; is there another way to show hierarchy while spiraling?"</blockquote>
+        <blockquote data-tag="verbatim">"desktop view is still pretty unviewable because its a super side but short interactive&hellip; is there another way to show hierarchy while spiraling?"</blockquote>
       </div>
-      <div class="connector">A purely visual pass turns out not to use the desktop screen well; naming that problem directly produces the conical-helix layout (<code class="hash">61d069f</code>).</div>
+      <div class="connector" data-tag="concept">A purely visual pass turns out not to use the desktop screen well; naming that problem directly produces the conical-helix layout (<code class="hash">61d069f</code>).</div>
       <div class="step">
         <div class="when">Entry 38 &middot; 2026-07-26</div>
-        <blockquote>"yeah maybe it should read as leaves at that point yes you go for it with your ui artistry"</blockquote>
+        <blockquote data-tag="verbatim">"yeah maybe it should read as leaves at that point yes you go for it with your ui artistry"</blockquote>
       </div>
-      <div class="connector">The family scale gets read as leaves rather than branches (<code class="hash">060519e</code>), then as growth rings (<code class="hash">1a557ee</code>) &mdash; the wreath idea from entry 37 finding its literal shape.</div>
+      <div class="connector" data-tag="concept">The family scale gets read as leaves rather than branches (<code class="hash">060519e</code>), then as growth rings (<code class="hash">1a557ee</code>) &mdash; the wreath idea from entry 37 finding its literal shape.</div>
     </div>
   </div>
 
   <div class="thread">
-    <h3>ChatGPT and the codex branch: quarantine to trust</h3>
-    <p class="thread-note">From containment to an explicit reversal of Claude's own caution.</p>
+    <h3 data-tag="style">ChatGPT and the codex branch: quarantine to trust</h3>
+    <p class="thread-note" data-tag="style">From containment to an explicit reversal of Claude's own caution.</p>
     <div class="timeline">
       <div class="step">
         <div class="when">Entry 29 &middot; 2026-07-11</div>
-        <blockquote>"in case any new openai models hopefully will keep whatever bugs or snips inside its own area and we keep most of the repo supported solely by claudel"</blockquote>
+        <blockquote data-tag="verbatim">"in case any new openai models hopefully will keep whatever bugs or snips inside its own area and we keep most of the repo supported solely by claudel"</blockquote>
       </div>
-      <div class="connector">The <code>codex/*</code> policy starts as containment, stated plainly as such &mdash; not a judgment about ChatGPT's work quality, a fence around risk.</div>
+      <div class="connector" data-tag="concept">The <code>codex/*</code> policy starts as containment, stated plainly as such &mdash; not a judgment about ChatGPT's work quality, a fence around risk.</div>
       <div class="step">
         <div class="when">Entry 34 &middot; 2026-07-11</div>
-        <blockquote>"update the rule where you can also update this branch. this is just the only one i want chatgpt touching"</blockquote>
+        <blockquote data-tag="verbatim">"update the rule where you can also update this branch. this is just the only one i want chatgpt touching"</blockquote>
       </div>
-      <div class="connector">Claude's access to the codex branch, previously a one-off exception, becomes a standing rule &mdash; the fence stays, but it stops being one-directional.</div>
+      <div class="connector" data-tag="concept">Claude's access to the codex branch, previously a one-off exception, becomes a standing rule &mdash; the fence stays, but it stops being one-directional.</div>
       <div class="step">
         <div class="when">Entry 39 &middot; 2026-07-27</div>
-        <blockquote>"that's against the branching rule in CLAUDE.md&hellip; I trust codex to do everything claude can do now that Ive had time to test their newest model. its trustworthy."</blockquote>
+        <blockquote data-tag="verbatim">"that's against the branching rule in CLAUDE.md&hellip; I trust codex to do everything claude can do now that Ive had time to test their newest model. its trustworthy."</blockquote>
       </div>
-      <div class="connector">The extraction/re-implementation gate &mdash; a rule Claude had cited back defensively &mdash; gets explicitly overridden. <code>codex/*</code> can merge directly into <code>prototype</code>; Claude's review moves from a pre-merge gate to periodic post-hoc review, as it still is today.</div>
+      <div class="connector" data-tag="concept">The extraction/re-implementation gate &mdash; a rule Claude had cited back defensively &mdash; gets explicitly overridden. <code>codex/*</code> can merge directly into <code>prototype</code>; Claude's review moves from a pre-merge gate to periodic post-hoc review, as it still is today.</div>
     </div>
   </div>
 
   <div class="thread">
-    <h3>Go Deeper's ortho/retro mechanism</h3>
-    <p class="thread-note">From a data-logging toggle to a framing for a whole audience.</p>
+    <h3 data-tag="style">Go Deeper's ortho/retro mechanism</h3>
+    <p class="thread-note" data-tag="style">From a data-logging toggle to a framing for a whole audience.</p>
     <div class="timeline">
       <div class="step">
         <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
-        <blockquote>"So yes being able to click either ortho (sniff) or retro (swallow) and that option should always be available for the user to flag for themselves. and that can be another visibility toggle in the legend."</blockquote>
+        <blockquote data-tag="verbatim">"So yes being able to click either ortho (sniff) or retro (swallow) and that option should always be available for the user to flag for themselves. and that can be another visibility toggle in the legend."</blockquote>
       </div>
-      <div class="connector">Ortho/retro starts as an always-visible flag on every note, sitting in the legend alongside other visibility toggles.</div>
+      <div class="connector" data-tag="concept">Ortho/retro starts as an always-visible flag on every note, sitting in the legend alongside other visibility toggles.</div>
       <div class="step">
         <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
-        <blockquote>"ortho nasal is fine behind an advanced frame"</blockquote>
+        <blockquote data-tag="verbatim">"ortho nasal is fine behind an advanced frame"</blockquote>
       </div>
-      <div class="connector">Within the same session, the mechanism gets pulled back behind an advanced frame &mdash; the first move toward what becomes Go Deeper.</div>
+      <div class="connector" data-tag="concept">Within the same session, the mechanism gets pulled back behind an advanced frame &mdash; the first move toward what becomes Go Deeper.</div>
       <div class="step">
         <div class="when">Entry 6 &middot; 2026-05-23 &rarr; 05-26</div>
-        <blockquote>"every taste note on the left pane can have ortho/retro on there and that is what confirms the note's presence on the central wheel and in the analysis. to confirm you need to select ortho(sniff) or retro(Swallow)."</blockquote>
+        <blockquote data-tag="verbatim">"every taste note on the left pane can have ortho/retro on there and that is what confirms the note's presence on the central wheel and in the analysis. to confirm you need to select ortho(sniff) or retro(Swallow)."</blockquote>
       </div>
-      <div class="connector">It generalizes further &mdash; from an optional flag to the actual confirmation mechanism for entering a note at all, with a checkmark indicator so a user knows what they've already logged.</div>
+      <div class="connector" data-tag="concept">It generalizes further &mdash; from an optional flag to the actual confirmation mechanism for entering a note at all, with a checkmark indicator so a user knows what they've already logged.</div>
       <div class="step">
         <div class="when">Entry 42 &middot; 2026-08-06 &rarr; 08-07</div>
-        <blockquote>"im really trying to key into the people that will use go deeper because they are inquisitive and want to go deeper into how these notes relate and how to detect these different compounds by inferring from detecting flavors/aromas with our senses."</blockquote>
+        <blockquote data-tag="verbatim">"im really trying to key into the people that will use go deeper because they are inquisitive and want to go deeper into how these notes relate and how to detect these different compounds by inferring from detecting flavors/aromas with our senses."</blockquote>
       </div>
-      <div class="connector">Months later, Go Deeper stops being framed as a data-input mechanism at all and gets explicitly redefined around an audience &mdash; people curious about relationships between notes, not just a stricter logging mode. Map and Tree get ungated from behind it the same session.</div>
+      <div class="connector" data-tag="concept">Months later, Go Deeper stops being framed as a data-input mechanism at all and gets explicitly redefined around an audience &mdash; people curious about relationships between notes, not just a stricter logging mode. Map and Tree get ungated from behind it the same session.</div>
     </div>
   </div>
 
-  <p class="thread-note" style="margin-top: -8px;">Two threads worth naming were considered and dropped. The "no invented distinguishing compound" pattern (<code>noStandoutNote</code>) is real and consistently applied &mdash; but the log only carries one clean verbatim quote for it (entry 19's berry table framing), not enough steps to call an evolution rather than a single decision. The economic-cultivation and cultural-value map layers mentioned in <code>CLAUDE.md</code> are explicitly still unstarted, pending design approval, so there's no mutation to trace yet.</p>
+  <p class="thread-note" data-tag="concept" style="margin-top: -8px;">Two threads worth naming were considered and dropped. The "no invented distinguishing compound" pattern (<code>noStandoutNote</code>) is real and consistently applied &mdash; but the log only carries one clean verbatim quote for it (entry 19's berry table framing), not enough steps to call an evolution rather than a single decision. The economic-cultivation and cultural-value map layers mentioned in <code>CLAUDE.md</code> are explicitly still unstarted, pending design approval, so there's no mutation to trace yet.</p>
 
-  <h2 id="full-archive">Full archive</h2>
-  <p>Everything above is a synthesis. If you want the unabridged, unstyled version &mdash; the actual record this page was built from &mdash; it lives in the repo as plain markdown. These links render as raw text in a browser, no formatting, because there's no markdown renderer on this static site. That's expected, not a bug.</p>
+  <h2 id="full-archive" data-tag="style">Full archive</h2>
+  <p data-tag="style">Everything above is a synthesis. If you want the unabridged, unstyled version &mdash; the actual record this page was built from &mdash; it lives in the repo as plain markdown. These links render as raw text in a browser, no formatting, because there's no markdown renderer on this static site. That's expected, not a bug.</p>
   <ul class="links">
     <li><a href="docs/prompt-log/README.md">The curated prompt log</a><span class="hint">one entry per session, all 45, what was asked and what shipped</span></li>
     <li><a href="docs/prompt-log/raw/06-remove-sensitive-credentials-from-public-r.md">Raw transcript, entry 6</a><span class="hint">the V2 epic, 86 prompts verbatim &mdash; a representative long session</span></li>
@@ -452,5 +513,33 @@
     <p>Part of <a href="index.html">Aroma Wheel</a>, an educational artifact by Nolan [&AElig;] &middot; Portland, OR.</p>
   </footer>
 </main>
+
+<script>
+(function () {
+  var hud = document.getElementById('prov-hud');
+  var chips = hud.querySelectorAll('.prov-chip');
+  var resetBtn = document.getElementById('prov-reset');
+
+  function setFilter(name) {
+    if (name) {
+      document.body.setAttribute('data-prov-filter', name);
+    } else {
+      document.body.removeAttribute('data-prov-filter');
+    }
+    chips.forEach(function (c) {
+      c.setAttribute('aria-pressed', String(c.getAttribute('data-filter') === name));
+    });
+    resetBtn.classList.toggle('show', !!name);
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var active = chip.getAttribute('aria-pressed') === 'true';
+      setFilter(active ? null : chip.getAttribute('data-filter'));
+    });
+  });
+  resetBtn.addEventListener('click', function () { setFilter(null); });
+})();
+</script>
 </body>
 </html>
