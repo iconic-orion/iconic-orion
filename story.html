@@ -117,6 +117,16 @@
   .vignette blockquote { margin: 0 0 8px; padding: 8px 14px; }
   .vignette .v-meta { font-size: 11px; color: var(--ink-dim); margin: 0 0 10px; letter-spacing: 0.01em; }
   .vignette p:last-child { margin-bottom: 0; }
+
+  /* --- storyboard: a fast prompt-by-prompt iteration sequence inside a vignette --- */
+  .storyboard { position: relative; margin: 0 0 12px; padding-left: 20px; }
+  .storyboard::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px;
+    width: 1px; background: var(--line); }
+  .sb-step { position: relative; margin: 0 0 10px; }
+  .sb-step::before { content: ""; position: absolute; left: -20px; top: 5px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--bg); border: 1px solid var(--accent-2); }
+  .sb-when { font-size: 10px; color: var(--ink-dim); margin: 0 0 3px; letter-spacing: 0.02em; }
+  .sb-step blockquote { margin: 0; padding: 6px 12px; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -156,9 +166,22 @@
     </div>
 
     <div class="vignette">
-      <blockquote>"Too many options is my point. Let's remove these options entirely and make the state be the default experience of the app"</blockquote>
-      <p class="v-meta">Entry 28 &middot; 2026-07-10</p>
-      <p>A settings surface (Reading Mode, a separate Jiggle toggle) had grown past what the app needed. Rather than asking for a compromise, this collapses the decision entirely — a preference for fewer decisions surfaced to the user over more configurability, even where the agent's default move would be adding a toggle to satisfy everyone.</p>
+      <p class="v-meta">Entry 28 &middot; 2026-07-10, 18:25 &rarr; 18:38 &mdash; thirteen minutes, three prompts</p>
+      <div class="storyboard">
+        <div class="sb-step">
+          <div class="sb-when">18:25</div>
+          <blockquote>"Let's have "Reading Mode" Swallow the "Turn Jiggle Off" aspect of the jiggle button. Right now, the flavor notes are all vibrating no matter waht. i need them to rest at equilibrium reasonably timely."</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">18:35</div>
+          <blockquote>"Let's Make reading mode default. i like the ux of this"</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">18:38</div>
+          <blockquote>"Too many options is my point. Let's remove these options entirely and make the state be the default experience of the app"</blockquote>
+        </div>
+      </div>
+      <p>Three asks in a row, each one further than the last: merge two toggles into one, then make that one on by default, then realize a default anyone can still switch off is still a decision being asked of the user — so cut the option itself. Nobody suggested that last move; it's a preference for fewer decisions surfaced at all, arrived at faster than most single UI requests take to resolve.</p>
     </div>
 
     <div class="vignette">
@@ -179,9 +202,38 @@
     </div>
 
     <div class="vignette">
-      <blockquote>"it's like bllowing up a balloon with hot air and all of the gas molecules are colliding with each other in the confined space"</blockquote>
-      <p class="v-meta">Entry 22 &middot; 2026-07-01</p>
-      <p>A bug report about the wheel's floating compound bubbles resetting unpredictably, phrased as a physical model rather than a UI complaint — and the fix that followed ("forcefield"-style collision, a softer freeze curve) tracked the metaphor almost literally. Reaching for a teachable physical analogy to describe a UI problem reads as the science-communication instinct at work, not just a description of what looked wrong.</p>
+      <p class="v-meta">Entry 22 &middot; 2026-07-01, 10:48 &rarr; 19:12 &mdash; one mobile-preview request, six rounds of correction</p>
+      <div class="storyboard">
+        <div class="sb-step">
+          <div class="sb-when">10:48</div>
+          <blockquote>"let's load up a preview of the mobile portrait running index.html at the current slice"</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">10:51</div>
+          <blockquote>"argh when I try to organize the icons&hellip; the hweel jumbles all over again and it resets its somewhere else entirely&hellip; it's like bllowing up a balloon with hot air and all of the gas molecules are colliding with each other in the confined space."</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">10:56</div>
+          <blockquote>"Mmmm, legibility still lacks, the icons need to be aware of each other and have some sort of forcefield like basil seeds around them"</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">11:11</div>
+          <blockquote>"let's also add a "freeze aroma bubbles" checkbox&hellip; as if the aroma wheel is a fluid in a petri dish."</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">11:19</div>
+          <blockquote>"the physics definitely need to be grounded to the fact that i am mostly working on this on my desktop where i have a massive widescreen monitor but my phone is tiny by comparison."</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">11:23</div>
+          <blockquote>"dude it's rave mode activated! argh and now desktop is dead by comparison!"</blockquote>
+        </div>
+        <div class="sb-step">
+          <div class="sb-when">19:12</div>
+          <blockquote>"mobile needs to be slower still. the notes are still vibrating at least 7-8 times a second."</blockquote>
+        </div>
+      </div>
+      <p>Every correction here is a physical metaphor, not a UI spec — balloon, basil seeds, fluid in a petri dish, rave mode — and the fix that eventually landed (cached per-viewport home positions, a softened freeze curve, a manual freeze toggle) tracked those metaphors almost literally. It also took a real overcorrection in the middle: tuning for "massive widescreen monitor" produced something so fast on desktop it earned "rave mode activated," which then needed pulling back for both screens separately. The vision wasn't hit on the first pass, or the second — it took naming what was wrong six different ways before the physics actually matched what he meant.</p>
     </div>
 
     <div class="vignette">
