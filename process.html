@@ -57,8 +57,10 @@
   ul.links a { display: inline-block; }
   ul.links .hint { color: var(--ink-dim); font-size: 12px; margin-left: 6px; }
 
-  blockquote { margin: 0 0 16px; padding: 10px 16px; border-left: 2px solid var(--line);
-    color: var(--ink-dim); font-size: 13px; font-style: italic; }
+  blockquote { margin: 0 0 16px; padding: 10px 16px; border-left: 2px solid var(--accent);
+    color: var(--ink); font-size: 14px; line-height: 1.6; font-style: normal; }
+  blockquote.meta { border-left-color: var(--line); color: var(--ink-dim); font-size: 13px;
+    font-style: italic; }
 
   footer.page { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
     font-size: 12px; color: var(--ink-dim); }
@@ -107,7 +109,7 @@
   <h2>Why this page exists at all</h2>
   <p>This tool has said elsewhere that its point isn't just the finished interface, it's the thinking that shaped it. That claim is empty if the thinking stays invisible. This page, and the log it points to, exist so that claim has to answer to something &mdash; and so the honest, less flattering half of the answer (that the actual words in this app aren't Nolan's) sits right next to the half that's easy to be proud of (that very little of what those words <em>do</em> was left to the model to decide alone).</p>
 
-  <blockquote>This paragraph and everything above the "Read it yourself" links were drafted by Claude at Nolan's request, to be corrected into his own voice. Nothing here should be read as his final word on the subject until he's edited it.</blockquote>
+  <blockquote class="meta">This paragraph and everything above the "Read it yourself" links were drafted by Claude at Nolan's request, to be corrected into his own voice. Nothing here should be read as his final word on the subject until he's edited it.</blockquote>
 
   <footer class="page">
     <p>Part of <a href="index.html">Aroma Wheel</a>, an educational artifact by Nolan [&AElig;] &middot; Portland, OR.</p>
