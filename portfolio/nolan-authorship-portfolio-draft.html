@@ -1,0 +1,1632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10100e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f1b458'/%3E%3C/svg%3E">
+<title>The Work Between Prompts — Nolan’s Authorship Portfolio</title>
+<meta name="description" content="A portfolio study of Nolan’s systems thinking, facilitation practice, human direction, agent translation, and correction loops, using Aroma Wheel as one case study.">
+<style>
+  :root {
+    --bg: #10100e;
+    --bg-soft: #151511;
+    --paper: #e9e1d1;
+    --paper-dim: #a39c8e;
+    --line: rgba(233, 225, 209, .14);
+    --line-strong: rgba(233, 225, 209, .28);
+    --nolan: #f1b458;
+    --direction: #f07f72;
+    --agent: #82b8ad;
+    --inherited: #a7a2d5;
+    --artifact: #9ccf78;
+    --uncertain: #8f8a80;
+    --panel: rgba(27, 27, 23, .88);
+    --radius: 18px;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--paper);
+    background:
+      radial-gradient(circle at 82% 8%, rgba(130, 184, 173, .11), transparent 28rem),
+      radial-gradient(circle at 10% 38%, rgba(241, 180, 88, .08), transparent 30rem),
+      var(--bg);
+    font-family: var(--sans);
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .18;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+    z-index: 100;
+  }
+
+  a { color: inherit; text-decoration-color: rgba(241, 180, 88, .55); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--nolan); }
+  button { font: inherit; }
+  code { color: var(--agent); font-size: .9em; }
+  .eyebrow {
+    margin: 0 0 10px;
+    color: var(--paper-dim);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .site-header {
+    min-height: 54px;
+    padding: 0 clamp(18px, 4vw, 54px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-bottom: 1px solid var(--line);
+    color: var(--paper-dim);
+    font-size: 12px;
+  }
+  .site-header a { text-decoration: none; }
+  .site-header a:hover { color: var(--paper); }
+  .site-mark { letter-spacing: .08em; }
+
+  .hero {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: clamp(58px, 10vw, 130px) clamp(18px, 5vw, 66px) 64px;
+    min-height: min(860px, calc(100vh - 54px));
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
+    align-items: center;
+    gap: clamp(42px, 7vw, 100px);
+  }
+  .hero h1 {
+    max-width: 760px;
+    margin: 0;
+    font: 400 clamp(54px, 8.5vw, 118px)/.88 var(--serif);
+    letter-spacing: -.055em;
+  }
+  .hero h1 em {
+    display: block;
+    color: var(--nolan);
+    font-style: italic;
+    font-weight: 400;
+  }
+  .hero-deck {
+    max-width: 680px;
+    margin: 30px 0 0;
+    color: var(--paper-dim);
+    font-size: clamp(17px, 2vw, 22px);
+    line-height: 1.55;
+  }
+  .hero-deck strong { color: var(--paper); font-weight: 520; }
+  .status-line {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 28px;
+    color: var(--agent);
+    font-size: 12px;
+  }
+  .status-line::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(130, 184, 173, .09);
+  }
+
+  .control-system {
+    width: min(100%, 520px);
+    justify-self: center;
+    display: grid;
+    justify-items: center;
+    gap: 18px;
+  }
+  .control-loop {
+    position: relative;
+    width: min(100%, 470px);
+    aspect-ratio: 1;
+  }
+  .control-loop::before,
+  .control-loop::after {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+  }
+  .control-loop::after {
+    inset: 25%;
+    border-style: dashed;
+    border-color: rgba(241, 180, 88, .32);
+  }
+  .loop-core {
+    position: absolute;
+    inset: 33%;
+    z-index: 2;
+    border: 1px solid rgba(241, 180, 88, .46);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(241, 180, 88, .17), rgba(241, 180, 88, .02));
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: var(--nolan);
+    font: italic 18px/1.15 var(--serif);
+    box-shadow: 0 0 44px rgba(241, 180, 88, .08);
+  }
+  .loop-node {
+    --x: 0;
+    --y: 0;
+    position: absolute;
+    left: calc(50% + var(--x));
+    top: calc(50% + var(--y));
+    width: 122px;
+    min-height: 66px;
+    transform: translate(-50%, -50%);
+    padding: 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: rgba(16, 16, 14, .92);
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    text-align: center;
+    color: var(--paper);
+    font-size: 12px;
+    line-height: 1.25;
+    z-index: 3;
+  }
+  .loop-node small { color: var(--paper-dim); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .loop-node.source { --x: 0px; --y: -190px; border-color: rgba(241, 180, 88, .48); }
+  .loop-node.render { --x: 190px; --y: 0px; border-color: rgba(130, 184, 173, .48); }
+  .loop-node.inspect { --x: 0px; --y: 190px; border-color: rgba(240, 127, 114, .48); }
+  .loop-node.revise { --x: -190px; --y: 0px; border-color: rgba(156, 207, 120, .48); }
+  .loop-foundation {
+    position: relative;
+    width: min(92%, 440px);
+    min-height: 88px;
+    padding: 27px 42px 20px;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+  }
+  .loop-foundation::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-top: 1px solid rgba(130, 184, 173, .52);
+    border-radius: 50% 50% 18px 18px / 28% 28% 18px 18px;
+    background:
+      radial-gradient(circle at 19% 45%, rgba(241, 180, 88, .36) 0 1px, transparent 2px),
+      radial-gradient(circle at 78% 30%, rgba(130, 184, 173, .46) 0 1px, transparent 2px),
+      radial-gradient(circle at 62% 72%, rgba(167, 162, 213, .32) 0 1px, transparent 2px),
+      radial-gradient(ellipse at 50% 0%, rgba(130, 184, 173, .15), rgba(16, 16, 14, 0) 68%);
+    box-shadow: 0 -18px 46px rgba(130, 184, 173, .06);
+  }
+  .loop-foundation::after {
+    content: "ITERATION AS FOUNDATION";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--agent);
+    font-size: 8px;
+    letter-spacing: .17em;
+    white-space: nowrap;
+  }
+  .loop-caption {
+    color: var(--paper);
+    font: italic 14px/1.5 var(--serif);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .page-shell {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 clamp(18px, 5vw, 66px) 100px;
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 82px);
+    align-items: start;
+  }
+  .page-shell > * { min-width: 0; }
+  .provenance-dock {
+    position: sticky;
+    top: 18px;
+    z-index: 20;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(21, 21, 17, .93);
+    box-shadow: 0 16px 48px rgba(0,0,0,.28);
+    backdrop-filter: blur(16px);
+    min-width: 0;
+  }
+  .dock-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: var(--paper-dim);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .dock-reset {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--paper-dim);
+    cursor: pointer;
+    font-size: 10px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    visibility: hidden;
+  }
+  .dock-reset.show { visibility: visible; }
+  .layer-list { display: grid; gap: 7px; }
+  .layer-button {
+    --layer: var(--paper-dim);
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: rgba(255,255,255,.018);
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    color: var(--paper);
+    cursor: pointer;
+    text-align: left;
+    font-size: 11px;
+  }
+  .layer-button::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--layer); }
+  .layer-button .count { color: var(--paper-dim); font-variant-numeric: tabular-nums; }
+  .layer-button:hover { border-color: var(--line-strong); }
+  .layer-button[aria-pressed="true"] { border-color: var(--layer); background: color-mix(in srgb, var(--layer) 9%, transparent); }
+  .layer-button[data-filter="verbatim"] { --layer: var(--nolan); }
+  .layer-button[data-filter="direction"] { --layer: var(--direction); }
+  .layer-button[data-filter="agent"] { --layer: var(--agent); }
+  .layer-button[data-filter="inherited"] { --layer: var(--inherited); }
+  .layer-button[data-filter="artifact"] { --layer: var(--artifact); }
+  .dock-help { margin: 14px 0 0; color: var(--paper-dim); font-size: 10px; line-height: 1.5; }
+  .dock-readout { margin: 10px 0 0; color: var(--paper); font-size: 10px; }
+
+  .story { min-width: 0; }
+  .section {
+    padding: clamp(64px, 9vw, 116px) 0;
+    border-top: 1px solid var(--line);
+  }
+  .section:first-child { border-top: 0; padding-top: 18px; }
+  .section-heading { max-width: 790px; margin: 0 0 40px; }
+  .section h2 {
+    margin: 0;
+    max-width: 780px;
+    font: 400 clamp(35px, 5vw, 62px)/1 var(--serif);
+    letter-spacing: -.035em;
+  }
+  .section-intro {
+    max-width: 740px;
+    margin: 18px 0 0;
+    color: var(--paper-dim);
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .section-intro strong { color: var(--paper); }
+
+  [data-owner] { transition: opacity .2s ease, filter .2s ease, border-color .2s ease; }
+  body[data-provenance-filter] [data-owner] { opacity: .14; filter: saturate(.25); }
+  body[data-provenance-filter="verbatim"] [data-owner="verbatim"],
+  body[data-provenance-filter="direction"] [data-owner="direction"],
+  body[data-provenance-filter="agent"] [data-owner="agent"],
+  body[data-provenance-filter="inherited"] [data-owner="inherited"],
+  body[data-provenance-filter="artifact"] [data-owner="artifact"] { opacity: 1; filter: none; }
+
+  .human-account {
+    position: relative;
+    margin: 40px 0 28px;
+    padding: clamp(24px, 5vw, 48px);
+    overflow: hidden;
+    border: 1px solid rgba(241, 180, 88, .35);
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(241,180,88,.08), rgba(241,180,88,.015));
+  }
+  .human-account::after {
+    content: "N";
+    position: absolute;
+    right: -15px;
+    bottom: -85px;
+    color: rgba(241, 180, 88, .05);
+    font: italic 240px/1 var(--serif);
+  }
+  .provenance-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    color: var(--paper-dim);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+  .provenance-label::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: currentColor; }
+  [data-owner="verbatim"] > .provenance-label { color: var(--nolan); }
+  [data-owner="direction"] > .provenance-label { color: var(--direction); }
+  [data-owner="agent"] > .provenance-label { color: var(--agent); }
+  [data-owner="inherited"] > .provenance-label { color: var(--inherited); }
+  [data-owner="artifact"] > .provenance-label { color: var(--artifact); }
+  blockquote {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font: 400 clamp(24px, 4vw, 41px)/1.32 var(--serif);
+    letter-spacing: -.02em;
+  }
+  blockquote::before { content: "“"; color: var(--nolan); }
+  blockquote::after { content: "”"; color: var(--nolan); }
+  .quote-source { position: relative; z-index: 1; margin: 20px 0 0; color: var(--paper-dim); font-size: 11px; }
+
+  .source-field {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .source-token {
+    min-height: 118px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: var(--paper);
+    font: italic 17px/1.25 var(--serif);
+    background: rgba(255,255,255,.015);
+  }
+  .source-token span { color: var(--paper-dim); font: 9px/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+  .source-note {
+    max-width: 720px;
+    margin: 18px 0 0;
+    padding-left: 16px;
+    border-left: 2px solid var(--uncertain);
+    color: var(--paper-dim);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .origin-quote {
+    margin: 34px 0 24px;
+    padding: 22px 24px;
+    border-left: 3px solid var(--nolan);
+    background: rgba(241,180,88,.045);
+    font: 400 clamp(22px, 3vw, 31px)/1.38 var(--serif);
+  }
+  .origin-quote .quote-source { font-family: var(--sans); font-size: 10px; }
+
+  .method-case {
+    overflow: hidden;
+    margin-top: 28px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: rgba(255,255,255,.012);
+  }
+  .case-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr);
+    gap: 1px;
+    background: var(--line);
+  }
+  .case-heading > div { padding: clamp(22px, 4vw, 34px); background: var(--bg-soft); }
+  .case-heading h3 { margin: 0; font: 400 clamp(26px, 3.8vw, 40px)/1.08 var(--serif); }
+  .case-heading p { margin: 0; color: var(--paper-dim); font-size: 12px; line-height: 1.65; }
+  .method-chain {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border-top: 1px solid var(--line);
+  }
+  .method-node { min-height: 174px; padding: 17px; background: var(--bg-soft); }
+  .method-node .method-num { color: var(--paper-dim); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+  .method-node b { display: block; margin: 28px 0 8px; color: var(--paper); font: 400 17px/1.2 var(--serif); }
+  .method-node span { color: var(--paper-dim); font-size: 10px; line-height: 1.5; }
+  .method-node:nth-child(3) { box-shadow: inset 0 2px 0 var(--agent); }
+  .method-node:nth-child(4) { box-shadow: inset 0 2px 0 var(--direction); }
+
+  .systems-field {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .system-domain {
+    min-height: 188px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255,255,255,.013);
+  }
+  .system-domain .domain-name { color: var(--paper-dim); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+  .system-domain h3 { margin: 32px 0 9px; color: var(--paper); font: 400 20px/1.15 var(--serif); }
+  .system-domain p { margin: 0; color: var(--paper-dim); font-size: 10.5px; line-height: 1.55; }
+  .system-thesis {
+    margin-top: 18px;
+    padding: 18px 20px;
+    border: 1px dashed rgba(130,184,173,.4);
+    border-radius: 14px;
+    color: var(--paper-dim);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .system-thesis strong { color: var(--agent); }
+
+  .facilitator-quote {
+    margin: 34px 0 24px;
+    padding: clamp(24px, 4vw, 36px);
+    border: 1px solid rgba(241,180,88,.3);
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(241,180,88,.07), transparent 55%);
+  }
+  .facilitator-quote blockquote { font-size: clamp(24px, 3.8vw, 39px); }
+
+  .practice-ledger {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 26px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--line);
+  }
+  .practice-stat { min-height: 132px; padding: 18px; background: var(--bg-soft); }
+  .practice-stat b { display: block; color: var(--nolan); font: 400 clamp(25px, 3.2vw, 38px)/1 var(--serif); }
+  .practice-stat span { display: block; margin-top: 12px; color: var(--paper-dim); font-size: 10px; line-height: 1.45; }
+
+  .bridge-flow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .bridge-node {
+    position: relative;
+    min-height: 145px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: rgba(255,255,255,.013);
+  }
+  .bridge-node:not(:last-child)::after {
+    content: "↔";
+    position: absolute;
+    right: -14px;
+    top: 22px;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--agent);
+    font-size: 10px;
+  }
+  .bridge-node .bridge-label { color: var(--paper-dim); font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+  .bridge-node h3 { margin: 28px 0 7px; color: var(--paper); font: 400 19px/1.18 var(--serif); }
+  .bridge-node p { margin: 0; color: var(--paper-dim); font-size: 10px; line-height: 1.5; }
+
+  .mystery-box {
+    margin-top: 38px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: rgba(255,255,255,.012);
+  }
+  .mystery-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 30px;
+    padding: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .mystery-heading h3 { max-width: 570px; margin: 0; font: 400 clamp(26px, 3.5vw, 39px)/1.08 var(--serif); }
+  .mystery-heading p { max-width: 280px; margin: 0; color: var(--paper-dim); font-size: 10px; line-height: 1.55; }
+  .mystery-sequence {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+  }
+  .mystery-stage { min-height: 205px; padding: 18px; background: var(--bg-soft); }
+  .mystery-stage .stage-num { color: var(--paper-dim); font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+  .mystery-stage b { display: block; margin: 34px 0 9px; color: var(--paper); font: 400 18px/1.2 var(--serif); }
+  .mystery-stage span { color: var(--paper-dim); font-size: 10px; line-height: 1.52; }
+  .mystery-stage:nth-child(4) { box-shadow: inset 0 2px 0 var(--nolan); }
+  .mystery-stage:nth-child(5) { box-shadow: inset 0 2px 0 var(--agent); }
+  .lineage-note {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: start;
+    margin: 0;
+    padding: 17px 20px;
+    border-top: 1px solid var(--line);
+    color: var(--paper-dim);
+    font-size: 10.5px;
+    line-height: 1.55;
+  }
+  .lineage-note strong { color: var(--inherited); font: 400 16px/1.25 var(--serif); }
+  .lineage-note a { color: var(--inherited); }
+  .observation-caveat {
+    margin: 0;
+    padding: 16px 20px;
+    border-top: 1px solid var(--line);
+    color: var(--paper-dim);
+    font-size: 10.5px;
+    line-height: 1.55;
+  }
+  .observation-caveat strong { color: var(--direction); }
+  .narrative-rhythm {
+    margin-top: 20px;
+    padding: 20px 22px;
+    border-left: 3px solid var(--nolan);
+    background: rgba(241,180,88,.04);
+    color: var(--paper);
+    font: 400 clamp(18px, 2.4vw, 25px)/1.45 var(--serif);
+  }
+  .rhythm-formula { display: block; margin-top: 10px; color: var(--agent); font: 10px/1.5 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+
+  .translation-loop {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin: 38px 0 24px;
+  }
+
+  .translation-mirror {
+    margin: 32px 0 26px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(255,255,255,.012);
+  }
+  .mirror-quote {
+    padding: 22px 24px;
+    border-bottom: 1px solid var(--line);
+    color: var(--paper);
+    font: 400 clamp(21px, 3vw, 29px)/1.38 var(--serif);
+  }
+  .mirror-quote .provenance-label { display: flex; }
+  .mirror-rows { display: grid; gap: 1px; background: var(--line); }
+  .mirror-row {
+    display: grid;
+    grid-template-columns: 112px repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+  }
+  .mirror-row > div { min-height: 112px; padding: 14px; background: var(--bg-soft); }
+  .mirror-label {
+    display: grid;
+    align-content: center;
+    color: var(--paper-dim);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .mirror-cell { position: relative; display: grid; align-content: center; color: var(--paper-dim); font-size: 10px; line-height: 1.45; }
+  .mirror-cell b { display: block; margin-bottom: 5px; color: var(--paper); font: 400 16px/1.2 var(--serif); }
+  .mirror-cell:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    right: -8px;
+    top: calc(50% - 8px);
+    z-index: 2;
+    width: 16px;
+    height: 16px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--paper-dim);
+    font-size: 9px;
+  }
+  .mirror-row.maker .mirror-label { color: var(--nolan); }
+  .mirror-row.taster .mirror-label { color: var(--artifact); }
+  .mirror-row .mirror-cell:nth-child(3) { box-shadow: inset 0 2px 0 var(--agent); }
+  .mirror-note {
+    margin: 0;
+    padding: 16px 20px;
+    border-top: 1px solid var(--line);
+    color: var(--paper-dim);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .mirror-note strong { color: var(--agent); }
+
+  .pragmatic-translation {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+    gap: 1px;
+    border-top: 1px solid var(--line);
+    background: var(--line);
+  }
+  .pragmatic-translation > div { padding: 22px 24px; background: var(--bg-soft); }
+  .pragmatic-translation blockquote { font-size: clamp(19px, 2.6vw, 27px); line-height: 1.42; }
+  .signal-field { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 0; }
+  .signal-field span {
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--paper-dim);
+    font-size: 9px;
+  }
+  .translation-contract { display: grid; align-content: center; gap: 18px; }
+  .translation-contract p { margin: 0; color: var(--paper-dim); font-size: 11px; line-height: 1.6; }
+  .translation-contract p strong { display: block; margin-bottom: 5px; font: 400 17px/1.2 var(--serif); }
+  .translation-contract .can-help strong { color: var(--agent); }
+  .translation-contract .must-protect strong { color: var(--direction); }
+  .translation-rule {
+    margin: 0;
+    padding: 14px 16px;
+    border-left: 2px solid var(--nolan);
+    background: rgba(241,180,88,.04);
+    color: var(--paper);
+    font: 400 16px/1.4 var(--serif);
+  }
+  .loop-step {
+    position: relative;
+    min-height: 180px;
+    padding: 18px 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255,255,255,.015);
+  }
+  .loop-step:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    right: -15px;
+    top: 50%;
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--paper-dim);
+    font-size: 12px;
+  }
+  .loop-step .num { color: var(--paper-dim); font-size: 10px; letter-spacing: .1em; }
+  .loop-step h3 { margin: 34px 0 8px; font: 400 18px/1.1 var(--serif); }
+  .loop-step p { margin: 0; color: var(--paper-dim); font-size: 11px; line-height: 1.5; }
+  .loop-step.human { border-top-color: var(--direction); }
+  .loop-step.machine { border-top-color: var(--agent); }
+  .loop-step.result { border-top-color: var(--artifact); }
+  .control-thesis {
+    margin: 24px 0 0;
+    padding: 18px 20px;
+    border-left: 3px solid var(--direction);
+    background: rgba(240, 127, 114, .055);
+    color: var(--paper);
+    font: 400 20px/1.45 var(--serif);
+  }
+
+  .dismissal-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr);
+    gap: 1px;
+    margin-top: 34px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: var(--line);
+  }
+  .dismissal-quote,
+  .dismissal-answer { padding: clamp(24px, 4vw, 38px); background: var(--bg-soft); }
+  .dismissal-quote blockquote { font-size: clamp(23px, 3.5vw, 36px); }
+  .dismissal-answer { display: grid; align-content: center; gap: 16px; }
+  .dismissal-answer p { margin: 0; color: var(--paper-dim); font-size: 13px; line-height: 1.65; }
+  .dismissal-answer strong { color: var(--paper); }
+  .dismissal-answer .answer-line {
+    padding-left: 14px;
+    border-left: 2px solid var(--direction);
+    color: var(--paper);
+    font: 400 19px/1.4 var(--serif);
+  }
+
+  .practice-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .practice-card {
+    min-height: 132px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255,255,255,.014);
+  }
+  .practice-card b { display: block; margin-bottom: 20px; color: var(--paper); font: 400 18px/1.2 var(--serif); }
+  .practice-card span { color: var(--paper-dim); font-size: 10px; line-height: 1.45; }
+
+  .teaching-aid {
+    margin-top: 54px;
+    padding: clamp(24px, 5vw, 44px);
+    border: 1px solid rgba(241, 180, 88, .3);
+    border-radius: 24px;
+    background:
+      linear-gradient(145deg, rgba(241,180,88,.07), transparent 38%),
+      rgba(255,255,255,.012);
+  }
+  .teaching-aid h3 {
+    max-width: 680px;
+    margin: 0;
+    font: 400 clamp(29px, 4vw, 46px)/1.08 var(--serif);
+    letter-spacing: -.025em;
+  }
+  .teaching-aid > p {
+    max-width: 700px;
+    margin: 14px 0 0;
+    color: var(--paper-dim);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .learning-path {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 30px;
+  }
+  .learning-step {
+    position: relative;
+    min-height: 150px;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(16,16,14,.66);
+  }
+  .learning-step:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    top: 20px;
+    right: -13px;
+    z-index: 2;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--bg-soft);
+    color: var(--paper-dim);
+    font-size: 10px;
+  }
+  .learning-step .level { color: var(--paper-dim); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+  .learning-step b { display: block; margin: 28px 0 7px; color: var(--paper); font: 400 17px/1.2 var(--serif); }
+  .learning-step span { color: var(--paper-dim); font-size: 10px; line-height: 1.45; }
+  .learning-step:last-child { border-color: rgba(130,184,173,.45); }
+  .learning-step:last-child b { color: var(--agent); }
+  .facilitator-line {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: start;
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .facilitator-line strong { color: var(--nolan); font: italic 17px/1.3 var(--serif); }
+  .facilitator-line span { color: var(--paper-dim); font-size: 11px; line-height: 1.55; }
+
+  .traces { display: grid; gap: 28px; }
+  .trace {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: rgba(255,255,255,.012);
+  }
+  .trace-header {
+    padding: 22px 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .trace-index { margin-bottom: 5px; color: var(--paper-dim); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+  .trace h3 { margin: 0; font: 400 clamp(24px, 3vw, 34px)/1.1 var(--serif); }
+  .trace-measure { flex: 0 0 auto; color: var(--paper-dim); font-size: 10px; text-align: right; line-height: 1.4; }
+  .trace-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .trace-cell {
+    min-width: 0;
+    padding: 22px 24px 26px;
+    border-right: 1px solid var(--line);
+  }
+  .trace-cell:last-child { border-right: 0; }
+  .trace-cell p { margin: 0; color: var(--paper-dim); font-size: 13px; line-height: 1.6; }
+  .trace-cell p + p,
+  .trace-cell blockquote + p,
+  .trace-cell .mini-turn + .mini-turn { margin-top: 16px; }
+  .trace-cell blockquote { font-size: clamp(17px, 2vw, 23px); line-height: 1.4; }
+  .trace-cell .quote-source { margin-top: 10px; font-size: 10px; }
+  .trace-cell .artifact-name { margin: 2px 0 12px; color: var(--paper); font: 400 22px/1.2 var(--serif); }
+  .trace-insight {
+    margin: 0;
+    padding: 18px 24px;
+    border-top: 1px solid var(--line);
+    background: rgba(130, 184, 173, .04);
+    color: var(--paper-dim);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .trace-insight strong { color: var(--agent); }
+  .mini-turn {
+    padding-left: 14px;
+    border-left: 2px solid var(--direction);
+  }
+  .mini-turn .turn-time { margin-bottom: 4px; color: var(--paper-dim); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .mini-turn q { color: var(--paper); font: 400 16px/1.45 var(--serif); }
+
+  .authorship-matrix {
+    overflow: hidden;
+    margin-top: 34px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+  }
+  .matrix-row {
+    display: grid;
+    grid-template-columns: 1.05fr 1.15fr 1.15fr .95fr;
+    border-top: 1px solid var(--line);
+  }
+  .matrix-row:first-child { border-top: 0; }
+  .matrix-row > div { padding: 17px 18px; border-right: 1px solid var(--line); }
+  .matrix-row > div:last-child { border-right: 0; }
+  .matrix-head { color: var(--paper-dim); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .matrix-topic { color: var(--paper); font: 400 17px/1.25 var(--serif); }
+  .matrix-cell { color: var(--paper-dim); font-size: 11px; line-height: 1.5; }
+  .matrix-cell b { display: block; margin-bottom: 3px; color: var(--paper); font-weight: 600; }
+  .matrix-cell.nolan b { color: var(--nolan); }
+  .matrix-cell.agent b { color: var(--agent); }
+  .matrix-cell.unknown b { color: var(--inherited); }
+
+  .certainty-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .certainty-card {
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.014);
+  }
+  .certainty-card h3 { margin: 0 0 18px; font: 400 21px/1.2 var(--serif); }
+  .certainty-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 13px; }
+  .certainty-card li { color: var(--paper-dim); font-size: 12px; line-height: 1.55; }
+  .certainty-card.known { border-top-color: var(--artifact); }
+  .certainty-card.read { border-top-color: var(--agent); }
+  .certainty-card.limit { border-top-color: var(--inherited); }
+  .certainty-card.known h3 { color: var(--artifact); }
+  .certainty-card.read h3 { color: var(--agent); }
+  .certainty-card.limit h3 { color: var(--inherited); }
+
+  .ledger {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 34px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--line);
+  }
+  .ledger-stat { min-height: 150px; padding: 22px; background: var(--bg-soft); }
+  .ledger-number { color: var(--nolan); font: 400 clamp(34px, 5vw, 55px)/1 var(--serif); }
+  .ledger-label { margin-top: 10px; color: var(--paper); font-size: 12px; }
+  .ledger-note { margin-top: 5px; color: var(--paper-dim); font-size: 10px; line-height: 1.45; }
+  .archive-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+  .archive-link {
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    text-decoration: none;
+  }
+  .archive-link:hover { border-color: var(--nolan); }
+  .archive-link b { display: block; margin-bottom: 4px; color: var(--paper); font: 400 17px/1.2 var(--serif); }
+  .archive-link span { color: var(--paper-dim); font-size: 10px; line-height: 1.45; }
+
+  .draft-note {
+    margin-top: 38px;
+    padding: 18px 20px;
+    border: 1px dashed rgba(130, 184, 173, .4);
+    border-radius: 15px;
+    color: var(--paper-dim);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .draft-note strong { color: var(--agent); }
+  .page-footer {
+    padding: 30px clamp(18px, 5vw, 66px) 60px;
+    border-top: 1px solid var(--line);
+    color: var(--paper-dim);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; min-height: auto; }
+    .control-system { margin-top: 25px; }
+    .page-shell { grid-template-columns: 1fr; }
+    .provenance-dock {
+      top: 8px;
+      width: 100%;
+      max-width: 100%;
+      padding: 11px 12px;
+      border-radius: 15px;
+    }
+    .layer-list { display: flex; min-width: 0; max-width: 100%; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+    .layer-list::-webkit-scrollbar { display: none; }
+    .layer-button { width: auto; min-width: max-content; grid-template-columns: 7px 1fr auto; padding: 7px 9px; }
+    .dock-help { display: none; }
+    .dock-title { margin-bottom: 7px; }
+    .translation-loop { grid-template-columns: 1fr 1fr; }
+    .mirror-row { grid-template-columns: 92px repeat(2, minmax(0, 1fr)); }
+    .pragmatic-translation { grid-template-columns: 1fr; }
+    .mirror-label { grid-row: span 2; }
+    .mirror-cell::after { display: none !important; }
+    .loop-step:last-child { grid-column: 1 / -1; }
+    .loop-step:not(:last-child)::after { display: none; }
+    .source-field { grid-template-columns: repeat(3, 1fr); }
+    .method-chain { grid-template-columns: 1fr 1fr; }
+    .method-node:last-child { grid-column: 1 / -1; min-height: 120px; }
+    .systems-field { grid-template-columns: 1fr 1fr; }
+    .practice-ledger, .bridge-flow { grid-template-columns: 1fr 1fr; }
+    .bridge-node::after { display: none; }
+    .mystery-sequence { grid-template-columns: 1fr 1fr; }
+    .mystery-stage:last-child { grid-column: 1 / -1; min-height: 130px; }
+    .practice-strip { grid-template-columns: 1fr 1fr; }
+    .learning-path { grid-template-columns: 1fr 1fr; }
+    .learning-step:last-child { grid-column: 1 / -1; }
+    .learning-step:not(:last-child)::after { display: none; }
+  }
+
+  @media (max-width: 720px) {
+    .site-header { min-height: 48px; }
+    .hero { padding-top: 66px; padding-bottom: 46px; }
+    .hero h1 { font-size: clamp(50px, 17vw, 78px); }
+    .control-system { width: min(100%, 370px); }
+    .control-loop { width: min(100%, 350px); }
+    .loop-node { width: 96px; min-height: 58px; padding: 8px; font-size: 10px; }
+    .loop-node.source { --x: 0px; --y: -142px; }
+    .loop-node.render { --x: 142px; --y: 0px; }
+    .loop-node.inspect { --x: 0px; --y: 142px; }
+    .loop-node.revise { --x: -142px; --y: 0px; }
+    .loop-core { font-size: 15px; }
+    .loop-foundation { width: min(92%, 330px); min-height: 78px; padding: 25px 28px 17px; }
+    .loop-caption { font-size: 12px; }
+    .page-shell { gap: 20px; }
+    .section { padding: 68px 0; }
+    .section:first-child { padding-top: 14px; }
+    .source-field { grid-template-columns: 1fr 1fr; }
+    .case-heading, .method-chain, .systems-field { grid-template-columns: 1fr; }
+    .method-node, .method-node:last-child { min-height: auto; grid-column: auto; }
+    .method-node b { margin-top: 20px; }
+    .system-domain { min-height: auto; }
+    .practice-ledger, .bridge-flow, .mystery-sequence { grid-template-columns: 1fr; }
+    .practice-stat, .bridge-node, .mystery-stage, .mystery-stage:last-child { min-height: auto; grid-column: auto; }
+    .mystery-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+    .mystery-stage b { margin-top: 22px; }
+    .lineage-note { grid-template-columns: 1fr; }
+    .dismissal-panel { grid-template-columns: 1fr; }
+    .learning-path { grid-template-columns: 1fr; }
+    .learning-step:last-child { grid-column: auto; }
+    .facilitator-line { grid-template-columns: 1fr; }
+    .source-token:last-child { grid-column: 1 / -1; min-height: 82px; }
+    .translation-loop { grid-template-columns: 1fr; }
+    .mirror-row { grid-template-columns: 1fr; }
+    .mirror-label { min-height: auto !important; grid-row: auto; }
+    .mirror-row > div { min-height: auto; }
+    .loop-step, .loop-step:last-child { min-height: auto; grid-column: auto; }
+    .loop-step h3 { margin-top: 22px; }
+    .trace-header { padding: 18px; }
+    .trace-measure { display: none; }
+    .trace-grid { grid-template-columns: 1fr; }
+    .trace-cell { padding: 20px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .trace-cell:last-child { border-bottom: 0; }
+    .matrix-row { grid-template-columns: 1fr; }
+    .matrix-row.matrix-head { display: none; }
+    .matrix-row > div { border-right: 0; border-top: 1px solid var(--line); }
+    .matrix-row > div:first-child { border-top: 0; }
+    .matrix-cell::before { display: block; margin-bottom: 4px; color: var(--paper-dim); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+    .matrix-cell.nolan::before { content: "Human contribution"; }
+    .matrix-cell.agent::before { content: "Agent contribution"; }
+    .matrix-cell.unknown::before { content: "Trace limit"; }
+    .certainty-grid, .ledger, .archive-links { grid-template-columns: 1fr; }
+    .ledger { gap: 1px; }
+    .ledger-stat { min-height: auto; }
+  }
+
+  @media (max-width: 390px) {
+    .hero { padding-left: 16px; padding-right: 16px; }
+    .control-system { width: 100%; }
+    .control-loop { width: 310px; }
+    .loop-node { width: 86px; }
+    .loop-node.source { --y: -125px; }
+    .loop-node.render { --x: 125px; }
+    .loop-node.inspect { --y: 125px; }
+    .loop-node.revise { --x: -125px; }
+    .source-field { grid-template-columns: 1fr; }
+    .source-token:last-child { grid-column: auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <span>Portfolio working draft · Aroma Wheel case study</span>
+  <span class="site-mark">THE HUMAN RECORD / 02</span>
+</header>
+
+<section class="hero" aria-labelledby="page-title">
+  <div>
+    <p class="eyebrow">A development story about directed agency</p>
+    <h1 id="page-title">The work <em>between prompts.</em></h1>
+    <p class="hero-deck">The visible app is code. <strong>The work that made it specific happened before the code, between each render, and after every agent said it was done.</strong></p>
+    <div class="status-line">A visual argument, not a final attribution score</div>
+  </div>
+
+  <div class="control-system">
+    <div class="control-loop" aria-label="Conversation-driven control loop: lived sensing becomes direction, the agent renders a hypothesis, Nolan inspects the result, and the artifact is revised repeatedly.">
+      <div class="loop-core">intent<br>stays human</div>
+      <div class="loop-node source"><small>01 / Nolan</small>lived sensing + direction</div>
+      <div class="loop-node render"><small>02 / Agent</small>render a hypothesis</div>
+      <div class="loop-node inspect"><small>03 / Nolan</small>inspect the distance</div>
+      <div class="loop-node revise"><small>04 / Artifact</small>revise what exists</div>
+    </div>
+    <div class="loop-foundation">
+      <div class="loop-caption">Repeat until the interface says what the first prompt could not fully specify.</div>
+    </div>
+  </div>
+</section>
+
+<div class="page-shell">
+  <aside class="provenance-dock" id="provenance-dock" aria-label="Provenance filter">
+    <div class="dock-title">
+      <span>Read one layer</span>
+      <button class="dock-reset" id="dock-reset" type="button">show all</button>
+    </div>
+    <div class="layer-list" role="group" aria-label="Isolate a provenance layer">
+      <button class="layer-button" type="button" data-filter="verbatim" aria-pressed="false"><span>Nolan · exact</span><span class="count"></span></button>
+      <button class="layer-button" type="button" data-filter="direction" aria-pressed="false"><span>Nolan → direction</span><span class="count"></span></button>
+      <button class="layer-button" type="button" data-filter="agent" aria-pressed="false"><span>Agent · synthesis</span><span class="count"></span></button>
+      <button class="layer-button" type="button" data-filter="inherited" aria-pressed="false"><span>Inherited form</span><span class="count"></span></button>
+      <button class="layer-button" type="button" data-filter="artifact" aria-pressed="false"><span>Observable result</span><span class="count"></span></button>
+    </div>
+    <p class="dock-help"><b>Exact</b> means verbatim. <b>Direction</b> is a documented human decision restated. <b>Synthesis</b> is an agent’s interpretation or structure. <b>Inherited form</b> marks conventions with no honest line back to one source. <b>Result</b> is what the repo can show exists.</p>
+    <p class="dock-readout" id="dock-readout" aria-live="polite">All tagged fragments visible.</p>
+  </aside>
+
+  <main class="story">
+    <section class="section" id="before-chatbox">
+      <div class="section-heading">
+        <p class="eyebrow">00 / Before the chatbox</p>
+        <h2>The source material was already alive.</h2>
+        <p class="section-intro" data-owner="direction">A repository can count prompts and commits. It cannot see the sensory practice that made those prompts possible. That earlier layer has to be named without pretending the git history can independently verify it.</p>
+      </div>
+
+      <figure class="human-account" data-owner="verbatim">
+        <div class="provenance-label">Nolan: exact words from this design brief</div>
+        <blockquote>It isn't as simple as saying “hey Claude can you make this app?” It's weeks of actual thinking, hand journaling, sketching, tasting, internal visual processing of spatial and visual, musical, sensory shells of processing to create this experience from the mind of Nolan.</blockquote>
+        <figcaption class="quote-source">Nolan · 2026-08-18 · current brief, not yet part of the archived 45-entry prompt log</figcaption>
+      </figure>
+
+      <div class="source-field" data-owner="direction" aria-label="Human source-material layers named by Nolan">
+        <div class="source-token">tasting<span>embodied observation</span></div>
+        <div class="source-token">hand journals<span>thinking outside the repo</span></div>
+        <div class="source-token">sketches<span>form before syntax</span></div>
+        <div class="source-token">spatial + visual processing<span>internal model</span></div>
+        <div class="source-token">musical + sensory association<span>cross-modal sensemaking</span></div>
+      </div>
+      <p class="source-note" data-owner="agent"><strong>Evidence boundary:</strong> this page can accurately say Nolan reports doing this work. Unless journals or sketches are later published, it cannot quantify or authenticate that private layer. Naming a limit is part of showing the work honestly.</p>
+    </section>
+
+    <section class="section" id="systems-precedent">
+      <div class="section-heading">
+        <p class="eyebrow">00.5 / This way of working predates AI</p>
+        <h2>The unofficial route is part of the method.</h2>
+        <p class="section-intro" data-owner="agent">The Aroma Wheel is not the first time Nolan has used a tool outside a conventional job title or credential path to make a difficult system operable. The recurring skill is not knowing every formal procedure in advance. It is finding the structure, building a usable model, and checking whether the model still makes sense when it touches reality.</p>
+      </div>
+
+      <div class="origin-quote" data-owner="verbatim">
+        “I feel that I do a lot of approximations to the ‘official’ way to do something.”
+        <div class="quote-source">Nolan · 2026-08-18 · current conversation</div>
+      </div>
+
+      <article class="method-case">
+        <div class="case-heading">
+          <div data-owner="direction">
+            <div class="provenance-label">Nolan's account, condensed</div>
+            <h3>A GIS problem hiding inside months of manual work.</h3>
+          </div>
+          <div data-owner="direction">
+            <p>Just out of college, Nolan helped a maternal-health research lab approximate neighborhood street connectivity for more than 300 participants. The proposed hand process involved counting intersections around each home. He brought his own GIS access and translated the task into a repeatable spatial workflow.</p>
+          </div>
+        </div>
+
+        <div class="method-chain" data-owner="direction" aria-label="The recurring systems-thinking method shown by Nolan's GIS work">
+          <div class="method-node"><div class="method-num">01 / Encounter</div><b>Find the live bottleneck.</b><span>A meaningful research question is blocked by a process too slow to perform consistently by hand.</span></div>
+          <div class="method-node"><div class="method-num">02 / Translate</div><b>Turn procedure into geometry.</b><span>Homes become points, ten-mile study areas become circles, and intersections become countable spatial features.</span></div>
+          <div class="method-node"><div class="method-num">03 / Automate</div><b>Make one method repeatable.</b><span>A GIS workflow replaces hundreds of separate manual counts and preserves one consistent rule across participants.</span></div>
+          <div class="method-node"><div class="method-num">04 / Defend</div><b>Interrogate the surprising number.</b><span>When counts reached into the thousands, Nolan used tables and neighborhood maps to show why dense suburban and rural street patterns produced very different results.</span></div>
+          <div class="method-node"><div class="method-num">05 / Rescope</div><b>Let the result revise the question.</b><span>The output exposed overlap and scale: a ten-mile radius could be too broad when many participants shared neighborhoods across one region.</span></div>
+        </div>
+      </article>
+
+      <div class="systems-field" data-owner="direction" aria-label="Different domains in which Nolan practices related systems thinking">
+        <article class="system-domain"><div class="domain-name">Spatial systems</div><h3>GIS + environmental layers</h3><p>Distance, buffers, street networks, neighborhood form, green space, land use, and possible pollution sources.</p></article>
+        <article class="system-domain"><div class="domain-name">Temporal systems</div><h3>Orchestral scores</h3><p>Self-directed composition in MuseScore, grounded in years of learning how instrumental parts, theory, and musical syntax work together over time.</p></article>
+        <article class="system-domain"><div class="domain-name">Mechanical systems</div><h3>Rides + track networks</h3><p>Roller-coaster and attraction modeling, train systems, queues, routes, and the controlled movement of people through designed experiences.</p></article>
+        <article class="system-domain"><div class="domain-name">Sensory systems</div><h3>The Aroma Wheel</h3><p>Perception, vocabulary, chemistry, taxonomy, geography, and teaching workflow organized around the changing experience of a tasting.</p></article>
+      </div>
+
+      <p class="system-thesis" data-owner="agent"><strong>Agent reading:</strong> these interests share a grammar: state changes over time, movement through space, many local parts producing one experience, and a need to make invisible relationships legible. That does not substitute for formal domain credentials where credentials are required. It does explain why conversation-to-code is useful here: Nolan already thinks in interacting systems and uses the agent to externalize them into a medium other people can enter.</p>
+    </section>
+
+    <section class="section" id="facilitation-practice">
+      <div class="section-heading">
+        <p class="eyebrow">00.75 / Facilitation is experience authorship</p>
+        <h2>Design the conditions. Let someone else make the discovery.</h2>
+        <p class="section-intro" data-owner="agent">For nearly four years, Nolan practiced translation in public: live science shows, weekly K–8 rooms, scientist engagement, institutional meetings, student cohorts, and professional-development workshops. The job was not to stand between people and the science. It was to build the sequence through which they could reach one another.</p>
+      </div>
+
+      <div class="facilitator-quote" data-owner="verbatim">
+        <div class="provenance-label">Nolan: the facilitator's authorship paradox</div>
+        <blockquote>providing the space, not being the main character per se, but obviously you are because you were the one that designed the experience</blockquote>
+        <div class="quote-source">Nolan · 2026-08-18 · current conversation</div>
+      </div>
+
+      <div class="practice-ledger" data-owner="direction" aria-label="Nolan's science-communication practice, from his current account">
+        <div class="practice-stat"><b>~4 years</b><span>Working continuously in science communication and museum education.</span></div>
+        <div class="practice-stat"><b>30+</b><span>Students at a time in facilitated rooms and live science experiences.</span></div>
+        <div class="practice-stat"><b>K–8</b><span>Weekly practice adjusting explanation, participation, and pacing across ages.</span></div>
+        <div class="practice-stat"><b>Many rooms</b><span>Children, teachers, scientists, museum and university staff, administrators, and organizational stakeholders.</span></div>
+      </div>
+
+      <div class="bridge-flow" data-owner="direction" aria-label="The institutional bridge Nolan describes facilitating">
+        <article class="bridge-node"><div class="bridge-label">Museum floor</div><h3>Watch people use science.</h3><p>Learn how objects, prompts, permission, movement, and attention change what an exhibit actually teaches.</p></article>
+        <article class="bridge-node"><div class="bridge-label">Scientists</div><h3>Translate expertise into participation.</h3><p>Recruit researchers to commit time to student cohorts and problems that can become meaningful hands-on inquiry.</p></article>
+        <article class="bridge-node"><div class="bridge-label">Institutions</div><h3>Make the partnership legible.</h3><p>Connect museum staff, university staff, administrators, science communicators, and stakeholders around a shared public-literacy purpose.</p></article>
+        <article class="bridge-node"><div class="bridge-label">Learners</div><h3>Build a path into the field.</h3><p>Engineering challenges, biochemistry lead-ins, girls-in-STEM cohorts, and programs shaped for different parts of town and stages of learning.</p></article>
+      </div>
+
+      <article class="mystery-box">
+        <header class="mystery-heading">
+          <h3>A narrative made from a box, a sound, permission, and a reveal.</h3>
+          <p data-owner="agent">The activity does not begin by explaining inference. It creates a need to infer, then gives the group language for what they just did.</p>
+        </header>
+        <div class="mystery-sequence" data-owner="direction" aria-label="The experience-design rhythm of the mystery-box activity Nolan describes">
+          <div class="mystery-stage"><div class="stage-num">01 / Place</div><b>Objects arrive before instructions.</b><span>The facilitator can observe who assumes they may touch, who waits for permission, and how institutional habits shape participation before the lesson is named.</span></div>
+          <div class="mystery-stage"><div class="stage-num">02 / Withhold</div><b>The box stays closed.</b><span>A ball chain may sound like rolling or skidding. A sealed water bottle, hinge, rattle, or clink can suggest a mechanism far more elaborate than the object inside.</span></div>
+          <div class="mystery-stage"><div class="stage-num">03 / Investigate</div><b>Participants make evidence.</b><span>They tilt, shake, listen, compare, model an interior, disagree, and decide what another test might reveal.</span></div>
+          <div class="mystery-stage"><div class="stage-num">04 / Reveal</div><b>The ordinary object creates surprise.</b><span>Opening the box does not merely announce a right answer. It exposes the distance between evidence, inference, imagination, and the mechanism that was actually there.</span></div>
+          <div class="mystery-stage"><div class="stage-num">05 / Return</div><b>Now reveal the why.</b><span>Why were the objects placed out early? Why did some people reach immediately while others waited? What did each test support, and what did the evidence never prove?</span></div>
+        </div>
+
+        <p class="lineage-note" data-owner="inherited"><strong>Inherited form, named rather than claimed</strong><span>Nolan learned this mystery-box practice through a colleague who had worked at Explora in Albuquerque. Explora's official record documents a <a href="https://www.explora.us/events/mystery-boxes-teacher-workshop/" target="_blank" rel="noopener">Mystery Boxes Teacher Workshop</a> centered on curiosity, problem-solving, inquiry, and inference. That supports the institutional connection. It does not identify the activity's original creator or prove that Nolan's exact box design originated there.</span></p>
+        <p class="observation-caveat" data-owner="agent"><strong>Interpretation boundary:</strong> teachers waiting for permission while scientists reached for the objects is Nolan's observation from facilitated sessions, not a universal behavioral claim about either group. Its value here is as an example of how an experience can make tacit norms visible.</p>
+      </article>
+
+      <div class="narrative-rhythm" data-owner="verbatim">
+        “stories, narrative, it's not just prose in general that reaches for the heart, but the rhythm in narrative that humans are so good at doing.”
+        <span class="rhythm-formula" data-owner="agent">Set the scene → withhold just enough → invite action → let tension accumulate → reveal → return to the why</span>
+      </div>
+    </section>
+
+    <section class="section" id="control-surface">
+      <div class="section-heading">
+        <p class="eyebrow">01 / The control surface</p>
+        <h2>Conversation did not replace direction. It became the way direction reached the code.</h2>
+        <p class="section-intro" data-owner="agent">An agent can hold the implementation tools while the human steers through language, perception, refusal, and revision. The useful unit is not “the prompt.” It is the loop.</p>
+      </div>
+
+      <div class="translation-loop" aria-label="Five-step conversation-driven development loop">
+        <article class="loop-step human" data-owner="direction">
+          <div class="num">01 / Articulate</div>
+          <h3>Name the desired experience.</h3>
+          <p>Often as a sensation, spatial relationship, story, or frustration before it is a technical requirement.</p>
+        </article>
+        <article class="loop-step machine" data-owner="agent">
+          <div class="num">02 / Translate</div>
+          <h3>Agent renders a hypothesis.</h3>
+          <p>Code, copy, and interface structure make one possible reading of the direction visible.</p>
+        </article>
+        <article class="loop-step human" data-owner="direction">
+          <div class="num">03 / Perceive</div>
+          <h3>Inspect what feels wrong.</h3>
+          <p>The artifact reveals assumptions that were impossible to correct while they were still abstract.</p>
+        </article>
+        <article class="loop-step human" data-owner="verbatim">
+          <div class="num">04 / Correct</div>
+          <h3>Put the distance into words.</h3>
+          <p>The next prompt is not “more.” It narrows, reverses, removes, or gives the agent room in a specific place.</p>
+        </article>
+        <article class="loop-step result" data-owner="artifact">
+          <div class="num">05 / Accrete</div>
+          <h3>Let decisions become structure.</h3>
+          <p>Repeated corrections become defaults, policies, data models, and visual grammar.</p>
+        </article>
+      </div>
+
+      <div class="translation-mirror" id="translation-mirror">
+        <div class="mirror-quote" data-owner="verbatim">
+          <div class="provenance-label">Nolan: why the language model matters</div>
+          “I need LLMs to help me translate my limited vocabulary into something with more dimension.”
+        </div>
+        <div class="mirror-rows">
+          <div class="mirror-row maker" data-owner="direction">
+            <div class="mirror-label">Maker loop</div>
+            <div class="mirror-cell"><b>Internal model</b>Spatial, sensory, temporal, musical, and relational thought.</div>
+            <div class="mirror-cell"><b>LLM expansion</b>Candidate vocabulary, structures, metaphors, and code translations.</div>
+            <div class="mirror-cell"><b>Human recognition</b>Nolan selects what feels faithful, rejects flattening, and supplies the missing distinction.</div>
+            <div class="mirror-cell"><b>Shared interface</b>The internal system becomes behavior other people can encounter.</div>
+          </div>
+          <div class="mirror-row taster" data-owner="direction">
+            <div class="mirror-label">Tasting loop</div>
+            <div class="mirror-cell"><b>Felt perception</b>A rich but initially difficult-to-name sensory experience.</div>
+            <div class="mirror-cell"><b>Wheel expansion</b>Candidate notes, relationships, chemical families, and comparison views.</div>
+            <div class="mirror-cell"><b>Taster recognition</b>The participant chooses language that fits without being graded against one correct answer.</div>
+            <div class="mirror-cell"><b>Shared inquiry</b>Private sensation becomes something a group can compare and investigate.</div>
+          </div>
+        </div>
+        <p class="mirror-note" data-owner="agent"><strong>Agent reading:</strong> the model is useful here as an expansion and translation medium, not an oracle. Dimension enters the artifact through a loop of proposals and recognition. Nolan's ability to say “that is closer,” “that flattened it,” or “the relationship is wrong” remains the control signal.</p>
+
+        <div class="pragmatic-translation">
+          <div data-owner="verbatim">
+            <div class="provenance-label">Nolan: the social translation problem</div>
+            <blockquote>i have a difficult time expressing myself in conversation because people often need a very specific translstion to hear it correctly (tone of voice, pitch, volume, idioms, courtesys, performances of emotion or lack thereof)</blockquote>
+            <div class="signal-field" aria-label="Social signals that can affect how intended meaning is heard">
+              <span>tone</span><span>pitch</span><span>volume</span><span>idiom</span><span>courtesy ritual</span><span>performed emotion</span><span>unperformed emotion</span>
+            </div>
+          </div>
+          <div class="translation-contract" data-owner="agent">
+            <p class="can-help"><strong>What translation can help with</strong>Make context explicit, propose audience-specific phrasing, calibrate directness, replace a misleading idiom, or state an emotional intention that a listener might otherwise infer incorrectly.</p>
+            <p class="must-protect"><strong>What translation must protect</strong>An unexpected delivery is not evidence of absent care. The LLM should not overwrite Nolan's meaning with generic warmth, compulsory deference, or an emotion performed only to satisfy convention.</p>
+            <div class="translation-rule">Keep the source visible. Mark the paraphrase. Let Nolan decide whether the translation still carries the original meaning.</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="control-thesis" data-owner="agent">The agent is not a neutral vehicle, and Nolan is not directly moving every mechanical part. A closer analogy is a conversation-driven control system: the agent proposes motion; Nolan keeps redefining the destination and deciding whether the motion counts as progress.</p>
+
+      <div class="dismissal-panel" id="peer-dismissal">
+        <div class="dismissal-quote" data-owner="verbatim">
+          <div class="provenance-label">Nolan: what is at stake</div>
+          <blockquote>I fear that most of my peers will write off my efforts as “oh ai did it, not you” when really im using machine learning to do the translation from prose to code and i am directing the final behavior and ux of the page and workflows in the moment of tasting at cafes or designing tasting experiences utilizing this tool as a shared platform.</blockquote>
+          <p class="quote-source">Nolan · 2026-08-18 · current conversation</p>
+        </div>
+        <div class="dismissal-answer" data-owner="agent">
+          <div class="provenance-label">What that shorthand gets wrong</div>
+          <p><strong>“The AI wrote the code” is materially true.</strong> “Therefore the AI made the work” only follows if making is defined as typing syntax and nothing else.</p>
+          <p class="answer-line">The disputed territory is not who typed. It is whether originating the system, directing its behavior, testing it in lived use, and repeatedly deciding what the tool should become count as authorship.</p>
+          <p>This record cannot force a peer to use a broader definition. It can make the narrower definition visible, so the disagreement is about authorship itself rather than a mistaken story that one prompt produced the app.</p>
+        </div>
+      </div>
+
+      <div class="practice-strip" data-owner="direction" aria-label="Human direction continues in four contexts">
+        <div class="practice-card"><b>At the café</b><span>Testing the workflow in the same conditions where tasting perception changes moment to moment.</span></div>
+        <div class="practice-card"><b>Inside a tasting</b><span>Noticing where the interface supports or interrupts live sensory attention.</span></div>
+        <div class="practice-card"><b>Between people</b><span>Designing a shared platform where perceptions can be compared without declaring one correct.</span></div>
+        <div class="practice-card"><b>Back in conversation</b><span>Turning those observations into behavioral corrections the agent can translate into code.</span></div>
+      </div>
+
+      <article class="teaching-aid" id="teaching-aid">
+        <div class="provenance-label" data-owner="verbatim">Nolan: the live purpose</div>
+        <h3 data-owner="direction">The app is the teaching surface. Nolan leads the tasting.</h3>
+        <p data-owner="verbatim">“this is a teaching aid while i lead others into their first tasting experiences with more depth than ‘this tastes good, this doesn't’ to ‘is that a terpene or an ester i'm detecting?’”</p>
+
+        <div class="learning-path" data-owner="direction" aria-label="A facilitated progression from preference to chemistry-informed inquiry">
+          <div class="learning-step"><div class="level">01 / Preference</div><b>“Do I like it?”</b><span>A valid beginning, but not the end of what a person can notice.</span></div>
+          <div class="learning-step"><div class="level">02 / Perception</div><b>“What changed?”</b><span>Slow down enough to notice aroma, timing, texture, and the difference between sniffing and swallowing.</span></div>
+          <div class="learning-step"><div class="level">03 / Language</div><b>“What does it remind me of?”</b><span>Turn private sensation into shareable words without grading the perception as right or wrong.</span></div>
+          <div class="learning-step"><div class="level">04 / Relationship</div><b>“Where else does this occur?”</b><span>Compare notes through plant family, geography, and shared aroma compounds.</span></div>
+          <div class="learning-step"><div class="level">05 / Inquiry</div><b>“Terpene or ester?”</b><span>Use the evidence layer to form a chemistry-informed question and decide where to go deeper.</span></div>
+        </div>
+
+        <div class="facilitator-line" data-owner="agent">
+          <strong>The interface supplies structure; the facilitator supplies attention.</strong>
+          <span>The wheel can surface plausible chemical relationships, but a sensory description by itself does not identify a molecule or chemical class with laboratory certainty. The educational move is from unexamined preference toward a better-supported question, not from first taste to false confirmation.</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" id="traces">
+      <div class="section-heading">
+        <p class="eyebrow">02 / Four traces through the loop</p>
+        <h2>What mattered was the distance between the first render and the intended experience.</h2>
+        <p class="section-intro" data-owner="agent">These are not project-management milestones. They are moments where the prompt trail exposes a way of thinking: when Nolan leads hard, when seeing an agent output changes the idea, and when an earlier human decision is deliberately reversed.</p>
+      </div>
+
+      <div class="traces">
+        <article class="trace">
+          <header class="trace-header">
+            <div><div class="trace-index">Trace 01 · Entry 3</div><h3>Stop planning. Start building.</h3></div>
+            <div class="trace-measure">1 human prompt<br>no correction required</div>
+          </header>
+          <div class="trace-grid">
+            <div class="trace-cell" data-owner="verbatim">
+              <div class="provenance-label">Nolan: exact input</div>
+              <blockquote>here's the deal we dont need to expand claude md. just start making the html file first prototype. i believe in your capabilities</blockquote>
+              <p class="quote-source">2026-05-21 · raw prompt-log entry 03</p>
+            </div>
+            <div class="trace-cell" data-owner="agent">
+              <div class="provenance-label">Recorded agent move</div>
+              <p class="artifact-name">Context → artifact</p>
+              <p>The surviving record shows the agent reading the project brief, inspecting the worktree, and moving into the HTML artifact. It does not preserve a prose response worth elevating over the action.</p>
+            </div>
+            <div class="trace-cell" data-owner="artifact">
+              <div class="provenance-label">Observable result</div>
+              <p class="artifact-name">The seed of <code>v1</code></p>
+              <p>The first prototype exists because the human instruction closed the planning branch and named the file as the next place where thinking had to happen.</p>
+            </div>
+          </div>
+          <p class="trace-insight" data-owner="agent"><strong>Agent reading:</strong> directiveness here is not technical micromanagement. It is Nolan recognizing a failure mode of agent collaboration: planning can impersonate progress unless the human decides when abstraction has stopped being useful.</p>
+        </article>
+
+        <article class="trace">
+          <header class="trace-header">
+            <div><div class="trace-index">Trace 02 · Entry 28</div><h3>A control disappears in thirteen minutes.</h3></div>
+            <div class="trace-measure">3 human prompts<br>each removes a decision</div>
+          </header>
+          <div class="trace-grid">
+            <div class="trace-cell" data-owner="verbatim">
+              <div class="provenance-label">Nolan: correction sequence</div>
+              <div class="mini-turn"><div class="turn-time">18:25</div><q>Let's have “Reading Mode” Swallow the “Turn Jiggle Off” aspect… i need them to rest at equilibrium reasonably timely.</q></div>
+              <div class="mini-turn"><div class="turn-time">18:35</div><q>Let's Make reading mode default. i like the ux of this</q></div>
+              <div class="mini-turn"><div class="turn-time">18:38</div><q>Too many options is my point. Let's remove these options entirely and make the state be the default experience of the app</q></div>
+            </div>
+            <div class="trace-cell" data-owner="agent">
+              <div class="provenance-label">Agent translations</div>
+              <p class="artifact-name">Merge → default → remove</p>
+              <p>First, one control absorbs another control's behavior. Then the combined mode turns on by default. Finally the interface stops asking the user to make that choice at all.</p>
+              <p>The code summary records a shared <code>bubblesFrozen()</code> rule, changed initialization, and synchronized motion behavior.</p>
+            </div>
+            <div class="trace-cell" data-owner="artifact">
+              <div class="provenance-label">Observable result</div>
+              <p class="artifact-name">Calm becomes the product, not a setting.</p>
+              <p>The finished experience contains less interface than the first solution. Iteration did not add fidelity by adding controls; it found the intended behavior by deleting the choice.</p>
+            </div>
+          </div>
+          <p class="trace-insight" data-owner="agent"><strong>Agent reading:</strong> the pattern is reductive but not minimalist for its own sake. Each prompt notices that an internal implementation distinction has leaked into the user's experience and pushes it back under the surface.</p>
+        </article>
+
+        <article class="trace">
+          <header class="trace-header">
+            <div><div class="trace-index">Trace 03 · Entry 35</div><h3>The agent shows something Nolan did not know yet.</h3></div>
+            <div class="trace-measure">proposal becomes discovery<br>discovery becomes direction</div>
+          </header>
+          <div class="trace-grid">
+            <div class="trace-cell" data-owner="verbatim">
+              <div class="provenance-label">Nolan: gives bounded freedom</div>
+              <blockquote>i dont have a real idea on how to show it so go ahead and propose a few examples of how you visualize this relationship</blockquote>
+              <p class="quote-source">2026-07-25 · prompt 7</p>
+            </div>
+            <div class="trace-cell" data-owner="agent">
+              <div class="provenance-label">Agent proposal, reconstructed from the reaction</div>
+              <p class="artifact-name">“One branch, or seven”</p>
+              <p>A comparison made limonene's concentration around citrus visible beside linalool's spread across lavender, blueberry, ginger, chamomile, and other notes.</p>
+              <p>This description is supported by the next human prompts, but the original agent prose is not in the public prompt-only archive.</p>
+            </div>
+            <div class="trace-cell" data-owner="verbatim">
+              <div class="provenance-label">Nolan: output changes the idea</div>
+              <div class="mini-turn"><q>Oh wow it's euphoric seeing this data tree… “well I'll be damned” to learn that my internal rule for Linalool = lavender was actually flawed…</q></div>
+              <div class="mini-turn"><q>literally the comparison view you rendered looks great. it needs to be a view.</q></div>
+            </div>
+          </div>
+          <p class="trace-insight" data-owner="agent"><strong>Agent reading:</strong> this is the important counterexample to a simple “human commands, machine obeys” story. Nolan defines the relationship worth exploring, gives the agent visual latitude, lets the output revise his own internal model, then recognizes which proposal deserves to become product structure.</p>
+        </article>
+
+        <article class="trace">
+          <header class="trace-header">
+            <div><div class="trace-index">Trace 04 · Entries 24 + 43</div><h3>An honesty policy is reversed to preserve honesty.</h3></div>
+            <div class="trace-measure">1 month apart<br>practice stays, framing changes</div>
+          </header>
+          <div class="trace-grid">
+            <div class="trace-cell" data-owner="verbatim">
+              <div class="provenance-label">Nolan: first direction</div>
+              <blockquote>i think i also need an honesty policy in here where all citations have a “under human review” until I personally review them and verify that they are indeed not hallucinated</blockquote>
+              <p class="quote-source">2026-07-01 · entry 24</p>
+            </div>
+            <div class="trace-cell" data-owner="artifact">
+              <div class="provenance-label">What became visible</div>
+              <p class="artifact-name">A caution label on the citations</p>
+              <p>The mechanism honestly exposed review state, but the public copy made sourced material sound broadly suspect. A rule that made sense internally produced the wrong trust signal when rendered.</p>
+            </div>
+            <div class="trace-cell" data-owner="verbatim">
+              <div class="provenance-label">Nolan: later reversal</div>
+              <blockquote>the citation honesty policy does the opposite. it makes it sound dishonest and possibly completly false. remove this entire section… just say what criteria was considered for choosing works cited to rely on.</blockquote>
+              <p class="quote-source">2026-08-04 · entry 43</p>
+            </div>
+          </div>
+          <p class="trace-insight" data-owner="agent"><strong>Agent reading:</strong> human authorship includes changing one's own earlier call after the interface exposes its consequences. The revision does not prove the first idea was bad; it shows that judgment continued after implementation.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="authorship">
+      <div class="section-heading">
+        <p class="eyebrow">03 / Authorship is not one percentage</p>
+        <h2>“Who made this?” changes answer when the object changes.</h2>
+        <p class="section-intro" data-owner="agent">Counting keystrokes answers a real question, but not the only one. The project becomes clearer when origin, judgment, expression, implementation, and inherited convention are kept on separate axes.</p>
+      </div>
+
+      <div class="authorship-matrix" aria-label="Qualitative authorship matrix">
+        <div class="matrix-row matrix-head" aria-hidden="true">
+          <div>Layer</div><div>Human contribution</div><div>Agent contribution</div><div>Trace limit</div>
+        </div>
+        <div class="matrix-row">
+          <div class="matrix-topic">Sensory premise</div>
+          <div class="matrix-cell nolan" data-owner="direction"><b>Primary source</b>Tasting, journals, sketches, and cross-modal associations named by Nolan.</div>
+          <div class="matrix-cell agent" data-owner="agent"><b>Later interpreter</b>Can structure the account, but cannot originate Nolan's lived perception.</div>
+          <div class="matrix-cell unknown"><b>Partly private</b>The repo cannot inventory unpublished thought.</div>
+        </div>
+        <div class="matrix-row">
+          <div class="matrix-topic">Product direction</div>
+          <div class="matrix-cell nolan" data-owner="direction"><b>Decision authority</b>Defines purpose, audience, boundaries, defaults, and what feels like the right experience.</div>
+          <div class="matrix-cell agent" data-owner="agent"><b>Proposal engine</b>Offers structures and alternatives that Nolan may accept, alter, or reject.</div>
+          <div class="matrix-cell unknown"><b>Well documented</b>Prompt → commit links are often visible, but not always complete.</div>
+        </div>
+        <div class="matrix-row">
+          <div class="matrix-topic">Language on screen</div>
+          <div class="matrix-cell nolan" data-owner="verbatim"><b>Mixed</b>Some language is Nolan verbatim; some is direction repeatedly corrected toward his voice.</div>
+          <div class="matrix-cell agent" data-owner="agent"><b>Often literal drafter</b>Most connective prose and interface copy began as agent-generated text.</div>
+          <div class="matrix-cell unknown"><b>Taggable here</b>Exact quotes can be separated from paraphrase and synthesis.</div>
+        </div>
+        <div class="matrix-row">
+          <div class="matrix-topic">Code syntax</div>
+          <div class="matrix-cell nolan" data-owner="direction"><b>Behavioral review</b>Drives what the code must do through use, critique, and iteration.</div>
+          <div class="matrix-cell agent" data-owner="agent"><b>Primary typist</b>The HTML, CSS, JavaScript, data plumbing, and most implementation phrasing are agent-written.</div>
+          <div class="matrix-cell unknown"><b>Git-visible</b>Authorship of literal characters is much easier to establish than authorship of intent.</div>
+        </div>
+        <div class="matrix-row">
+          <div class="matrix-topic">Learned conventions</div>
+          <div class="matrix-cell nolan"><b>Selective pressure</b>Human feedback favors some visual and rhetorical patterns and rejects others.</div>
+          <div class="matrix-cell agent" data-owner="inherited"><b>Amalgamated capability</b>The model draws on statistical patterns learned across code, writing, design, and research.</div>
+          <div class="matrix-cell unknown" data-owner="inherited"><b>Not attributable per line</b>This page cannot name whose prior work influenced one CSS rule or sentence through model training.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="certainty">
+      <div class="section-heading">
+        <p class="eyebrow">04 / Where the line actually is</p>
+        <h2>The archive can support a claim without turning every interpretation into fact.</h2>
+        <p class="section-intro" data-owner="agent">Consensus starts to diverge when documented events become claims about interior authorship, creative ownership, or the model's training lineage. The page should let a reader see exactly where that transition happens.</p>
+      </div>
+
+      <div class="certainty-grid">
+        <article class="certainty-card known" data-owner="artifact">
+          <h3>Observable</h3>
+          <ul>
+            <li>Verbatim human prompts survive in the archive.</li>
+            <li>Git shows which artifacts and behaviors changed afterward.</li>
+            <li>The implementation was overwhelmingly typed by agents.</li>
+            <li>Repeated human corrections shaped defaults, scope, and visual behavior.</li>
+          </ul>
+        </article>
+        <article class="certainty-card read" data-owner="agent">
+          <h3>Interpreted</h3>
+          <ul>
+            <li>What one prompt reveals about Nolan's working style.</li>
+            <li>Whether a correction demonstrates expertise, taste, caution, or all three.</li>
+            <li>Where one idea ends and a jointly developed idea begins.</li>
+            <li>The narrative groupings used on this page.</li>
+          </ul>
+        </article>
+        <article class="certainty-card limit" data-owner="inherited">
+          <h3>Not supportable</h3>
+          <ul>
+            <li>A clean human-versus-agent percentage.</li>
+            <li>A claim that the agent contributed no creative judgment.</li>
+            <li>A claim that Nolan directly authored agent-written syntax.</li>
+            <li>Per-output attribution to particular people whose work influenced model training.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="archive">
+      <div class="section-heading">
+        <p class="eyebrow">05 / The checkable record</p>
+        <h2>Do not take the visual essay's word for it.</h2>
+        <p class="section-intro" data-owner="direction">The public archive exists so the polished version can be challenged by the raw one. It names missing transcripts instead of estimating through them.</p>
+      </div>
+
+      <div class="ledger" data-owner="artifact">
+        <div class="ledger-stat"><div class="ledger-number">397</div><div class="ledger-label">verbatim human prompts</div><div class="ledger-note">Across the sessions whose prompt text survives in the published record.</div></div>
+        <div class="ledger-stat"><div class="ledger-number">19,944</div><div class="ledger-label">human words</div><div class="ledger-note">Measured from the archive; not a proxy for creative percentage.</div></div>
+        <div class="ledger-stat"><div class="ledger-number">34</div><div class="ledger-label">measured sessions</div><div class="ledger-note">Spanning 2026-05-22 → 2026-08-15. Forty-five curated entries include additional provenance tiers and gaps.</div></div>
+      </div>
+
+      <div class="archive-links">
+        <div class="archive-link"><b>Curated prompt log</b><span>All 45 entries: what Nolan asked for, what changed, and where the record is incomplete. The live portfolio can link to the published project record later.</span></div>
+        <div class="archive-link"><b>Verbatim prompt archive</b><span>The raw human prompts in order, without this page's narrative structure.</span></div>
+        <div class="archive-link"><b>Provenance method</b><span>Measurement method, transcript tiers, gaps, and rules for prompt-to-feature attribution.</span></div>
+        <div class="archive-link"><b>Agent orchestration log</b><span>Agent-written instructions to sub-agents, kept separate because they are not Nolan's words.</span></div>
+      </div>
+
+      <div class="draft-note" data-owner="agent"><strong>About this page:</strong> Codex created this visual structure and drafted its connective prose from Nolan's 2026-08-18 brief, Claude's earlier source curation, and the published prompt log. Nolan's exact words are labeled. Paraphrases and interpretations remain agent-authored until Nolan reviews, corrects, or replaces them.</div>
+    </section>
+  </main>
+</div>
+
+<footer class="page-footer">Nolan [Æ] · systems thinking, sensory education, experience design, and human-directed machine translation · Portland, Oregon.</footer>
+
+<script>
+(function () {
+  var dock = document.getElementById('provenance-dock');
+  var buttons = Array.prototype.slice.call(dock.querySelectorAll('.layer-button'));
+  var reset = document.getElementById('dock-reset');
+  var readout = document.getElementById('dock-readout');
+
+  buttons.forEach(function (button) {
+    var name = button.getAttribute('data-filter');
+    var count = document.querySelectorAll('[data-owner="' + name + '"]').length;
+    button.querySelector('.count').textContent = count;
+  });
+
+  function applyFilter(name) {
+    if (name) document.body.setAttribute('data-provenance-filter', name);
+    else document.body.removeAttribute('data-provenance-filter');
+
+    buttons.forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.getAttribute('data-filter') === name));
+    });
+    reset.classList.toggle('show', Boolean(name));
+
+    if (!name) {
+      readout.textContent = 'All tagged fragments visible.';
+      return;
+    }
+    var activeButton = buttons.find(function (button) { return button.getAttribute('data-filter') === name; });
+    var label = activeButton.querySelector('span').textContent;
+    var count = document.querySelectorAll('[data-owner="' + name + '"]').length;
+    readout.textContent = 'Isolating ' + count + ' “' + label + '” fragments.';
+  }
+
+  buttons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      var name = button.getAttribute('data-filter');
+      var active = button.getAttribute('aria-pressed') === 'true';
+      applyFilter(active ? null : name);
+    });
+  });
+  reset.addEventListener('click', function () { applyFilter(null); });
+})();
+</script>
+</body>
+</html>
