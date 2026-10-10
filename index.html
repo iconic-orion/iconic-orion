@@ -1513,6 +1513,43 @@
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Full-screen wheel: the wheel lifts out of the page grid and takes the whole
+     viewport, with pan/zoom (d3.zoom on #svg, see wheelZoom). Everything that
+     normally floats over the wheel steps aside so nothing can cover the ring,
+     leaving only the display tools, the Radar and the zoom controls. */
+  .wheel-fs-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; }
+  .wheel-fs-btn svg { width: 14px; height: 14px; display: block; }
+  .wheel-fs-btn:hover { border-color: var(--accent); color: var(--accent); }
+  body.wheel-fullscreen .wheel-fs-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  .wheel-zoom-ctl { position: absolute; right: 10px; bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index: 19; display: none; flex-direction: column; gap: 6px; }
+  body.wheel-fullscreen .wheel-zoom-ctl { display: flex; }
+  .wheel-zoom-ctl button { width: 44px; height: 44px; border-radius: 10px; font-size: 20px; line-height: 1;
+    background: rgba(29, 27, 23, 0.78); color: var(--ink); border: 1px solid var(--line);
+    cursor: pointer; -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+  .wheel-zoom-ctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .wheel-zoom-ctl .zoom-reset { font-size: 11px; }
+  body.wheel-fullscreen { overflow: hidden; }
+  body.wheel-fullscreen main.wheel { position: fixed; inset: 0; z-index: 150;
+    width: 100vw; height: 100vh; height: 100dvh; background-color: var(--bg);
+    --wheel-bottom-reserve: 0px; }
+  body.wheel-fullscreen main.wheel #svg { cursor: grab; touch-action: none !important; }
+  body.wheel-fullscreen main.wheel #svg:active { cursor: grabbing; }
+  body.wheel-fullscreen .wheel-hint, body.wheel-fullscreen .wheel-seed-btn,
+  body.wheel-fullscreen #relation-hint, body.wheel-fullscreen #pin-hint,
+  body.wheel-fullscreen #wheel-nudge, body.wheel-fullscreen .lap-rail,
+  body.wheel-fullscreen #tasting-tray, body.wheel-fullscreen #callout-toggle,
+  body.wheel-fullscreen .prototype-watermark { display: none !important; }
+  /* Zoomed in there is room to name the compound dots, which phones otherwise hide. */
+  body.wheel-fullscreen.wheel-zoomed g.compound text.node-label { display: block; }
+  /* Labels keep a steady on-screen size while the glyphs grow with the zoom. */
+  body.wheel-fullscreen #svg text.node-label, body.wheel-fullscreen #svg text.note-label {
+    font-size: calc(10px / var(--wheel-k, 1)) !important; }
+  /* Not full screen: the zoom behavior is inert, so leave touch scrolling alone. */
+  body:not(.wheel-fullscreen) #svg { touch-action: auto !important; }
+
   /* Constellation — Go Deeper's subjective hemisphere, promoted to a direct
      header toggle (was reachable only via the Sixth-lens depth card, which
      buried it behind a warp animation plus click-through; that on-ramp still
@@ -4317,6 +4354,16 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
       Radar
     </button>
+    <button type="button" id="wheel-fs-toggle" class="wheel-fs-btn" aria-pressed="false"
+      aria-label="Expand the wheel to full screen" title="Full screen: pinch, scroll or drag to zoom and pan into clusters of notes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fs-open" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-close" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" style="display:none"/></svg>
+    </button>
+  </div>
+  <!-- Zoom controls for the full-screen wheel (hidden otherwise, see CSS). -->
+  <div class="wheel-zoom-ctl" id="wheel-zoom-ctl">
+    <button type="button" id="wheel-zoom-in" aria-label="Zoom in">+</button>
+    <button type="button" id="wheel-zoom-out" aria-label="Zoom out">−</button>
+    <button type="button" id="wheel-zoom-reset" class="zoom-reset" aria-label="Reset zoom">Fit</button>
   </div>
   <!-- Go Deeper "vines" — a decorative climbing vine grown into the wheel's
        empty bottom-left corner only while body.go-deeper is on. Ecobrutalism:
@@ -8140,6 +8187,23 @@ const gNotes  = root.append("g").attr("class", "notes");
 const gLabels   = root.append("g").attr("class", "labels");
 const gCallouts = root.append("g").attr("class", "callouts");
 
+// Pan/zoom for the full-screen wheel. The zoom transform lives on `root`, and
+// the float drags use their parent group as the d3.drag container, so pointer
+// coordinates stay in wheel space at any zoom. The filter keeps the behavior
+// inert outside full screen so page scrolling on a phone is untouched.
+let wheelZoomT = d3.zoomIdentity;
+const wheelZoom = d3.zoom()
+  .scaleExtent([1, 10])
+  .filter(e => document.body.classList.contains("wheel-fullscreen")
+    && (!e.ctrlKey || e.type === "wheel") && !e.button)
+  .on("zoom", e => {
+    wheelZoomT = e.transform;
+    root.attr("transform", wheelZoomT.toString());
+    document.body.classList.toggle("wheel-zoomed", wheelZoomT.k >= 2);
+    document.body.style.setProperty("--wheel-k", wheelZoomT.k.toFixed(3));
+  });
+svg.call(wheelZoom).on("dblclick.zoom", null);
+
 function layout() {
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
@@ -8168,7 +8232,8 @@ function layout() {
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
-  root.attr("transform", `translate(0,0)`);
+  wheelZoom.extent([[0, 0], [W, H]]).translateExtent([[0, 0], [W, H]]);
+  root.attr("transform", wheelZoomT.toString());
   if (inChemistry()) {
     // Dual layout: chemical-class arcs on the ring, compounds anchored in them;
     // the entered notes float (rendered from the sim tick / recompute).
@@ -14614,6 +14679,30 @@ layout();
 startSim();
 recompute();
 autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
+
+// ---------- Full-screen wheel (pan / zoom) ----------
+const wheelFsBtn = document.getElementById("wheel-fs-toggle");
+function setWheelFullscreen(on) {
+  on = !!on && !document.body.classList.contains("origins-mode") && !document.body.classList.contains("taxonomy-mode");
+  document.body.classList.toggle("wheel-fullscreen", on);
+  wheelFsBtn.setAttribute("aria-pressed", String(on));
+  wheelFsBtn.setAttribute("aria-label", on ? "Exit full screen" : "Expand the wheel to full screen");
+  wheelFsBtn.querySelector(".fs-open").style.display = on ? "none" : "";
+  wheelFsBtn.querySelector(".fs-close").style.display = on ? "" : "none";
+  if (!on) {
+    svg.call(wheelZoom.transform, d3.zoomIdentity);
+    document.body.classList.remove("wheel-zoomed");
+  }
+  // The wheel's box just changed size: re-run the same path as a window resize.
+  window.dispatchEvent(new Event("resize"));
+}
+wheelFsBtn.addEventListener("click", () => setWheelFullscreen(!document.body.classList.contains("wheel-fullscreen")));
+document.getElementById("wheel-zoom-in").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1.6));
+document.getElementById("wheel-zoom-out").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1 / 1.6));
+document.getElementById("wheel-zoom-reset").addEventListener("click", () => svg.transition().duration(250).call(wheelZoom.transform, d3.zoomIdentity));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.classList.contains("wheel-fullscreen")) setWheelFullscreen(false);
+});
 
 window.addEventListener("resize", () => {
   layout();
