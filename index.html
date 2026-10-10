@@ -1519,10 +1519,9 @@
   .class-key { position: absolute; left: 10px; top: 58px; z-index: 17;
     display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
     max-width: calc(100% - 20px); }
-  .class-key-toggle { background: rgba(29, 27, 23, 0.6); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px;
-    font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+  .class-key-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
   .class-key-toggle:hover, .class-key-toggle[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
   .class-key-body { background: rgba(23, 22, 27, 0.72); border: 1px solid var(--line);
     border-radius: 12px; padding: 9px 11px; width: 250px; max-width: 100%;
@@ -1544,7 +1543,7 @@
   @media (max-width: 760px) {
     .class-key { left: 10px; right: auto; top: 64px; flex-direction: column;
       align-items: flex-start; }
-    .class-key-toggle { min-height: 40px; padding: 7px 13px; }
+    .wheel-view-tools .class-key-toggle { min-height: 40px; padding: 8px; font-size: 11px; }
     .class-key-body { max-height: 30vh; width: 236px; }
   }
 
@@ -2310,7 +2309,7 @@
        are hidden; saved laps shift both controls down together. */
     #callout-toggle {
       display: flex; align-items: center; gap: 5px;
-      position: absolute; top: 64px; left: 112px; z-index: 5;
+      position: absolute; top: 64px; left: 10px; z-index: 5;
       padding: 4px 8px;
       background: rgba(29, 27, 23, 0.55);
       border: 1px solid rgba(205, 200, 190, 0.22);
@@ -3435,7 +3434,7 @@
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body > header, body > main, body > aside, body > footer { min-width: 0; width: 100%; }
     body:not(.origins-mode):not(.taxonomy-mode) {
-      grid-template-rows: auto calc(43svh + 272px) auto;
+      grid-template-rows: auto calc(43svh + 232px) auto;
       background: linear-gradient(180deg, #0a0d0f 0, #101519 52%, #0c1012 100%); }
     header { min-height: 52px; padding-left: 16px; border-color: rgba(214,230,222,.1); }
     header h1 { font-size: 16px; }
@@ -4397,6 +4396,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
       Radar
     </button>
+    <button type="button" class="class-key-toggle" id="class-key-toggle" aria-expanded="false" aria-controls="class-key-body"
+      title="Key: what each compound icon means">
+      <span aria-hidden="true">🍐</span> Key
+    </button>
     <button type="button" id="wheel-fs-toggle" class="wheel-fs-btn" aria-pressed="false"
       aria-label="Expand the wheel to full screen" title="Full screen: pinch, scroll or drag to zoom and pan into clusters of notes">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fs-open" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-close" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" style="display:none"/></svg>
@@ -4406,9 +4409,6 @@
        chemical CLASS (🌲 terpene, 🍐 ester...), not a single compound. Collapsed
        by default, semi-transparent; lists the classes in play first. -->
   <div class="class-key" id="class-key">
-    <button type="button" class="class-key-toggle" id="class-key-toggle" aria-expanded="false" aria-controls="class-key-body">
-      <span aria-hidden="true">🌲 🍐</span> Key
-    </button>
     <div class="class-key-body" id="class-key-body" hidden></div>
   </div>
   <!-- Zoom controls for the full-screen wheel (hidden otherwise, see CSS). -->
@@ -8270,7 +8270,7 @@ function layout() {
   if (window.matchMedia("(max-width: 760px)").matches && H > 0) {
     const wTop = wheelEl.getBoundingClientRect().top;
     let top = 0;
-    wheelEl.querySelectorAll(".wheel-view-tools, #callout-toggle, .class-key-toggle, .lap-rail").forEach(el => {
+    wheelEl.querySelectorAll(".wheel-view-tools, #callout-toggle, .lap-rail").forEach(el => {
       if (el.offsetParent === null) return;
       top = Math.max(top, el.getBoundingClientRect().bottom - wTop + 6);
     });
