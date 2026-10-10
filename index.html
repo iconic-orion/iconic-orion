@@ -1542,9 +1542,9 @@
   .class-key-row .ck-hint { color: var(--ink-dim); }
   .class-key-row.dim { opacity: .6; }
   @media (max-width: 760px) {
-    .class-key { left: auto; right: 8px; top: auto; bottom: 8px; flex-direction: column-reverse;
-      align-items: flex-end; }
-    .class-key-toggle { min-height: 44px; padding: 8px 14px; }
+    .class-key { left: 10px; right: auto; top: 64px; flex-direction: column;
+      align-items: flex-start; }
+    .class-key-toggle { min-height: 40px; padding: 7px 13px; }
     .class-key-body { max-height: 30vh; width: 236px; }
   }
 
@@ -2257,6 +2257,7 @@
     .lap-rail:not(.is-empty) ~ .wheel-view-tools { top: 50px; }
     .lap-rail:not(.is-empty) ~ .wheel-hint { top: 142px; }
     .lap-rail:not(.is-empty) ~ #callout-toggle { top: 106px; }
+    .lap-rail:not(.is-empty) ~ .class-key { top: 106px; }
 
     /* Drop the context hint below the wheel-local tools and the mobile-only
        "Show compound labels" toggle so the three layers never overlap. */
@@ -2309,7 +2310,7 @@
        are hidden; saved laps shift both controls down together. */
     #callout-toggle {
       display: flex; align-items: center; gap: 5px;
-      position: absolute; top: 64px; left: 10px; z-index: 5;
+      position: absolute; top: 64px; left: 112px; z-index: 5;
       padding: 4px 8px;
       background: rgba(29, 27, 23, 0.55);
       border: 1px solid rgba(205, 200, 190, 0.22);
@@ -3434,7 +3435,7 @@
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body > header, body > main, body > aside, body > footer { min-width: 0; width: 100%; }
     body:not(.origins-mode):not(.taxonomy-mode) {
-      grid-template-rows: auto calc(43svh + 232px) auto;
+      grid-template-rows: auto calc(43svh + 272px) auto;
       background: linear-gradient(180deg, #0a0d0f 0, #101519 52%, #0c1012 100%); }
     header { min-height: 52px; padding-left: 16px; border-color: rgba(214,230,222,.1); }
     header h1 { font-size: 16px; }
@@ -8269,7 +8270,7 @@ function layout() {
   if (window.matchMedia("(max-width: 760px)").matches && H > 0) {
     const wTop = wheelEl.getBoundingClientRect().top;
     let top = 0;
-    wheelEl.querySelectorAll(".wheel-view-tools, #callout-toggle, .lap-rail").forEach(el => {
+    wheelEl.querySelectorAll(".wheel-view-tools, #callout-toggle, .class-key-toggle, .lap-rail").forEach(el => {
       if (el.offsetParent === null) return;
       top = Math.max(top, el.getBoundingClientRect().bottom - wTop + 6);
     });
