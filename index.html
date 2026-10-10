@@ -2130,6 +2130,11 @@
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
 
+    /* Bottom strip of the wheel band reserved for the relationship hint and the
+       Go Deeper button. layout() keeps the ring out of it; 112px matches the
+       the later mobile skin block grows the wheel row by this plus 40px of ring room. */
+    main.wheel { --wheel-bottom-reserve: 112px; }
+
     /* On mobile the wheel is a fixed band with overflow:hidden. Centering the
        (tall) nudge pushed its top — and its × — above the band, clipped and
        impossible to close. Anchor it to the TOP of the band so the header row
@@ -3350,7 +3355,7 @@
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body > header, body > main, body > aside, body > footer { min-width: 0; width: 100%; }
     body:not(.origins-mode):not(.taxonomy-mode) {
-      grid-template-rows: auto 43svh auto;
+      grid-template-rows: auto calc(43svh + 152px) auto;
       background: linear-gradient(180deg, #0a0d0f 0, #101519 52%, #0c1012 100%); }
     header { min-height: 52px; padding-left: 16px; border-color: rgba(214,230,222,.1); }
     header h1 { font-size: 16px; }
@@ -3905,6 +3910,12 @@
       width: 44px; height: 44px; }
     .site-footer { top: 34px; left: calc(17px + env(safe-area-inset-left)); right: auto;
       font-size: 8px; letter-spacing: .07em; color: rgba(241,238,231,.42); }
+    /* The corner badge used to sit on the compounds bar's "in play" counts.
+       On a phone it rides the header, on the copyright's line, so it never
+       covers a control, the wheel, or the drawer. */
+    .prototype-watermark { top: 31px; bottom: auto; right: auto;
+      left: calc(70px + env(safe-area-inset-left)); padding: 1px 6px;
+      font-size: 7px; letter-spacing: 1.5px; }
     header.hud-open .hud-extra { top: 56px; max-height: calc(100svh - 56px);
       padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
 
@@ -8132,10 +8143,28 @@ const gCallouts = root.append("g").attr("class", "callouts");
 function layout() {
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
+  // On a phone the ring owns a clear window of the band: everything the page
+  // overlays on the wheel (tools bar, labels toggle, lap rail on top; the
+  // relationship/pin hint and Go Deeper on the bottom) lives OUTSIDE that
+  // window, so nothing but the first-run nudge can sit on the ring. The top
+  // inset is measured from the real controls, the bottom is a fixed reserve
+  // (--wheel-bottom-reserve) so the ring does not jump when a hint appears.
+  let ringH = H;
+  if (window.matchMedia("(max-width: 760px)").matches && H > 0) {
+    const wTop = wheelEl.getBoundingClientRect().top;
+    let top = 0;
+    wheelEl.querySelectorAll(".wheel-view-tools, #callout-toggle, .lap-rail").forEach(el => {
+      if (el.offsetParent === null) return;
+      top = Math.max(top, el.getBoundingClientRect().bottom - wTop + 6);
+    });
+    const bottom = parseFloat(getComputedStyle(wheelEl).getPropertyValue("--wheel-bottom-reserve")) || 0;
+    ringH = Math.max(H - top - bottom, 160);
+    CY = top + ringH / 2;
+  }
   // Tighter ring on narrow viewports: the note/compound anchor labels extend
   // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
   // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
-  R_NOTE = Math.min(W, H) * (W < 560 ? 0.36 : 0.38);
+  R_NOTE = Math.min(W, ringH) * (W < 560 && ringH === H ? 0.36 : 0.38);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
