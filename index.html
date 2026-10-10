@@ -1513,6 +1513,30 @@
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Chemistry classes your tasting doesn't produce wait here, off the ring. */
+  .class-bin { position: absolute; left: 10px; bottom: 58px; z-index: 16; max-width: 240px;
+    display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .class-bin[hidden] { display: none; }
+  .class-bin-toggle { background: rgba(29, 27, 23, 0.6); color: var(--ink-dim); border: 1px solid var(--line);
+    border-radius: 999px; padding: 5px 11px; font-size: 11px; cursor: pointer; white-space: nowrap;
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+  .class-bin-toggle:hover, .class-bin-toggle[aria-expanded="true"] { border-color: var(--accent); color: var(--ink); }
+  .class-bin-body { background: rgba(23, 22, 27, 0.66); border: 1px solid var(--line); border-radius: 12px;
+    padding: 8px 10px; max-height: min(40vh, 300px); overflow-y: auto; box-sizing: border-box;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .class-bin-body[hidden] { display: none; }
+  .class-bin-note { margin: 0 0 6px; font-size: 10.5px; line-height: 1.4; color: var(--ink-dim); }
+  .class-bin-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .class-bin-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--ink-dim);
+    padding: 2px 8px 2px 3px; border-radius: 999px; border: 1px solid var(--line); cursor: help;
+    background: color-mix(in srgb, var(--ck-color, #888) 8%, transparent); }
+  .class-bin-chip .ck-icon { width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 10px; border: 1.3px solid var(--ck-color, var(--line)); opacity: .8; }
+  @media (max-width: 760px) {
+    .class-bin { left: auto; right: 8px; bottom: 8px; align-items: flex-end; flex-direction: column-reverse; }
+    .class-bin-toggle { min-height: 44px; padding: 8px 14px; }
+  }
+
   /* Scent / Chemistry as one sliding switch: the two choices are one control,
      so a single thumb moves between them instead of two separate tabs. The
      thumb follows body.organize-chemistry (set by the same handler as the tabs). */
@@ -4428,6 +4452,15 @@
        by default, semi-transparent; lists the classes in play first. -->
   <div class="class-key" id="class-key">
     <div class="class-key-body" id="class-key-body" hidden></div>
+  </div>
+  <!-- Chemistry mode only: classes that none of your notes produce are parked
+       here instead of taking up ring space. They rejoin the ring on their own as
+       soon as a note brings one in. -->
+  <div class="class-bin" id="class-bin" hidden>
+    <button type="button" class="class-bin-toggle" id="class-bin-toggle" aria-expanded="false" aria-controls="class-bin-body">
+      Not in this tasting <span id="class-bin-count"></span>
+    </button>
+    <div class="class-bin-body" id="class-bin-body" hidden></div>
   </div>
   <!-- Zoom controls for the full-screen wheel (hidden otherwise, see CSS). -->
   <div class="wheel-zoom-ctl" id="wheel-zoom-ctl">
@@ -8343,6 +8376,7 @@ function layout() {
     compoundNodes.forEach(carry); noteNodes.forEach(carry);
   }
   _calloutSetKey = '';   // force callout re-layout on next tick (W/H/R changed)
+  renderClassBin();
   updateSimulationCenter();
 }
 
@@ -8740,7 +8774,13 @@ function applyArcEvidence() {
 
 // Distribute visible compounds around the ring, grouped contiguously by class.
 function computeCompoundPositions() {
-  const visible = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+  // Only classes the current tasting actually produces take ring space (wedge
+  // width follows the number of active compounds); the rest wait in the side bin
+  // (see renderClassBin). With nothing entered yet, show the full structure.
+  const allVisible = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+  const active = allVisible.filter(c => CPD_NODE_BY_ID[c.id].intensity_raw > 0);
+  const visible = active.length ? active : allVisible;
+  const onRing = new Set(visible.map(c => c.id));
   const counts = {};
   CLASSES.forEach(cl => counts[cl.id] = visible.filter(c => c.class === cl.id).length);
   const total = visible.length || 1;
@@ -8762,7 +8802,7 @@ function computeCompoundPositions() {
     node._x = CX + Math.cos(a) * R_NOTE;
     node._y = CY + Math.sin(a) * R_NOTE;
   });
-  COMPOUNDS.forEach(c => { if (!isCompoundVisible(c.id)) {
+  COMPOUNDS.forEach(c => { if (!onRing.has(c.id)) {
     const n = CPD_NODE_BY_ID[c.id]; n._angle = null; n._x = null; n._y = null;
   }});
   CLASSES.forEach(cl => { cl._arc = classAngles[cl.id]; });
@@ -9479,6 +9519,31 @@ function renderClassKey() {
     + (on.length ? `<div class="class-key-head">In your tasting</div>` + on.map(c => row(c, false)).join("") : "")
     + `<div class="class-key-head">${on.length ? "Other classes" : "All classes"}</div>` + off.map(c => row(c, on.length > 0)).join("");
 }
+// Side bin for chemistry classes that no entered note produces.
+const classBinEl = document.getElementById("class-bin");
+const classBinBody = document.getElementById("class-bin-body");
+const classBinToggle = document.getElementById("class-bin-toggle");
+let classBinOpen = null;   // null = follow the default (open on wide screens)
+function renderClassBin() {
+  const active = new Set(COMPOUNDS.filter(c => isCompoundVisible(c.id) && CPD_NODE_BY_ID[c.id].intensity_raw > 0).map(c => c.class));
+  const off = CLASS_ORDER.filter(c => !active.has(c) && !state.hiddenClasses.has(c));
+  if (!inChemistry() || !active.size || !off.length) { classBinEl.hidden = true; return; }
+  classBinEl.hidden = false;
+  document.getElementById("class-bin-count").textContent = "(" + off.length + ")";
+  classBinBody.innerHTML =
+    `<p class="class-bin-note">No note you've entered produces these compound classes, so they sit out of the ring. Add a note that does and its class returns to the wheel.</p>`
+    + `<div class="class-bin-chips">` + off.map(cls =>
+      `<span class="class-bin-chip" style="--ck-color:${COMPOUND_CLASS_COLOR[cls]}" title="${CLASS_KEY_HINT[cls] || ""}">`
+      + `<span class="ck-icon" aria-hidden="true">${classIcon(cls)}</span>${CLASS_FULL[cls] || cls}</span>`).join("") + `</div>`;
+  const open = classBinOpen === null ? W >= 560 : classBinOpen;
+  classBinBody.hidden = !open;
+  classBinToggle.setAttribute("aria-expanded", String(open));
+}
+classBinToggle.addEventListener("click", () => {
+  classBinOpen = classBinBody.hidden;   // flip from what is showing now
+  classBinBody.hidden = !classBinOpen;
+  classBinToggle.setAttribute("aria-expanded", String(classBinOpen));
+});
 classKeyToggle.addEventListener("click", () => {
   const open = classKeyBody.hidden;
   classKeyBody.hidden = !open;
@@ -10029,7 +10094,13 @@ function recompute() {
 
   // Redraw the anchor set — it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
-  if (inChemistry()) drawCompoundAnchors(); else drawNotes();
+  if (inChemistry()) {
+    // The set of active classes may have changed, which changes every wedge.
+    computeCompoundPositions();
+    drawClassArcs();
+    drawCompoundAnchors();
+  } else drawNotes();
+  renderClassBin();
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
   updateOriginsClearTasting();     // map-local bulk clear mirrors the same live input count
