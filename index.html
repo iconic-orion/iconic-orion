@@ -8436,10 +8436,83 @@ function drawArcLabels(items) {
     .attr("xlink:href", d => `#arclbl-${d.id}`)
     .text(d => d.label.toUpperCase());
 
+  // Wide wheels stack crowded chemistry labels into extra rows instead of
+  // dropping them: the single-compound slivers on the upper left are far
+  // narrower than their names, so each label takes the outermost row where it
+  // clears the previous label in that row, and gets a short leader back to its
+  // wedge. Phones keep the fit-test + glyph fallback below.
+  const stacked = W >= 560 && items.length && !items[0].cssVar;
+  items.forEach(d => { d._rl = RL; d._tier = 0; });
+  gArcs.selectAll("line.arc-leader").remove();
+  if (stacked) {
+    const TIER_STEP = 18, MAX_TIERS = 5, GAP = 14;
+    const w = new Map();
+    texts.each(function(d) {
+      this.style.display = "";
+      const tp = this.querySelector("textPath");
+      w.set(d.id, tp ? tp.getComputedTextLength() : 0);
+    });
+    const mid = d => (d._arc.start + d._arc.end) / 2;
+    const lastInTier = [];
+    [...items].sort((a, b) => mid(a) - mid(b)).forEach(d => {
+      let t = 0;
+      for (; t < MAX_TIERS - 1; t++) {
+        const prev = lastInTier[t];
+        if (!prev) break;
+        const need = (w.get(prev.id) + w.get(d.id)) / 2 + GAP;
+        if ((mid(d) - mid(prev)) * (RL - t * TIER_STEP) >= need) break;
+      }
+      d._tier = t; d._rl = RL - t * TIER_STEP;
+      lastInTier[t] = d;
+    });
+    gArcs.selectAll("path.arc-label-path").attr("d", d => arcLabelPath(d, d._rl));
+    gArcs.selectAll("line.arc-leader").data(items.filter(d => d._tier > 0), d => d.id)
+      .join("line").attr("class", "arc-leader")
+      .attr("x1", d => CX + (R_RING - 4) * Math.cos(mid(d))).attr("y1", d => CY + (R_RING - 4) * Math.sin(mid(d)))
+      .attr("x2", d => CX + (d._rl + 8) * Math.cos(mid(d))).attr("y2", d => CY + (d._rl + 8) * Math.sin(mid(d)))
+      .attr("stroke", d => d.color).attr("stroke-opacity", 0.5).attr("stroke-width", 1)
+      .style("pointer-events", "none");
+  }
+
+  // Phones: the ring is far too small for 21 curved class names, so they sit
+  // OUTSIDE the ring as small horizontal labels with leader lines, fanned apart
+  // vertically on each side so no two overlap.
+  const outside = W < 560 && items.length && !items[0].cssVar;
+  gArcs.selectAll("g.arc-outside").remove();
+  if (outside) {
+    const SHORT = { "phenolic-aldehyde": "phenol-ald.", "phenylpropene": "phenylprop.",
+      "haloanisole": "haloanis.", "isothiocyanate": "isothiocy.", "norisoprenoid": "norisopr." };
+    const MIN_GAP = 11, mid = d => (d._arc.start + d._arc.end) / 2;
+    const rows = items.map(d => {
+      const a = mid(d), right = Math.cos(a) >= 0;
+      return { d, a, right, x0: CX + (R_RING + 3) * Math.cos(a), y0: CY + (R_RING + 3) * Math.sin(a),
+        x: CX + (R_RING + 14) * Math.cos(a) + (right ? 3 : -3), y: CY + (R_RING + 12) * Math.sin(a) };
+    });
+    [true, false].forEach(side => {
+      const col = rows.filter(r => r.right === side).sort((p, q) => p.y - q.y);
+      for (let i = 1; i < col.length; i++) col[i].y = Math.max(col[i].y, col[i - 1].y + MIN_GAP);
+      const over = col.length ? col[col.length - 1].y - (H - 10) : 0;
+      if (over > 0) col.forEach(r => { r.y -= over; });
+      for (let i = col.length - 2; i >= 0; i--) col[i].y = Math.min(col[i].y, col[i + 1].y - MIN_GAP);
+      col.forEach(r => { r.y = Math.max(r.y, 10); });
+    });
+    const g = gArcs.append("g").attr("class", "arc-outside");
+    g.selectAll("line").data(rows).join("line")
+      .attr("x1", r => r.x0).attr("y1", r => r.y0).attr("x2", r => r.x + (r.right ? -2 : 2)).attr("y2", r => r.y)
+      .attr("stroke", r => r.d.color).attr("stroke-opacity", 0.55).attr("stroke-width", 0.8);
+    g.selectAll("text").data(rows).join("text")
+      .attr("x", r => r.x).attr("y", r => r.y).attr("dominant-baseline", "central")
+      .attr("text-anchor", r => r.right ? "start" : "end")
+      .attr("fill", r => r.d.color)
+      .style("font-size", "8.5px").style("letter-spacing", "0.03em").style("text-transform", "uppercase")
+      .text(r => SHORT[r.d.id] || r.d.label);
+  }
+
   // Fit-test each chemistry-class label against its actual wedge; collect the
   // ones that don't fit for glyph fallback. Measured while still visible.
   const glyphData = [];
   texts.each(function(d) {
+    if (stacked || outside) { if (outside) this.style.display = "none"; return; }
     if (d.cssVar) { this.style.display = ""; return; }   // groups: always text
     const avail = Math.abs(d._arc.end - d._arc.start) * RL;   // arc length of the wedge
     const tp = this.querySelector("textPath");
