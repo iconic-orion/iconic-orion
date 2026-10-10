@@ -1544,9 +1544,15 @@
   body.wheel-fullscreen .prototype-watermark { display: none !important; }
   /* Zoomed in there is room to name the compound dots, which phones otherwise hide. */
   body.wheel-fullscreen.wheel-zoomed g.compound text.node-label { display: block; }
-  /* Labels keep a steady on-screen size while the glyphs grow with the zoom. */
+  /* Semantic zoom: the map spreads at the full zoom factor k but each note and
+     compound glyph is drawn at k^-0.5 of that (--wheel-s), so it only grows as
+     the square root of k. Zooming in therefore pulls crowded neighbors apart
+     instead of just enlarging the pile. Labels are drawn at a steady size. */
+  body.wheel-fullscreen #svg g.note > *, body.wheel-fullscreen #svg g.compound > * {
+    transform: scale(var(--wheel-s, 1)); }
+  body.wheel-fullscreen #svg path.edge { vector-effect: non-scaling-stroke; }
   body.wheel-fullscreen #svg text.node-label, body.wheel-fullscreen #svg text.note-label {
-    font-size: calc(10px / var(--wheel-k, 1)) !important; }
+    font-size: calc(10px * var(--wheel-s, 1)) !important; }
   /* Not full screen: the zoom behavior is inert, so leave touch scrolling alone. */
   body:not(.wheel-fullscreen) #svg { touch-action: auto !important; }
 
@@ -8193,14 +8199,14 @@ const gCallouts = root.append("g").attr("class", "callouts");
 // inert outside full screen so page scrolling on a phone is untouched.
 let wheelZoomT = d3.zoomIdentity;
 const wheelZoom = d3.zoom()
-  .scaleExtent([1, 10])
+  .scaleExtent([1, 20])
   .filter(e => document.body.classList.contains("wheel-fullscreen")
     && (!e.ctrlKey || e.type === "wheel") && !e.button)
   .on("zoom", e => {
     wheelZoomT = e.transform;
     root.attr("transform", wheelZoomT.toString());
     document.body.classList.toggle("wheel-zoomed", wheelZoomT.k >= 2);
-    document.body.style.setProperty("--wheel-k", wheelZoomT.k.toFixed(3));
+    document.body.style.setProperty("--wheel-s", Math.pow(wheelZoomT.k, -0.5).toFixed(4));
   });
 svg.call(wheelZoom).on("dblclick.zoom", null);
 
