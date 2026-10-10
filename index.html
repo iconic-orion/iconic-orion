@@ -1907,6 +1907,7 @@
      note-halo is the soft same-color disc behind it (group cue + selection
      ring); its stroke/fill are driven inline so they win over the generic
      .note/.compound circle rules above without a specificity fight. */
+  .node-glyph-img { transition: scale 0.34s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .node-glyph { pointer-events: none; text-anchor: middle; dominant-baseline: central;
     paint-order: stroke; stroke: var(--bg); stroke-width: 0.5px; stroke-linejoin: round;
     font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
@@ -9259,6 +9260,42 @@ function tick() {
 function updateFloatPositions() {
   gComps.selectAll("g.compound").attr("transform", d => `translate(${d.x},${d.y})`);
 }
+// Floating dots move every animation frame, and a color-emoji <text> at 30-120px
+// is re-rasterized each time it shifts by a sub-pixel (measured: ~10 fps with 17
+// floats on a desktop wheel, vs 60 fps with the glyphs hidden). Floats draw their
+// emoji as a cached bitmap <image> instead, which the compositor just
+// translates. The bitmap is rendered once per emoji; size is a CSS `scale` on the
+// element so the pop-in ease still animates and the separate `transform` stays
+// free for the full-screen zoom's counter-scale.
+const GLYPH_BITMAP_PX = 160;
+const _glyphBitmaps = new Map();
+function glyphBitmapURL(emoji) {
+  let url = _glyphBitmaps.get(emoji);
+  if (url) return url;
+  const c = document.createElement("canvas");
+  c.width = c.height = GLYPH_BITMAP_PX;
+  const ctx = c.getContext("2d");
+  ctx.font = `${Math.round(GLYPH_BITMAP_PX * 0.8)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(emoji, GLYPH_BITMAP_PX / 2, GLYPH_BITMAP_PX / 2 + GLYPH_BITMAP_PX * 0.04);
+  url = c.toDataURL("image/png");
+  _glyphBitmaps.set(emoji, url);
+  return url;
+}
+// Draw `emoji` at `size` px inside float group `g` (a d3 selection of one <g>),
+// replacing the live <text> glyph.
+function setFloatGlyph(g, emoji, size) {
+  g.select("text.node-glyph").style("display", "none");
+  let img = g.select("image.node-glyph-img");
+  if (img.empty()) {
+    img = g.insert("image", "text.node-label").attr("class", "node-glyph-img")
+      .attr("x", -GLYPH_BITMAP_PX / 2).attr("y", -GLYPH_BITMAP_PX / 2)
+      .attr("width", GLYPH_BITMAP_PX).attr("height", GLYPH_BITMAP_PX)
+      .style("pointer-events", "none");
+  }
+  img.attr("href", glyphBitmapURL(emoji)).style("scale", size / GLYPH_BITMAP_PX);
+}
+
 // Full float rebuild for the active mode — data join, styles, labels.
 function syncFloats() {
   if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
@@ -9376,9 +9413,7 @@ function renderCompoundFloats() {
       .style("stroke", seld ? "var(--accent)" : col)
       .style("stroke-opacity", seld ? 1 : 0.75)
       .style("stroke-width", seld ? 2 : 1.3);
-    g.select("text.node-glyph")
-      .style("font-size", sz + "px")
-      .text(classIcon(d.class));
+    setFloatGlyph(g, classIcon(d.class), sz);
     g.select("text.node-label")
       .attr("x", half + 5)
       .attr("y", 3)
@@ -9456,9 +9491,7 @@ function renderNoteFloats() {
       .style("fill-opacity", 0.16 + 0.18 * Math.min(1, d.score))
       .style("stroke", d.id === state.selectedNote ? "var(--accent)" : "none")
       .style("stroke-width", 2);
-    g.select("text.node-glyph")
-      .style("font-size", sz + "px")
-      .text(noteIcon(d));
+    setFloatGlyph(g, noteIcon(d), sz);
     g.select("text.node-label")
       .attr("x", half + 5)
       .attr("y", 3)
