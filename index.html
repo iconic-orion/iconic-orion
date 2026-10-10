@@ -8303,10 +8303,11 @@ function computeNotePositions() {
 // scales with the wheel (a fixed pixel inset looks fine small but cramped on a
 // big full-width wheel). Stays well clear of the central floating dots.
 function arcLabelRadius() {
-  const band = R_RING - R_COMPOUND_MAX;          // open space between ring and floats
+  const inner = inChemistry() ? R_COMPOUND_MAX : FLOAT_ZONE_R();
+  const band = R_RING - inner;                   // open space between ring and floats
   // Center the labels in that open band (clamped clear of the floats on a tiny
   // wheel) so the gap from the ring scales with the wheel and never reads cramped.
-  return Math.max(R_COMPOUND_MAX + 12, R_RING - Math.max(50, band * 0.5));
+  return Math.max(inner + 16, R_RING - Math.max(26, band * 0.5));
 }
 
 // Color a section label by its category: group color in scent mode, chemical-
@@ -8429,7 +8430,7 @@ function drawGroupArcs() {
   // center decorative ring
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
     .attr("class", "center-ring")
-    .attr("cx", CX).attr("cy", CY).attr("r", R_COMPOUND_MAX + 12);
+    .attr("cx", CX).attr("cy", CY).attr("r", FLOAT_ZONE_R() + 12);
 }
 
 // Shared by wheel-note click and Enter/Space keyboard activation: scroll the
@@ -8950,7 +8951,9 @@ function updateSimulationCenter() {
 // collide would shove them apart arbitrarily every time.
 // Molecules occupy the dotted center arena; the flavor notes and category
 // labels remain attached to their outer shell.
-const FLOAT_ZONE_R = () => R_COMPOUND_MAX * (W < 760 ? 0.82 : 0.72);
+// 1.5x the original arena (0.82 / 0.72 of R_COMPOUND_MAX): glyph size, collide
+// padding and drift stay tied to R_COMPOUND_MAX, so only the room grows.
+const FLOAT_ZONE_R = () => R_COMPOUND_MAX * (W < 760 ? 1.23 : 1.08);
 
 function clampToFloatArena(x, y, node) {
   if (inChemistry()) return { x, y }; // Chemistry's established free-pin behavior stays untouched.
