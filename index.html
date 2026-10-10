@@ -8466,7 +8466,7 @@ function drawArcLabels(items) {
       lastInTier[t] = d;
     });
     gArcs.selectAll("path.arc-label-path").attr("d", d => arcLabelPath(d, d._rl));
-    gArcs.selectAll("line.arc-leader").data(items.filter(d => d._tier > 0), d => d.id)
+    gArcs.selectAll("line.arc-leader").data(items, d => d.id)
       .join("line").attr("class", "arc-leader")
       .attr("x1", d => CX + (R_RING - 4) * Math.cos(mid(d))).attr("y1", d => CY + (R_RING - 4) * Math.sin(mid(d)))
       .attr("x2", d => CX + (d._rl + 8) * Math.cos(mid(d))).attr("y2", d => CY + (d._rl + 8) * Math.sin(mid(d)))
