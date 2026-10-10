@@ -2132,7 +2132,7 @@
 
     /* Bottom strip of the wheel band reserved for the relationship hint and the
        Go Deeper button. layout() keeps the ring out of it; 112px matches the
-       the later mobile skin block grows the wheel row by this plus 40px of ring room. */
+       the later mobile skin block grows the wheel row by this plus 120px of ring room. */
     main.wheel { --wheel-bottom-reserve: 112px; }
 
     /* On mobile the wheel is a fixed band with overflow:hidden. Centering the
@@ -3355,7 +3355,7 @@
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body > header, body > main, body > aside, body > footer { min-width: 0; width: 100%; }
     body:not(.origins-mode):not(.taxonomy-mode) {
-      grid-template-rows: auto calc(43svh + 152px) auto;
+      grid-template-rows: auto calc(43svh + 232px) auto;
       background: linear-gradient(180deg, #0a0d0f 0, #101519 52%, #0c1012 100%); }
     header { min-height: 52px; padding-left: 16px; border-color: rgba(214,230,222,.1); }
     header h1 { font-size: 16px; }
@@ -8164,7 +8164,7 @@ function layout() {
   // Tighter ring on narrow viewports: the note/compound anchor labels extend
   // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
   // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
-  R_NOTE = Math.min(W, ringH) * (W < 560 && ringH === H ? 0.36 : 0.38);
+  R_NOTE = ringH === H ? Math.min(W, H) * (W < 560 ? 0.36 : 0.38) : Math.min(W * 0.35, ringH * 0.4);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
