@@ -8211,6 +8211,7 @@ const wheelZoom = d3.zoom()
 svg.call(wheelZoom).on("dblclick.zoom", null);
 
 function layout() {
+  const prevCX = CX, prevCY = CY, prevR = R_COMPOUND_MAX;
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
   // On a phone the ring owns a clear window of the band: everything the page
@@ -8250,6 +8251,19 @@ function layout() {
     computeNotePositions();
     drawGroupArcs();
     drawNotes();
+  }
+  // The wheel's box or ring just changed (resize, full screen, rotation): carry
+  // every float and pin along with it, so dots stay where they were relative to
+  // the ring instead of sitting at the old coordinates (outside the new ring)
+  // and crawling home. Skipped on the first layout, before anything is placed.
+  if (prevR > 0 && (prevCX !== CX || prevCY !== CY || prevR !== R_COMPOUND_MAX)) {
+    const k = R_COMPOUND_MAX / prevR;
+    const carry = n => {
+      n.x = CX + (n.x - prevCX) * k; n.y = CY + (n.y - prevCY) * k;
+      if (n.fx != null) n.fx = CX + (n.fx - prevCX) * k;
+      if (n.fy != null) n.fy = CY + (n.fy - prevCY) * k;
+    };
+    compoundNodes.forEach(carry); noteNodes.forEach(carry);
   }
   _calloutSetKey = '';   // force callout re-layout on next tick (W/H/R changed)
   updateSimulationCenter();
