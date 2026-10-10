@@ -5927,9 +5927,22 @@ const COMPOUND_CLASS_COLOR = {
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
-// organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
-// get a short ring label so the 12 arc labels don't collide.
-const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
+// organized "by chemistry." Ring order is NOT the color-table order: wedge width
+// is proportional to compound count, so the many one- and two-compound classes
+// used to pile up in one quadrant with unreadable labels. This order alternates
+// big and tiny wedges around the circle (and keeps similar hues from touching).
+// Nothing else depends on the order: colors, icons and info are keyed by id.
+const CLASS_RING_ORDER = [
+  // Six repeats of: one big wedge, a tiny one, a mid-size one (and sometimes a second tiny).
+  "terpene", "furanone", "pyrazine", "haloanisole",
+  "aldehyde", "phenylpropene", "phenol",
+  "ester", "pyrroline", "alcohol", "acid",
+  "ketone", "thiazole", "isothiocyanate",
+  "lactone", "phenolic-aldehyde", "sulfide",
+  "thiol", "norisoprenoid", "furan", "pyranone"
+];
+const CLASS_ORDER = CLASS_RING_ORDER.filter(id => id in COMPOUND_CLASS_COLOR)
+  .concat(Object.keys(COMPOUND_CLASS_COLOR).filter(id => !CLASS_RING_ORDER.includes(id)));
 // Short labels exist ONLY so the 12 Chemistry-mode ring-arc sectors don't
 // collide — don't reuse them anywhere with room for the full class name
 // (e.g. the "Main aroma compound class" headline uses CLASS_FULL instead).
