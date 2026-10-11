@@ -1513,6 +1513,24 @@
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.radar-floating #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
+  /* Draggable pane edges (desktop). The handles sit on the wheel's own left and
+     right edges; dragging sets --notes-pane-w / --detail-pane-w, and each pane's
+     text scales with its width (see wirePaneResizers: 0.75x at the narrowest). */
+  .pane-resizer { position: absolute; top: 0; bottom: 0; width: 9px; z-index: 17;
+    cursor: col-resize; touch-action: none; }
+  .pane-resizer.left { left: 0; } .pane-resizer.right { right: 0; }
+  .pane-resizer::after { content: ""; position: absolute; top: 50%; left: 3px; width: 3px; height: 38px;
+    margin-top: -19px; border-radius: 3px; background: var(--line); opacity: .7; transition: background .15s, opacity .15s; }
+  .pane-resizer:hover::after, .pane-resizer:focus-visible::after, .pane-resizer.dragging::after {
+    background: var(--accent); opacity: 1; }
+  .pane-resizer:focus-visible { outline: none; }
+  body.notes-hidden .pane-resizer.left, body.detail-hidden .pane-resizer.right { display: none; }
+  @media (max-width: 760px) { .pane-resizer { display: none; } }
+  @media (min-width: 761px) {
+    aside.notes { zoom: var(--notes-zoom, 1); }
+    aside.detail { zoom: var(--detail-zoom, 1); }
+  }
+
   /* Radar docked as the top card of the compounds pane. The same #compass-content
      element is moved here from the floating widget, so it is rendered once. */
   .radar-dock { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px;
@@ -4412,6 +4430,10 @@
 </aside>
 <main class="wheel">
   <svg id="svg"></svg>
+  <div class="pane-resizer left" id="resizer-notes" role="separator" aria-orientation="vertical" tabindex="0"
+    aria-label="Resize the notes pane (arrow keys work too, double-click resets)" title="Drag to resize. Double-click resets."></div>
+  <div class="pane-resizer right" id="resizer-detail" role="separator" aria-orientation="vertical" tabindex="0"
+    aria-label="Resize the compounds pane (arrow keys work too, double-click resets)" title="Drag to resize. Double-click resets."></div>
   <!-- Lap stack — a stopwatch for tasting. Save lap freezes the current notes and
        delivery conditions as a layer; keep adjusting, save again, and the layers
        accumulate. Oldest sits at the BOTTOM, newest on top, read like a geological
@@ -15067,6 +15089,72 @@ layout();
 startSim();
 recompute();
 autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
+
+// ---------- Resizable side panes (desktop) ----------
+// Drag the wheel's left or right edge to resize the notes or compounds pane. Each
+// pane's text scales with its width (CSS zoom): 0.75x at the narrowest, 1x at the
+// default width, up to 1.15x when widened. Widths persist per browser.
+(function wirePaneResizers() {
+  const rootStyle = document.documentElement.style;
+  const MIN_W = 220, KEY = "aw.paneWidths";
+  const maxW = () => Math.max(MIN_W + 40, Math.min(620, window.innerWidth * 0.4));
+  const defaults = {
+    notes: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--notes-pane-w")) || 320,
+    detail: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--detail-pane-w")) || 360
+  };
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) { return {}; } })();
+  const widths = { notes: saved.notes || null, detail: saved.detail || null };
+  const clampW = w => Math.round(Math.max(MIN_W, Math.min(maxW(), w)));
+  let rafPending = false;
+  function apply(which) {
+    const w = widths[which];
+    const cssVar = which === "notes" ? "--notes-pane-w" : "--detail-pane-w";
+    const zoomVar = which === "notes" ? "--notes-zoom" : "--detail-zoom";
+    if (w == null) { rootStyle.removeProperty(cssVar); rootStyle.removeProperty(zoomVar); }
+    else {
+      rootStyle.setProperty(cssVar, w + "px");
+      rootStyle.setProperty(zoomVar, Math.max(0.75, Math.min(1.15, w / defaults[which])).toFixed(3));
+    }
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(() => { rafPending = false; window.dispatchEvent(new Event("resize")); });
+    }
+  }
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(widths)); } catch (_) {} };
+  function current(which) {
+    return widths[which] != null ? widths[which]
+      : parseFloat(getComputedStyle(document.documentElement).getPropertyValue(which === "notes" ? "--notes-pane-w" : "--detail-pane-w")) || defaults[which];
+  }
+  function wire(el, which) {
+    let startX = 0, startW = 0, dragging = false;
+    const dir = which === "notes" ? 1 : -1;   // dragging right grows the left pane, shrinks the right one
+    el.addEventListener("pointerdown", e => {
+      dragging = true; startX = e.clientX; startW = current(which);
+      el.setPointerCapture(e.pointerId); el.classList.add("dragging"); e.preventDefault();
+    });
+    el.addEventListener("pointermove", e => {
+      if (!dragging) return;
+      widths[which] = clampW(startW + dir * (e.clientX - startX));
+      apply(which);
+    });
+    const end = e => { if (!dragging) return; dragging = false; el.classList.remove("dragging"); persist(); };
+    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    el.addEventListener("dblclick", () => { widths[which] = null; apply(which); persist(); });
+    el.addEventListener("keydown", e => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const step = (e.key === "ArrowRight" ? 1 : -1) * dir * 16;
+      widths[which] = clampW(current(which) + step); apply(which); persist();
+    });
+  }
+  wire(document.getElementById("resizer-notes"), "notes");
+  wire(document.getElementById("resizer-detail"), "detail");
+  if (widths.notes) apply("notes");
+  if (widths.detail) apply("detail");
+  window.addEventListener("resize", () => {   // keep a saved width legal when the window shrinks
+    ["notes", "detail"].forEach(k => { if (widths[k] != null && widths[k] > maxW()) { widths[k] = clampW(widths[k]); apply(k); } });
+  });
+})();
 
 // ---------- Full-screen wheel (pan / zoom) ----------
 const wheelFsBtn = document.getElementById("wheel-fs-toggle");
