@@ -1511,7 +1511,23 @@
     display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
   #compass-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  body.radar-floating #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+
+  /* Radar docked as the top card of the compounds pane. The same #compass-content
+     element is moved here from the floating widget, so it is rendered once. */
+  .radar-dock { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel-2); overflow: hidden; }
+  .radar-dock-head { display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 6px 12px; font-size: 11px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--line); }
+  .radar-popout-btn { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-dim);
+    padding: 3px 10px; font-size: 10.5px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .radar-popout-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .radar-dock .compass-content { width: auto; transform: none !important; }
+  .radar-dock .compass-header { display: none; }
+  .radar-dock #compass-svg { height: 220px; }
+  body.origins-mode .radar-dock, body.taxonomy-mode .radar-dock { display: none; }
+  #compass-close-btn { white-space: nowrap; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
 
   /* Chemistry classes your experience doesn't produce wait here, off the ring. */
   .class-bin { position: absolute; left: 10px; bottom: 58px; z-index: 16; max-width: 240px;
@@ -2321,7 +2337,7 @@
        (applyCompassScale) from the handle's actual rendered size, so it
        automatically picks up this bigger mobile touch target — no override
        needed here. */
-    #compass-close-btn { width: 44px; height: 44px; display: flex;
+    #compass-close-btn { min-width: 44px; height: 44px; padding: 0 8px; display: flex;
       align-items: center; justify-content: center; }
 
     /* Chemistry mode only: the ring anchors are compounds, whose long names run
@@ -4238,15 +4254,6 @@
     </div>
     <!-- Desktop-only divider separating the workspace switch from wheel controls. -->
     <div class="hud-vdivider" aria-hidden="true"></div>
-    <!-- Notes and compounds are two ends of one graph, not input and output, so
-         the panel names the object on each side rather than calling one of them
-         "Results". -->
-    <div class="tabs" id="view-tabs" title="Which side of the graph is open around the wheel.">
-      <span class="tabs-label">Panels</span>
-      <button data-view="note-input" class="active">Notes</button>
-      <button data-view="dashboard" title="Show the notes and the compounds side by side">Both</button>
-      <button data-view="analysis">Compounds</button>
-    </div>
     <!-- Constellation: Go Deeper's subjective hemisphere, opened directly —
          see #constellation-overlay. The Sixth-lens depth card still exists as
          a narrative on-ramp, but this is the fast path Nolan asked for after
@@ -4434,7 +4441,7 @@
       <button data-organize="chemistry">Chemistry</button>
     </div>
     <button id="compass-toggle" aria-label="Toggle Wheel Radar"
-      title="Wheel Radar: a draggable profile of your strongest notes or compounds. This is separate from the Map's geographic bearing compass.">
+      title="Radar: a profile of your strongest notes or compounds. Docked in the compounds pane; press to float it over the wheel (or dock it back). Separate from the Map bearing compass.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
       Radar
     </button>
@@ -4587,7 +4594,6 @@
        visible whether the corresponding side pane is shown or hidden. Click to
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
-  <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide or show the Compounds panel" aria-label="Toggle Compounds panel">›</button>
   <!-- Radar: a small draggable, resizable aroma profile, toggled from the
        Wheel-local display toolbar. Three axis modes (see #compass-mode-tabs): Notes /
        Compounds — the user's own top-10 active items, live — and Class, a
@@ -4602,7 +4608,7 @@
     <div id="compass-content" class="compass-content">
       <div class="compass-header" id="compass-drag-handle">
         <span title="Wheel Radar">Radar</span>
-        <button type="button" id="compass-close-btn" aria-label="Hide Radar" title="Hide Radar">×</button>
+        <button type="button" id="compass-close-btn" aria-label="Dock the Radar back into the compounds pane" title="Dock back into the compounds pane">Dock ↘</button>
       </div>
       <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Class: a fixed set over one chemical class, same axes for everyone.">
         <button data-compass-mode="notes" class="active">Notes</button>
@@ -5034,6 +5040,17 @@
   <span class="compounds-bar-summary" id="compounds-bar-summary"></span>
 </button>
 <aside class="detail" id="detail-panel">
+  <!-- Radar lives here by default, as the top card of the compounds pane. The
+       #compass-content block is moved between this dock and the floating
+       #aroma-compass on the wheel (see setCompassVisible). Re-attached at the
+       top whenever the pane re-renders its contents. -->
+  <section class="radar-dock" id="radar-dock" aria-label="Radar">
+    <div class="radar-dock-head">
+      <span>Radar</span>
+      <button type="button" id="radar-popout-btn" class="radar-popout-btn" aria-label="Pop the Radar out onto the wheel" title="Pop out: float the Radar over the wheel">Pop out ↗</button>
+    </div>
+    <div class="radar-dock-body" id="radar-dock-body"></div>
+  </section>
   <div class="empty">Click a compound to see linked notes and citations. Slide notes on the left to register what you're noticing. The results are literature-guided possibilities, not a chemical measurement.</div>
 </aside>
 
@@ -7774,7 +7791,7 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
-  compassVisible: true,    // Wheel Radar widget shown/hidden
+  compassVisible: false,   // true = Radar popped out as a floater on the wheel; false = docked atop the compounds pane
   compassMode: "notes",      // "notes" | "compounds" | "class" — which axis set the compass shows
   compassClass: "terpene",  // chemical class shown in "class" mode (dropdown-selectable)
   compassPos: null,         // {x,y} once dragged; null = default corner position
@@ -11843,11 +11860,14 @@ document.getElementById("enter-tasting-btn").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
 });
 
+// There is no panel switcher any more: the compound details are always on
+// screen, beside the wheel on desktop and in the bottom drawer on a phone (whose
+// bar is always visible). `v` is accepted for the old call sites and links but
+// no longer changes which panes show; the wheel's full-screen mode is the way to
+// give the wheel more room.
 function setView(v) {
-  if (isMobileViewport() && v === "dashboard") v = "note-input";
-  if (v === "dashboard")        { state.notesHidden = false; state.detailHidden = false; }
-  else if (v === "note-input")  { state.notesHidden = false; state.detailHidden = true;  }
-  else if (v === "analysis")    { state.notesHidden = true;  state.detailHidden = false; }
+  state.notesHidden = false;
+  state.detailHidden = isMobileViewport();   // phones use the drawer, not the side pane
   applyPaneState();
 }
 
@@ -11857,7 +11877,8 @@ function setView(v) {
 // Compounds view — otherwise the tap would select a compound you can't see.
 function ensureDetailVisible() {
   if (window.matchMedia("(max-width: 760px)").matches) {
-    setView("analysis");
+    // Open the compounds drawer rather than swapping panels.
+    if (state.compoundsSnap === "peek") setCompoundsSnap("half");
   } else if (state.detailHidden) {
     state.detailHidden = false;
     applyPaneState();
@@ -11971,10 +11992,6 @@ updateWheelHint();
 // Per-pane toggle handlers — independent of the view presets.
 document.getElementById("toggle-notes").addEventListener("click", () => {
   state.notesHidden = !state.notesHidden;
-  applyPaneState();
-});
-document.getElementById("toggle-detail").addEventListener("click", () => {
-  state.detailHidden = !state.detailHidden;
   applyPaneState();
 });
 
@@ -12418,9 +12435,7 @@ function hydrateExactView(encoded) {
     if (workspace === "wheel" && ["dashboard", "note-input", "analysis"].includes(payload.p)) {
       setView(payload.p);
     } else if (workspace === "wheel" && payload.p === "wheel-only") {
-      state.notesHidden = true;
-      state.detailHidden = true;
-      applyPaneState();
+      setView("dashboard");   // old link that hid both panes; compounds stay on screen now
     }
 
     if (workspace === "map") {
@@ -14041,7 +14056,6 @@ compassClassSelectEl.addEventListener("change", () => {
 // axes, and Notes/Compounds need the axis SET itself to update live, not
 // just the data on it, so there's no real "static part" left to cache.
 function renderCompass() {
-  if (!state.compassVisible) return;
   compassCaptionEl.textContent = typeof COMPASS_CAPTION[state.compassMode] === "function"
     ? COMPASS_CAPTION[state.compassMode](state.compassClass)
     : COMPASS_CAPTION[state.compassMode];
@@ -14092,14 +14106,34 @@ function renderCompass() {
   applyCompassScale(state.compassWidth || compassDefaultWidth());
 }
 
+// "Visible" now means POPPED OUT: the Radar is always on screen, docked as the
+// top card of the compounds pane unless it has been floated over the wheel. The
+// same #compass-content element is moved between the two hosts.
+const radarDockEl = document.getElementById("radar-dock");
+const radarDockBodyEl = document.getElementById("radar-dock-body");
 function setCompassVisible(visible) {
   state.compassVisible = !!visible;
-  compassEl.hidden = !state.compassVisible;
-  document.body.classList.toggle("compass-on", state.compassVisible);
-  if (state.compassVisible) renderCompass();
+  const floating = state.compassVisible;
+  compassEl.hidden = !floating;
+  radarDockEl.hidden = floating;
+  // Some wheel overlays (compound-labels toggle, context caption) have always
+  // stayed out of the way of the Radar; the Radar is always present now, so
+  // they keep doing so.
+  document.body.classList.add("compass-on");
+  document.body.classList.toggle("radar-floating", floating);
+  if (floating) compassEl.insertBefore(compassContentEl, compassEl.firstChild);
+  else radarDockBodyEl.appendChild(compassContentEl);
+  if (!floating) { compassContentEl.style.transform = ""; compassContentEl.querySelector(".compass-header").style.paddingLeft = ""; }
+  renderCompass();
+  if (typeof layout === "function") layout();   // the floater's top-inset / dock height can change the ring box
 }
 compassToggleBtn.addEventListener("click", () => setCompassVisible(!state.compassVisible));
 document.getElementById("compass-close-btn").addEventListener("click", () => setCompassVisible(false));
+document.getElementById("radar-popout-btn").addEventListener("click", () => setCompassVisible(true));
+// Every pane re-render replaces the compounds pane's contents; keep the dock on top.
+new MutationObserver(() => {
+  if (detailPanel.firstElementChild !== radarDockEl) detailPanel.prepend(radarDockEl);
+}).observe(detailPanel, { childList: true });
 
 function setCompassMode(mode) {
   if (mode === state.compassMode) return;
@@ -14148,6 +14182,7 @@ const COMPASS_MIN_W = 140;
 function compassDefaultWidth() { return Math.max(COMPASS_MIN_W, Math.min(COMPASS_BASE_W, wheelEl.clientWidth * 0.4)); }
 
 function applyCompassScale(widthPx) {
+  if (!state.compassVisible) return;   // docked: the pane sets the size, no scaling
   const scale = widthPx / COMPASS_BASE_W;
   compassContentEl.style.transform = "none";
   const naturalH = compassContentEl.getBoundingClientRect().height;
@@ -14186,6 +14221,7 @@ function applyCompassScale(widthPx) {
     // × becomes unclickable. Any future interactive control added to the
     // header (e.g. a resize/expand button) needs the same exclusion.
     if (e.target.closest("#compass-close-btn")) return;
+    if (!state.compassVisible) return;   // docked: nothing to drag
     dragging = true;
     handle.classList.add("dragging");
     handle.setPointerCapture(e.pointerId);
