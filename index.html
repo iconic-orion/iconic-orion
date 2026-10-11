@@ -1672,7 +1672,8 @@
   .wheel-zoom-pair button { background: var(--panel-2); color: var(--ink); border: none; width: 30px;
     padding: 5px 0; font-size: 15px; line-height: 1; cursor: pointer; }
   .wheel-zoom-pair button + button { border-left: 1px solid var(--line); }
-  .wheel-zoom-pair button:hover { color: var(--accent); }
+  .wheel-zoom-pair button:hover:not(:disabled) { color: var(--accent); }
+  .wheel-zoom-pair button:disabled { opacity: .35; cursor: default; }
   @media (max-width: 760px) { .wheel-zoom-pair { display: none; } }
 
   /* Constellation — Go Deeper's subjective hemisphere, promoted to a direct
@@ -4481,9 +4482,9 @@
       title="Key: what each compound icon means">
       <span aria-hidden="true">🍐</span> Key
     </button>
-    <div class="wheel-zoom-pair" role="group" aria-label="Zoom the wheel">
-      <button type="button" id="wheel-tb-zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
-      <button type="button" id="wheel-tb-zoom-in" aria-label="Zoom in" title="Zoom in. Drag to pan; full screen gives more room">+</button>
+    <div class="wheel-zoom-pair" role="group" aria-label="Icon size">
+      <button type="button" id="wheel-tb-zoom-out" aria-label="Smaller floating icons" title="Smaller floating icons (the compounds in the middle of the ring)">−</button>
+      <button type="button" id="wheel-tb-zoom-in" aria-label="Larger floating icons" title="Larger floating icons (the compounds in the middle of the ring)">+</button>
     </div>
     <button type="button" id="wheel-fs-toggle" class="wheel-fs-btn" aria-pressed="false"
       aria-label="Expand the wheel to full screen" title="Full screen: pinch, scroll or drag to zoom and pan into clusters of notes">
@@ -7719,10 +7720,13 @@ function chemBloomFactor(evidenceSum) { return 1 - Math.exp(-0.8 * Math.max(0, e
 // proportionally on a widescreen desktop's much larger wheel. A fixed-px
 // glyph would read as a legible marker on a phone and a nearly-invisible
 // speck lost in a huge desktop float zone, or vice versa.
+// User size multiplier for the FLOATING icons in the middle of the ring (the compounds that appear in Scent mode, the notes in Chemistry mode). The icons on the rim are untouched. Set by the toolbar - / +.
+const GLYPH_SCALE_STEPS = [0.6, 0.75, 0.9, 1, 1.2, 1.45, 1.75, 2.1];
+const GLYPH_SCALE = { index: 3, get value() { return GLYPH_SCALE_STEPS[this.index]; } };
 function noteGlyphSize(signal) {
   const base = Math.max(12, R_COMPOUND_MAX * 0.21);
   const range = Math.max(18, R_COMPOUND_MAX * 0.38);
-  return base + Math.min(range, Math.max(0, signal) * range);
+  return (base + Math.min(range, Math.max(0, signal) * range));
 }
 // Compound marker size. Compound scores run smaller than note signals, so this
 // curve is steeper; floored a touch below notes so molecules read as the
@@ -7730,7 +7734,7 @@ function noteGlyphSize(signal) {
 function compoundGlyphSize(score) {
   const base = Math.max(10, R_COMPOUND_MAX * 0.174);
   const range = Math.max(14, R_COMPOUND_MAX * 0.298);
-  return base + Math.min(range, Math.max(0, score) * range);
+  return (base + Math.min(range, Math.max(0, score) * range));
 }
 // Per-group summed note signal — "how much evidence sits in this flavor family."
 function groupActivity() {
@@ -9724,7 +9728,7 @@ function renderCompoundFloats() {
   // chemical-class emoji inside. Shape (the glyph) reads the class; the ring's
   // color carries the scent-home tint, exactly as the old orb did.
   merged.each(function(d) {
-    const sz = compoundGlyphSize(d.score);
+    const sz = compoundGlyphSize(d.score) * GLYPH_SCALE.value;   // floats only: the toolbar - / + size these
     const half = sz * 0.5;
     const col = compoundColor(d);
     const seld = d.id === state.selectedCompound;
@@ -9811,7 +9815,7 @@ function renderNoteFloats() {
   // Same scaling-emoji marker as the Scent-mode ring anchors, here drifting
   // through the center toward the chemical neighborhoods each note evokes.
   merged.each(function(d) {
-    const sz = noteGlyphSize(d.score);
+    const sz = noteGlyphSize(d.score) * GLYPH_SCALE.value;   // floats only: the toolbar - / + size these
     const half = sz * 0.5;
     const g = d3.select(this);
     g.select("circle.note-halo")
@@ -10153,13 +10157,13 @@ function recompute() {
     // radius now feeds only the collide force (the visible mark is the glyph
     // token, not a circle of this radius), so track the glyph's actual footprint
     // — otherwise the bigger emoji tokens overlap their neighbors.
-    node.radius = compoundGlyphSize(node.score) * 0.55;
+    node.radius = compoundGlyphSize(node.score) * GLYPH_SCALE.value * 0.55;
   });
   // Score the note float-nodes too (used as their size/opacity when they're the
   // floating set in chemistry mode). Cheap; harmless in scent mode.
   noteNodes.forEach(nn => {
     nn.score = noteSignal(nn.id);
-    nn.radius = noteGlyphSize(nn.score) * 0.55;   // collide spacing tracks the emoji size
+    nn.radius = noteGlyphSize(nn.score) * GLYPH_SCALE.value * 0.55;   // collide spacing tracks the emoji size
   });
   // Clear stale selections: if the selected compound or note has lost all evidence
   // it's no longer on the wheel, and keeping it selected leaves ghost edges drawn
@@ -15175,8 +15179,20 @@ function setWheelFullscreen(on) {
 wheelFsBtn.addEventListener("click", () => setWheelFullscreen(!document.body.classList.contains("wheel-fullscreen")));
 document.getElementById("wheel-zoom-in").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1.6));
 document.getElementById("wheel-zoom-out").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1 / 1.6));
-document.getElementById("wheel-tb-zoom-in").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1.6));
-document.getElementById("wheel-tb-zoom-out").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1 / 1.6));
+// Toolbar - / + resize the note and compound icons only (the view zoom lives in
+// full screen and on scroll / pinch). Remembered per browser.
+(function wireGlyphScale() {
+  const KEY = "aw.glyphScaleIndex", dec = document.getElementById("wheel-tb-zoom-out"), inc = document.getElementById("wheel-tb-zoom-in");
+  try { const i = parseInt(localStorage.getItem(KEY), 10); if (i >= 0 && i < GLYPH_SCALE_STEPS.length) GLYPH_SCALE.index = i; } catch (_) {}
+  function sync() { dec.disabled = GLYPH_SCALE.index === 0; inc.disabled = GLYPH_SCALE.index === GLYPH_SCALE_STEPS.length - 1; }
+  function bump(d) {
+    GLYPH_SCALE.index = Math.max(0, Math.min(GLYPH_SCALE_STEPS.length - 1, GLYPH_SCALE.index + d));
+    try { localStorage.setItem(KEY, String(GLYPH_SCALE.index)); } catch (_) {}
+    sync(); recompute();
+  }
+  dec.addEventListener("click", () => bump(-1)); inc.addEventListener("click", () => bump(1)); sync();
+  if (GLYPH_SCALE.index !== 3) recompute();   // a remembered size applies from the first frame
+})();
 document.getElementById("wheel-zoom-reset").addEventListener("click", () => svg.transition().duration(250).call(wheelZoom.transform, d3.zoomIdentity));
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && document.body.classList.contains("wheel-fullscreen")) setWheelFullscreen(false);
