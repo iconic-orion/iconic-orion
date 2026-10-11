@@ -1513,7 +1513,7 @@
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
   body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
 
-  /* Chemistry classes your tasting doesn't produce wait here, off the ring. */
+  /* Chemistry classes your experience doesn't produce wait here, off the ring. */
   .class-bin { position: absolute; left: 10px; bottom: 58px; z-index: 16; max-width: 240px;
     display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
   .class-bin[hidden] { display: none; }
@@ -2098,7 +2098,7 @@
          row 5   ──────────── divider ────────────
          row 6   Share card                 Start Over
          row 7   Feedback
-         row 8   Save or share tasting
+         row 8   Save or share experience
        Wheel organization and the Radar now live on the Wheel
        itself, so they intentionally do not appear in this global tray.
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
@@ -2583,7 +2583,7 @@
   /* A fruit in this canopy is a note you actually tasted. The specular dot is
      what turns a flat disc into something ripe and picked-looking; untasted
      notes keep their aroma-group hue but stay matte and smaller, so the
-     canopy shows your tasting at a glance instead of an even field of dots.
+     canopy shows your experience at a glance instead of an even field of dots.
      Solid fill, no alpha — the highlight is a shape, not a wash. */
   .tx-fruit-gloss { display: none; fill: #f3f8ef; pointer-events: none; stroke: none; }
   .tx-node.tx-tasted .tx-fruit-gloss { display: block; }
@@ -2636,7 +2636,7 @@
      collapse taxa above them. */
   .tx-node.tx-family circle { stroke: none; }
   .tx-node.tx-family:hover text { fill: var(--accent); }
-  /* In the current tasting. Opaque emphasis only (brighter stroke + weight) —
+  /* In the current experience. Opaque emphasis only (brighter stroke + weight) —
      the size and group-color of the dot itself carry the signal, set in JS. */
   .tx-node.tx-tasted .tx-node-core { stroke: var(--ink); stroke-width: 2.5; }
   .tx-node.tx-tasted text { fill: var(--ink); font-weight: 600; }
@@ -3541,7 +3541,7 @@
       letter-spacing: .055em; pointer-events: none; }
   }
 
-  /* Lap rail — the tasting stopwatch. A narrow column pinned to the right edge
+  /* Lap rail — the experience stopwatch. A narrow column pinned to the right edge
      of the wheel area on desktop; a horizontal strip on phones. Strata reading:
      newest layer on top, first lap at the bottom of the pile. */
   /* Absolute inside main.wheel (which is position:relative), NOT fixed to the
@@ -3618,7 +3618,7 @@
   .lap-empty[hidden] { display: none; }
 
   /* Delivery strip — the third sensory dimension. Sits above the note list and
-     stays collapsed by default so it frames the tasting without competing with
+     stays collapsed by default so it frames the experience without competing with
      the primary input. */
   .delivery-strip { border: 1px solid var(--line); border-radius: 5px;
     background: var(--panel); margin: 0 0 10px; }
@@ -4222,8 +4222,8 @@
   <div class="hud-extra" id="hud-extra">
     <!-- Workspace switch (primary nav): Wheel is always present; Go Deeper
          reveals the Map and Tree explanatory lenses. -->
-    <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the tasting wheel, the world map of ingredient origins, and the plant/fungus ancestry tree with optional ecological visitors.">
-      <button data-workspace="wheel" class="active" title="The tasting wheel">
+    <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the wheel, the world map of ingredient origins, and the plant/fungus ancestry tree with optional ecological visitors.">
+      <button data-workspace="wheel" class="active" title="The wheel">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3" stroke-linecap="round"/></svg>
         Wheel
       </button>
@@ -4251,7 +4251,7 @@
          see #constellation-overlay. The Sixth-lens depth card still exists as
          a narrative on-ramp, but this is the fast path Nolan asked for after
          not finding it behind the Go Deeper warp. -->
-    <button id="constellation-toggle" title="Constellation: the same tasting notes re-aligned by chemistry, taxonomy, geography, or how they actually hit you.">
+    <button id="constellation-toggle" title="Constellation: the same notes re-aligned by chemistry, taxonomy, geography, or how they actually hit you.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="18" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="8" r="1" fill="currentColor" stroke="none"/><path d="M12 12L12 4M12 12L19 9M12 12L16 19M12 12L6 18M12 12L4 8" stroke-width="1.1"/></svg>
       Constellation
     </button>
@@ -4276,7 +4276,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z"/></svg>
       Feedback
     </a>
-    <button id="share-open-btn" title="Preview and share your tasting as an image or link">
+    <button id="share-open-btn" title="Preview and share your experience as an image or link">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6" r="2.4"/><circle cx="17" cy="18" r="2.4"/><path d="M8.1 10.9 14.9 7.1M8.1 13.1 14.9 16.9"/></svg>
       Share
     </button>
@@ -4287,10 +4287,10 @@
          every workspace, rather than attached to the wheel artwork. -->
     <div id="hud-save-share" class="hud-save-share">
       <button type="button" id="lap-save" aria-haspopup="menu" aria-expanded="false"
-        aria-controls="lap-actions-menu" title="Save a snapshot or copy a link to this tasting">Save or share tasting ▾</button>
+        aria-controls="lap-actions-menu" title="Save a snapshot or copy a link to this experience">Save or share experience ▾</button>
       <div id="lap-actions-menu" class="lap-actions-menu" role="menu" hidden>
         <button type="button" id="lap-save-action" class="lap-menu-action" role="menuitem">＋ Save a snapshot in this session</button>
-        <div class="lap-share-label">Keep or share this tasting</div>
+        <div class="lap-share-label">Keep or share this experience</div>
         <p class="lap-share-help">Copy this link to return to this exact view later, or send it to someone else.</p>
         <div class="lap-share-row">
           <input type="text" id="lap-share-link" readonly aria-label="Shareable link to this exact view" />
@@ -4381,7 +4381,7 @@
        above the notes because it frames the whole tasting, not one note. -->
   <details id="delivery-strip" class="delivery-strip">
     <summary class="delivery-summary">
-      <span class="delivery-title">How you're tasting it</span>
+      <span class="delivery-title">How you're experiencing it</span>
       <span class="delivery-chips" id="delivery-chips" aria-live="polite"></span>
       <span class="caret">▼</span>
     </summary>
@@ -4405,7 +4405,7 @@
        detail panel whenever it opened.
        Selecting a lap PREVIEWS it and never overwrites live work; branching is a
        separate, labeled action. -->
-  <div id="lap-rail" class="lap-rail" aria-label="Saved tasting snapshots">
+  <div id="lap-rail" class="lap-rail" aria-label="Saved experience snapshots">
     <div class="lap-rail-head">
       <!-- Ribbon toggle, phones only. Collapsed the strip shows just lap numbers
            so it costs one compact row; expanded it unfurls each layer's note
@@ -4416,8 +4416,8 @@
     </div>
     <div class="lap-preview-bar" id="lap-preview-bar" hidden>
       <span id="lap-preview-label">Previewing</span>
-      <button type="button" id="lap-continue" title="Make this lap the live tasting and keep editing from here">Continue from here</button>
-      <button type="button" id="lap-return" title="Discard the preview and return to your live tasting">Back to live</button>
+      <button type="button" id="lap-continue" title="Make this lap the live experience and keep editing from here">Continue from here</button>
+      <button type="button" id="lap-return" title="Discard the preview and return to your live experience">Back to live</button>
     </div>
     <!-- column-reverse: DOM order is chronological, visual order puts newest on
          top and the first lap at the bottom of the pile. -->
@@ -4458,7 +4458,7 @@
        soon as a note brings one in. -->
   <div class="class-bin" id="class-bin" hidden>
     <button type="button" class="class-bin-toggle" id="class-bin-toggle" aria-expanded="false" aria-controls="class-bin-body">
-      Not in this tasting <span id="class-bin-count"></span>
+      Not in this experience <span id="class-bin-count"></span>
     </button>
     <div class="class-bin-body" id="class-bin-body" hidden></div>
   </div>
@@ -4481,7 +4481,7 @@
        and Tree, which follows the pattern already set for Organize and Radar,
        controls that disappear with the wheel rather than lingering inert. -->
   <button id="godeeper-toggle" class="wheel-seed-btn"
-    title="Plant this tasting deeper. Grows the vine, and opens ortho and retro tagging on every note.">
+    title="Plant this experience deeper. Grows the vine, and opens ortho and retro tagging on every note.">
     <span class="seed-glyph" aria-hidden="true">
       <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
         <path class="seed-sprout-stem" d="M9 15.5V9"/>
@@ -4627,12 +4627,12 @@
   <!-- One-time discoverability cloud for pinning: floats can be dragged to a
        fixed spot and double-tapped to release. Shown once the wheel has floats,
        dismissible, and auto-dismissed the first time the user actually drags a
-       float (they've discovered it). Sits just above the tasting tray. -->
+       float (they've discovered it). Sits just above the experience tray. -->
   <!-- The live relationship line. Shares the pin-hint's slot just above the
        tasting tray and outranks it: a fact about the notes you actually entered
        beats a generic tip about dragging. Full cards with routes live in the
        Results panel, which is closed on first load, so this is what carries the
-       finding in real time while someone is still building the tasting. -->
+       finding in real time while someone is still building the experience. -->
   <button type="button" id="relation-hint" class="pin-hint relation-hint" hidden
     aria-label="How your notes connect. Opens the results panel.">
     <span class="pin-hint-icon" id="relation-hint-icon" aria-hidden="true">🌿</span>
@@ -4644,9 +4644,9 @@
     <span>Something stand out? <strong>Drag</strong> it to pin it where you want — double-tap to free it.</span>
     <button type="button" class="helper-dismiss" data-dismiss-helper="pin" aria-label="Dismiss this tip" title="Dismiss">×</button>
   </div>
-  <div id="tasting-tray" class="tasting-tray" hidden aria-label="Your current tasting inputs">
+  <div id="tasting-tray" class="tasting-tray" hidden aria-label="Your current experience inputs">
     <div class="tray-head">
-      <span class="tray-title">Your tasting</span>
+      <span class="tray-title">Your experience</span>
       <span class="tray-count" id="tray-count">0</span>
     </div>
     <div class="tray-chips" id="tray-chips"></div>
@@ -4662,12 +4662,12 @@
      wandered -- shown whenever the Notes panel currently isn't the thing on
      screen, kept in sync by syncEnterTastingBtn(). -->
 <button id="enter-tasting-btn" type="button" hidden
-  aria-label="Enter tasting: return to the Wheel to add or edit notes" title="Enter tasting">
+  aria-label="Enter experience: return to the Wheel to add or edit notes" title="Enter experience">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path d="M4 20l1.1-4.2L15.5 5.4l3.1 3.1L8.2 19 4 20z" stroke-linejoin="round" stroke-linecap="round"/>
     <path d="M13.2 7.2l3.1 3.1" stroke-linecap="round"/>
   </svg>
-  Enter tasting
+  Enter experience
 </button>
 <section id="mobile-note-sheet" class="mobile-note-sheet" aria-label="Adjust aroma intensity" aria-hidden="true">
   <div class="mobile-sheet-head">
@@ -4733,7 +4733,7 @@
     </nav>
     <div class="cx-stage-wrap">
       <div class="cx-stage-frame">
-        <svg class="cx-stage" viewBox="0 0 900 680" role="img" aria-label="Constellation of tasting notes">
+        <svg class="cx-stage" viewBox="0 0 900 680" role="img" aria-label="Constellation of notes">
           <g id="cxChromeA" class="cx-chrome-layer"></g>
           <g id="cxChromeB" class="cx-chrome-layer" style="opacity:0"></g>
           <g id="cxEdgesA" class="cx-edges-layer"></g>
@@ -4799,13 +4799,13 @@
         <span id="origins-search-count" role="status" aria-live="polite" aria-atomic="true"></span>
       </div>
       <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
-      <!-- Drops the bearing compass on the geographic center of your tasting —
+      <!-- Drops the bearing compass on the geographic center of your experience —
            the point its notes fan out from evenly. Lives out here rather than
            inside the compass because the compass is itself a <button> and
            cannot nest one. Only meaningful in the Origin lens, so it hides with
            the compass. -->
       <button type="button" id="compass-center-notes" hidden
-        title="Move the compass to the geographic center of your tasting notes">◎ Center on notes</button>
+        title="Move the compass to the geographic center of your notes">◎ Center on notes</button>
       <div id="origins-map-controls">
         <div class="omc-pan">
           <button type="button" id="pan-up" aria-label="Pan up" title="Pan up">&#9650;</button>
@@ -4828,7 +4828,7 @@
           <path class="map-bearing-mini-s-half" d="M20 35 L15 20 L20 20 Z"></path>
           <text class="map-bearing-mini-label" x="20" y="4.5">N</text>
         </svg>
-        <svg class="map-bearing-full" viewBox="0 0 120 120" role="img" aria-label="Geographic tasting-note bearings from this point">
+        <svg class="map-bearing-full" viewBox="0 0 120 120" role="img" aria-label="Geographic note bearings from this point">
           <circle class="map-bearing-ring" cx="60" cy="60" r="49"></circle>
           <circle class="map-bearing-inner" cx="60" cy="60" r="30"></circle>
           <line class="map-bearing-cross" x1="60" y1="9" x2="60" y2="111"></line>
@@ -4840,7 +4840,7 @@
           <g id="map-bearing-dynamic"></g>
           <circle class="map-bearing-center" cx="60" cy="60" r="4"></circle>
         </svg>
-        <span id="map-bearing-caption">Add tasting notes to orient the compass</span>
+        <span id="map-bearing-caption">Add notes to orient the compass</span>
       </button>
       <!-- A separate control, not a tap-the-dial toggle: the compass is a
            <button> already handling drag and cannot nest one, and a whole-dial
@@ -4863,14 +4863,14 @@
       <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Approximate</span>
       <span class="ol-sep">·</span>
       <!-- Map-local visibility filters (see buildOriginsLegendFilters()): the
-           master "only my tasting" declutter switch plus one checkbox per flavor
+           master "only my experience" declutter switch plus one checkbox per flavor
            group. Display filters only — no effect on the wheel or scoring. -->
       <label class="ol-filter" id="origins-only-tasting-wrap">
         <input type="checkbox" id="origins-only-tasting">
-        Only notes in my tasting
+        Only notes in my experience
       </label>
-      <button type="button" class="ol-clear-tasting" id="origins-clear-tasting">Clear tasting</button>
-      <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
+      <button type="button" class="ol-clear-tasting" id="origins-clear-tasting">Clear experience</button>
+      <span id="origins-filter-empty" hidden>— nothing in your experience yet; add notes on the Wheel</span>
       <span id="origins-tasting-coverage" aria-live="polite"></span>
       <span class="ol-sep">·</span>
       <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every flavor group off so you can switch on just the ones you want (click again to turn all back on)">toggle groups</span>
@@ -5085,7 +5085,7 @@
   </div>
 </div>
 
-<!-- Share / export: preview + customize a screenshot-able tasting card, then
+<!-- Share / export: preview + customize a screenshot-able experience card, then
      generate a shareable link (which is also the bookmark) and download the
      image (PNG/JPG/PDF). All client-side — no backend, no accounts. The card
      is built as an SVG (buildShareCard) that embeds a clone of the live wheel;
@@ -5093,7 +5093,7 @@
 <div id="share-overlay" class="info-overlay share-overlay" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
   <div class="info-overlay-content share-content">
     <div class="info-overlay-header">
-      <span id="share-title">Share your tasting</span>
+      <span id="share-title">Share your experience</span>
       <button type="button" id="share-close-btn" class="info-close" aria-label="Close">✕</button>
     </div>
     <div class="share-body">
@@ -5106,7 +5106,7 @@
       <div class="share-controls">
         <label class="share-field">
           <span class="share-label">Caption</span>
-          <input type="text" id="share-caption" maxlength="60" placeholder="My tasting" autocomplete="off" />
+          <input type="text" id="share-caption" maxlength="60" placeholder="My experience" autocomplete="off" />
         </label>
 
         <div class="share-field">
@@ -5135,7 +5135,7 @@
 
         <div class="share-field">
           <span class="share-label">Include on card</span>
-          <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Tasting notes</span></label>
+          <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Notes</span></label>
           <div class="share-row">
             <label class="share-check"><input type="checkbox" id="share-show-compounds" checked /><span>Compounds <span id="share-compound-count" class="share-count"></span></span></label>
             <button type="button" id="share-compound-toggle" class="share-disclosure" aria-expanded="false" title="Choose which compounds to show">▸</button>
@@ -7765,7 +7765,7 @@ const state = {
   selectedOriginNote: null,         // map: note whose detail is open — highlighted (spinning ring + white), not an entry change
   expandedOriginCluster: null,      // map: crowded-region glyph currently expanded into its member notes
   geographyLens: "origin",          // "origin" | "production" | "traditions"; only one mark system renders at once
-  geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the tasting
+  geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the experience
   mapCompassPos: null,              // {left,top} in map-wrap CSS pixels; null chooses a responsive default
   mapCompassMinimized: true,        // Map: bearing compass starts as a small fixed north-arrow badge, expands on tap
   hiddenClasses: new Set(),  // compound-class names hidden via legend
@@ -7783,7 +7783,7 @@ const state = {
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false,       // mobile callout labels toggle
   taxonomySheetSnap: "half", // mobile Tree detail: "peek" | "half" | "full"
-  // Delivery conditions for the current tasting (see DELIVERY_CONDITIONS).
+  // Delivery conditions for the current experience (see DELIVERY_CONDITIONS).
   // null = not stated, which is different from "neutral" — we don't assume.
   delivery: { temperature: null, effervescence: null, agitation: null, breath: null },
   // Saved laps — immutable snapshots of {entries, delivery}, oldest first.
@@ -8199,7 +8199,7 @@ function taxonomyTastingCoverageText() {
     if (note.kingdom === "Animalia") return `${note.label} appears as ecology, not a plant or fungal branch`;
     return `${note.label} has no organism branch here`;
   });
-  return `${placed.length} of ${active.length} tasting notes have organism branches here.`
+  return `${placed.length} of ${active.length} notes have organism branches here.`
     + (omittedText.length ? ` ${omittedText.join("; ")}.` : "")
     + " Related branches are context for comparison, not proof that ancestry caused an aroma.";
 }
@@ -8795,7 +8795,7 @@ function applyArcEvidence() {
 
 // Distribute visible compounds around the ring, grouped contiguously by class.
 function computeCompoundPositions() {
-  // Only classes the current tasting actually produces take ring space (wedge
+  // Only classes the current experience actually produces take ring space (wedge
   // width follows the number of active compounds); the rest wait in the side bin
   // (see renderClassBin). With nothing entered yet, show the full structure.
   const allVisible = COMPOUNDS.filter(c => isCompoundVisible(c.id));
@@ -9515,7 +9515,7 @@ function syncFloats() {
   renderClassKey();
 }
 
-// Key to the compound icons. Classes fed by your current tasting come first;
+// Key to the compound icons. Classes fed by your current experience come first;
 // the rest follow dimmed, so the key doubles as a reference for the whole set.
 const CLASS_KEY_HINT = {
   "terpene": "pine, citrus, herbs", "pyrazine": "roasted, nutty", "furan": "caramel, bready",
@@ -9537,7 +9537,7 @@ function renderClassKey() {
   const on = CLASS_ORDER.filter(c => active.has(c)), off = CLASS_ORDER.filter(c => !active.has(c));
   classKeyBody.innerHTML =
     `<p class="class-key-intro">Each ringed icon is a chemical class of aroma compound, not one compound. Food icons on the wheel are your notes.</p>`
-    + (on.length ? `<div class="class-key-head">In your tasting</div>` + on.map(c => row(c, false)).join("") : "")
+    + (on.length ? `<div class="class-key-head">In your experience</div>` + on.map(c => row(c, false)).join("") : "")
     + `<div class="class-key-head">${on.length ? "Other classes" : "All classes"}</div>` + off.map(c => row(c, on.length > 0)).join("");
 }
 // Side bin for chemistry classes that no entered note produces.
@@ -10010,7 +10010,7 @@ function updateEdges() {
     // permanent thicket of faint lines to notes you never entered — and it's
     // already spelled out, with citations, in the panel's "Contributing notes"
     // list. So a selected compound keeps only its LIT edges (to notes actually
-    // in the tasting); the "also appears in…" discovery lives in the panel, not
+    // in the experience); the "also appears in…" discovery lives in the panel, not
     // as wheel clutter. Selected lit edges still render focused (emphasized).
     const isHovered = state.hoveredNote === e.note || state.hoveredCompound === e.cpd;
     const isSelected = state.selectedCompound === e.cpd;
@@ -10146,7 +10146,7 @@ function recompute() {
   if (typeof renderMapBearingCompass === "function") renderMapBearingCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
-  // Keep the tree in step with the tasting, but only while it's the visible
+  // Keep the tree in step with the experience, but only while it's the visible
   // workspace: unlike refreshOriginMarkers (which just sets attributes), a
   // tree render recomputes the whole d3 layout and measures the container, so
   // running it on every slider tick from the wheel would be wasted work.
@@ -11290,12 +11290,12 @@ function detectFlavorCombos(activeSet) {
   return matches.slice(0, 3);
 }
 // ---------- TASTING RELATIONSHIPS ----------
-// One engine, several surfaces. "How do the notes in this tasting relate?" was
+// One engine, several surfaces. "How do the notes in this experience relate?" was
 // being answered in five places with five implementations and five vocabularies:
 // the bouquet knew compound classes, Constellation knew compound overlap, the
 // Compare panel knew botany and geography, the Map and Tree knew their own
 // coverage. None of them could see the others' answer, and the Wheel -- where
-// the tasting is actually built -- could see none of it.
+// the experience is actually built -- could see none of it.
 //
 // The axes below deliberately mirror Constellation's lenses, so a relationship
 // reads the same wherever the user meets it, and each one carries the route to
@@ -12317,7 +12317,7 @@ const lapStackEl    = document.getElementById("lap-stack");
 const lapEmptyEl    = document.getElementById("lap-empty");
 const lapPreviewBar = document.getElementById("lap-preview-bar");
 const lapPreviewLbl = document.getElementById("lap-preview-label");
-let _liveStash = null;   // live tasting parked while previewing a lap
+let _liveStash = null;   // live experience parked while previewing a lap
 
 function currentWorkspace() {
   if (document.body.classList.contains("taxonomy-mode")) return "tree";
@@ -12509,7 +12509,7 @@ function returnToLive() {
   renderLapStack();
 }
 
-// Branch: the previewed lap becomes the live tasting. The stash is dropped, so
+// Branch: the previewed lap becomes the live experience. The stash is dropped, so
 // this is the one path that discards unsaved work — and it takes an explicit
 // click on a labeled button to get here.
 function continueFromLap() {
@@ -12529,7 +12529,7 @@ function renderLapStack() {
     b.innerHTML = `<span class="lap-chip-n">Lap ${lap.n}</span>
       <span class="lap-chip-meta">${noteCount} note${noteCount === 1 ? "" : "s"}</span>
       ${cond ? `<span class="lap-chip-cond">${cond}</span>` : ``}`;
-    b.title = `Preview lap ${lap.n}${cond ? ` — ${cond}` : ""}. Your live tasting is kept.`;
+    b.title = `Preview lap ${lap.n}${cond ? ` — ${cond}` : ""}. Your live experience is kept.`;
     b.addEventListener("click", () => previewLap(lap));
     lapStackEl.appendChild(b);
   });
@@ -12712,7 +12712,7 @@ function updateNudge() {
 // Pin-hint cloud: show once the wheel has floats (so there's something to pin),
 // until the user dismisses it or drags a float for the first time.
 const pinHintEl = document.getElementById("pin-hint");
-// The top relationship, shown live above the tasting tray while the user is
+// The top relationship, shown live above the experience tray while the user is
 // still entering notes. Clicking it opens the Results panel, where the full set
 // of rows carries the routes into Tree, Map, and Constellation.
 const relationHintEl = document.getElementById("relation-hint");
@@ -13246,15 +13246,15 @@ const CX_CAPTIONS = {
 };
 function cxBadgeText(lens, L) {
   const activeN = cxActiveCount();
-  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin · ${activeN} active in your tasting`;
+  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin · ${activeN} active in your experience`;
   if (lens === "embodied") {
     const tagged = NOTES.filter(n => cxEffectiveTag(n.id)).length;
-    return `${tagged} of ${NOTES.length} placed (${activeN} active in your tasting)`;
+    return `${tagged} of ${NOTES.length} placed (${activeN} active in your experience)`;
   }
-  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${activeN} active in your tasting`;
+  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${activeN} active in your experience`;
 }
 function cxLegendFor(lens) {
-  const activeNote = `<div style="margin-top:2px;">Brighter + bigger = active in your current tasting; dim = in the graph but not entered.</div>`;
+  const activeNote = `<div style="margin-top:2px;">Brighter + bigger = active in your current experience; dim = in the graph but not entered.</div>`;
   if (lens === "chemistry") {
     const wt = cxState.minWeight <= 0;
     return `<div>Compound sectors, alphabetical by chemical class — the sector layout <em>is</em> the key.</div>
@@ -13266,7 +13266,7 @@ function cxLegendFor(lens) {
       groups.map(k => `<div><span class="legend-swatch" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-2);margin-right:6px;"></span>${k}</div>`).join("") + activeNote;
   }
   if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below are notes with no recorded cultivation origin.</div>${activeNote}`;
-  return `<div>Y = felt temperature, from the cooling and warming tags in the Guide me flow.</div><div>X = orthonasal or retronasal. Real phase tags from your actual tasting are locked in. Chips let you place anything else hypothetically for this session only.</div>`;
+  return `<div>Y = felt temperature, from the cooling and warming tags in the Guide me flow.</div><div>X = orthonasal or retronasal. Real phase tags from your actual experience are locked in. Chips let you place anything else hypothetically for this session only.</div>`;
 }
 
 function cxCurrentLayout() {
@@ -13320,7 +13320,7 @@ function cxWireStar(id, circle) {
   circle.addEventListener("blur", cxHideFloat);
 }
 function cxCycleTag(noteId) {
-  if (cxTagIsReal(noteId)) { cxSelect(noteId); return; } // already a real fact from the tasting -- not editable here
+  if (cxTagIsReal(noteId)) { cxSelect(noteId); return; } // already a real fact from the experience -- not editable here
   const cur = cxState.tags[noteId];
   const next = cur === "ortho" ? "retro" : cur === "retro" ? "both" : cur === "both" ? undefined : "ortho";
   if (next) cxState.tags[noteId] = next; else delete cxState.tags[noteId];
@@ -13446,17 +13446,17 @@ function cxRenderOverlapGraph() {
   let tastingHtml;
   if (!active.length) {
     tastingHtml = `<section class="cx-tasting-links">
-      <h3>Start with your tasting</h3>
+      <h3>Start with your experience</h3>
       <p>Add two or more notes on the Wheel. Their shared, literature-linked compounds will appear here before the full system view.</p>
     </section>`;
   } else if (active.length === 1) {
     tastingHtml = `<section class="cx-tasting-links">
-      <h3>Your tasting · 1 note</h3>
+      <h3>Your experience · 1 note</h3>
       <p>${noteIcon(active[0].note)} ${active[0].note.label} is active. Add another note to look for crossover, or open the whole graph below.</p>
     </section>`;
   } else {
     tastingHtml = `<section class="cx-tasting-links">
-      <h3>Your tasting connections</h3>
+      <h3>Your experience connections</h3>
       <p>${active.length} active notes · ${tastingPairs.length} pair${tastingPairs.length === 1 ? "" : "s"} share at least one linked compound. These are clues for sensory comparison, not proof that the compound is present or that one note caused another.</p>
       <div class="cx-overlap-list">
         ${tastingPairs.length ? tastingPairs.slice(0, 8).map(tastingPairHtml).join("")
@@ -13661,13 +13661,13 @@ function cxRenderSide() {
   cxEls.side.innerHTML = `
     <button class="cx-side-close" id="cxCloseBtn">← Overlap spectrum</button>
     <h3>${n.label}</h3>
-    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}${active ? ' · <span style="color:var(--accent)">active in your tasting</span>' : ""}</span>
+    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}${active ? ' · <span style="color:var(--accent)">active in your experience</span>' : ""}</span>
     <div class="cx-lineage"><span class="cx-rank">Lineage</span>${path.join(" → ")}</div>
     ${o ? `<div class="cx-origin">${o.region}<br><span class="cx-coord">${o.lat}°, ${o.lon}°</span></div>` : `<div class="cx-origin">No origin on record in the app.</div>`}
     ${cxNoteOverlapHtml(n.id)}
     <div class="cx-cpd-list">${rows || '<div class="cx-cpd-row" style="color:var(--ink-dim)">No edges for this note yet.</div>'}</div>
     ${cxState.lens === "embodied" ? (tagLocked ? `
-      <div class="cx-lineage"><span class="cx-rank">Phase</span>Tagged ${tag} in your actual tasting — not editable here.</div>` : `
+      <div class="cx-lineage"><span class="cx-rank">Phase</span>Tagged ${tag} in your actual experience — not editable here.</div>` : `
       <div class="cx-tag-row">
         <button class="cx-tag-btn" data-tag="ortho" aria-pressed="${tag === "ortho"}">Ortho</button>
         <button class="cx-tag-btn" data-tag="retro" aria-pressed="${tag === "retro"}">Retro</button>
@@ -13738,7 +13738,7 @@ function cxApplyLayout(L, animate) {
   const from = {};
   Object.keys(cxStarEls).forEach(id => { from[id] = cxCurrentTransform(cxStarEls[id]); });
   const to = {};
-  // Active-in-your-tasting notes read brighter and bigger everywhere -- the
+  // Active-in-your-notes read brighter and bigger everywhere -- the
   // one constant thread across all four lenses tying Constellation back to
   // what's actually in the Wheel right now, not a static reference chart.
   NOTES.forEach(n => {
@@ -13813,7 +13813,7 @@ function cxInit() {
 function openConstellation() {
   cxOverlayEl.hidden = false;
   if (!cxInitialized) { cxInit(); return; }
-  // Re-sync to whatever's actually in the tasting now -- a prior open
+  // Re-sync to whatever's actually in the experience now -- a prior open
   // shouldn't leave the view stale if notes changed while it was closed.
   cxSwitchLens(cxState.lens, true, true);
 }
@@ -14348,7 +14348,7 @@ function renderAbout() {
     <p>This tool comes from a background in UI/UX design, museum education, science communication, GIS and systems analysis, and creative engineering. That background shapes a few choices here that differ from how a professional tasting wheel usually works.</p>
     <p>Before this had any code, it was a spreadsheet: aromas listed against eight terpenes, each cell a 1 to 10 guess at how strongly that terpene would need to show up to produce that smell. The current compound graph grew out of checking that early guesswork against real GC-MS literature, keeping what held up and replacing what the literature contradicted.</p>
     <p>Confidence here is a convergence score: how many of your own independently-reported notes point at the same compound, and how strong those links are in the literature. Two sittings of the same coffee can produce different notes, each reflecting what was perceived in that moment.</p>
-    <p>The wheel, the Tree, the Map, the Radar, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, botanical lineage in the Tree, cultivation origins on the Map, a fixed set of axes in the Radar so two tastings sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
+    <p>The wheel, the Tree, the Map, the Radar, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, botanical lineage in the Tree, cultivation origins on the Map, a fixed set of axes in the Radar so two experiences sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
     <p>Terms like retronasal, odor threshold, and furanone stay in the copy because they are the words the literature actually uses. The reference points lean toward things most people have tasted, since a lot of this audience is sober or non-drinking. Citations point to real published sources, and Methodology → What counts as a source here lists the exact criteria.</p>
     <p>Expert tasting skill comes from years of repetition and calibration against a shared vocabulary. What this tool maps is closer to precision: how well a personal, in-the-moment perception lines up with what is published about a compound's known aroma. That gap, between perceiving something and pinning down its chemistry, is what makes sensory perception worth paying attention to.</p>
 
@@ -14463,7 +14463,7 @@ function renderHowToUse() {
       ["use-controls", "Controls"],
       ["use-deeper", "Go Deeper"],
       ["use-explore", "Try a sensory question"],
-      ["use-repeat", "Repeat-tasting"]
+      ["use-repeat", "Repeat experiences"]
     ])}
 
     <h3 id="use-ladder">The inference chain</h3>
@@ -14495,23 +14495,23 @@ function renderHowToUse() {
 
     <h3 id="use-controls">Controls</h3>
     <ul>
-      <li><strong>Wheel.</strong> The default tasting workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). Not sure what to log? The Note Suggester above the sliders turns everyday words ("tropical," "earthy," "boozy") into specific notes to try. The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
-      <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed a tasting too.</li>
+      <li><strong>Wheel.</strong> The default workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). Not sure what to log? The Note Suggester above the sliders turns everyday words ("tropical," "earthy," "boozy") into specific notes to try. The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed an experience too.</li>
       <li><strong>Tree.</strong> Biologically placeable plant and fungal notes arranged by represented lineage. Culinary umbrellas and process/fault descriptors stay on the Wheel rather than becoming invented branches. Use relatives as comparison leads, then check their compound links; shared ancestry alone does not prove an aroma relationship.</li>
       <li><strong>Compare notes.</strong> Put any two notes side by side. Shared compounds give you a sensory crossover to investigate; culinary, botanical, and geographic cards provide context without treating correlation as causation.</li>
-      <li><strong>Constellation.</strong> Starts with crossover inside your current tasting, then lets you open the whole note system through chemistry, taxonomy, geography, or embodied perception. Brighter stars are notes you actually entered.</li>
-      <li><strong>Radar.</strong> A small draggable, resizable profile of your tasting, pinned to the wheel. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different tastings are directly comparable. The Map has its own separate bearing compass.</li>
-      <li><strong>Share.</strong> Opens a tasting-card preview with image and PDF downloads and a URL that preserves the current tasting.</li>
+      <li><strong>Constellation.</strong> Starts with crossover inside your current experience, then lets you open the whole note system through chemistry, taxonomy, geography, or embodied perception. Brighter stars are notes you actually entered.</li>
+      <li><strong>Radar.</strong> A small draggable, resizable profile of your experience, pinned to the wheel. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different experiences are directly comparable. The Map has its own separate bearing compass.</li>
+      <li><strong>Share.</strong> Opens an experience-card preview with image and PDF downloads and a URL that preserves the current experience.</li>
       <li><strong>Legend.</strong> Visibility filters and a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p><strong>Go Deeper</strong> keeps the Wheel and your tasting intact, then reveals Compare notes, Constellation, Map, and Tree. It also adds optional phase controls to the note rows: <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (after swallowing, exhale through the nose). Use them when timing matters; you do not need them for a useful tasting.</p>
+    <p><strong>Go Deeper</strong> keeps the Wheel and your experience intact, then reveals Compare notes, Constellation, Map, and Tree. It also adds optional phase controls to the note rows: <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (after swallowing, exhale through the nose). Use them when timing matters; you do not need them for a useful tasting.</p>
 
     <h3 id="use-explore">Turn a crossover into a sensory question</h3>
     <p>When two notes share a linked compound, treat that as an invitation to test your perception. Open the compound and read its sensory description. Smell or taste the two ingredients separately, then together. Ask whether the shared character becomes easier to name, disappears under a stronger note, or changes with temperature, bubbles, swirling, or retronasal exhalation. Record what <em>you</em> notice; the app supplies a hypothesis and vocabulary, not a correct answer.</p>
 
-    <h3 id="use-repeat">Repeat-tasting</h3>
+    <h3 id="use-repeat">Repeat experiences</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
   `;
 }
@@ -15070,7 +15070,7 @@ function initialBearingDegrees(a, b) {
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-// Every note in the current tasting that has a mapped origin, strongest first.
+// Every note in the current experience that has a mapped origin, strongest first.
 // Split out from mapCompassTastingItems so the compass's 8-mark display cap
 // doesn't silently become the sample the geography stats are computed from.
 function placedTastingNotes() {
@@ -15306,7 +15306,7 @@ function openTastingGeographyPanel(items, centroid, spread, totalPlaced) {
   content.innerHTML = "";
 
   const h3 = document.createElement("h3");
-  h3.textContent = "Where this tasting comes from";
+  h3.textContent = "Where this experience comes from";
   const where = document.createElement("p");
   where.className = "origin-region";
   const latL = `${Math.abs(centroid.lat).toFixed(1)}°${centroid.lat >= 0 ? "N" : "S"}`;
@@ -15346,7 +15346,7 @@ function centerCompassOnTasting() {
     // Honest empty state: no notes placed, or no meaningful center exists.
     if (btn) btn.title = items.length
       ? "These notes have no meaningful center — they're spread near-antipodally."
-      : "Add tasting notes with a mapped origin first.";
+      : "Add notes with a mapped origin first.";
     return;
   }
 
@@ -15405,10 +15405,10 @@ function renderMapBearingCompass() {
     const centroid = tastingGeoCentroid(items);
     centerBtn.disabled = !centroid;
     centerBtn.title = centroid
-      ? "Move the compass to the geographic center of your tasting notes"
+      ? "Move the compass to the geographic center of your notes"
       : (items.length
         ? "These notes have no meaningful center — they're spread near-antipodally."
-        : "Add tasting notes with a mapped origin first.");
+        : "Add notes with a mapped origin first.");
   }
   const layer = document.getElementById("map-bearing-dynamic");
   layer.innerHTML = "";
@@ -15443,15 +15443,15 @@ function renderMapBearingCompass() {
   const latLabel = `${Math.abs(anchor.lat).toFixed(0)}°${anchor.lat >= 0 ? "N" : "S"}`;
   const lonLabel = `${Math.abs(anchor.lon).toFixed(0)}°${anchor.lon >= 0 ? "E" : "W"}`;
   caption.textContent = items.length
-    ? `${latLabel}, ${lonLabel} · ${items.length} tasting note${items.length === 1 ? "" : "s"}`
-    : `${latLabel}, ${lonLabel} · add tasting notes`;
+    ? `${latLabel}, ${lonLabel} · ${items.length} note${items.length === 1 ? "" : "s"}`
+    : `${latLabel}, ${lonLabel} · add notes`;
   const summary = items.slice(0, 4).map(item => {
     const bearing = initialBearingDegrees(anchor, item.origin);
     return `${item.note.label} ${compassCardinal(bearing)}`;
   }).join(", ");
   compass.setAttribute("aria-label", items.length
     ? `Move Map bearing compass. ${summary}${items.length > 4 ? `, and ${items.length - 4} more` : ""}. Arrow keys reposition it.`
-    : "Move Map bearing compass. Add tasting notes to show their directions. Arrow keys reposition it.");
+    : "Move Map bearing compass. Add notes to show their directions. Arrow keys reposition it.");
   compass.title = "Map bearing compass · drag to move, tap to minimize; arrow keys reposition";
 }
 
@@ -16147,7 +16147,7 @@ document.querySelectorAll("#geography-pilot-picker button").forEach(button => {
 });
 
 function loadOrigins() {
-  // Already loaded: full rebuild, not just a refresh — the tasting may have
+  // Already loaded: full rebuild, not just a refresh — the experience may have
   // changed on the Wheel since the last visit, and under the "only my
   // tasting" filter that changes which markers exist at all.
   if (originsLoaded) { rebuildOriginMarkers(); return; }
@@ -16184,7 +16184,7 @@ function rebuildOriginMarkers() {
   updateOriginsFilterEmpty();
 }
 
-// "— nothing in your tasting yet" note next to the only-my-tasting checkbox:
+// "— nothing in your experience yet" note next to the only-my-tasting checkbox:
 // shown only when that filter is on AND it filtered the map down to nothing,
 // so an empty map is explained rather than looking broken.
 function updateOriginsFilterEmpty() {
@@ -16199,7 +16199,7 @@ function updateOriginsFilterEmpty() {
   }
   const mapped = active.filter(note => NOTE_ORIGINS[note.id]);
   const missing = active.filter(note => !NOTE_ORIGINS[note.id]);
-  coverage.textContent = `${mapped.length} of ${active.length} tasting notes have a mapped origin.`
+  coverage.textContent = `${mapped.length} of ${active.length} notes have a mapped origin.`
     + (missing.length ? ` Not mapped here: ${missing.map(note => note.label).join(", ")}.` : "")
     + " Missing means no defensible single origin is recorded in this app—not that the note lacks a history.";
 }
@@ -16209,10 +16209,10 @@ function updateOriginsClearTasting() {
   if (!btn) return;
   const noteCount = new Set(Array.from(state.entries.keys(), key => key.split(":")[0])).size;
   btn.disabled = noteCount === 0;
-  btn.textContent = noteCount ? `Clear tasting · ${noteCount}` : "Clear tasting";
+  btn.textContent = noteCount ? `Clear experience · ${noteCount}` : "Clear experience";
   btn.setAttribute("aria-label", noteCount
-    ? `Clear all ${noteCount} tasting note${noteCount === 1 ? "" : "s"}`
-    : "No tasting notes to clear");
+    ? `Clear all ${noteCount} note${noteCount === 1 ? "" : "s"}`
+    : "No notes to clear");
 }
 
 function clearOriginsTasting() {
@@ -16227,7 +16227,7 @@ function clearOriginsTasting() {
 }
 
 // The map legend's visibility checkboxes: one per flavor group (colored dot +
-// name, all checked by default) plus the "only my tasting" master filter.
+// name, all checked by default) plus the "only my experience" master filter.
 // These write the map-local state.origins* fields — never state.hiddenGroups,
 // which belongs to the wheel legend and affects scoring.
 function buildOriginsLegendFilters() {
@@ -16739,7 +16739,7 @@ function buildOriginMarkers() {
       const activateMarker = () => {
         // Selecting a marker is a non-destructive VIEW action — it never removes
         // the note (that surprised users: clicking an entered note deleted it and
-        // it vanished under "only my tasting"). A not-yet-entered note is added,
+        // it vanished under "only my experience"). A not-yet-entered note is added,
         // so the map is still a way to build a tasting; an already-entered note is
         // just highlighted. Removal now lives on the sliders. After a rebuild the
         // markers are recreated, so re-apply the selection to the fresh nodes.
@@ -16875,7 +16875,7 @@ function refreshOriginMarkers() {
 
 // ---------- MAP MARKER SELECTION ----------
 // Selecting a marker highlights it (spinning ring + white dot/label) and opens
-// its detail; it does not change the tasting entries. Deselecting reverts.
+// its detail; it does not change the experience entries. Deselecting reverts.
 function selectOriginNote(id) {
   const collapsedCluster = Array.from(document.querySelectorAll("#markers-svg .origin-region-cluster"))
     .find(g => g.dataset.expanded !== "true" && (g.dataset.noteIds || "").split("|").includes(id));
@@ -17090,7 +17090,7 @@ function countTaxonomyLeaves(d) {
   if (!kids) return 1;
   return kids.reduce((sum, k) => sum + countTaxonomyLeaves(k), 0);
 }
-// How many leaves under `d` are in the current tasting. Walks _children too,
+// How many leaves under `d` are in the current experience. Walks _children too,
 // so a collapsed Family still reports what's hidden inside it — otherwise
 // collapsing a branch would silently zero out its count.
 function countTastedLeaves(d) {
@@ -17581,7 +17581,7 @@ function renderTaxonomyCompareResult(result) {
     taxonomyCompareExpanded && taxonomyCompareChartOrientation === "columns");
   if (!aId && !bId) {
     const activeCount = NOTES.filter(note => hasAnyEntry(note.id)).length;
-    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two aroma notes. ${activeCount >= 2 ? `Start with two of the ${activeCount} notes in your tasting, or reach beyond it.` : "The active workspace adds chemistry, botanical, or geographic context."} Shared links are questions to explore—not proof of causation.</div>`;
+    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two aroma notes. ${activeCount >= 2 ? `Start with two of the ${activeCount} notes in your experience, or reach beyond it.` : "The active workspace adds chemistry, botanical, or geographic context."} Shared links are questions to explore—not proof of causation.</div>`;
     return;
   }
   if (!aId || !bId) {
@@ -17951,7 +17951,7 @@ function taxonomyOriginRegion(origin) {
   if (origin.lon > 110 && origin.lat < -10) return "oceania";
   // West Asia has to be claimed before the broad lon >= 45 sweep, or Iran, the
   // Caucasus, and Central Asia all get filed as "South / East Asia". That was
-  // tolerable while this only tinted Tree pips, but the tasting-relationship
+  // tolerable while this only tinted Tree pips, but the experience-relationship
   // readout now names the region in copy the user reads, so Rose and Almond
   // were being reported as first cultivated in South / East Asia.
   if (origin.lon >= 45 && origin.lon < 75 && origin.lat >= 25) return "europe-west-asia";
@@ -19262,7 +19262,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   // wood, the leaves are what this family actually puts out. Blade points
   // radially outward, so the whole rim reads as foliage on a trunk.
   //
-  // Color carries the tasting, same as everywhere else: an untasted leaf is
+  // Color carries the experience, same as everywhere else: an untasted leaf is
   // dormant foliage (the app's own vine green), a tasted one takes its
   // aroma-group color and grows longer. Deliberately NOT the dendrogram's gray
   // for untasted - a wreath of gray leaves reads as dead rather than dormant -
@@ -20164,7 +20164,7 @@ function renderTaxonomyTree() {
   // Internal nodes report how much of themselves you actually tasted, which is
   // the whole point of wiring entries in here: it turns "Rutaceae (12)" — a
   // fact about the dataset — into "Rutaceae (3 of 12 tasted)", a fact about
-  // YOUR cup. That's the answer to "which families does this tasting
+  // YOUR cup. That's the answer to "which families does this experience
   // implicate," which is the question the tree's own caption ("Family is the
   // chemistry clue") has always posed without being able to answer.
   const labelFor = d => {
@@ -20278,7 +20278,7 @@ function renderTaxonomyTree() {
       return `Open family ${TAXON_COMMON[d.data.name] || d.data.name}, ${d.data.name}, ${total} note${total === 1 ? "" : "s"}`;
     });
   // A tasted leaf is bigger and carries its aroma-group color — the exact
-  // convention the Map already uses for "this note is in your tasting"
+  // convention the Map already uses for "this note is in your experience"
   // (.origin-marker.active grows its dot; origin dots are group-colored), so
   // the two geography/lineage workspaces now read the same way. Radius and hue
   // are both unused channels here (fill = collapse state, stroke = family /
@@ -20747,7 +20747,7 @@ document.getElementById("taxonomy-compare-toggle").addEventListener("click", () 
   if (taxonomyCompareActive) {
     // Opening cold (no pair chosen yet, none carried over from elsewhere,
     // e.g. Constellation's own Compare button) used to just show two empty
-    // pickers -- a detached lookup with no connection to the tasting you
+    // pickers -- a detached lookup with no connection to the experience you
     // just built. Seed from it instead: the strongest-sharing pair among
     // your active notes if one exists, otherwise the two strongest by
     // intensity so there's still a real starting comparison, not a blank form.
@@ -20843,10 +20843,10 @@ updateTaxonomyLayerSummary();
 
 // refreshOriginMarkers() is called from recompute() whenever originsLoaded is true.
 
-// ---------- SHARE / EXPORT: the shareable tasting card ----------
+// ---------- SHARE / EXPORT: the shareable experience card ----------
 // Build a screenshot-able card as an SVG that embeds a clone of the live wheel,
 // show it in a live preview, and (on Generate) rasterize it to a canvas for
-// PNG/JPG/PDF download + a share link that encodes the tasting in the URL (so
+// PNG/JPG/PDF download + a share link that encodes the experience in the URL (so
 // the link is also the bookmark). Entirely client-side: no backend, no accounts.
 (function () {
   const SVGNS = "http://www.w3.org/2000/svg";
@@ -20997,7 +20997,7 @@ updateTaxonomyLayerSummary();
     const { notes, comps: allComps } = activeTasting();
     const comps = allComps.filter(c => !opts.hiddenCompounds.has(c.id));
     const mapItems = originItemsFor(notes);
-    const cap = (captionInput.value || "My tasting").trim() || "My tasting";
+    const cap = (captionInput.value || "My experience").trim() || "My experience";
     const PAD = 64, footerTop = H - 104;
 
     const svg = sEl("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
@@ -21167,7 +21167,7 @@ updateTaxonomyLayerSummary();
     previewEl.innerHTML = "";
     const { notes } = activeTasting();
     if (!notes.length) {
-      previewEl.innerHTML = '<div class="share-empty">Add a few notes to your tasting first — your shareable card is built from what you noticed.</div>';
+      previewEl.innerHTML = '<div class="share-empty">Add a few notes to your experience first — your shareable card is built from what you noticed.</div>';
       genBtn.disabled = true; flipBtn.classList.remove("visible"); invalidateOutput(); return;
     }
     genBtn.disabled = false;
@@ -21253,7 +21253,7 @@ updateTaxonomyLayerSummary();
   }
 
   function safeName() {
-    return ((captionInput.value || "tasting").trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "tasting").slice(0, 40);
+    return ((captionInput.value || "experience").trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "experience").slice(0, 40);
   }
   // Front/back downloads default to "one practical image" over "two separate
   // files" — most sharing (texting, social) is a single image, so front and
@@ -21314,7 +21314,7 @@ updateTaxonomyLayerSummary();
 
   // Per-compound checklist, ordered by prominence (confidence). All checked by
   // default — uncheck down to a favorite few, or leave them all for the full
-  // aroma soup. Rebuilt each time the modal opens (the tasting can't change
+  // aroma soup. Rebuilt each time the modal opens (the experience can't change
   // while it's open).
   const compListEl = document.getElementById("share-compound-list");
   const compCountEl = document.getElementById("share-compound-count");
