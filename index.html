@@ -1634,18 +1634,28 @@
   body.wheel-fullscreen #tasting-tray, body.wheel-fullscreen #callout-toggle,
   body.wheel-fullscreen .prototype-watermark { display: none !important; }
   /* Zoomed in there is room to name the compound dots, which phones otherwise hide. */
-  body.wheel-fullscreen.wheel-zoomed g.compound text.node-label { display: block; }
+  body.wheel-zoomed g.compound text.node-label { display: block; }
   /* Semantic zoom: the map spreads at the full zoom factor k but each note and
      compound glyph is drawn at k^-0.5 of that (--wheel-s), so it only grows as
      the square root of k. Zooming in therefore pulls crowded neighbors apart
      instead of just enlarging the pile. Labels are drawn at a steady size. */
-  body.wheel-fullscreen #svg g.note > *, body.wheel-fullscreen #svg g.compound > * {
+  body.wheel-zoomed-in #svg g.note > *, body.wheel-zoomed-in #svg g.compound > * {
     transform: scale(var(--wheel-s, 1)); }
-  body.wheel-fullscreen #svg path.edge { vector-effect: non-scaling-stroke; }
-  body.wheel-fullscreen #svg text.node-label, body.wheel-fullscreen #svg text.note-label {
+  body.wheel-zoomed-in #svg path.edge { vector-effect: non-scaling-stroke; }
+  body.wheel-zoomed-in #svg text.node-label, body.wheel-zoomed-in #svg text.note-label {
     font-size: calc(10px * var(--wheel-s, 1)) !important; }
   /* Not full screen: the zoom behavior is inert, so leave touch scrolling alone. */
   body:not(.wheel-fullscreen) #svg { touch-action: auto !important; }
+  /* Once zoomed in outside full screen (toolbar +/- or desktop scroll), dragging pans. */
+  body.wheel-zoomed-in #svg { touch-action: none !important; cursor: grab; }
+  body.wheel-zoomed-in #svg:active { cursor: grabbing; }
+  /* Toolbar zoom pair: desktop only; phones get pinch and the full-screen controls. */
+  .wheel-zoom-pair { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .wheel-zoom-pair button { background: var(--panel-2); color: var(--ink); border: none; width: 30px;
+    padding: 5px 0; font-size: 15px; line-height: 1; cursor: pointer; }
+  .wheel-zoom-pair button + button { border-left: 1px solid var(--line); }
+  .wheel-zoom-pair button:hover { color: var(--accent); }
+  @media (max-width: 760px) { .wheel-zoom-pair { display: none; } }
 
   /* Constellation — Go Deeper's subjective hemisphere, promoted to a direct
      header toggle (was reachable only via the Sixth-lens depth card, which
@@ -4449,6 +4459,10 @@
       title="Key: what each compound icon means">
       <span aria-hidden="true">🍐</span> Key
     </button>
+    <div class="wheel-zoom-pair" role="group" aria-label="Zoom the wheel">
+      <button type="button" id="wheel-tb-zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+      <button type="button" id="wheel-tb-zoom-in" aria-label="Zoom in" title="Zoom in. Drag to pan; full screen gives more room">+</button>
+    </div>
     <button type="button" id="wheel-fs-toggle" class="wheel-fs-btn" aria-pressed="false"
       aria-label="Expand the wheel to full screen" title="Full screen: pinch, scroll or drag to zoom and pan into clusters of notes">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fs-open" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-close" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" style="display:none"/></svg>
@@ -8330,11 +8344,16 @@ const gCallouts = root.append("g").attr("class", "callouts");
 let wheelZoomT = d3.zoomIdentity;
 const wheelZoom = d3.zoom()
   .scaleExtent([1, 20])
-  .filter(e => document.body.classList.contains("wheel-fullscreen")
+  // User gestures zoom/pan in full screen, anywhere on a desktop-width wheel, and
+  // on a phone once the wheel is already zoomed in (so page scrolling stays free
+  // until then). The toolbar and full-screen buttons zoom programmatically.
+  .filter(e => (document.body.classList.contains("wheel-fullscreen")
+      || window.matchMedia("(min-width: 761px)").matches || wheelZoomT.k > 1.001)
     && (!e.ctrlKey || e.type === "wheel") && !e.button)
   .on("zoom", e => {
     wheelZoomT = e.transform;
     root.attr("transform", wheelZoomT.toString());
+    document.body.classList.toggle("wheel-zoomed-in", wheelZoomT.k > 1.001);
     document.body.classList.toggle("wheel-zoomed", wheelZoomT.k >= 2);
     document.body.style.setProperty("--wheel-s", Math.pow(wheelZoomT.k, -0.5).toFixed(4));
   });
@@ -15068,6 +15087,8 @@ function setWheelFullscreen(on) {
 wheelFsBtn.addEventListener("click", () => setWheelFullscreen(!document.body.classList.contains("wheel-fullscreen")));
 document.getElementById("wheel-zoom-in").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1.6));
 document.getElementById("wheel-zoom-out").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1 / 1.6));
+document.getElementById("wheel-tb-zoom-in").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1.6));
+document.getElementById("wheel-tb-zoom-out").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1 / 1.6));
 document.getElementById("wheel-zoom-reset").addEventListener("click", () => svg.transition().duration(250).call(wheelZoom.transform, d3.zoomIdentity));
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && document.body.classList.contains("wheel-fullscreen")) setWheelFullscreen(false);
@@ -16956,6 +16977,7 @@ function setWorkspace(mode) {
     _preTreeDetailHidden = null;
     applyPaneState();
   }
+  if (mode === "wheel") setView("dashboard");   // wheel workspace: notes, wheel and compounds all on screen
   document.body.classList.toggle("origins-mode", mode === "map");
   document.body.classList.toggle("taxonomy-mode", mode === "tree");
   syncTaxonomySheetState();
