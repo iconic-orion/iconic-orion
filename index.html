@@ -7653,6 +7653,9 @@ function evidenceColor(base, t) {
 // Diminishing-returns bloom: one solid note already lifts a family clearly off
 // the resting floor; more (or stronger) signal deepens it toward full.
 function bloomFactor(signalSum) { return 1 - Math.exp(-1.7 * Math.max(0, signalSum)); }
+// Chemistry classes sum raw compound evidence (typically 0.2-1.5 per class), so
+// they use a gentler curve that only nears full glow with several strong notes.
+function chemBloomFactor(evidenceSum) { return 1 - Math.exp(-0.8 * Math.max(0, evidenceSum)); }
 // Emoji-marker size (px) for a note on the wheel, scaled by its signal. The
 // ingredient's icon IS the marker now, so this is what literally swells as you
 // taste a note more strongly and shrinks as it fades. Floored at a legible,
@@ -8732,9 +8735,11 @@ function applyArcEvidence() {
     compoundNodes.forEach(node => {
       if (node.intensity_raw > 0) {
         const cls = CPD_BY_ID[node.id].class;
-        // 0.5 floor per active compound guarantees a class visibly lifts the
-        // moment any of its compounds light up, then deepens with intensity.
-        if (activity[cls] !== undefined) activity[cls] += 0.5 + Math.min(1, node.intensity);
+        // A class's glow is the summed evidence of its active compounds, with
+        // no free floor: one faint compound barely lifts its wedge, and the glow
+        // deepens as more notes feed the class or feed it harder. (A 0.5 floor
+        // per compound used to saturate nearly every active class at ~100%.)
+        if (activity[cls] !== undefined) activity[cls] += node.intensity_raw;
       }
     });
     baseFor = d => d.color;
@@ -8744,7 +8749,7 @@ function applyArcEvidence() {
   }
   gArcs.selectAll("path.group-arc").each(function(d) {
     const base = baseFor(d);
-    const bloom = bloomFactor(activity[d.id] || 0);
+    const bloom = (chem ? chemBloomFactor : bloomFactor)(activity[d.id] || 0);
     const col = evidenceColor(base, bloom);
     d3.select(this)
       .attr("stroke", col)
@@ -8754,7 +8759,7 @@ function applyArcEvidence() {
   });
   gArcs.selectAll("text.group-arc-label").each(function(d) {
     const base = baseFor(d);
-    const bloom = bloomFactor(activity[d.id] || 0);
+    const bloom = (chem ? chemBloomFactor : bloomFactor)(activity[d.id] || 0);
     d3.select(this)
       .attr("fill", bloom > 0.05 ? vividColor(base) : (chem ? base : "var(--ink-dim)"))
       .attr("opacity", (0.45 + 0.5 * bloom).toFixed(3))
@@ -8762,7 +8767,7 @@ function applyArcEvidence() {
   });
   // Thin-class glyph fallbacks dim/brighten with their wedge, same as the text.
   gArcs.selectAll("text.arc-glyph").each(function(d) {
-    const bloom = bloomFactor(activity[d.id] || 0);
+    const bloom = (chem ? chemBloomFactor : bloomFactor)(activity[d.id] || 0);
     d3.select(this).attr("opacity", (0.5 + 0.45 * bloom).toFixed(3));
   });
 }
