@@ -8406,6 +8406,22 @@ function computeNotePositions() {
     n._x = CX + Math.cos(a) * R_NOTE;
     n._y = CY + Math.sin(a) * R_NOTE;
   });
+  // Notes you've actually entered spread evenly across their own wedge instead
+  // of sitting in their alphabetical list slot, so two neighbors in the list
+  // don't crowd each other when the wedge has plenty of room (the wedge itself
+  // keeps its size, so the ring stays stable as you add notes). Un-entered notes
+  // keep their slot positions; they aren't drawn, and varietal children anchor
+  // their edges to a parent's slot.
+  GROUPS.forEach(g => {
+    const ga = groupAngles[g.id];
+    const entered = visible.filter(n => n.group === g.id && hasAnyEntry(n.id));
+    entered.forEach((n, j) => {
+      const a = ga.start + (j + 0.5) / entered.length * ga.span;
+      n._angle = a;
+      n._x = CX + Math.cos(a) * R_NOTE;
+      n._y = CY + Math.sin(a) * R_NOTE;
+    });
+  });
   // Hidden notes get null positions (and won't render)
   NOTES.forEach(n => { if (!isNoteVisible(n.id)) { n._angle = null; n._x = null; n._y = null; } });
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
@@ -10104,7 +10120,10 @@ function recompute() {
     computeCompoundPositions();
     drawClassArcs();
     drawCompoundAnchors();
-  } else drawNotes();
+  } else {
+    computeNotePositions();   // entered notes re-space within their wedge
+    drawNotes();
+  }
   renderClassBin();
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
