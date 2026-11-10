@@ -8032,7 +8032,7 @@ function countEntriesForPhase(phase) {
 function isNoteVisible(noteId) {
   const n = NOTE_BY_ID[noteId];
   if (!n) return false;
-  if (n.subOf) return false;
+  // Varietal children (Meyer lemon, bergamot...) are ordinary notes: own wheel position and panel row, alphabetized in their group.
   if (state.hiddenGroups.has(n.group)) return false;
   return true;
 }
@@ -8082,15 +8082,8 @@ function fillVarietalWrap(wrap, parentId) {
 // rows right after it. Shared by buildNotesPanel() and the toggle handler so
 // the expanded set stays correct across a full panel rebuild.
 function appendNoteRowWithVarietals(container, n) {
+  // Flat list: no nested varietal rows any more (see isNoteVisible()).
   container.appendChild(renderNoteRow(n));
-  const hasAny = varietalChildrenOf(n.id).length > 0 || ghostChildrenOf(n.id).length > 0;
-  if (hasAny && state.expandedVarietals.has(n.id)) {
-    const wrap = document.createElement("div");
-    wrap.className = "note-subrows";
-    wrap.dataset.parent = n.id;
-    fillVarietalWrap(wrap, n.id);
-    container.appendChild(wrap);
-  }
 }
 // Toggles a parent's varietal children open/closed in place (no full panel
 // rebuild — snappier, and keeps scroll position stable).
@@ -10550,7 +10543,10 @@ function guideRenderNotes() {
   search.setAttribute("aria-label", "Search notes"); search.autocomplete = "off";
   const chips = document.createElement("div"); chips.className = "guide-chips";
   const list = document.createElement("div");
-  const all = getVisibleNotes();
+  // Every scoreable note, varietal children included (Meyer lemon, bergamot,
+  // peppermint…). Here they sit alphabetically in their group like any other
+  // note; the parent/child nesting only exists in the regular panel.
+  const all = NOTES.filter(n => isNoteScoreable(n.id));
   GROUPS.forEach(g => {
     const notes = all.filter(n => n.group === g.id).sort((a, b) => a.label.localeCompare(b.label));
     if (!notes.length) return;
@@ -10800,46 +10796,6 @@ function renderNoteRow(n) {
     mark.setAttribute("aria-label", "culinary umbrella; expand for botanical classification");
     mark.title = n.umbrellaNote;
     lbl.appendChild(mark);
-  }
-
-  // Varietal disclosure: notes with subOf children (mint -> peppermint/
-  // spearmint/wintergreen, lemon -> lime/yuzu/meyerlemon, etc.) get a small
-  // toggle to expand those children into their own independently-scoreable
-  // rows right below. Available in both default and Go Deeper mode — it's
-  // just a standing feature of the row, not a separate mode.
-  const varietalChildren = varietalChildrenOf(n.id);
-  const ghostChildren = ghostChildrenOf(n.id);
-  if (varietalChildren.length + ghostChildren.length > 0) {
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "varietal-toggle" + (state.expandedVarietals.has(n.id) ? " expanded" : "");
-    toggle.setAttribute("aria-label", `Show ${varietalChildren.length} varietals of ${n.label} as separate sliders`);
-    let toggleTitle = varietalChildren.length > 0
-      ? `${varietalChildren.length} varietals: ${varietalChildren.map(c => c.label).join(", ")}. Click to score them independently.`
-      : "Click to show related notes.";
-    if (ghostChildren.length > 0) {
-      toggleTitle += ` Also shows a live read-only copy of: ${ghostChildren.map(c => c.label).join(", ")} (already has its own row).`;
-    }
-    if (n.umbrellaNote) toggleTitle += ` ${n.umbrellaNote}`;
-    toggle.title = toggleTitle;
-    toggle.textContent = "▸";
-    toggle.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleVarietalExpansion(n.id, row);
-    });
-    lbl.insertBefore(toggle, lbl.firstChild);
-    // The arrow glyph itself is tiny — rather than relying on a reader to
-    // land a click precisely on it, the whole label (a CSS grid item that
-    // already stretches across the row up to where the score number sits)
-    // becomes the toggle target too. preventDefault() stops the label's
-    // native "focus the slider" behavior so it doesn't fire alongside.
-    lbl.classList.add("has-varietal-toggle");
-    lbl.title = toggleTitle;
-    lbl.addEventListener("click", (e) => {
-      e.preventDefault();
-      toggleVarietalExpansion(n.id, row);
-    });
   }
 
   // Cross-group taxonomy badge: only for notes whose plant family has no other
