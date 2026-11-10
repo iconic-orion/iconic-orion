@@ -27,6 +27,7 @@
     --grp-fermented: #6ebdab;
     --grp-vegetal: #5a9c4f;
     --grp-herbal:  #7fc275;
+    --grp-earthy:  #b0a35c;
 
     /* Pane widths — referenced both by the body grid and by the pane-toggle
        positions, so both stay in sync if these change. */
@@ -5254,8 +5255,9 @@ const GROUPS = [
   { id: "fruity",    label: "Fruity",    color: "var(--grp-fruity)",    cssVar: "--grp-fruity" },
   { id: "floral",    label: "Floral",    color: "var(--grp-floral)",    cssVar: "--grp-floral" },
   { id: "roasted",   label: "Roasted",   color: "var(--grp-roasted)",   cssVar: "--grp-roasted" },
-  { id: "spice",     label: "Spice",     color: "var(--grp-spice)",     cssVar: "--grp-spice" },
+  { id: "spice",     label: "Spicy",     color: "var(--grp-spice)",     cssVar: "--grp-spice" },
   { id: "herbal",    label: "Herbal",    color: "var(--grp-herbal)",    cssVar: "--grp-herbal" },
+  { id: "earthy",    label: "Grassy / earthy", color: "var(--grp-earthy)", cssVar: "--grp-earthy" },
   { id: "nutty",     label: "Nutty",     color: "var(--grp-nutty)",     cssVar: "--grp-nutty" },
   { id: "sweet",     label: "Sweet",     color: "var(--grp-sweet)",     cssVar: "--grp-sweet" },
   { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" },
@@ -5376,13 +5378,13 @@ const NOTES = [
   // (wheat, sugarcane, and corn respectively — see their own family/order
   // above) but are iconic enough flavor notes to keep their own top-level
   // sliders, same situation as Cherry under Stonefruit.
-  { id: "cereal",      label: "Cereal / grain",     group: "roasted",  common: true,  family: "Poaceae", order: "Poales", ghostRefs: ["toast", "burnt", "popcorn"] },
-  { id: "rice",        label: "Rice",               group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
-  { id: "wheat",       label: "Wheat",              group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
-  { id: "barley",      label: "Barley / malt",      group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
-  { id: "oats",        label: "Oats",               group: "roasted",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
-  { id: "millet",      label: "Millet",             group: "roasted",  common: false, subOf: "cereal", family: "Poaceae", order: "Poales" },
-  { id: "quinoa",      label: "Quinoa",             group: "roasted",  common: false, subOf: "cereal", family: "Amaranthaceae", order: "Caryophyllales" },
+  { id: "cereal",      label: "Cereal / grain",     group: "earthy",  common: true,  family: "Poaceae", order: "Poales", ghostRefs: ["toast", "burnt", "popcorn"] },
+  { id: "rice",        label: "Rice",               group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
+  { id: "wheat",       label: "Wheat",              group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
+  { id: "barley",      label: "Barley / malt",      group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
+  { id: "oats",        label: "Oats",               group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
+  { id: "millet",      label: "Millet",             group: "earthy",  common: false, subOf: "cereal", family: "Poaceae", order: "Poales" },
+  { id: "quinoa",      label: "Quinoa",             group: "earthy",  common: false, subOf: "cereal", family: "Amaranthaceae", order: "Caryophyllales" },
   // spice
   { id: "clove",       label: "Clove",              group: "spice",    common: true,  genus: "Syzygium", family: "Myrtaceae", order: "Myrtales" },
   { id: "cinnamon",    label: "Cinnamon",           group: "spice",    common: true,  genus: "Cinnamomum", family: "Lauraceae", order: "Laurales" },
@@ -5417,7 +5419,7 @@ const NOTES = [
   // The note's own label calls out cedar specifically, so "Woody / cedar"
   // anchors to genus Cedrus rather than the umbrella bucket — same family
   // (Pinaceae) as Pine, different genus.
-  { id: "woody",       label: "Woody / cedar",      group: "herbal",  common: true,  genus: "Cedrus", family: "Pinaceae", order: "Pinales" },
+  { id: "woody",       label: "Woody / cedar",      group: "earthy",  common: true,  genus: "Cedrus", family: "Pinaceae", order: "Pinales" },
   { id: "pine",        label: "Pine / resin",       group: "herbal",  common: true,  genus: "Pinus", family: "Pinaceae", order: "Pinales" },
   // Eucalyptus is Myrtaceae, not even close to pine's Pinaceae — promoted to
   // its own standalone slider (it has its own real, sourced compounds and is
@@ -5433,14 +5435,14 @@ const NOTES = [
   // a kitchen. Edible fungi genuinely span many families, and 1-octen-3-ol (the
   // compound this note is built on) is common across most of them, so this is a
   // representative placement rather than a claim about all mushrooms.
-  { id: "mushroom",    label: "Mushroom",           group: "herbal",  common: false, kingdom: "Fungi", genus: "Agaricus", family: "Agaricaceae", order: "Agaricales" },
-  { id: "green",       label: "Green / grassy",     group: "herbal",  common: true,  taxonBucket: "umbrella" },
-  { id: "bellpepper",  label: "Bell pepper",        group: "herbal",  common: true,  family: "Solanaceae", order: "Solanales" },
+  { id: "mushroom",    label: "Mushroom",           group: "earthy",  common: false, kingdom: "Fungi", genus: "Agaricus", family: "Agaricaceae", order: "Agaricales" },
+  { id: "green",       label: "Green / grassy",     group: "earthy",  common: true,  taxonBucket: "umbrella" },
+  { id: "bellpepper",  label: "Bell pepper",        group: "earthy",  common: true,  family: "Solanaceae", order: "Solanales" },
   { id: "mint",        label: "Mint",               group: "herbal",  common: true,  family: "Lamiaceae", order: "Lamiales" },
   { id: "peppermint",  label: "Peppermint",         group: "herbal",  common: true,  subOf: "mint", family: "Lamiaceae", order: "Lamiales" },
   { id: "spearmint",   label: "Spearmint",          group: "herbal",  common: true,  subOf: "mint", family: "Lamiaceae", order: "Lamiales" },
   { id: "wintergreen", label: "Wintergreen",        group: "herbal",  common: true,  subOf: "mint", family: "Ericaceae", order: "Ericales" },
-  { id: "tobacco",     label: "Tobacco",            group: "herbal",  common: false, family: "Solanaceae", order: "Solanales" },
+  { id: "tobacco",     label: "Tobacco",            group: "earthy",  common: false, family: "Solanaceae", order: "Solanales" },
   // sweet
   { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true,  genus: "Vanilla", family: "Orchidaceae", order: "Asparagales" },
   { id: "caramel",     label: "Caramel",            group: "sweet",    common: true,  taxonBucket: "process" },
@@ -7616,21 +7618,24 @@ const GUIDE_NARROW = {
   ]},
   roasted: { question: "What's roasting?", options: [
     { key: "coffee",   label: "Coffee / dark roast",        notes: ["coffee"] },
-    { key: "bread",    label: "Bread & grain",              notes: ["toast", "cereal", "popcorn"] },
+    { key: "bread",    label: "Toast & popcorn",            notes: ["toast", "popcorn"] },
     { key: "smoke",    label: "Smoke & char",               notes: ["smoky", "burnt"] }
   ]},
-  spice: { question: "Which spice register?", options: [
+  spice: { question: "Which kind of spicy?", options: [
     { key: "baking",   label: "Warm baking spice",          notes: ["cinnamon", "clove", "cardamom"] },
     { key: "pungent",  label: "Sharp / pungent",            notes: ["pepper", "ginger"] }
   ]},
-  herbal: { question: "Which kind of herbal or earthy?", options: [
+  earthy: { question: "Which kind of grassy or earthy?", options: [
+    { key: "grain",    label: "Grain / cereal",             notes: ["cereal", "rice", "wheat", "barley", "oats", "millet", "quinoa"] },
+    { key: "green",    label: "Fresh-cut green",            notes: ["green", "bellpepper"] },
+    { key: "soil",     label: "Soil, mushroom & wood",      notes: ["mushroom", "woody"] },
+    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] }
+  ]},
+  herbal: { question: "Which kind of herb?", options: [
     { key: "mint",     label: "Cool mint",                  notes: ["mint", "peppermint", "spearmint", "wintergreen", "eucalyptus"] },
     { key: "licorice", label: "Licorice / anise",           notes: ["anise", "licorice"] },
     { key: "savory",   label: "Savory herbs",               notes: ["sage", "thyme", "bayleaf"] },
-    { key: "forest",   label: "Forest / resin",             notes: ["pine", "woody"] },
-    { key: "soil",     label: "Soil & mushroom",            notes: ["mushroom"] },
-    { key: "green",    label: "Fresh-cut green",            notes: ["green", "bellpepper"] },
-    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] }
+    { key: "forest",   label: "Forest / resin",             notes: ["pine"] }
   ]},
   nutty: { question: "Closest nut?", options: [
     { key: "marzipan", label: "Marzipan / almond extract",  notes: ["almond"] },
@@ -7663,7 +7668,8 @@ const GUIDE_FAMILY_HINTS = {
   sweet:     "vanilla, caramel, honey, chocolate",
   roasted:   "coffee, bread, smoke, char",
   spice:     "cinnamon, clove, pepper, ginger",
-  herbal:    "mint, sage, pine, soil, grass",
+  herbal:    "mint, sage, thyme, pine, anise",
+  earthy:    "grain, grass, mushroom, soil",
   nutty:     "almond, hazelnut, coconut",
   fermented: "yeast, cheese, booze, funk",
   vegetal:   "onion, tomato, cooked veg"
@@ -7767,7 +7773,7 @@ const NOTE_ICONS = {
   lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
   brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
 };
-const GROUP_ICON = { fruity:"🍑", floral:"🌸", roasted:"☕", spice:"🧂", herbal:"🌿", nutty:"🥜",
+const GROUP_ICON = { fruity:"🍑", floral:"🌸", roasted:"☕", spice:"🧂", herbal:"🌿", earthy:"🌾", nutty:"🥜",
   sweet:"🍬", fermented:"🫧", vegetal:"🥬" };
 function noteIcon(n) {
   const note = typeof n === "string" ? NOTE_BY_ID[n] : n;
