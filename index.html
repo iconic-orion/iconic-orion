@@ -3543,6 +3543,19 @@
   .note-irritant-glyph { font-size: 11px; pointer-events: none; }
   .irritant-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px;
     color: var(--ink-dim); padding: 2px 4px 0; }
+  .sense-diagram { margin-top: 10px; font-size: 11px; }
+  .sense-diagram > summary { cursor: pointer; color: var(--accent-2); }
+  .sense-diagram-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+  .sense-figure { margin: 0; }
+  .sense-figure-frame { position: relative; max-width: 300px; margin: 0 auto;
+    background: #fff; border-radius: 6px; overflow: hidden; }
+  .sense-figure-frame img { display: block; width: 100%; height: auto; }
+  .sense-figure-dots { position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .sense-figure-dots circle { fill: #d9632f; stroke: #fff; stroke-width: 3; }
+  .sense-figure[data-view="trigeminal"] .sense-figure-dots { opacity: 1; }
+  .sense-figure figcaption { margin-top: 8px; color: var(--ink-dim); line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { .sense-figure-dots { transition: none; } }
   .sense-body { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
   .sense-row { display: flex; flex-direction: column; gap: 6px; padding: 8px 9px;
     border: 1px solid var(--line); border-radius: 6px; }
@@ -4314,6 +4327,30 @@
     </summary>
     <div class="delivery-body">
       <p class="delivery-intro">Not every nose sensation is smell. Menthol, camphor, vinegar, mustard oil and capsaicin also trigger the trigeminal nerve in your nose and mouth, which reports <strong>cool, burn or sting</strong> alongside the aroma. You can feel these with no sense of smell at all. Tell the wheel what you felt.</p>
+      <details class="sense-diagram">
+        <summary>Where do these signals come from?</summary>
+        <div class="sense-diagram-tabs" role="group" aria-label="Diagram view">
+          <button type="button" class="delivery-opt" id="diagram-routes" aria-pressed="true">Two routes of smell</button>
+          <button type="button" class="delivery-opt" id="diagram-trigeminal" aria-pressed="false">Where irritation is felt</button>
+        </div>
+        <figure class="sense-figure" id="sense-figure" data-view="routes">
+          <div class="sense-figure-frame">
+            <img src="images/orthonasal-retronasal.png" width="774" height="912" loading="lazy"
+              alt="Side view of the nose, mouth and throat. A green arrow shows orthonasal smell: air entering the nostril and rising to the olfactory bulb at the roof of the nasal cavity. A blue arrow shows retronasal smell: air from the mouth passing up behind the palate into the nasal cavity." />
+            <svg class="sense-figure-dots" viewBox="0 0 774 912" aria-hidden="true">
+              <g>
+                <circle cx="105" cy="440" r="10"/><circle cx="135" cy="478" r="10"/>
+                <circle cx="240" cy="492" r="10"/><circle cx="350" cy="497" r="10"/><circle cx="460" cy="508" r="10"/>
+                <circle cx="590" cy="455" r="10"/><circle cx="650" cy="425" r="10"/>
+                <circle cx="340" cy="545" r="10"/><circle cx="450" cy="548" r="10"/><circle cx="545" cy="585" r="10"/>
+                <circle cx="205" cy="650" r="10"/><circle cx="215" cy="705" r="10"/>
+                <circle cx="612" cy="650" r="10"/><circle cx="628" cy="730" r="10"/><circle cx="622" cy="810" r="10"/>
+              </g>
+            </svg>
+          </div>
+          <figcaption id="sense-figcaption"></figcaption>
+        </figure>
+      </details>
       <div id="sense-body" class="sense-body"></div>
       <details class="sense-sources"><summary>Sources</summary><ul id="sense-sources-list"></ul></details>
     </div>
@@ -10337,6 +10374,24 @@ function irritantBadge(noteId) {
   b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") open(e); });
   return b;
 }
+
+// Diagram: same anatomy, two readings. "routes" explains orthonasal vs
+// retronasal smell; "trigeminal" overlays where free nerve endings report
+// cool/burn/sting. The dots are schematic (positions approximate), not a map.
+const SENSE_FIGURE_CAPTIONS = {
+  routes: "<strong>Orthonasal</strong> (green): you sniff, and air carries volatiles straight up the nostril to the olfactory receptors at the roof of the nasal cavity. <strong>Retronasal</strong> (blue): when you eat or drink, volatiles travel from the mouth up behind the palate and reach the same receptors from behind. This is most of what we call flavor.",
+  trigeminal: "<strong>Orange dots</strong> mark where trigeminal free nerve endings sit: the lining of the nostril and nasal cavity, the palate, tongue and throat. Both routes pass over them, so a cooling, burning or stinging molecule can be felt on the way in (orthonasal) and on the way up from the mouth (retronasal). The olfactory neurons drawn at the roof are a separate system that only reports smell. Dot positions are schematic."
+};
+function setSenseFigure(view) {
+  const fig = document.getElementById("sense-figure");
+  fig.dataset.view = view;
+  document.getElementById("sense-figcaption").innerHTML = SENSE_FIGURE_CAPTIONS[view];
+  document.getElementById("diagram-routes").setAttribute("aria-pressed", String(view === "routes"));
+  document.getElementById("diagram-trigeminal").setAttribute("aria-pressed", String(view === "trigeminal"));
+}
+document.getElementById("diagram-routes").addEventListener("click", () => setSenseFigure("routes"));
+document.getElementById("diagram-trigeminal").addEventListener("click", () => setSenseFigure("trigeminal"));
+setSenseFigure("routes");
 
 document.getElementById("irritant-layer-toggle").addEventListener("change", e => {
   state.irritantLayer = e.target.checked;
