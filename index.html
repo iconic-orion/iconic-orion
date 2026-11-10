@@ -503,6 +503,8 @@
     margin: 0; }
   .notes-search:focus { outline: none; border-color: var(--accent); }
   .notes-search::placeholder { color: var(--ink-dim); }
+  .notes-search-opts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .notes-search-opts .delivery-opt { min-height: 30px; }
   .note-row.search-hidden, .group-header.search-hidden { display: none; }
   aside.detail { grid-area: detail; background: var(--panel); border-left: 1px solid var(--line);
     overflow-y: auto; padding: 16px; }
@@ -742,6 +744,10 @@
      quieter than .group-header so the flavor category stays the primary cue. */
   .taxon-header { font-size: 10px; font-style: italic; color: var(--ink-dim);
     padding: 4px 4px 2px 14px; cursor: help; }
+  /* Rows that belong to a family cluster are indented behind an accent rule, so
+     the next unrelated note (e.g. Banana after the Rosaceae group) visibly
+     sits outside the cluster instead of looking like another member. */
+  .note-row.in-taxon { margin-left: 12px; border-left: 3px solid var(--accent-2); }
   /* Cross-group taxonomy badge: small inline marker on a note row for ties
      that cross flavor-category boundaries (e.g. mint <-> lavender). */
   .taxon-badge { cursor: pointer; margin-left: 4px; font-size: 11px; opacity: 0.8;
@@ -4394,6 +4400,12 @@
       role="combobox" aria-autocomplete="list" aria-controls="notes-search-results" aria-expanded="false" />
     <div id="notes-search-results" class="flavor-search-results" role="listbox"
       aria-label="Matching flavor notes" hidden></div>
+    <div class="notes-search-opts" role="group" aria-label="Plant family finder">
+      <button type="button" id="opt-search-family" class="delivery-opt" aria-pressed="false"
+        title="Let the search also match plant families, like Rutaceae, citrus family or mint family">Search plant families</button>
+      <button type="button" id="opt-group-family" class="delivery-opt" aria-pressed="false"
+        title="Cluster notes that share a plant family under a heading inside each category">Group by plant family</button>
+    </div>
   </div>
   <nav id="mobile-scent-nav" class="mobile-scent-nav" aria-label="Jump to aroma family"></nav>
   <!-- Delivery: the third sensory dimension, alongside aroma-compound and
@@ -7950,6 +7962,10 @@ const state = {
   //   { felt: [sensation ids], none: bool (explicitly "felt nothing"), where: "nose"|"mouth"|"both"|null }
   // Absent key = not reported, which is different from "none".
   sensations: {},
+  // Plant-family finders for the notes panel. Both are off by default so the
+  // panel reads as one plain A-Z list per flavor category.
+  groupByFamily: false,       // cluster same-family notes under a family heading
+  searchFamily: false,        // let the search box also match family / genus / order / common name
   irritantLayer: true,        // highlight notes that can engage the trigeminal nerve
   // Saved laps — immutable snapshots of {entries, delivery}, oldest first.
   // previewingLap holds the lap number currently being viewed (null = live).
@@ -10719,7 +10735,7 @@ function buildNotesPanel() {
     const rendered = new Set();
     visible.forEach(n => {
       if (rendered.has(n.id)) return;
-      const inGroup = n.family ? notesWithFamily(n.family, visible) : [];
+      const inGroup = state.groupByFamily && n.family ? notesWithFamily(n.family, visible) : [];
       if (inGroup.length >= 2) {
         const crossGroup = notesWithFamily(n.family, allVisible).filter(m => m.group !== g.id);
         const taxHeader = document.createElement("div");
@@ -10734,7 +10750,11 @@ function buildNotesPanel() {
         }
         taxHeader.title = title;
         notesPanel.appendChild(taxHeader);
-        inGroup.forEach(m => { appendNoteRowWithVarietals(notesPanel, m); rendered.add(m.id); });
+        inGroup.forEach(m => {
+          appendNoteRowWithVarietals(notesPanel, m);
+          notesPanel.lastElementChild.classList.add("in-taxon");
+          rendered.add(m.id);
+        });
         return;
       }
       appendNoteRowWithVarietals(notesPanel, n);
@@ -10802,7 +10822,7 @@ function renderNoteRow(n) {
   // member in the SAME group (those get an in-group .taxon-header instead) but
   // does have a member in a DIFFERENT group — e.g. mint (Earthy) <-> lavender
   // (Floral), both Lamiaceae. Clicking jumps to the first such sibling's row.
-  if (n.family) {
+  if (state.groupByFamily && n.family) {
     const sameFamily = notesWithFamily(n.family, getVisibleNotes());
     const inGroup = sameFamily.filter(m => m.group === n.group);
     const crossGroup = sameFamily.filter(m => m.group !== n.group);
@@ -12282,14 +12302,25 @@ function autoDetectViewMode() {
 // Subtle search at the top of the notes pane filters which rows are visible.
 // Operates on already-rendered DOM (no rebuild) so focus + caret stay put as
 // the user types. Empty query = show everything (subject to other filters).
-function matchingFlavorNotes(query, predicate = () => true) {
+// Lower-cased plant-family text for a note: family, genus, order and the common
+// names (e.g. "rutaceae citrus citrus family sapindales"). Used only when the
+// "Search plant families" finder is on.
+function noteFamilyText(n) {
+  return [n.family, n.genus, n.order, TAXON_COMMON[n.family], TAXON_COMMON[n.genus]]
+    .filter(Boolean).join(" ").toLowerCase();
+}
+function noteMatchesQuery(n, q, useFamily) {
+  return n.label.toLowerCase().includes(q) || (useFamily && noteFamilyText(n).includes(q));
+}
+function matchingFlavorNotes(query, predicate = () => true, opts = {}) {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   return NOTES
-    .filter(n => predicate(n) && n.label.toLowerCase().includes(q))
+    .filter(n => predicate(n) && noteMatchesQuery(n, q, opts.family))
     .sort((a, b) => {
       const rank = n => n.id.toLowerCase() === q ? 0
-        : n.label.toLowerCase().startsWith(q) ? 1 : 2;
+        : n.label.toLowerCase().startsWith(q) ? 1
+        : n.label.toLowerCase().includes(q) ? 2 : 3;
       return rank(a) - rank(b) || a.label.localeCompare(b.label);
     });
 }
@@ -12401,8 +12432,7 @@ function applyNotesSearchFilter() {
   rows.forEach(row => {
     const noteId = row.dataset.note;
     const note = NOTE_BY_ID[noteId];
-    const label = (note && note.label || "").toLowerCase();
-    const matches = !q || label.includes(q);
+    const matches = !q || (note && noteMatchesQuery(note, q, state.searchFamily));
     row.classList.toggle("search-hidden", !matches);
   });
   // Hide group headers that have no remaining visible rows.
@@ -12422,10 +12452,29 @@ function applyNotesSearchFilter() {
 const notesSearchDropdown = setupFlavorSearchDropdown({
   input: notesSearchEl,
   resultsEl: document.getElementById("notes-search-results"),
-  getMatches: q => matchingFlavorNotes(q, n => isNoteScoreable(n.id)),
+  getMatches: q => matchingFlavorNotes(q, n => isNoteScoreable(n.id), { family: state.searchFamily }),
   onInput: applyNotesSearchFilter,
   onSelect: note => jumpToNoteRow(note.id),
 });
+
+// Plant-family finders (both off by default).
+function syncFamilyFinderUi() {
+  document.getElementById("opt-search-family").setAttribute("aria-pressed", String(state.searchFamily));
+  document.getElementById("opt-group-family").setAttribute("aria-pressed", String(state.groupByFamily));
+  notesSearchEl.placeholder = state.searchFamily ? "Search notes or plant families…" : "Search notes…";
+}
+document.getElementById("opt-search-family").addEventListener("click", () => {
+  state.searchFamily = !state.searchFamily;
+  syncFamilyFinderUi();
+  applyNotesSearchFilter();
+  notesSearchDropdown.render();
+});
+document.getElementById("opt-group-family").addEventListener("click", () => {
+  state.groupByFamily = !state.groupByFamily;
+  syncFamilyFinderUi();
+  buildNotesPanel();
+});
+syncFamilyFinderUi();
 
 // ---------- LEGEND ----------
 function buildLegend() {
