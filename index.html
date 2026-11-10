@@ -3626,22 +3626,23 @@
     @media (prefers-reduced-motion: no-preference) { .tasting-guide:not([hidden]) { animation: guideIn .2s ease-out; } }
     @keyframes guideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   }
-  /* Sunburst view. Fills the wheel area like #svg and replaces it while active. */
-  .sunburst-svg { display: none; position: absolute; inset: 0; width: 100%; height: 100%; }
-  body.shape-sunburst .sunburst-svg { display: block; }
-  body.shape-sunburst #svg { visibility: hidden; pointer-events: none; }
-  body.shape-sunburst #organize-tabs { display: none; }
-  .sb-arc { cursor: default; stroke: var(--bg); stroke-width: 1; transition: fill-opacity .15s; }
-  .sb-arc.sb-click { cursor: pointer; }
-  .sb-arc:hover, .sb-arc:focus-visible { fill-opacity: 1 !important; outline: none; }
-  .sb-arc.sb-selected { stroke: var(--accent); stroke-width: 2.5; }
-  .sb-arc.sb-dormant { fill-opacity: .16; }
-  .sb-label { font-size: 10px; fill: #fff; stroke: rgba(0,0,0,.5); stroke-width: 2.5px; paint-order: stroke;
-    pointer-events: none; font-weight: 600; }
-  .sb-label.sb-dark { fill: var(--ink); }
+  /* Radial bars view. Fills the wheel area like #svg and replaces it while active. */
+  .radial-svg { display: none; position: absolute; inset: 0; width: 100%; height: 100%; }
+  body.shape-radial .radial-svg { display: block; }
+  body.shape-radial #svg { visibility: hidden; pointer-events: none; }
+  body.shape-radial #organize-tabs { display: none; }
+  #radial-layer-tabs { display: none; }
+  body.shape-radial #radial-layer-tabs { display: flex; }
+  .rd-bar { stroke: none; transition: fill-opacity .15s; }
+  .rd-bar.sb-click { cursor: pointer; }
+  .rd-bar:hover, .rd-bar:focus-visible { fill-opacity: 1 !important; outline: none; }
+  .rd-bar.rd-selected { stroke: var(--accent); stroke-width: 2; }
+  .rd-guide { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+  .rd-group-label { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; fill: var(--ink-dim); pointer-events: none; }
+  .rd-label { font-size: 10px; fill: var(--ink); stroke: var(--bg); stroke-width: 3px; paint-order: stroke; pointer-events: none; }
   .sb-center-name { font: 400 17px Georgia, serif; fill: var(--ink); text-anchor: middle; }
   .sb-center-meta { font-size: 11px; fill: var(--ink-dim); text-anchor: middle; }
-  @media (prefers-reduced-motion: reduce) { .sb-arc { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .rd-bar { transition: none; } }
   .sense-diagram { margin-top: 10px; font-size: 11px; }
   .sense-diagram > summary { cursor: pointer; color: var(--accent-2); }
   .sense-diagram-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
@@ -4487,10 +4488,10 @@
 </aside>
 <main class="wheel">
   <svg id="svg"></svg>
-  <!-- Sunburst: the same tasting as concentric rings. Category in the middle,
-       your notes around it, the compounds those notes point to on the outside.
-       Shown instead of #svg when body.shape-sunburst is set. -->
-  <svg id="sunburst-svg" class="sunburst-svg" role="group" aria-label="Sunburst of your tasting: categories, notes and compounds"></svg>
+  <!-- Radial bars: the same tasting as a circular bar chart. Every bar starts at
+       the centre and reaches out to the angle the note (or compound) has on the
+       wheel; length is strength. Shown instead of #svg when body.shape-radial is set. -->
+  <svg id="radial-svg" class="radial-svg" role="group" aria-label="Radial bar chart of your tasting: each note or compound is a bar at its place on the wheel"></svg>
   <!-- Lap stack — a stopwatch for tasting. Save lap freezes the current notes and
        delivery conditions as a layer; keep adjusting, save again, and the layers
        accumulate. Oldest sits at the BOTTOM, newest on top, read like a geological
@@ -4524,10 +4525,16 @@
        than in the global HUD. "Radar" is intentionally distinct from the Map
        workspace's separate geographic bearing compass. -->
   <div id="wheel-view-tools" class="wheel-view-tools" aria-label="Wheel display tools">
-    <div class="tabs" id="shape-tabs" title="Show your tasting as the classic wheel or as a sunburst of rings (category, note, compound).">
+    <div class="tabs" id="shape-tabs" title="Show your tasting as the classic wheel or as radial bars: each note or compound reaches out from the centre to its place on the wheel.">
       <span class="tabs-label">View</span>
       <button data-shape="wheel" class="active">Wheel</button>
-      <button data-shape="sunburst">Sunburst</button>
+      <button data-shape="radial">Radial</button>
+    </div>
+    <div class="tabs" id="radial-layer-tabs" title="Which bars the radial view draws.">
+      <span class="tabs-label">Bars</span>
+      <button data-layer="notes" class="active">Notes</button>
+      <button data-layer="compounds">Compounds</button>
+      <button data-layer="both">Both</button>
     </div>
     <div class="tabs" id="organize-tabs" title="Organize the Wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
       <span class="tabs-label">Organize</span>
@@ -8135,7 +8142,8 @@ const state = {
   // panel reads as one plain A-Z list per flavor category.
   groupByFamily: false,       // cluster same-family notes under a family heading
   searchFamily: false,        // let the search box also match family / genus / order / common name
-  wheelShape: "wheel",        // "wheel" | "sunburst": which projection fills the main area
+  wheelShape: "wheel",        // "wheel" | "radial": which projection fills the main area
+  radialLayer: "notes",       // radial view: "notes" | "compounds" | "both"
   irritantLayer: true,        // highlight notes that can engage the trigeminal nerve
   // Saved laps — immutable snapshots of {entries, delivery}, oldest first.
   // previewingLap holds the lap number currently being viewed (null = live).
@@ -10257,7 +10265,7 @@ function recompute() {
   if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
   refreshGhostRows();
   if (typeof refreshSenseTracker === "function") refreshSenseTracker();
-  if (state.wheelShape === "sunburst" && typeof renderSunburst === "function") renderSunburst();
+  if (state.wheelShape === "radial" && typeof renderRadial === "function") renderRadial();
   updateCompoundsBar();
   announceResults();
 }
@@ -12420,144 +12428,159 @@ document.querySelectorAll("#organize-tabs button").forEach(b => {
   b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
 });
 
-// ── Sunburst view ────────────────────────────────────────────────────────
-// A second projection of the same tasting. Category (inner ring) > note
-// (middle) > compound (outer). A note's arc width is its signal, split among
-// its compounds in proportion to the edge weights, so every ring adds up to the
-// same total. A compound reached by two notes appears once under each, which is
-// the honest way to show a shared compound in a tree. With nothing entered, the
-// categories show as a faint ring so the view is never blank.
-const sunSvg = d3.select("#sunburst-svg");
-const SB_TAU = Math.PI * 2;
+// ── Radial bars view ─────────────────────────────────────────────────────
+// A second projection of the same tasting: a circular bar chart. Every bar
+// starts at the centre and reaches outward, sitting at the same angle the item
+// has on the wheel (notes at their wheel slot inside their flavor family,
+// compounds at the weighted average angle of the notes that feed them). Bar
+// length is strength. Category wedges ring the edge, as on the wheel.
+const radialSvg = d3.select("#radial-svg");
 
-function sunburstData() {
-  const groups = GROUPS.filter(g => !state.hiddenGroups.has(g.id));
-  const active = NOTES.filter(n => isNoteVisible(n.id) && hasAnyEntry(n.id));
-  if (!active.length) {
-    return { dormant: true, tree: { name: "root", children: groups.map(g => ({ kind: "group", id: g.id, name: g.label, group: g.id, value: 1 })) } };
-  }
-  const children = [];
-  groups.forEach(g => {
-    const notes = active.filter(n => n.group === g.id).map(n => {
-      const sig = noteSignal(n.id);
-      const edges = (NOTE_EDGES[n.id] || []).filter(e => isCompoundVisible(e.cpd));
-      const total = edges.reduce((s, e) => s + e.w, 0);
-      const node = { kind: "note", id: n.id, name: n.label, group: g.id, sig };
-      if (edges.length && total > 0) {
-        node.children = edges.slice().sort((a, b) => b.w - a.w).map(e => ({
-          kind: "compound", id: e.cpd, name: CPD_BY_ID[e.cpd].label, group: g.id, noteId: n.id,
-          cls: CPD_BY_ID[e.cpd].class, value: sig * (e.w / total), w: e.w
-        }));
-      } else node.value = sig;
-      return node;
-    });
-    if (notes.length) children.push({ kind: "group", id: g.id, name: g.label, group: g.id, children: notes });
-  });
-  return { dormant: false, tree: { name: "root", children } };
+function radialAngleOfNote(n) {          // wheel angle, 0 = right, clockwise
+  return n._angle == null ? null : n._angle;
 }
 
-function renderSunburst() {
+// Compound angle: circular mean of the angles of the scored notes that feed it,
+// weighted by signal x edge weight. Null when no contributor has a wheel angle.
+function radialCompoundAngle(cpdId, activeNotes) {
+  let sx = 0, sy = 0;
+  activeNotes.forEach(n => {
+    const e = (NOTE_EDGES[n.id] || []).find(x => x.cpd === cpdId);
+    const a = radialAngleOfNote(n);
+    if (!e || a == null) return;
+    const wt = noteSignal(n.id) * e.w;
+    sx += Math.cos(a) * wt; sy += Math.sin(a) * wt;
+  });
+  return (sx || sy) ? Math.atan2(sy, sx) : null;
+}
+
+function renderRadial() {
   const el = document.querySelector("main.wheel");
   const w = el.clientWidth, h = el.clientHeight;
   if (!w || !h) return;
-  sunSvg.attr("viewBox", `0 0 ${w} ${h}`);
-  sunSvg.selectAll("*").remove();
-  const { dormant, tree } = sunburstData();
+  radialSvg.attr("viewBox", `0 0 ${w} ${h}`);
+  radialSvg.selectAll("*").remove();
+
   const narrow = w < 560;
-  // Leaves room for the view tools above and the tasting tray below; on a phone
-  // the ring also drops a little so the tools bar does not sit on its top edge.
-  const R = Math.min(w, h) * (narrow ? 0.36 : 0.4);
-  const cy = h / 2 + (narrow ? 16 : 0);
-  const r0 = R * 0.2, ring = (R - r0) / 3;
-  const rootNode = d3.hierarchy(tree).sum(d => d.value || 0).sort((a, b) => b.value - a.value);
-  d3.partition().size([SB_TAU, 1])(rootNode);
-  const inner = d => r0 + (d.depth - 1) * ring;
-  const arc = d3.arc().startAngle(d => d.x0).endAngle(d => d.x1).padAngle(0.008)
-    .innerRadius(inner).outerRadius(d => inner(d) + ring - 2);
-  const g = sunSvg.append("g").attr("transform", `translate(${w / 2},${cy})`);
-  const nodes = rootNode.descendants().filter(d => d.depth > 0);
+  const R = Math.min(w, h) * (narrow ? 0.34 : 0.37);
+  const r0 = R * 0.1;
+  const cy = h / 2 + (narrow ? 14 : 0);
+  const g = radialSvg.append("g").attr("transform", `translate(${w / 2},${cy})`);
+  const layer = state.radialLayer;
+  const len = f => r0 + (R - r0) * Math.max(0, Math.min(1, f));
+  // d3.arc measures from 12 o'clock; wheel angles from 3 o'clock.
+  const toArcAngle = a => a + Math.PI / 2;
 
-  const sel = g.selectAll("path").data(nodes).join("path")
-    .attr("class", d => "sb-arc" + (dormant ? " sb-dormant" : "")
-      + (d.data.kind === "note" || d.data.kind === "compound" ? " sb-click" : "")
-      + ((d.data.kind === "note" && d.data.id === state.selectedNote) || (d.data.kind === "compound" && d.data.id === state.selectedCompound) ? " sb-selected" : ""))
-    .attr("d", arc)
-    .attr("fill", d => d.data.kind === "compound" ? (COMPOUND_CLASS_COLOR[d.data.cls] || "#aaa") : groupColor(d.data.group))
-    .attr("fill-opacity", d => d.data.kind === "group" ? 0.95 : d.data.kind === "note" ? 0.78 : 0.62);
-  sel.each(function(d) {
-    const dd = d.data;
-    const pct = rootNode.value ? Math.round(d.value / rootNode.value * 100) : 0;
-    const kindLabel = dd.kind === "compound" ? "compound" : dd.kind;
-    const desc = `${dd.name}, ${kindLabel}${dormant ? "" : `, ${pct}% of your tasting`}`;
-    d3.select(this).attr("aria-label", desc).append("title").text(desc);
-    if (dd.kind === "note" || dd.kind === "compound") d3.select(this).attr("role", "button").attr("tabindex", 0);
+  // Category wedges and guides
+  const bandIn = R + 8, bandOut = R + 14;
+  GROUPS.filter(gr => gr._arc && gr._arc.span > 0.001 && !state.hiddenGroups.has(gr.id)).forEach(gr => {
+    g.append("path")
+      .attr("d", d3.arc().innerRadius(bandIn).outerRadius(bandOut).padAngle(0.01)
+        .startAngle(toArcAngle(gr._arc.start)).endAngle(toArcAngle(gr._arc.end))())
+      .attr("fill", groupColor(gr.id)).attr("fill-opacity", 0.9);
+    if (gr._arc.span * (bandOut + 12) > 46) {      // enough room for the name
+      const a = (gr._arc.start + gr._arc.end) / 2, deg = a * 180 / Math.PI;
+      const flip = Math.cos(a) < 0 ? 180 : 0;
+      g.append("text").attr("class", "rd-group-label")
+        .attr("text-anchor", "middle").attr("dy", "0.35em")
+        .attr("transform", `rotate(${deg}) translate(${bandOut + 12},0) rotate(${flip ? -90 : 90})`)
+        .text(gr.label.split(" / ")[0]);
+    }
   });
-  const act = (e, d) => {
-    if (d.data.kind === "note") activateWheelNote({ id: d.data.id });
-    else if (d.data.kind === "compound") {
-      state.selectedCompound = d.data.id; state.selectedNote = null;
-      ensureDetailVisible(); renderDetail();
-    } else return;
-    renderSunburst();
-  };
-  sel.on("click", act).on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(e, d); } });
+  [0.25, 0.5, 0.75, 1].forEach(f => g.append("circle").attr("class", "rd-guide").attr("r", len(f)));
 
-  // Centre readout: follows the pointer or focus, otherwise summarizes.
-  const cName = g.append("text").attr("class", "sb-center-name").attr("y", -2);
-  const cMeta = g.append("text").attr("class", "sb-center-meta").attr("y", 16);
-  const noteCount = dormant ? 0 : tree.children.reduce((s, c) => s + c.children.length, 0);
-  const idle = () => {
-    cName.text(dormant ? "Your tasting" : "Your tasting");
-    cMeta.text(dormant ? "add a note to grow it" : `${noteCount} note${noteCount === 1 ? "" : "s"}`);
+  const active = NOTES.filter(n => isNoteVisible(n.id) && hasAnyEntry(n.id));
+  const items = [];
+  if (layer !== "compounds") {
+    active.forEach(n => {
+      const a = radialAngleOfNote(n);
+      if (a == null) return;
+      items.push({ kind: "note", id: n.id, name: n.label, group: n.group, a, f: noteSignal(n.id), half: 0.042, op: layer === "both" ? 0.5 : 0.88 });
+    });
+  }
+  if (layer !== "notes") {
+    compoundNodes.filter(c => c.intensity_raw > 0 && isCompoundVisible(c.id)).forEach(c => {
+      const a = radialCompoundAngle(c.id, active);
+      if (a == null) return;
+      items.push({ kind: "compound", id: c.id, name: CPD_BY_ID[c.id].label, cls: CPD_BY_ID[c.id].class, a, f: c.score, half: layer === "both" ? 0.016 : 0.03, op: 0.95 });
+    });
+  }
+
+  // Scale so the strongest bar reaches near the ring (relative strengths kept);
+  // the floor stops a single faint item from stretching to full length.
+  const top = Math.max(0.5, ...items.map(d => d.f));
+  const bar = d3.arc().innerRadius(r0).cornerRadius(1.5)
+    .outerRadius(d => len(d.f / top))
+    .startAngle(d => toArcAngle(d.a - d.half)).endAngle(d => toArcAngle(d.a + d.half));
+  const sel = g.selectAll("path.rd-bar").data(items).join("path").attr("class", d =>
+      "rd-bar sb-click" + ((d.kind === "note" && d.id === state.selectedNote) || (d.kind === "compound" && d.id === state.selectedCompound) ? " rd-selected" : ""))
+    .attr("d", bar)
+    .attr("fill", d => d.kind === "compound" ? (COMPOUND_CLASS_COLOR[d.cls] || "#aaa") : groupColor(d.group))
+    .attr("fill-opacity", d => d.op).attr("role", "button").attr("tabindex", 0)
+    .attr("aria-label", d => `${d.name}, ${d.kind}, strength ${Math.round(Math.max(0, Math.min(1, d.f)) * 100)} percent`);
+  sel.append("title").text(d => `${d.name} (${d.kind})`);
+
+  const act = d => {
+    if (d.kind === "note") activateWheelNote({ id: d.id });
+    else { state.selectedCompound = d.id; state.selectedNote = null; ensureDetailVisible(); renderDetail(); }
+    renderRadial();
   };
-  const focusOn = d => {
-    cName.text(d.data.name);
-    const dd = d.data;
-    cMeta.text(dormant ? "category" : dd.kind === "compound" ? `${dd.cls} · via ${NOTE_BY_ID[dd.noteId].label}` : `${dd.kind} · ${Math.round(d.value / rootNode.value * 100)}%`);
+  sel.on("click", (e, d) => act(d)).on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(d); } });
+
+  // Centre readout
+  const cName = g.append("text").attr("class", "sb-center-name").attr("y", -2).style("font-size", "13px");
+  const cMeta = g.append("text").attr("class", "sb-center-meta").attr("y", 12).style("font-size", "10px");
+  const idle = () => {
+    cName.text("Your tasting");
+    cMeta.text(items.length ? `${active.length} note${active.length === 1 ? "" : "s"}` : "add a note");
   };
   idle();
-  sel.on("mouseenter focus", (e, d) => focusOn(d)).on("mouseleave blur", idle);
+  sel.on("mouseenter focus", (e, d) => {
+    cName.text(d.name.length > 16 ? d.name.slice(0, 15) + "…" : d.name);
+    cMeta.text(`${d.kind} · ${Math.round(Math.max(0, Math.min(1, d.f)) * 100)}%`);
+  }).on("mouseleave blur", idle);
 
-  // Labels where an arc is long enough to hold one.
-  const labelled = nodes.filter(d => {
-    const mid = (inner(d) + inner(d) + ring) / 2;
-    return (d.x1 - d.x0) * mid > (d.depth === 3 ? 38 : 30);
+  // Labels at the bar tips. Greedy thinning: keep one only if it clears the
+  // previous kept label by about a text height, so crowded stretches stay legible.
+  const norm = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const sorted = items.slice().sort((a, b) => norm(a.a) - norm(b.a));
+  let lastKept = -Infinity;
+  sorted.forEach(d => {
+    const rr = len(d.f / top) + 7;
+    const an = norm(d.a);
+    if ((an - lastKept) * rr < 12) return;
+    lastKept = an;
+    const deg = d.a * 180 / Math.PI, left = Math.cos(d.a) < 0;
+    const t = g.append("text").attr("class", "rd-label").attr("dy", "0.35em")
+      .attr("text-anchor", left ? "end" : "start")
+      .attr("transform", `rotate(${deg + (left ? 180 : 0)}) translate(${left ? -rr : rr},0)`);
+    t.append("tspan").text(d.name.split(" / ")[0].slice(0, 16));
+    if (d.kind === "note" && irritantInfo(d.id)) {
+      t.append("tspan").attr("class", "note-irritant-glyph").attr("dx", 3)
+        .text(irritantInfo(d.id).sens.map(s => SENSATION_BY_ID[s].glyph).join(""));
+    }
   });
-  g.selectAll("text.sb-label").data(labelled).join("text").attr("class", d => "sb-label" + (dormant ? " sb-dark" : ""))
-    .attr("text-anchor", "middle").attr("dy", "0.35em")
-    .attr("transform", d => {
-      const a = (d.x0 + d.x1) / 2 * 180 / Math.PI;
-      const rr = inner(d) + ring / 2 - 1;
-      return `rotate(${a - 90}) translate(${rr},0) rotate(${a < 180 ? 0 : 180})`;
-    })
-    .text(d => {
-      const max = d.depth === 3 ? 12 : 14;
-      const label = d.data.name.split(" / ")[0];
-      const base = label.length > max ? label.slice(0, max - 1) + "…" : label;
-      return base;
-    });
-  // Irritant glyph on notes that can cool, burn or sting (follows the legend toggle).
-  g.selectAll("text.note-irritant-glyph").data(nodes.filter(d => d.data.kind === "note" && irritantInfo(d.data.id))).join("text")
-    .attr("class", "note-irritant-glyph")
-    .attr("transform", d => {
-      const a = (d.x0 + d.x1) / 2, rr = inner(d) + 7;
-      return `translate(${Math.sin(a) * rr},${-Math.cos(a) * rr})`;
-    })
-    .attr("text-anchor", "middle").attr("dy", "0.35em")
-    .text(d => irritantInfo(d.data.id).sens.map(s => SENSATION_BY_ID[s].glyph).join(""));
 }
 
 function setWheelShape(shape) {
   if (shape === state.wheelShape) return;
   state.wheelShape = shape;
-  document.body.classList.toggle("shape-sunburst", shape === "sunburst");
+  document.body.classList.toggle("shape-radial", shape === "radial");
   document.querySelectorAll("#shape-tabs button").forEach(x =>
     x.classList.toggle("active", x.dataset.shape === shape));
-  if (shape === "sunburst") renderSunburst();
+  if (shape === "radial") renderRadial();
+}
+function setRadialLayer(layer) {
+  state.radialLayer = layer;
+  document.querySelectorAll("#radial-layer-tabs button").forEach(x =>
+    x.classList.toggle("active", x.dataset.layer === layer));
+  renderRadial();
 }
 document.querySelectorAll("#shape-tabs button").forEach(b =>
   b.addEventListener("click", () => setWheelShape(b.dataset.shape)));
-window.addEventListener("resize", () => { if (state.wheelShape === "sunburst") renderSunburst(); });
+document.querySelectorAll("#radial-layer-tabs button").forEach(b =>
+  b.addEventListener("click", () => setRadialLayer(b.dataset.layer)));
+window.addEventListener("resize", () => { if (state.wheelShape === "radial") renderRadial(); });
 
 // ---------- WHEEL CONTEXT HINT ----------
 // The always-visible, tap-to-expand caption on the wheel (see the .wheel-hint
