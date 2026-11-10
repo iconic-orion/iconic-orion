@@ -3543,6 +3543,76 @@
   .note-irritant-glyph { font-size: 11px; pointer-events: none; }
   .irritant-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px;
     color: var(--ink-dim); padding: 2px 4px 0; }
+  /* Guided tasting overlay. Phones only: the button and the overlay both stay
+     hidden above 760px, where the side-by-side layout already fits. */
+  .guide-start, .tasting-guide { display: none; }
+  @media (max-width: 760px) {
+    .guide-start { display: flex; flex-direction: column; gap: 3px; width: 100%; min-height: 56px;
+      margin-bottom: 10px; padding: 10px 16px; text-align: left; cursor: pointer;
+      color: var(--bg); background: var(--accent); border: 0; border-radius: 14px; }
+    .guide-start-main { font: 700 15px/1.2 ui-sans-serif, system-ui; }
+    .guide-start-sub { font-size: 11px; opacity: .75; }
+    .tasting-guide:not([hidden]) { display: flex; flex-direction: column; position: fixed; inset: 0;
+      z-index: 400; background: var(--bg); color: var(--ink);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    body.guide-open { overflow: hidden; }
+    .guide-top { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px;
+      border-bottom: 1px solid var(--line); }
+    .guide-progress { display: flex; flex: 1; gap: 6px; }
+    .guide-step-dot { flex: 1; min-height: 44px; padding: 0; background: none; border: 0; cursor: pointer;
+      display: flex; align-items: center; }
+    .guide-step-dot::before { content: ""; display: block; width: 100%; height: 5px; border-radius: 999px;
+      background: var(--line); }
+    .guide-step-dot[aria-current="step"]::before { background: var(--accent); }
+    .guide-step-dot.done::before { background: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+    .guide-step-dot:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+    .guide-close { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%; cursor: pointer;
+      color: var(--ink); background: rgba(255,255,255,.04); border: 1px solid var(--line); font-size: 22px; }
+    .guide-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px 24px; }
+    .guide-kicker { margin: 0 0 4px; color: var(--accent-2); font-size: 10px;
+      text-transform: uppercase; letter-spacing: .14em; }
+    .guide-title { margin: 0 0 8px; font: 400 24px/1.2 Georgia, serif; outline: none; }
+    .guide-intro { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: var(--ink-dim); }
+    .guide-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; padding: 10px 14px;
+      border-top: 1px solid var(--line); background: var(--panel); }
+    .guide-btn { min-height: 50px; border-radius: 14px; font: 600 14px ui-sans-serif, system-ui; cursor: pointer;
+      color: var(--ink); background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+    .guide-btn-primary { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+    .guide-btn[disabled] { opacity: .35; cursor: default; }
+    /* Notes step */
+    .guide-search { width: 100%; min-height: 46px; box-sizing: border-box; padding: 0 14px; font-size: 16px;
+      color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; }
+    .guide-chips { display: flex; gap: 7px; overflow-x: auto; margin: 10px -16px 4px; padding: 4px 16px;
+      scrollbar-width: none; position: sticky; top: -18px; z-index: 2; background: var(--bg); }
+    .guide-chips::-webkit-scrollbar { display: none; }
+    .guide-chips button { flex: 0 0 auto; min-height: 38px; padding: 0 13px; cursor: pointer;
+      color: var(--ink-dim); background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      border-radius: 999px; font: 600 10px/1 ui-sans-serif, system-ui; letter-spacing: .07em; text-transform: uppercase; }
+    .guide-group { margin: 18px 2px 8px; font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+      color: var(--ink-dim); display: flex; align-items: center; gap: 8px; }
+    .guide-group .swatch { width: 10px; height: 10px; border-radius: 50%; }
+    .guide-note { border: 1px solid var(--line); border-radius: 14px; margin-bottom: 7px;
+      background: rgba(255,255,255,.02); }
+    .guide-note.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+      background: color-mix(in srgb, var(--accent) 8%, transparent); }
+    .guide-note-label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 14px; cursor: pointer; font-size: 14px; }
+    .guide-note-label input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--accent); }
+    .guide-note-glyphs { margin-left: auto; font-size: 12px; }
+    .guide-slider { display: grid; grid-template-columns: 1fr 34px; align-items: center; gap: 12px; padding: 0 14px 12px 48px; }
+    .guide-slider input[type=range] { width: 100%; min-height: 34px; accent-color: var(--accent); touch-action: pan-y; }
+    .guide-slider output { font: 400 20px Georgia, serif; color: var(--accent); text-align: right; }
+    .guide-slider[hidden] { display: none; }
+    .guide-empty { color: var(--ink-dim); font-size: 13px; padding: 16px 2px; }
+    /* Results step */
+    .guide-summary { display: flex; flex-direction: column; gap: 14px; }
+    .guide-summary h3 { margin: 0 0 6px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+    .guide-summary ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+    .guide-summary li { padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; }
+    .guide-summary p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-dim); }
+    .guide-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    @media (prefers-reduced-motion: no-preference) { .tasting-guide:not([hidden]) { animation: guideIn .2s ease-out; } }
+    @keyframes guideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  }
   .sense-diagram { margin-top: 10px; font-size: 11px; }
   .sense-diagram > summary { cursor: pointer; color: var(--accent-2); }
   .sense-diagram-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
@@ -4243,7 +4313,30 @@
   </div>
   <div id="global-compare-result" class="taxonomy-compare-result" aria-live="polite"></div>
 </section>
+<!-- Guided tasting (phones only): one step fills the screen at a time. Steps
+     reuse the live delivery and sense-tracker controls (moved in while open,
+     returned on close) and add a tick-then-slider checklist for notes. -->
+<div id="tasting-guide" class="tasting-guide" role="dialog" aria-modal="true" aria-labelledby="guide-title" hidden>
+  <div class="guide-top">
+    <div class="guide-progress" id="guide-progress" role="group" aria-label="Tasting steps"></div>
+    <button type="button" id="guide-close" class="guide-close" aria-label="Close guided tasting">×</button>
+  </div>
+  <div class="guide-scroll" id="guide-scroll">
+    <p class="guide-kicker" id="guide-kicker"></p>
+    <h2 class="guide-title" id="guide-title" tabindex="-1"></h2>
+    <p class="guide-intro" id="guide-intro"></p>
+    <div id="guide-mount"></div>
+  </div>
+  <div class="guide-nav">
+    <button type="button" id="guide-back" class="guide-btn">Back</button>
+    <button type="button" id="guide-next" class="guide-btn guide-btn-primary">Next</button>
+  </div>
+</div>
 <aside class="notes" id="left-panel">
+  <button type="button" id="guide-start" class="guide-start">
+    <span class="guide-start-main">Do a tasting</span>
+    <span class="guide-start-sub">A guided walk-through, one step at a time</span>
+  </button>
   <div class="legend collapsed" id="legend">
     <div class="legend-header" id="legend-toggle">
       <span>Legend &amp; visibility</span>
@@ -4327,7 +4420,7 @@
     </summary>
     <div class="delivery-body">
       <p class="delivery-intro">Not every nose sensation is smell. Menthol, camphor, vinegar, mustard oil and capsaicin also trigger the trigeminal nerve in your nose and mouth, which reports <strong>cool, burn or sting</strong> alongside the aroma. You can feel these with no sense of smell at all. Tell the wheel what you felt.</p>
-      <details class="sense-diagram">
+      <details class="sense-diagram" open>
         <summary>Where do these signals come from?</summary>
         <div class="sense-diagram-tabs" role="group" aria-label="Diagram view">
           <button type="button" class="delivery-opt" id="diagram-routes" aria-pressed="true">Two routes of smell</button>
@@ -7097,7 +7190,7 @@ const DELIVERY_CONDITIONS = [
     mechanism: "Carbonation is not only mouthfeel. CO₂ bubbles nucleate, rise, and burst at the surface, throwing tiny aerosol droplets into the air — and surface-active aroma compounds concentrate in those droplets. Bubbles actively pump volatiles upward rather than waiting for them to evaporate. This is the mechanism studied in sparkling-wine research.",
     options: [
       { id: "still",     label: "Still",     effect: "No bubble transport. Aroma reaches you by evaporation alone." },
-      { id: "light",     label: "Lightly sparkling", effect: "Gentle, sustained lift — bubbles carry aroma up over a longer window." },
+      { id: "light",     label: "Effervescent", effect: "Gentle, sustained lift — bubbles carry aroma up over a longer window." },
       { id: "sparkling", label: "Sparkling", effect: "Vigorous aerosol transport, plus carbonic-acid bite. Can deliver aroma strongly even when the liquid is cold enough to suppress plain evaporation." }
     ]
   },
@@ -10374,6 +10467,200 @@ function irritantBadge(noteId) {
   b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") open(e); });
   return b;
 }
+
+// ── Guided tasting (phones) ──────────────────────────────────────────────
+// Four steps, one per screen, freely navigable. Delivery and the sense
+// tracker are the real controls, borrowed into the overlay while it is open
+// and handed back on close, so state and behavior have a single source.
+const guideEl = document.getElementById("tasting-guide");
+const guideMount = document.getElementById("guide-mount");
+const GUIDE_STEPS = [
+  { title: "How you're tasting it", intro: "Same drink, different conditions, different aroma. Set whatever applies and skip the rest." },
+  { title: "Flavor notes", intro: "Tick every note you taste or smell. Ticking one reveals a slider for how strong it is." },
+  { title: "What you're feeling", intro: "Some things are felt more than smelled. Cooling, warming and stinging come from the trigeminal nerve. Tell the wheel what you noticed." },
+  { title: "Your tasting", intro: "Here is what you recorded. Go back to any step to change it." }
+];
+let guideStep = 0;
+let guideBorrowed = [];   // [{node, home, before}] to return on step change / close
+
+function guideReturnBorrowed() {
+  // Reverse order: each node's recorded neighbor must be back home first.
+  guideBorrowed.slice().reverse().forEach(b => b.home.insertBefore(b.node, b.before));
+  guideBorrowed = [];
+}
+function guideBorrow(node) {
+  guideBorrowed.push({ node, home: node.parentNode, before: node.nextSibling });
+  guideMount.appendChild(node);
+}
+
+function guideNoteKeys(id) { return INPUT_PHASES.filter(p => state.entries.has(entryKey(id, p))); }
+function guideSetIntensity(id, v) {
+  const phases = guideNoteKeys(id);
+  (phases.length ? phases : [null]).forEach(p => commitEntry(id, p, v));
+  state.pendingIntensity[id] = v;
+  recompute();
+}
+function guideClearNote(id) {
+  INPUT_PHASES.forEach(p => deleteEntry(id, p));
+  state.pendingIntensity[id] = 0;
+  recompute();
+}
+
+function guideNoteRow(n) {
+  const on = hasAnyEntry(n.id);
+  const cur = on ? Math.max(...guideNoteKeys(n.id).map(p => getEntry(n.id, p))) : (state.pendingIntensity[n.id] || 5);
+  const row = document.createElement("div");
+  row.className = "guide-note" + (on ? " on" : "");
+  row.dataset.note = n.id;
+  const irr = irritantInfo(n.id);
+  row.innerHTML = `
+    <label class="guide-note-label">
+      <input type="checkbox" ${on ? "checked" : ""} aria-label="I taste ${n.label}" />
+      <span aria-hidden="true">${noteIcon(n)}</span><span>${n.label}</span>
+      ${irr ? `<span class="guide-note-glyphs" title="Can also be felt: ${irr.sens.join(", ")}" aria-hidden="true">${irr.sens.map(s => SENSATION_BY_ID[s].glyph).join("")}</span>` : ""}
+    </label>
+    <div class="guide-slider" ${on ? "" : "hidden"}>
+      <input type="range" min="1" max="10" step="1" value="${cur}" aria-label="${n.label} intensity, 1 to 10" />
+      <output>${cur}</output>
+    </div>`;
+  const cb = row.querySelector("input[type=checkbox]");
+  const slider = row.querySelector("input[type=range]");
+  const out = row.querySelector("output");
+  const box = row.querySelector(".guide-slider");
+  cb.addEventListener("change", () => {
+    row.classList.toggle("on", cb.checked);
+    box.hidden = !cb.checked;
+    if (cb.checked) { guideSetIntensity(n.id, +slider.value); slider.focus(); }
+    else guideClearNote(n.id);
+  });
+  slider.addEventListener("input", () => { out.textContent = slider.value; guideSetIntensity(n.id, +slider.value); });
+  return row;
+}
+
+function guideRenderNotes() {
+  const wrap = document.createElement("div");
+  const search = document.createElement("input");
+  search.type = "search"; search.className = "guide-search"; search.placeholder = "Search notes…";
+  search.setAttribute("aria-label", "Search notes"); search.autocomplete = "off";
+  const chips = document.createElement("div"); chips.className = "guide-chips";
+  const list = document.createElement("div");
+  const all = getVisibleNotes();
+  GROUPS.forEach(g => {
+    const notes = all.filter(n => n.group === g.id).sort((a, b) => a.label.localeCompare(b.label));
+    if (!notes.length) return;
+    const h = document.createElement("div"); h.className = "guide-group"; h.id = "guide-grp-" + g.id;
+    h.innerHTML = `<span class="swatch" style="background:${groupColor(g.id)}"></span>${g.label}`;
+    list.appendChild(h);
+    notes.forEach(n => list.appendChild(guideNoteRow(n)));
+    const chip = document.createElement("button"); chip.type = "button"; chip.textContent = g.label;
+    chip.addEventListener("click", () => h.scrollIntoView({ behavior: "smooth", block: "start" }));
+    chips.appendChild(chip);
+  });
+  const empty = document.createElement("p"); empty.className = "guide-empty"; empty.hidden = true;
+  empty.textContent = "No notes match that search.";
+  search.addEventListener("input", () => {
+    const q = search.value.trim().toLowerCase();
+    let any = false;
+    list.querySelectorAll(".guide-group").forEach(h => {
+      let vis = 0, el = h.nextElementSibling;
+      while (el && el.classList.contains("guide-note")) {
+        const hit = !q || NOTE_BY_ID[el.dataset.note].label.toLowerCase().includes(q);
+        el.hidden = !hit; if (hit) vis++; el = el.nextElementSibling;
+      }
+      h.hidden = vis === 0; if (vis) any = true;
+    });
+    empty.hidden = any;
+  });
+  wrap.append(search, chips, list, empty);
+  return wrap;
+}
+
+function guideRenderSummary() {
+  const scored = NOTES.filter(n => hasAnyEntry(n.id))
+    .map(n => ({ n, v: Math.max(...guideNoteKeys(n.id).map(p => getEntry(n.id, p))) }))
+    .sort((a, b) => b.v - a.v);
+  const top = compoundNodes.filter(c => c.intensity_raw > 0).sort((a, b) => b.score - a.score).slice(0, 5);
+  const felt = Object.entries(state.sensations).filter(([, r]) => r.felt.length)
+    .map(([k, r]) => `${sensationTarget(k).label}: ${r.felt.map(s => SENSATION_BY_ID[s].label.toLowerCase()).join(", ")}`);
+  const div = document.createElement("div"); div.className = "guide-summary";
+  div.innerHTML = `
+    <div><h3>Notes</h3>${scored.length
+      ? `<ul>${scored.map(x => `<li>${noteIcon(x.n)} ${x.n.label} · ${x.v}</li>`).join("")}</ul>`
+      : `<p>No notes ticked yet. Go back to Flavor notes to add some.</p>`}</div>
+    <div><h3>How you're tasting it</h3><p>${deliveryChips.textContent}</p></div>
+    ${felt.length ? `<div><h3>What you felt</h3><ul>${felt.map(f => `<li>${f}</li>`).join("")}</ul></div>` : ""}
+    ${top.length ? `<div><h3>Compounds your notes point to</h3><ul>${top.map(c => `<li>${CPD_BY_ID[c.id].label}</li>`).join("")}</ul></div>` : ""}
+    <div class="guide-actions">
+      <button type="button" class="guide-btn guide-btn-primary" id="guide-see">See it on the wheel</button>
+      <button type="button" class="guide-btn" id="guide-save">Save a snapshot</button>
+    </div>`;
+  div.querySelector("#guide-see").addEventListener("click", closeGuide);
+  div.querySelector("#guide-save").addEventListener("click", e => {
+    saveLap(); e.target.textContent = scored.length ? "Snapshot saved" : "Nothing to save yet";
+  });
+  return div;
+}
+
+function renderGuideStep() {
+  guideReturnBorrowed();
+  guideMount.innerHTML = "";
+  const s = GUIDE_STEPS[guideStep];
+  document.getElementById("guide-kicker").textContent = `Step ${guideStep + 1} of ${GUIDE_STEPS.length}`;
+  document.getElementById("guide-title").textContent = s.title;
+  document.getElementById("guide-intro").textContent = s.intro;
+  if (guideStep === 0) { guideBorrow(deliveryControls); guideBorrow(deliveryReadout); }
+  else if (guideStep === 1) guideMount.appendChild(guideRenderNotes());
+  else if (guideStep === 2) {
+    buildSenseTracker();
+    guideBorrow(document.querySelector(".sense-diagram"));
+    guideBorrow(senseBody);
+    guideBorrow(document.querySelector(".sense-sources"));
+  } else guideMount.appendChild(guideRenderSummary());
+
+  const prog = document.getElementById("guide-progress");
+  prog.innerHTML = "";
+  GUIDE_STEPS.forEach((st, i) => {
+    const b = document.createElement("button"); b.type = "button";
+    b.className = "guide-step-dot" + (i < guideStep ? " done" : "");
+    b.setAttribute("aria-label", `Step ${i + 1}: ${st.title}`);
+    if (i === guideStep) b.setAttribute("aria-current", "step");
+    b.addEventListener("click", () => goGuideStep(i));
+    prog.appendChild(b);
+  });
+  document.getElementById("guide-back").disabled = guideStep === 0;
+  const next = document.getElementById("guide-next");
+  next.textContent = guideStep === GUIDE_STEPS.length - 1 ? "Done" : "Next";
+  document.getElementById("guide-scroll").scrollTop = 0;
+}
+function goGuideStep(i) {
+  guideStep = Math.max(0, Math.min(GUIDE_STEPS.length - 1, i));
+  renderGuideStep();
+  document.getElementById("guide-title").focus({ preventScroll: true });
+}
+function openGuide() {
+  guideEl.hidden = false;
+  document.body.classList.add("guide-open");
+  goGuideStep(0);
+}
+function closeGuide() {
+  if (guideEl.hidden) return;
+  guideReturnBorrowed();
+  guideEl.hidden = true;
+  document.body.classList.remove("guide-open");
+  buildSenseTracker();
+  syncSliders();      // the notes list below the wheel picks up what was ticked
+  recompute();
+  drawNotes();
+  document.getElementById("guide-start").focus({ preventScroll: true });
+}
+document.getElementById("guide-start").addEventListener("click", openGuide);
+document.getElementById("guide-close").addEventListener("click", closeGuide);
+document.getElementById("guide-back").addEventListener("click", () => goGuideStep(guideStep - 1));
+document.getElementById("guide-next").addEventListener("click", () => {
+  if (guideStep === GUIDE_STEPS.length - 1) closeGuide(); else goGuideStep(guideStep + 1);
+});
+guideEl.addEventListener("keydown", e => { if (e.key === "Escape") closeGuide(); });
+window.matchMedia("(max-width: 760px)").addEventListener("change", e => { if (!e.matches) closeGuide(); });
 
 // Diagram: same anatomy, two readings. "routes" explains orthonasal vs
 // retronasal smell; "trigeminal" overlays where free nerve endings report
