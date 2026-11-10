@@ -5972,11 +5972,17 @@ const EDGES = [
   // Green tea. The one source found compares three Taiping Houkui green-tea
   // aroma styles: linalool, geraniol and (E)-β-ionone were enriched in the
   // floral-like style, while the chestnut-like and fresh styles differed. So
-  // these links describe floral-leaning green tea, and the grassy "fresh" side
-  // (for example cis-3-hexenol) is left unmodeled because no source was found.
+  // these three links describe floral-leaning green tea. The grassy side is
+  // modeled below with hexanal. cis-3-hexenol is left out because no tea source
+  // for it was found.
   { note: "greentea", cpd: "linalool", w: 0.55, cite: "Liu, Shen, Huang et al. 2023 (linalool enriched in floral-like Taiping Houkui green tea)." },
   { note: "greentea", cpd: "ionone",   w: 0.45, cite: "Liu, Shen, Huang et al. 2023 ((E)-β-ionone enriched in floral-like Taiping Houkui green tea)." },
   { note: "greentea", cpd: "geraniol", w: 0.35, cite: "Liu, Shen, Huang et al. 2023 (geraniol enriched in floral-like Taiping Houkui green tea)." },
+  // The grassy side. The closest source found is an oolong study, where hexanal
+  // was one of the compounds behind the green, floral and fruity "Qingxiang"
+  // character. Oolong is partly oxidized, so this is applied to green tea by
+  // analogy. No green-tea-specific study of hexanal was located.
+  { note: "greentea", cpd: "hexanal",  w: 0.50, cite: "Gu, Ren, Zeng et al. 2026 (hexanal among the compounds behind the green, floral and fruity character of an oolong tea; applied to green tea by analogy, no green-tea study located)." },
   // Hojicha: pyrazines are reported as key flavor compounds of roasted green
   // tea, including 2,3-diethyl-5-methylpyrazine, which is in the compound list.
   // The study is of Chinese final-firing styles, applied to hojicha by analogy.
@@ -6691,6 +6697,11 @@ const REFERENCES = {
     title: "Effect of high pressure high temperature processing on the volatile fraction of differently coloured carrots.",
     journal: "Food Chemistry", volume: "153", pages: "340–352"
   },
+  "gu2026oolong": {
+    authors: "Gu, M., Ren, W., Zeng, S., Gui, W., Cai, Y., Chen, W., Jin, S., & Ye, N.", year: 2026,
+    title: "How wrapping-twisting methods shape the aroma of spring oolong tea: a case study of Anxi Huangjingui.",
+    journal: "Food Research International", volume: "243", pages: "120314"
+  },
   "liu2023greentea": {
     authors: "Liu, N., Shen, S., Huang, L., Deng, G., Wei, Y., Ning, J., & Wang, Y.", year: 2023,
     title: "Revelation of volatile contributions in green teas with different aroma types by GC-MS and GC-IMS.",
@@ -7108,6 +7119,7 @@ const CITE_TO_REF = [
   ["Friedman 2017",               "friedman2017"],
   ["Kebede et al. 2014",          "kebede2014carrot"],
   ["Liu, Shen, Huang et al. 2023", "liu2023greentea"],
+  ["Gu, Ren, Zeng et al. 2026",   "gu2026oolong"],
   ["Yang, Zhang, Hua et al. 2020", "yang2020roastedtea"],
   ["Liu, Wan, Xie & Chen 2021",   "liu2021brownsugar"],
   ["Wang, Qiao, Liu et al. 2023", "wang2023friedonion"],
@@ -8293,7 +8305,8 @@ const TAXON_COMMON = {
   Apidae: "Bee family", Saccharomycetaceae: "Brewer's-yeast family",
   Convolvulaceae: "Morning-glory family", Amaryllidaceae: "Amaryllis / onion family",
   Apiaceae: "Carrot / parsley family", Brassicaceae: "Cabbage / mustard family",
-  Dioscoreaceae: "Yam family", Araceae: "Arum family"
+  Dioscoreaceae: "Yam family", Araceae: "Arum family",
+  Theaceae: "Tea family", Camellia: "Tea plant (Camellia sinensis)"
 };
 
 // One-sentence diagnostic ("what identifies this family") shown on a family's
@@ -8336,6 +8349,7 @@ const FAMILY_INFO = {
   Orchidaceae: "Highly specialized monocots — bilaterally symmetric flowers with a modified lip petal, a fused reproductive column, and dust-fine seeds; vanilla is the flavor-bearing pod.",
   Amaryllidaceae: "Bulb-forming monocots with strap-shaped leaves and flowers gathered in an umbel; the onion subfamily makes the pungent sulfur compounds of onion and garlic.",
   Malvaceae: "Often mucilaginous plants with palmately veined leaves and stamens fused into a tube around the style; includes cacao and cotton.",
+  Theaceae: "Evergreen shrubs and small trees with glossy, leathery, toothed leaves and showy flowers with many stamens; Camellia sinensis is the single plant behind green, white, oolong, black, and pu-erh tea, and the differences between them come from processing, not species.",
   Apiaceae: "Aromatic herbs with hollow stems and sheathing leaf bases, their tiny flowers held in flat-topped umbels; includes carrot, celery, anise, and fennel.",
   Brassicaceae: "Pungent herbs defended by mustard-oil glucosinolates, with 4 petals in a cross and 6 stamens (4 long, 2 short); includes cabbage, arugula, wasabi, and horseradish.",
   Dioscoreaceae: "Twining monocot vines growing from starchy underground tubers, with net-veined heart-shaped leaves; the true yam (ube).",
