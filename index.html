@@ -10732,7 +10732,11 @@ function buildNotesPanel() {
     // position of the first member encountered — otherwise later members
     // would render scattered among unrelated notes with no visual tie back
     // to the header. Singletons render at their normal position, unaffected.
+    // Blocks (a family cluster or a lone note) are sorted by their heading or
+    // label, so "Citrus (Rutaceae)" lands before "Rosaceae" and a lone Banana
+    // slots between them by its own name.
     const rendered = new Set();
+    const blocks = [];
     visible.forEach(n => {
       if (rendered.has(n.id)) return;
       const inGroup = state.groupByFamily && n.family ? notesWithFamily(n.family, visible) : [];
@@ -10749,17 +10753,20 @@ function buildNotesPanel() {
           title += ` Also in other categories: ${crossGroup.map(m => m.label).join(", ")}.`;
         }
         taxHeader.title = title;
-        notesPanel.appendChild(taxHeader);
-        inGroup.forEach(m => {
-          appendNoteRowWithVarietals(notesPanel, m);
-          notesPanel.lastElementChild.classList.add("in-taxon");
-          rendered.add(m.id);
-        });
+        inGroup.forEach(m => rendered.add(m.id));
+        blocks.push({ key: label, render: () => {
+          notesPanel.appendChild(taxHeader);
+          inGroup.forEach(m => {
+            appendNoteRowWithVarietals(notesPanel, m);
+            notesPanel.lastElementChild.classList.add("in-taxon");
+          });
+        } });
         return;
       }
-      appendNoteRowWithVarietals(notesPanel, n);
       rendered.add(n.id);
+      blocks.push({ key: n.label, render: () => appendNoteRowWithVarietals(notesPanel, n) });
     });
+    blocks.sort((a, b) => a.key.localeCompare(b.key)).forEach(b => b.render());
   });
   // Re-apply any active search filter — the rebuild wiped search-hidden classes.
   if (typeof applyNotesSearchFilter === "function") applyNotesSearchFilter();
