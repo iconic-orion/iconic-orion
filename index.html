@@ -3529,6 +3529,36 @@
     background: rgba(216,166,87,.08); border-radius: 0 3px 3px 0; }
   .delivery-caveat { margin: 2px 0 0; font-size: 10px; line-height: 1.45;
     color: var(--ink-dim); font-style: italic; }
+  /* Irritant (trigeminal) layer: row badge, wheel ring, tracker rows. The whole
+     layer hides when body.no-irritant-layer is set by the legend checkbox. */
+  .irritant-badge { margin-left: 5px; font-size: 11px; cursor: pointer; white-space: nowrap;
+    display: inline-flex; gap: 1px; align-items: center; opacity: .85; }
+  .irritant-badge:hover { opacity: 1; }
+  .irritant-badge.reported { opacity: 1; text-shadow: 0 0 6px currentColor; }
+  body.no-irritant-layer .irritant-badge,
+  body.no-irritant-layer .note-irritant,
+  body.no-irritant-layer .note-irritant-glyph { display: none; }
+  .note-irritant { fill: none; stroke-width: 1.6; stroke-dasharray: 3 3; pointer-events: none; }
+  .note-irritant.reported { stroke-dasharray: none; stroke-width: 2.2; }
+  .note-irritant-glyph { font-size: 11px; pointer-events: none; }
+  .irritant-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px;
+    color: var(--ink-dim); padding: 2px 4px 0; }
+  .sense-body { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+  .sense-row { display: flex; flex-direction: column; gap: 6px; padding: 8px 9px;
+    border: 1px solid var(--line); border-radius: 6px; }
+  .sense-row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .sense-row-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .sense-row-expect { font-size: 11px; color: var(--ink-dim); line-height: 1.4; }
+  .sense-remove { background: none; border: 0; color: var(--ink-dim); cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 0 2px; }
+  .sense-remove:hover { color: var(--ink); }
+  .sense-sub { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-dim); }
+  .sense-feedback { font-size: 11px; line-height: 1.45; color: var(--ink-dim); margin: 0; }
+  .sense-add { display: flex; flex-wrap: wrap; gap: 4px; }
+  .sense-empty { margin: 0; font-size: 11px; color: var(--ink-dim); line-height: 1.45; }
+  .sense-sources { margin-top: 10px; font-size: 10px; color: var(--ink-dim); }
+  .sense-sources summary { cursor: pointer; }
+  .sense-sources ul { margin: 6px 0 0; padding-left: 16px; line-height: 1.45; }
   .delivery-empty { margin: 0; font-size: 11px; color: var(--ink-dim); line-height: 1.45; }
 
   /* Compact-phone contract. This final responsive layer owns the portrait HUD
@@ -4222,6 +4252,18 @@
       </div>
       <div class="legend-section">
         <div class="legend-section-title">
+          <span>Irritant layer</span>
+        </div>
+        <label class="legend-item irritant-toggle" title="Highlight notes that also trigger the trigeminal nerve (cool, burn, sting), not just smell">
+          <input type="checkbox" id="irritant-layer-toggle" checked />
+          <span class="label">Highlight possible irritants</span>
+        </label>
+        <div class="irritant-key" aria-hidden="true">
+          <span>❄️ cooling</span><span>🔥 burning</span><span>⚡ stinging</span><span>💧 tearing</span>
+        </div>
+      </div>
+      <div class="legend-section">
+        <div class="legend-section-title">
           <span>Compound classes</span>
           <span class="toggle-all" data-target="classes">toggle all</span>
         </div>
@@ -4257,6 +4299,23 @@
       <p class="delivery-intro">Same drink, different conditions, different aroma. These don't change the chemistry — they change how much of it reaches you.</p>
       <div id="delivery-controls"></div>
       <div id="delivery-readout" class="delivery-readout" aria-live="polite"></div>
+    </div>
+  </details>
+  <!-- Sense tracker: the trigeminal layer's input side. Cooling, burning and
+       stinging are not smell: menthol, camphor, vinegar, mustard oil and
+       capsaicin also fire the trigeminal nerve in the nose and mouth. Rows
+       appear for any irritant-capable note you have scored, plus off-wheel
+       triggers you add by hand. -->
+  <details id="sense-strip" class="delivery-strip sense-strip">
+    <summary class="delivery-summary">
+      <span class="delivery-title">What you're feeling</span>
+      <span class="delivery-chips empty" id="sense-chips" aria-live="polite"></span>
+      <span class="caret">▼</span>
+    </summary>
+    <div class="delivery-body">
+      <p class="delivery-intro">Not every nose sensation is smell. Menthol, camphor, vinegar, mustard oil and capsaicin also trigger the trigeminal nerve in your nose and mouth, which reports <strong>cool, burn or sting</strong> alongside the aroma. You can feel these with no sense of smell at all. Tell the wheel what you felt.</p>
+      <div id="sense-body" class="sense-body"></div>
+      <details class="sense-sources"><summary>Sources</summary><ul id="sense-sources-list"></ul></details>
     </div>
   </details>
   <div id="notes-panel"></div>
@@ -6420,6 +6479,64 @@ const REFERENCES = {
     journal: "Journal of Agricultural and Food Chemistry",
     volume: "65", issue: "48", pages: "10406–10423"
   },
+  // ── Trigeminal / irritant layer sources. Existence of each paper was matched
+  // against PubMed on 2026-11-10 (journal/year/volume/first page/first author).
+  // Titles are typed from memory, so they are still worth a human read-through.
+  "bandell2004": {
+    authors: "Bandell, M., et al.", year: 2004,
+    title: "Noxious cold ion channel TRPA1 is activated by pungent compounds and bradykinin.",
+    journal: "Neuron", volume: "41", issue: "6", pages: "849–857"
+  },
+  "mckemy2002": {
+    authors: "McKemy, D. D., Neuhausser, W. M., & Julius, D.", year: 2002,
+    title: "Identification of a cold receptor reveals a general role for TRP channels in thermosensation.",
+    journal: "Nature", volume: "416", issue: "6876", pages: "52–58"
+  },
+  "caterina1997": {
+    authors: "Caterina, M. J., et al.", year: 1997,
+    title: "The capsaicin receptor: a heat-activated ion channel in the pain pathway.",
+    journal: "Nature", volume: "389", issue: "6653", pages: "816–824"
+  },
+  "bautista2005": {
+    authors: "Bautista, D. M., et al.", year: 2005,
+    title: "Pungent products from garlic activate the sensory ion channel TRPA1.",
+    journal: "Proceedings of the National Academy of Sciences", volume: "102", issue: "34", pages: "12248–12252"
+  },
+  "behrendt2004": {
+    authors: "Behrendt, H.-J., Germann, T., Gillen, C., Hatt, H., & Jostock, R.", year: 2004,
+    title: "Characterization of the mouse cold-menthol receptor TRPM8 and vanilloid receptor type-1 VR1 using a fluorometric imaging plate reader (FLIPR) assay.",
+    journal: "British Journal of Pharmacology", volume: "141", issue: "4", pages: "737–745"
+  },
+  "xu2006": {
+    authors: "Xu, H., et al.", year: 2006,
+    title: "Oregano, thyme and clove-derived flavors and skin sensitizers activate specific TRP channels.",
+    journal: "Nature Neuroscience", volume: "9", issue: "5", pages: "628–635"
+  },
+  "dedov2002": {
+    authors: "Dedov, V. N., et al.", year: 2002,
+    title: "Gingerols: a novel class of vanilloid receptor (VR1) agonists.",
+    journal: "British Journal of Pharmacology", volume: "137", issue: "6", pages: "793–798"
+  },
+  "mcnamara2005": {
+    authors: "McNamara, F. N., Randall, A., & Gunthorpe, M. J.", year: 2005,
+    title: "Effects of piperine, the pungent component of black pepper, at the human vanilloid receptor (TRPV1).",
+    journal: "British Journal of Pharmacology", volume: "144", issue: "6", pages: "781–790"
+  },
+  "wang2010co2": {
+    authors: "Wang, Y. Y., Chang, R. B., & Liman, E. R.", year: 2010,
+    title: "TRPA1 is a component of the nociceptive response to CO2.",
+    journal: "Journal of Neuroscience", volume: "30", issue: "39", pages: "12958–12963"
+  },
+  "xu2005camphor": {
+    authors: "Xu, H., Blair, N. T., & Clapham, D. E.", year: 2005,
+    title: "Camphor activates and strongly desensitizes the transient receptor potential vanilloid subtype 3 channel in a vanilloid-independent mechanism.",
+    journal: "Journal of Neuroscience", volume: "25", issue: "39", pages: "8924–8937"
+  },
+  "doty1978": {
+    authors: "Doty, R. L., et al.", year: 1978,
+    title: "Intranasal trigeminal stimulation from odorous volatiles: psychometric responses from anosmic and normal humans.",
+    journal: "Physiology & Behavior", volume: "20", issue: "2", pages: "175–185"
+  },
   "verstrepen2003": {
     authors: "Verstrepen, K.J., Derdelinckx, G., Dufour, J.-P., Winderickx, J., Thevelein, J.M., Pretorius, I.S., & Delvaux, F.R.",
     year: 2003,
@@ -6823,6 +6940,90 @@ function formatRefFull(ref) {
   }
   const vi = ref.issue ? `${ref.volume}(${ref.issue})` : ref.volume;
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
+}
+
+// ── Trigeminal / irritant layer ──────────────────────────────────────────
+// Not every nasal or oral sensation is smell. Menthol, camphor, vinegar, mustard
+// oil and capsaicin also drive the trigeminal nerve (nociceptors and thermo-
+// receptors in the nasal and oral mucosa), which reports cool, burn or sting
+// alongside the aroma. People with no sense of smell still feel these (Doty
+// 1978). This layer flags which notes can do that and lets the user report what
+// they actually felt. It is a qualitative flag, not a dose model: it says "this
+// note can irritate", never "this much irritates".
+const SENSATIONS = [
+  { id: "cooling",  label: "Cooling",           glyph: "❄️", color: "#3f8fc9", channel: "TRPM8",
+    feel: "A cold, fresh feeling with no actual temperature drop, like breathing in after mint." },
+  { id: "warming",  label: "Warming / burning", glyph: "🔥", color: "#d9632f", channel: "TRPV1",
+    feel: "Heat or burn in the mouth, throat or nose, the capsaicin kind of warmth." },
+  { id: "stinging", label: "Stinging / sharp",  glyph: "⚡", color: "#c9a21a", channel: "TRPA1",
+    feel: "A sharp, prickly sting in the nose or sinuses, like fresh horseradish or fizz." },
+  { id: "tearing",  label: "Tearing / watering", glyph: "💧", color: "#5b8fb9", channel: "TRPA1",
+    feel: "Eyes or nose start to water, as when cutting an onion." }
+];
+const SENSATION_BY_ID = Object.fromEntries(SENSATIONS.map(s => [s.id, s]));
+
+// Notes on the wheel that can engage the trigeminal nerve. `sens` lists the
+// sensations to expect, `level` how reliably (strong = defining feature of the
+// note, moderate = usually noticeable, mild = only at higher concentration).
+// Varietal children (peppermint, red onion…) inherit from their parent unless
+// they have an entry of their own.
+const IRRITANT_NOTES = {
+  mint:        { agent: "menthol", channel: "TRPM8", sens: ["cooling"], level: "strong", refs: ["mckemy2002"] },
+  peppermint:  { agent: "menthol", channel: "TRPM8", sens: ["cooling"], level: "strong", refs: ["mckemy2002"] },
+  spearmint:   { agent: "carvone", channel: "weak TRPM8 / other", sens: ["cooling"], level: "mild", refs: [] },
+  wintergreen: { agent: "methyl salicylate", channel: "TRPA1", sens: ["warming", "stinging"], level: "moderate", refs: ["bandell2004"] },
+  eucalyptus:  { agent: "1,8-cineole", channel: "TRPM8", sens: ["cooling"], level: "strong", refs: ["behrendt2004"] },
+  pine:        { agent: "pinene and related terpenes", channel: "mixed", sens: ["stinging", "cooling"], level: "mild", refs: [] },
+  cardamom:    { agent: "1,8-cineole", channel: "TRPM8", sens: ["cooling"], level: "mild", refs: ["behrendt2004"] },
+  bayleaf:     { agent: "1,8-cineole, eugenol", channel: "TRPM8 / TRPV1", sens: ["cooling"], level: "mild", refs: ["behrendt2004"] },
+  clove:       { agent: "eugenol", channel: "TRPV1 / TRPA1", sens: ["warming"], level: "strong", refs: ["xu2006"] },
+  cinnamon:    { agent: "cinnamaldehyde", channel: "TRPA1", sens: ["warming", "stinging"], level: "moderate", refs: ["bandell2004"] },
+  pepper:      { agent: "piperine", channel: "TRPV1 / TRPA1", sens: ["warming", "stinging"], level: "strong", refs: ["mcnamara2005"] },
+  ginger:      { agent: "gingerols and shogaols", channel: "TRPV1", sens: ["warming"], level: "strong", refs: ["dedov2002"] },
+  thyme:       { agent: "thymol", channel: "TRPA1 / TRPV3", sens: ["warming"], level: "mild", refs: ["xu2006"] },
+  wasabi:      { agent: "allyl and methylsulfinylalkyl isothiocyanates", channel: "TRPA1", sens: ["stinging", "tearing"], level: "strong", refs: ["bandell2004"] },
+  horseradish: { agent: "allyl isothiocyanate", channel: "TRPA1", sens: ["stinging", "tearing"], level: "strong", refs: ["bandell2004"] },
+  arugula:     { agent: "erucin (an isothiocyanate)", channel: "TRPA1", sens: ["stinging"], level: "mild", refs: ["bandell2004"] },
+  cabbage:     { agent: "isothiocyanates", channel: "TRPA1", sens: ["stinging"], level: "mild", refs: ["bandell2004"] },
+  brusselssprouts: { agent: "isothiocyanates", channel: "TRPA1", sens: ["stinging"], level: "mild", refs: ["bandell2004"] },
+  onion:       { agent: "syn-propanethial S-oxide (the lachrymatory factor)", channel: "TRPA1", sens: ["tearing", "stinging"], level: "strong", refs: [] },
+  sweetonion:  { agent: "syn-propanethial S-oxide (less of it)", channel: "TRPA1", sens: ["tearing"], level: "mild", refs: [] },
+  greenonion:  { agent: "syn-propanethial S-oxide (less of it)", channel: "TRPA1", sens: ["tearing"], level: "mild", refs: [] },
+  garlic:      { agent: "allicin and related sulfur compounds", channel: "TRPA1 / TRPV1", sens: ["stinging", "warming"], level: "strong", refs: ["bautista2005"] },
+  smoky:       { agent: "smoke irritants such as acrolein", channel: "TRPA1", sens: ["stinging"], level: "mild", refs: [] },
+  tobacco:     { agent: "nicotine and smoke irritants", channel: "nicotinic / TRPA1", sens: ["stinging"], level: "mild", refs: [] }
+};
+
+// Triggers that are not aroma notes on the wheel but are felt anyway. They can
+// be added in the tracker so a tasting of, say, a chili oil or a vinegar
+// shrub can record what the nerve reported even though there is no slider.
+const IRRITANT_EXTRAS = [
+  { id: "capsaicin", label: "Capsaicin (chili)",      agent: "capsaicin", channel: "TRPV1", sens: ["warming"], level: "strong", refs: ["caterina1997"] },
+  { id: "vinegar",   label: "Acetic acid (vinegar)",  agent: "acetic acid", channel: "acid-sensing channels incl. TRPV1", sens: ["stinging"], level: "moderate", refs: ["caterina1997"] },
+  { id: "camphor",   label: "Camphor",                agent: "camphor", channel: "TRPV3 / TRPA1", sens: ["cooling", "warming"], level: "moderate", refs: ["xu2005camphor"] },
+  { id: "menthol",   label: "Pure menthol",           agent: "menthol", channel: "TRPM8", sens: ["cooling"], level: "strong", refs: ["mckemy2002"] },
+  { id: "carbonation", label: "Carbonation (CO₂)",    agent: "dissolved CO₂", channel: "TRPA1", sens: ["stinging"], level: "moderate", refs: ["wang2010co2"] },
+  { id: "ethanol",   label: "Ethanol",                agent: "ethanol", channel: "TRPV1", sens: ["warming"], level: "moderate", refs: [] }
+];
+const IRRITANT_EXTRA_BY_ID = Object.fromEntries(IRRITANT_EXTRAS.map(x => [x.id, x]));
+const IRRITANT_LEVEL_LABEL = { strong: "strong", moderate: "usually noticeable", mild: "only when concentrated" };
+
+// Irritant info for a note id, inheriting from the parent for varietal children.
+function irritantInfo(noteId) {
+  if (IRRITANT_NOTES[noteId]) return IRRITANT_NOTES[noteId];
+  const n = NOTE_BY_ID[noteId];
+  if (n && n.subOf && IRRITANT_NOTES[n.subOf]) return IRRITANT_NOTES[n.subOf];
+  return null;
+}
+// Sensation key -> info. Notes use their id, extras use "x:<id>".
+function sensationTarget(key) {
+  if (key.startsWith("x:")) {
+    const x = IRRITANT_EXTRA_BY_ID[key.slice(2)];
+    return x ? { label: x.label, info: x, extra: true } : null;
+  }
+  const n = NOTE_BY_ID[key];
+  const info = irritantInfo(key);
+  return n && info ? { label: n.label, info, extra: false, note: n } : null;
 }
 
 // ── Delivery: the third sensory dimension ────────────────────────────────
@@ -7609,6 +7810,11 @@ const state = {
   // Delivery conditions for the current tasting (see DELIVERY_CONDITIONS).
   // null = not stated, which is different from "neutral" — we don't assume.
   delivery: { temperature: null, effervescence: null, agitation: null, breath: null },
+  // Trigeminal sensations the user reported, keyed by note id or "x:<extra id>":
+  //   { felt: [sensation ids], none: bool (explicitly "felt nothing"), where: "nose"|"mouth"|"both"|null }
+  // Absent key = not reported, which is different from "none".
+  sensations: {},
+  irritantLayer: true,        // highlight notes that can engage the trigeminal nerve
   // Saved laps — immutable snapshots of {entries, delivery}, oldest first.
   // previewingLap holds the lap number currently being viewed (null = live).
   laps: [],
@@ -8363,6 +8569,8 @@ function drawNotes() {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateWheelNote(d); }
     });
   enter.append("circle").attr("class", "note-halo");
+  enter.append("circle").attr("class", "note-irritant");
+  enter.append("text").attr("class", "note-irritant-glyph");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "note-label");
 
@@ -8386,6 +8594,7 @@ function drawNotes() {
       .style("fill-opacity", 0.16 + 0.16 * Math.min(1, sig))
       .style("stroke", d.id === state.selectedNote ? "var(--accent)" : "none")
       .style("stroke-width", 2);
+    paintIrritantMark(g, d.id, sz);
     g.select("text.node-glyph")
       .style("font-size", sz + "px")
       .text(noteIcon(d));
@@ -9323,6 +9532,8 @@ function renderNoteFloats() {
       .on("end",   (e, d) => { if (!e.active) applyFreezeMode(); }));
   enter.each(seedFloatAtHome);   // appear at home, don't crawl in from the corner
   enter.append("circle").attr("class", "note-halo");
+  enter.append("circle").attr("class", "note-irritant");
+  enter.append("text").attr("class", "note-irritant-glyph");
   enter.append("text").attr("class", "node-glyph");
   enter.append("text").attr("class", "node-label");
 
@@ -9342,6 +9553,7 @@ function renderNoteFloats() {
       .style("fill-opacity", 0.16 + 0.18 * Math.min(1, d.score))
       .style("stroke", d.id === state.selectedNote ? "var(--accent)" : "none")
       .style("stroke-width", 2);
+    paintIrritantMark(g, d.id, sz);
     g.select("text.node-glyph")
       .style("font-size", sz + "px")
       .text(noteIcon(d));
@@ -9727,6 +9939,7 @@ function recompute() {
   // so an off-screen tree can never go stale.
   if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
   refreshGhostRows();
+  if (typeof refreshSenseTracker === "function") refreshSenseTracker();
   updateCompoundsBar();
   announceResults();
 }
@@ -9951,6 +10164,185 @@ function renderDeliveryReadout() {
   `;
 }
 
+// ── Sense tracker (trigeminal layer, input side) ─────────────────────────
+const senseBody  = document.getElementById("sense-body");
+const senseChips = document.getElementById("sense-chips");
+let _senseSig = null;
+
+function senseGlyphs(info, key) {
+  const rep = key && state.sensations[key] && state.sensations[key].felt.length
+    ? state.sensations[key].felt : info.sens;
+  return rep.map(id => SENSATION_BY_ID[id].glyph).join("");
+}
+
+// Which rows the tracker shows: irritant-capable notes with an entry (or an
+// existing report), then any off-wheel extras the user added.
+function senseKeys() {
+  const noteKeys = NOTES
+    .filter(n => irritantInfo(n.id) && (hasAnyEntry(n.id) || state.sensations[n.id]))
+    .sort((a, b) => a.label.localeCompare(b.label)).map(n => n.id);
+  const extraKeys = Object.keys(state.sensations).filter(k => k.startsWith("x:") && sensationTarget(k));
+  return noteKeys.concat(extraKeys);
+}
+
+function refreshSenseTracker() {
+  const sig = senseKeys().join("|");
+  if (sig !== _senseSig) buildSenseTracker();
+}
+
+function senseRecord(key) {
+  return state.sensations[key] || (state.sensations[key] = { felt: [], none: false, where: null });
+}
+function pruneSense(key) {
+  const r = state.sensations[key];
+  if (r && !r.felt.length && !r.none && !r.where && !key.startsWith("x:")) delete state.sensations[key];
+}
+
+function senseFeedback(info, rec) {
+  if (rec.none) return "Nothing felt. That is a real result: dose, temperature and personal sensitivity all change how much the nerve reports.";
+  if (!rec.felt.length) return "";
+  const hit = info.sens.filter(s => rec.felt.includes(s));
+  const names = rec.felt.map(s => SENSATION_BY_ID[s].label.toLowerCase()).join(" and ");
+  if (hit.length) return `Felt ${names}. That matches what ${info.agent} usually does (${info.channel}), and it comes from the nerve, not from smell.`;
+  return `Felt ${names}, which differs from the usual ${info.sens.map(s => SENSATION_BY_ID[s].label.toLowerCase()).join(" / ")}. Trigeminal sensitivity varies a lot between people and moments, so this is recorded as your result.`;
+}
+
+function buildSenseTracker() {
+  const keys = senseKeys();
+  _senseSig = keys.join("|");
+  senseBody.innerHTML = "";
+
+  keys.forEach(key => {
+    const t = sensationTarget(key);
+    const rec = state.sensations[key] || { felt: [], none: false, where: null };
+    const row = document.createElement("div");
+    row.className = "sense-row";
+    row.dataset.sense = key;
+    const exp = t.info.sens.map(s => SENSATION_BY_ID[s].label.toLowerCase()).join(", ");
+    row.innerHTML = `
+      <div class="sense-row-head">
+        <span class="sense-row-name">${t.note ? noteIcon(t.note) + " " : ""}${t.label}</span>
+        ${t.extra ? `<button type="button" class="sense-remove" aria-label="Remove ${t.label}" title="Remove">×</button>` : ""}
+      </div>
+      <div class="sense-row-expect">Often: ${exp} (${IRRITANT_LEVEL_LABEL[t.info.level]}). Agent: ${t.info.agent}, via ${t.info.channel}.</div>`;
+    if (t.extra) row.querySelector(".sense-remove").addEventListener("click", () => {
+      delete state.sensations[key]; buildSenseTracker(); drawNotes();
+    });
+
+    const mk = (labelHtml, pressed, onClick, aria) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "delivery-opt"; b.innerHTML = labelHtml;
+      b.setAttribute("aria-pressed", String(pressed));
+      if (aria) b.setAttribute("aria-label", aria);
+      b.addEventListener("click", onClick);
+      return b;
+    };
+    const sub1 = document.createElement("div"); sub1.className = "sense-sub"; sub1.textContent = "What did you feel?";
+    const opts = document.createElement("div"); opts.className = "delivery-opts";
+    opts.setAttribute("role", "group"); opts.setAttribute("aria-label", `${t.label}: what you felt`);
+    SENSATIONS.forEach(s => opts.appendChild(mk(`${s.glyph} ${s.label}`, rec.felt.includes(s.id), () => {
+      const r = senseRecord(key); r.none = false;
+      r.felt = r.felt.includes(s.id) ? r.felt.filter(x => x !== s.id) : r.felt.concat(s.id);
+      pruneSense(key); buildSenseTracker(); drawNotes();
+    })));
+    opts.appendChild(mk("Nothing", rec.none, () => {
+      const r = senseRecord(key); r.none = !r.none; if (r.none) r.felt = [];
+      pruneSense(key); buildSenseTracker(); drawNotes();
+    }));
+    const sub2 = document.createElement("div"); sub2.className = "sense-sub"; sub2.textContent = "Where?";
+    const where = document.createElement("div"); where.className = "delivery-opts";
+    where.setAttribute("role", "group"); where.setAttribute("aria-label", `${t.label}: where you felt it`);
+    [["nose", "Nose"], ["mouth", "Mouth / throat"], ["both", "Both"]].forEach(([id, lab]) =>
+      where.appendChild(mk(lab, rec.where === id, () => {
+        const r = senseRecord(key); r.where = r.where === id ? null : id; pruneSense(key); buildSenseTracker();
+      })));
+    row.append(sub1, opts, sub2, where);
+    const fb = senseFeedback(t.info, rec);
+    if (fb) { const p = document.createElement("p"); p.className = "sense-feedback"; p.textContent = fb; row.appendChild(p); }
+    senseBody.appendChild(row);
+  });
+
+  if (!keys.length) {
+    const p = document.createElement("p"); p.className = "sense-empty";
+    p.textContent = "Score a note that can sting, cool or burn (mint, ginger, wasabi, clove, onion, pepper…) and it appears here. Or add something that has no slider below.";
+    senseBody.appendChild(p);
+  }
+
+  // Off-wheel triggers: no aroma slider, but the nerve still reports them.
+  const addWrap = document.createElement("div");
+  const addLab = document.createElement("div"); addLab.className = "sense-sub";
+  addLab.textContent = "Add a trigger that isn't a wheel note";
+  const add = document.createElement("div"); add.className = "sense-add";
+  IRRITANT_EXTRAS.filter(x => !state.sensations["x:" + x.id]).forEach(x => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "delivery-opt"; b.textContent = "＋ " + x.label;
+    b.addEventListener("click", () => { senseRecord("x:" + x.id); buildSenseTracker(); });
+    add.appendChild(b);
+  });
+  addWrap.append(addLab, add);
+  senseBody.appendChild(addWrap);
+
+  const reported = Object.values(state.sensations).filter(r => r.felt.length || r.none).length;
+  senseChips.textContent = reported ? `${reported} reported` : (keys.length ? "none reported" : "nothing to report");
+  senseChips.classList.toggle("empty", !reported);
+
+  // Source list: only the papers behind rows currently shown.
+  const used = new Set();
+  keys.forEach(k => sensationTarget(k).info.refs.forEach(r => used.add(r)));
+  used.add("doty1978");
+  document.getElementById("sense-sources-list").innerHTML =
+    [...used].filter(r => REFERENCES[r]).map(r => `<li>${formatRefFull(REFERENCES[r])}</li>`).join("");
+}
+
+// Irritant layer on a wheel note: a dashed ring (solid once the user reports a
+// sensation) tinted by the first expected/reported sensation, plus its glyph.
+function paintIrritantMark(g, noteId, sz) {
+  const irr = irritantInfo(noteId);
+  const rec = state.sensations[noteId];
+  const felt = rec && rec.felt.length ? rec.felt : null;
+  const sensList = felt || (irr ? irr.sens : []);
+  const half = sz * 0.5;
+  g.select("circle.note-irritant")
+    .attr("r", sz * 0.62 + 4)
+    .attr("display", irr ? null : "none")
+    .classed("reported", !!felt)
+    .style("stroke", sensList.length ? SENSATION_BY_ID[sensList[0]].color : "none");
+  g.select("text.note-irritant-glyph")
+    .attr("x", half * 0.75).attr("y", -half * 0.75)
+    .attr("display", irr ? null : "none")
+    .text(sensList.map(s => SENSATION_BY_ID[s].glyph).join(""));
+}
+
+// Small inline marker for a note row / detail: glyphs for the expected (or
+// reported) sensation, click opens the tracker.
+function irritantBadge(noteId) {
+  const info = irritantInfo(noteId);
+  if (!info) return null;
+  const rec = state.sensations[noteId];
+  const reported = !!(rec && rec.felt.length);
+  const b = document.createElement("span");
+  b.className = "irritant-badge" + (reported ? " reported" : "");
+  b.setAttribute("role", "button"); b.tabIndex = 0;
+  b.textContent = senseGlyphs(info, noteId);
+  const exp = info.sens.map(s => SENSATION_BY_ID[s].label.toLowerCase()).join(" / ");
+  b.title = `Possible trigeminal irritant: ${info.agent} can feel ${exp} (${info.channel}), not just smell. Click to report what you feel.`;
+  b.setAttribute("aria-label", b.title);
+  const open = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const strip = document.getElementById("sense-strip");
+    strip.open = true; buildSenseTracker();
+    strip.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  b.addEventListener("click", open);
+  b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") open(e); });
+  return b;
+}
+
+document.getElementById("irritant-layer-toggle").addEventListener("change", e => {
+  state.irritantLayer = e.target.checked;
+  document.body.classList.toggle("no-irritant-layer", !state.irritantLayer);
+});
+
 function buildNotesPanel() {
   notesPanel.innerHTML = "";
   const allVisible = getVisibleNotes();
@@ -10047,6 +10439,8 @@ function renderNoteRow(n) {
   words.textContent = n.label;
   lbl.appendChild(icon);
   lbl.appendChild(words);
+  const irritant = irritantBadge(n.id);
+  if (irritant) lbl.appendChild(irritant);
   if (n.umbrellaNote) {
     const mark = document.createElement("span");
     mark.className = "note-umbrella-mark";
@@ -10689,10 +11083,23 @@ function renderNoteDetail(noteId) {
     </div>`;
   }
 
+  // Trigeminal flag: shown only for notes that can cool, burn or sting.
+  let irritantHtml = "";
+  const irr = irritantInfo(noteId);
+  if (irr) {
+    const sensTxt = irr.sens.map(s => `${SENSATION_BY_ID[s].glyph} ${SENSATION_BY_ID[s].label.toLowerCase()}`).join(", ");
+    irritantHtml = `
+    <div class="section">
+      <div class="section-title">Possible irritant</div>
+      <div class="note-umbrella-explainer"><strong>${sensTxt}</strong> (${IRRITANT_LEVEL_LABEL[irr.level]}). ${irr.agent.charAt(0).toUpperCase() + irr.agent.slice(1)} also activates the trigeminal nerve (${irr.channel}), so part of this note is felt in the nose and mouth rather than smelled. Use "What you're feeling" to record what you notice.</div>
+    </div>`;
+  }
+
   detailPanel.innerHTML = `
     <button class="back-to-grid" type="button">← All compounds</button>
     <h2><span class="note-color-dot" style="background:${color}"></span><span class="detail-icon" aria-hidden="true">${noteIcon(n)}</span> ${n.label}${n.umbrellaNote ? '<span class="note-umbrella-mark">*</span>' : ''}</h2>
     <div class="compound-class">Note · ${g.label}</div>
+    ${irritantHtml}
     ${taxonomyHtml}
 
     ${entriesHtml}
@@ -11851,6 +12258,7 @@ document.querySelectorAll(".toggle-all").forEach(el => {
 // enables so the per-row UI matches the loaded data.
 function setNotes(entries) {
   state.entries.clear();
+  state.sensations = {};
   Object.keys(state.pendingIntensity).forEach(k => state.pendingIntensity[k] = 0);
   closeAllCallouts();
   entries.forEach(e => {
@@ -11944,6 +12352,7 @@ function buildExactViewUrl() {
     ohg: [...state.originsHiddenGroups],
     oot: state.originsOnlyTasting ? 1 : 0,
     ev: [...state.expandedVarietals],
+    sn: state.sensations,
   };
   const params = new URLSearchParams();
   params.set("view", encodeExactView(payload));
@@ -11963,7 +12372,18 @@ function hydrateExactView(encoded) {
       const value = payload.d && payload.d[condition.id];
       delivery[condition.id] = condition.options.some(option => option.id === value) ? value : null;
     });
-    applyTasting({ entries, delivery });
+    const sensations = {};
+    if (payload.sn && typeof payload.sn === "object") {
+      Object.entries(payload.sn).forEach(([key, v]) => {
+        if (!sensationTarget(key) || !v || typeof v !== "object") return;
+        sensations[key] = {
+          felt: (Array.isArray(v.felt) ? v.felt : []).filter(id => SENSATION_BY_ID[id]),
+          none: !!v.none,
+          where: ["nose", "mouth", "both"].includes(v.where) ? v.where : null
+        };
+      });
+    }
+    applyTasting({ entries, delivery, sensations });
 
     state.hiddenPhases = new Set((payload.hp || []).filter(id => PHASES.includes(id)));
     state.hiddenGroups = new Set((payload.hg || []).filter(id => GROUP_BY_ID[id]));
@@ -12028,13 +12448,15 @@ function hydrateExactView(encoded) {
 // any parse-and-rebuild round-trip silently mangles default entries — which is
 // almost all of them. Copying the Map is both exact and cheaper.
 function snapshotTasting() {
-  return { entries: [...state.entries.entries()], delivery: { ...state.delivery } };
+  return { entries: [...state.entries.entries()], delivery: { ...state.delivery },
+           sensations: JSON.parse(JSON.stringify(state.sensations)) };
 }
 
 // Mirrors setNotes()'s refresh sequence, but writes the entryAp directly rather
 // than re-committing parsed {note, phase} objects, for the reason above.
 function applyTasting(snap) {
   state.delivery = { ...snap.delivery };
+  state.sensations = JSON.parse(JSON.stringify(snap.sensations || {}));
   buildDeliveryStrip();
   state.entries.clear();
   Object.keys(state.pendingIntensity).forEach(k => state.pendingIntensity[k] = 0);
@@ -14579,6 +15001,7 @@ document.addEventListener("keydown", (e) => {
 // ---------- INIT ----------
 buildLegend();
 buildDeliveryStrip();
+buildSenseTracker();
 renderLapStack();
 buildNotesPanel();
 layout();
