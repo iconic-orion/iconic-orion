@@ -5365,8 +5365,24 @@ const NOTES = [
   // roasted
   { id: "coffee",      label: "Coffee / roast",     group: "roasted",  common: true,  genus: "Coffea", family: "Rubiaceae", order: "Gentianales" },
   { id: "toast",       label: "Toast / bread",      group: "roasted",  common: true,  family: "Poaceae", order: "Poales" },
+  // Cooked-vegetable counterparts of Carrot and Raw onion. Same plant, different
+  // aroma: dry heat browns the sugars and amino acids (Maillard/Strecker
+  // chemistry) and, for onion, changes the sulfur profile. They sit in Roasted
+  // because that is the register you smell. Evidence is thin: see the EDGES
+  // comments for exactly what is and is not supported.
+  { id: "roastedcarrot", label: "Roasted carrot",   group: "roasted",  common: true,  genus: "Daucus", family: "Apiaceae", order: "Apiales" },
+  { id: "roastedonion",  label: "Roasted onion",    group: "roasted",  common: true,  genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
+  // Tea: one plant (Camellia sinensis), two very different registers. Green tea
+  // is the fresh, steamed or pan-fired leaf (grassy), hojicha is green tea
+  // roasted at high heat, which swaps the grassy edge for toasty pyrazines.
+  { id: "greentea",    label: "Green tea",          group: "earthy",   common: true,  genus: "Camellia", family: "Theaceae", order: "Ericales" },
+  { id: "hojicha",     label: "Hojicha",            group: "roasted",  common: true,  genus: "Camellia", family: "Theaceae", order: "Ericales" },
   { id: "smoky",       label: "Smoky",              group: "roasted",  common: true,  taxonBucket: "process" },
   { id: "burnt",       label: "Burnt sugar",        group: "roasted",  common: true,  family: "Poaceae", order: "Poales" },
+  // Cane-sugar products. Both come from sugarcane (Saccharum, Poaceae), and the
+  // aroma is almost all heat chemistry from boiling the juice down.
+  { id: "brownsugar",  label: "Brown sugar",        group: "roasted",  common: true,  genus: "Saccharum", family: "Poaceae", order: "Poales" },
+  { id: "molasses",    label: "Molasses",           group: "roasted",  common: true,  genus: "Saccharum", family: "Poaceae", order: "Poales" },
   { id: "popcorn",     label: "Popcorn / fresh bread", group: "roasted", common: true, genus: "Zea", family: "Poaceae", order: "Poales" },
   // Cereal is the quick-use default; rice/wheat/barley/oats/millet/quinoa below
   // are subOf "cereal" — present in the data (their own compounds, citations,
@@ -5448,7 +5464,7 @@ const NOTES = [
   { id: "caramel",     label: "Caramel",            group: "sweet",    common: true,  taxonBucket: "process" },
   { id: "honey",       label: "Honey",              group: "sweet",    common: true,  kingdom: "Animalia", genus: "Apis", family: "Apidae", order: "Hymenoptera" },
   { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true,  genus: "Theobroma", family: "Malvaceae", order: "Malvales" },
-  { id: "maple",       label: "Maple / brown sugar",group: "sweet",    common: true,  genus: "Acer", family: "Sapindaceae", order: "Sapindales" },
+  { id: "maple",       label: "Maple",             group: "sweet",    common: true,  genus: "Acer", family: "Sapindaceae", order: "Sapindales" },
   { id: "cottoncandy", label: "Cotton candy",       group: "sweet",    common: true,  taxonBucket: "process" },
   // fermented — virtually all of these are chemical/microbial process or
   // fault descriptors rather than a single organism's flavor identity; see
@@ -5469,7 +5485,7 @@ const NOTES = [
   { id: "miso",        label: "Miso paste",         group: "fermented",common: true,  taxonBucket: "process" },
   { id: "soysauce",     label: "Soy sauce",          group: "fermented",common: true,  taxonBucket: "process" },
   // vegetal
-  { id: "onion",       label: "Onion",              group: "vegetal",  common: true,  genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
+  { id: "onion",       label: "Raw onion",           group: "vegetal",  common: true,  genus: "Allium", family: "Amaryllidaceae", order: "Asparagales" },
   // Red/White onion: literature attributes cultivar differences mainly to
   // anthocyanin pigment and pungency level, not a separate compound — same
   // honest case as Blood orange.
@@ -5938,6 +5954,44 @@ const EDGES = [
   { note: "apple",      cpd: "e2mb",      w: 0.55, cite: "Dimick & Hoskin 1983 (ethyl 2-methylbutanoate, green-apple ester)." },
   { note: "berry",      cpd: "e2mb",      w: 0.40, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate across Rubus berries)." },
   // ---- Vegetal expansion ----
+  // Brown sugar: odor-active compounds found by GC-O with aroma-extract dilution
+  // and odor-activity values in non-centrifugal cane sugar. All five exist in
+  // the compound list already. Weights are this app's judgment, not measured.
+  { note: "brownsugar", cpd: "furfural",  w: 0.70, cite: "Liu, Wan, Xie & Chen 2021 (furfural among the key aroma-active compounds of brown sugar)." },
+  { note: "brownsugar", cpd: "phenylacet", w: 0.50, cite: "Liu, Wan, Xie & Chen 2021 (benzeneacetaldehyde, i.e. phenylacetaldehyde, a key aroma-active compound of brown sugar)." },
+  { note: "brownsugar", cpd: "diacetyl",  w: 0.40, cite: "Liu, Wan, Xie & Chen 2021 (2,3-butanedione, i.e. diacetyl, a key aroma-active compound of brown sugar)." },
+  { note: "brownsugar", cpd: "bdam",      w: 0.50, cite: "Liu, Wan, Xie & Chen 2021 (β-damascenone among the key aroma-active compounds of brown sugar)." },
+  { note: "brownsugar", cpd: "guaiacol",  w: 0.40, cite: "Liu, Wan, Xie & Chen 2021 (2-methoxyphenol, i.e. guaiacol, a key aroma-active compound of brown sugar)." },
+  // Molasses: no molasses-specific odorant study was found. It is the dark
+  // concentrate left from the same cane juice, so the brown-sugar set is
+  // applied by analogy with a lighter selection and the same caveat.
+  { note: "molasses",   cpd: "furfural",  w: 0.60, cite: "Liu, Wan, Xie & Chen 2021 (brown sugar; applied to molasses by analogy, no molasses-specific study located)." },
+  { note: "molasses",   cpd: "guaiacol",  w: 0.45, cite: "Liu, Wan, Xie & Chen 2021 (brown sugar; applied to molasses by analogy, no molasses-specific study located)." },
+  { note: "molasses",   cpd: "bdam",      w: 0.40, cite: "Liu, Wan, Xie & Chen 2021 (brown sugar; applied to molasses by analogy, no molasses-specific study located)." },
+  { note: "molasses",   cpd: "phenylacet", w: 0.40, cite: "Liu, Wan, Xie & Chen 2021 (brown sugar; applied to molasses by analogy, no molasses-specific study located)." },
+  // Green tea. The one source found compares three Taiping Houkui green-tea
+  // aroma styles: linalool, geraniol and (E)-β-ionone were enriched in the
+  // floral-like style, while the chestnut-like and fresh styles differed. So
+  // these links describe floral-leaning green tea, and the grassy "fresh" side
+  // (for example cis-3-hexenol) is left unmodeled because no source was found.
+  { note: "greentea", cpd: "linalool", w: 0.55, cite: "Liu, Shen, Huang et al. 2023 (linalool enriched in floral-like Taiping Houkui green tea)." },
+  { note: "greentea", cpd: "ionone",   w: 0.45, cite: "Liu, Shen, Huang et al. 2023 ((E)-β-ionone enriched in floral-like Taiping Houkui green tea)." },
+  { note: "greentea", cpd: "geraniol", w: 0.35, cite: "Liu, Shen, Huang et al. 2023 (geraniol enriched in floral-like Taiping Houkui green tea)." },
+  // Hojicha: pyrazines are reported as key flavor compounds of roasted green
+  // tea, including 2,3-diethyl-5-methylpyrazine, which is in the compound list.
+  // The study is of Chinese final-firing styles, applied to hojicha by analogy.
+  { note: "hojicha", cpd: "dempyr", w: 0.60, cite: "Yang, Zhang, Hua et al. 2020 (2,3-diethyl-5-methylpyrazine among pyrazines in roasted green tea; applied to hojicha by analogy)." },
+  // Roasted onion. Deliberately a single modeled link: the only source found
+  // that names a browning-type odorant in heated Allium is a fried green onion
+  // study, and it is about green onion oil, not roasted bulb onion. No
+  // roasted-onion-specific odorant study was found, so nothing else is modeled.
+  { note: "roastedonion", cpd: "furaneol", w: 0.45, cite: "Wang, Qiao, Liu et al. 2023 (furaneol is a key aroma compound of fried green onion oil; applied here to roasted onion by analogy, no roasted-onion study located)." },
+  // Roasted carrot. Heated carrots are reported to form terpene oxidation,
+  // carotenoid-degradation and Maillard/Strecker products, but without naming
+  // an individual odorant. Carotol (the carrot signature) and β-ionone (a
+  // classic carotenoid-derived aroma compound) are this app's own inference.
+  { note: "roastedcarrot", cpd: "carotol", w: 0.40, cite: "Kebede et al. 2014 (heat-processed carrots show terpene-fraction changes; carotol itself is this app's inference, no roasted-carrot odorant study located)." },
+  { note: "roastedcarrot", cpd: "ionone",  w: 0.35, cite: "Kebede et al. 2014 (heat-processed carrots show carotenoid-degradation products; the β-ionone link is this app's inference, not a measured result)." },
   { note: "onion",      cpd: "lacrifac",  w: 0.90, cite: "Imai et al. 2002 (lachrymatory-factor synthase, the onion-tears compound)." },
   { note: "redonion",   cpd: "lacrifac",  w: 0.90, cite: "Imai et al. 2002 (same compound as regular onion; pigment, not aroma, is the real difference)." },
   { note: "whiteonion", cpd: "lacrifac",  w: 0.90, cite: "Imai et al. 2002 (same lachrymatory base as regular onion)." },
@@ -6632,6 +6686,31 @@ const REFERENCES = {
   // ── Trigeminal / irritant layer sources. Existence of each paper was matched
   // against PubMed on 2026-11-10 (journal/year/volume/first page/first author).
   // Titles are typed from memory, so they are still worth a human read-through.
+  "kebede2014carrot": {
+    authors: "Kebede, B. T., Grauwet, T., Palmers, S., Vervoort, L., Carle, R., Hendrickx, M., & Van Loey, A.", year: 2014,
+    title: "Effect of high pressure high temperature processing on the volatile fraction of differently coloured carrots.",
+    journal: "Food Chemistry", volume: "153", pages: "340–352"
+  },
+  "liu2023greentea": {
+    authors: "Liu, N., Shen, S., Huang, L., Deng, G., Wei, Y., Ning, J., & Wang, Y.", year: 2023,
+    title: "Revelation of volatile contributions in green teas with different aroma types by GC-MS and GC-IMS.",
+    journal: "Food Research International", volume: "169", pages: "112845"
+  },
+  "yang2020roastedtea": {
+    authors: "Yang, Y., Zhang, M., Hua, J., Deng, Y., Jiang, Y., Li, J., Wang, J., Yuan, H., & Dong, C.", year: 2020,
+    title: "Quantitation of pyrazines in roasted green tea by infrared-assisted extraction coupled to headspace solid-phase microextraction in combination with GC-QqQ-MS/MS.",
+    journal: "Food Research International", volume: "134", pages: "109167"
+  },
+  "liu2021brownsugar": {
+    authors: "Liu, J., Wan, P., Xie, C., & Chen, D.-W.", year: 2021,
+    title: "Key aroma-active compounds in brown sugar and their influence on sweetness.",
+    journal: "Food Chemistry", volume: "345", pages: "128826"
+  },
+  "wang2023friedonion": {
+    authors: "Wang, J., Qiao, L., Liu, B., Wang, J., Wang, R., Zhang, N., Sun, B., Chen, H., & Yu, Y.", year: 2023,
+    title: "Characteristic aroma-active components of fried green onion (Allium fistulosum L.) through flavoromics analysis.",
+    journal: "Food Chemistry", volume: "429", pages: "136909"
+  },
   "bandell2004": {
     authors: "Bandell, M., et al.", year: 2004,
     title: "Noxious cold ion channel TRPA1 is activated by pungent compounds and bradykinin.",
@@ -7027,6 +7106,11 @@ const CITE_TO_REF = [
   ["Bartowsky & Henschke 2004",   "bartowsky2004"],
   ["Sefton et al. 2011",          "sefton2011"],
   ["Friedman 2017",               "friedman2017"],
+  ["Kebede et al. 2014",          "kebede2014carrot"],
+  ["Liu, Shen, Huang et al. 2023", "liu2023greentea"],
+  ["Yang, Zhang, Hua et al. 2020", "yang2020roastedtea"],
+  ["Liu, Wan, Xie & Chen 2021",   "liu2021brownsugar"],
+  ["Wang, Qiao, Liu et al. 2023", "wang2023friedonion"],
   ["Verstrepen et al. 2003",      "verstrepen2003"],
   ["Mayer, Czerny, Grosch 2000",  "mayer2000"],
   ["Hatanaka 1993",               "hatanaka1993"],
@@ -7448,8 +7532,8 @@ const WAIS_DESCRIPTORS = [
   ]},
   { category: "Sweet", entries: [
     { word: "sweet / dessert",   notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
-    { word: "brown sugar",       notes: ["maple", "caramel"] },
-    { word: "molasses",          notes: ["caramel", "maple", "burnt"] },
+    { word: "brown sugar",       notes: ["brownsugar", "maple", "caramel"] },
+    { word: "molasses",          notes: ["molasses", "caramel", "maple", "burnt"] },
     { word: "toffee",            notes: ["caramel", "honey", "vanilla"] },
     { word: "cotton candy",      notes: ["cottoncandy"] },
     { word: "candy floss",       notes: ["cottoncandy"] },
@@ -7619,7 +7703,10 @@ const GUIDE_NARROW = {
   roasted: { question: "What's roasting?", options: [
     { key: "coffee",   label: "Coffee / dark roast",        notes: ["coffee"] },
     { key: "bread",    label: "Toast & popcorn",            notes: ["toast", "popcorn"] },
-    { key: "smoke",    label: "Smoke & char",               notes: ["smoky", "burnt"] }
+    { key: "smoke",    label: "Smoke & char",               notes: ["smoky", "burnt"] },
+    { key: "canesugar", label: "Brown sugar / molasses",    notes: ["brownsugar", "molasses"] },
+    { key: "roastveg", label: "Roasted vegetables",         notes: ["roastedcarrot", "roastedonion"] },
+    { key: "roasttea", label: "Roasted tea",                notes: ["hojicha"] }
   ]},
   spice: { question: "Which kind of spicy?", options: [
     { key: "baking",   label: "Warm baking spice",          notes: ["cinnamon", "clove", "cardamom"] },
@@ -7629,7 +7716,8 @@ const GUIDE_NARROW = {
     { key: "grain",    label: "Grain / cereal",             notes: ["cereal", "rice", "wheat", "barley", "oats", "millet", "quinoa"] },
     { key: "green",    label: "Fresh-cut green",            notes: ["green", "bellpepper"] },
     { key: "soil",     label: "Soil, mushroom & wood",      notes: ["mushroom", "woody"] },
-    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] }
+    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] },
+    { key: "tea",      label: "Green tea",                  notes: ["greentea"] }
   ]},
   herbal: { question: "Which kind of herb?", options: [
     { key: "mint",     label: "Cool mint",                  notes: ["mint", "peppermint", "spearmint", "wintergreen", "eucalyptus"] },
@@ -7768,7 +7856,7 @@ const NOTE_ICONS = {
   winey:"🍷", buttery:"🧈", yeasty:"🍞", sulfury:"🥚", cardboard:"📦", cheesy:"🧀",
   sweaty:"🧦", musty:"🍂", skunky:"🦨", miso:"🍜", soysauce:"🍶",
   // Vegetal
-  onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
+  greentea:"🍵", hojicha:"🫖", brownsugar:"🥄", molasses:"🫙", roastedonion:"🧅", roastedcarrot:"🥕", onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
   garlic:"🧄", celery:"🥬", carrot:"🥕", beet:"🫜", olive:"🫒", tomato:"🍅", arugula:"🥬",
   lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
   brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
