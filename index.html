@@ -5466,6 +5466,17 @@ const NOTES = [
   { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true,  genus: "Theobroma", family: "Malvaceae", order: "Malvales" },
   { id: "maple",       label: "Maple",             group: "sweet",    common: true,  genus: "Acer", family: "Sapindaceae", order: "Sapindales" },
   { id: "cottoncandy", label: "Cotton candy",       group: "sweet",    common: true,  taxonBucket: "process" },
+  // Sugar cane is the fresh stalk or juice. White sugar is refined and has next
+  // to no aroma of its own: its sweetness is taste, and the note exists so a
+  // sweet-only impression can be recorded without inventing chemistry for it.
+  { id: "sugarcane",   label: "Sugar cane",         group: "sweet",    common: true,  genus: "Saccharum", family: "Poaceae", order: "Poales" },
+  // Beet sugar comes from the sugar beet (Beta vulgaris) rather than cane, but
+  // once refined it is the same molecule, sucrose, so it carries the same
+  // honest "no odorant" treatment. No study of its trace aroma was found.
+  { id: "beetsugar",   label: "Beet sugar",         group: "sweet",    common: true,  genus: "Beta", family: "Amaranthaceae", order: "Caryophyllales",
+    noCompoundNote: "Refined beet sugar is chemically the same sucrose as refined cane sugar and has almost no aroma of its own, so no odorant is linked here. No study of its trace aroma was found. What you notice is sweetness, which is a taste, not a smell." },
+  { id: "whitesugar",  label: "White sugar",        group: "sweet",    common: true,  taxonBucket: "process",
+    noCompoundNote: "Refined white sugar has almost no aroma of its own, so no odorant is linked here. What you notice is sweetness, which is a taste, not a smell. Any aroma in a sugary food comes from other ingredients or from browning, which is what Brown sugar, Caramel and Burnt sugar cover." },
   // fermented — virtually all of these are chemical/microbial process or
   // fault descriptors rather than a single organism's flavor identity; see
   // the repo's design notes for the reasoning behind each "process" call here.
@@ -5574,6 +5585,15 @@ const COMPOUNDS = [
   { id: "cinnamald",     label: "Cinnamaldehyde",    class: "aldehyde",  threshold: "low",      specificity: "signature", thresholdSrc: "~1.1 ppb (Friedman 2017).", note: "Cinnamon principal. Over 50% of cinnamon bark oil." },
   { id: "walnuttrienal", label: "(2E,4E,6Z)-Nona-2,4,6-trienal", class: "aldehyde", threshold: "low", specificity: "signature", thresholdSrc: "One of the two key walnut odorants established by recombination and omission experiments (Stübner & Steinhaus 2023).", note: "Oatmeal-like alone; with sotolon it becomes unmistakably walnut-like." },
   { id: "hexanal",       label: "Hexanal",           class: "aldehyde",  threshold: "medium",   specificity: "shared",    thresholdSrc: "~4.5 ppb (Buttery 1981).", note: "Green grassy C6 aldehyde; lipid oxidation." },
+  // Added with the Sugar cane note. Peng et al. 2025 names these three, with
+  // hexanal, as characteristic aroma compounds of sugarcane juice. The threshold
+  // buckets below are PROVISIONAL: the odor-threshold tables found list butanal
+  // at roughly 9-37 ppb and isobutyl isobutyrate at about 30 ppb without a clear
+  // medium or primary source, and no pentanal value was located, so all three
+  // sit in the middle bucket until a primary threshold source is checked.
+  { id: "butanal",       label: "Butanal",           class: "aldehyde",  commonName: "butyraldehyde", threshold: "medium", specificity: "shared", thresholdSrc: "Provisional bucket. Compiled odor-threshold tables list roughly 9-37 ppb, medium not stated; primary source still to be checked.", note: "Short four-carbon aldehyde with a sharp, pungent edge. A characteristic aroma compound of sugarcane juice." },
+  { id: "pentanal",      label: "Pentanal",          class: "aldehyde",  commonName: "valeraldehyde", threshold: "medium", specificity: "shared", thresholdSrc: "Provisional bucket. No odor threshold located; placed with its neighbors butanal and hexanal until a primary source is checked.", note: "Five-carbon aldehyde, sitting between butanal and hexanal in the series. A characteristic aroma compound of sugarcane juice." },
+  { id: "ibib",          label: "Isobutyl isobutyrate", class: "ester",  threshold: "medium", specificity: "shared", thresholdSrc: "Provisional bucket. One compiled table lists about 30 ppb, another a much wider range; primary source still to be checked.", note: "Ethereal, fruity ester with pineapple, banana and grape-skin character. A characteristic aroma compound of sugarcane juice." },
   { id: "e2non",         label: "(E)-2-Nonenal",     class: "aldehyde",  threshold: "very-low", specificity: "signature", thresholdSrc: "~0.08 ppb (Lermusieau, Noël, Liégeois & Collin 1999).", note: "Cardboard/stale; the beer and coffee staling marker. Also a high-impact aldehyde in raw millet and fresh cranberry, where the same waxy-cardboard edge is just part of the native smell rather than a sign of age." },
   { id: "benzald",       label: "Benzaldehyde",      class: "aldehyde",  threshold: "medium",   specificity: "signature", thresholdSrc: "~350 ppb (Buttery 1981).", note: "Bitter-almond, marzipan." },
   { id: "phenylacet",    label: "Phenylacetaldehyde",class: "aldehyde",  threshold: "low",      specificity: "shared",    thresholdSrc: "~4 ppb (Czerny et al. 2008).", note: "Honey-floral Strecker aldehyde." },
@@ -5954,6 +5974,13 @@ const EDGES = [
   { note: "apple",      cpd: "e2mb",      w: 0.55, cite: "Dimick & Hoskin 1983 (ethyl 2-methylbutanoate, green-apple ester)." },
   { note: "berry",      cpd: "e2mb",      w: 0.40, cite: "Klesk & Qian 2003 (ethyl 2-methylbutanoate across Rubus berries)." },
   // ---- Vegetal expansion ----
+  // Sugar cane (fresh juice). One link: a sugarcane-wine study reports hexanal,
+  // along with isobutyl isobutyrate, pentanal and butanal, as characteristic
+  // aroma compounds of sugarcane juice. Weights are this app's judgment.
+  { note: "sugarcane", cpd: "hexanal", w: 0.50, cite: "Peng, Feng, Zhang et al. 2025 (hexanal named among the characteristic aroma compounds of sugarcane juice, in a sugarcane fruit wine study)." },
+  { note: "sugarcane", cpd: "butanal", w: 0.35, cite: "Peng, Feng, Zhang et al. 2025 (butanal named among the characteristic aroma compounds of sugarcane juice, in a sugarcane fruit wine study)." },
+  { note: "sugarcane", cpd: "pentanal", w: 0.35, cite: "Peng, Feng, Zhang et al. 2025 (pentanal named among the characteristic aroma compounds of sugarcane juice, in a sugarcane fruit wine study)." },
+  { note: "sugarcane", cpd: "ibib", w: 0.40, cite: "Peng, Feng, Zhang et al. 2025 (isobutyl isobutyrate named among the characteristic aroma compounds of sugarcane juice, in a sugarcane fruit wine study)." },
   // Brown sugar: odor-active compounds found by GC-O with aroma-extract dilution
   // and odor-activity values in non-centrifugal cane sugar. All five exist in
   // the compound list already. Weights are this app's judgment, not measured.
@@ -6112,6 +6139,9 @@ const COMPOUND_ORIGINS = {
   walnuttrienal: "Walnuts, where this oatmeal-like aldehyde combines with sotolon to create the characteristic walnut aroma. Neither molecule reconstructs the full identity as clearly on its own.",
   vanillin:      "Vanilla pods (the namesake), baked goods, ice cream, custards. Also slowly extracted from charred oak wood during barrel aging, a vanilla note that wasn't there at the start appears as the barrel does its work; the same chemistry shows up in trace amounts in any oak-aged liquid.",
   cinnamald:     "Cinnamon bark: over 50% of cinnamon bark essential oil is this one molecule, so most of what we call 'cinnamon flavor' is just this. Also cassia (Chinese cinnamon, what most US grocery 'cinnamon' actually is).",
+  butanal:       "A sharp, pungent four-carbon aldehyde, one of the small volatile aldehydes found in sugarcane juice. Not a sweet smell on its own: it adds a raw, green-leaning edge that is part of why fresh cane juice smells different from sugar.",
+  pentanal:      "A five-carbon aldehyde, a small volatile that sits one step below hexanal in the aldehyde series. Reported with butanal, hexanal and isobutyl isobutyrate as part of the aroma of fresh sugarcane juice.",
+  ibib:          "Pineapple, banana, tropical fruit, a little grape skin. A light, ethereal fruity ester that adds lift to the grassy aldehydes in fresh sugarcane juice.",
   hexanal:       "Cut grass, green leaves, unripe fruit, fresh cucumber. The smell of broken plant cells, released the instant a leaf is torn. Also the dominant raw-grain aldehyde across wheat, rice, oats, barley, millet, and quinoa alike — most of why uncooked cereals smell so similar to each other.",
   geranial:      "Fresh ginger rhizome's brightest top note. Also half of lemongrass and lemon myrtle's 'citral' character, paired there with its near-identical isomer neral.",
   zingiberene:   "Fresh ginger rhizome — its single most abundant aroma compound by volume, though not its loudest-smelling one. Trace amounts also turn up in basil and turmeric, both close botanical relatives.",
@@ -6697,6 +6727,11 @@ const REFERENCES = {
     title: "Effect of high pressure high temperature processing on the volatile fraction of differently coloured carrots.",
     journal: "Food Chemistry", volume: "153", pages: "340–352"
   },
+  "peng2025sugarcane": {
+    authors: "Peng, Y.-X., Feng, B., Zhang, Z.-J., Li, K., Wang, S., & Niu, D.", year: 2025,
+    title: "Effect of fermentation alcohol termination by ceramic membrane filtration on the aroma of sugarcane fruit wine.",
+    journal: "Food Microbiology", volume: "128", pages: "104724"
+  },
   "gu2026oolong": {
     authors: "Gu, M., Ren, W., Zeng, S., Gui, W., Cai, Y., Chen, W., Jin, S., & Ye, N.", year: 2026,
     title: "How wrapping-twisting methods shape the aroma of spring oolong tea: a case study of Anxi Huangjingui.",
@@ -7120,6 +7155,7 @@ const CITE_TO_REF = [
   ["Kebede et al. 2014",          "kebede2014carrot"],
   ["Liu, Shen, Huang et al. 2023", "liu2023greentea"],
   ["Gu, Ren, Zeng et al. 2026",   "gu2026oolong"],
+  ["Peng, Feng, Zhang et al. 2025", "peng2025sugarcane"],
   ["Yang, Zhang, Hua et al. 2020", "yang2020roastedtea"],
   ["Liu, Wan, Xie & Chen 2021",   "liu2021brownsugar"],
   ["Wang, Qiao, Liu et al. 2023", "wang2023friedonion"],
@@ -7710,7 +7746,8 @@ const GUIDE_NARROW = {
     { key: "vanilla",  label: "Vanilla / custard",          notes: ["vanilla"] },
     { key: "honey",    label: "Honey",                      notes: ["honey"] },
     { key: "cocoa",    label: "Chocolate / cocoa",          notes: ["chocolate"] },
-    { key: "candy",    label: "Spun sugar / candy",         notes: ["cottoncandy"] }
+    { key: "candy",    label: "Spun sugar / candy",         notes: ["cottoncandy"] },
+    { key: "sugar",    label: "Plain sugar / sugar cane",   notes: ["sugarcane", "whitesugar", "beetsugar"] }
   ]},
   roasted: { question: "What's roasting?", options: [
     { key: "coffee",   label: "Coffee / dark roast",        notes: ["coffee"] },
@@ -7868,7 +7905,7 @@ const NOTE_ICONS = {
   winey:"🍷", buttery:"🧈", yeasty:"🍞", sulfury:"🥚", cardboard:"📦", cheesy:"🧀",
   sweaty:"🧦", musty:"🍂", skunky:"🦨", miso:"🍜", soysauce:"🍶",
   // Vegetal
-  greentea:"🍵", hojicha:"🫖", brownsugar:"🥄", molasses:"🫙", roastedonion:"🧅", roastedcarrot:"🥕", onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
+  sugarcane:"🎋", whitesugar:"🧊", beetsugar:"🫜", greentea:"🍵", hojicha:"🫖", brownsugar:"🥄", molasses:"🫙", roastedonion:"🧅", roastedcarrot:"🥕", onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
   garlic:"🧄", celery:"🥬", carrot:"🥕", beet:"🫜", olive:"🫒", tomato:"🍅", arugula:"🥬",
   lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
   brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
@@ -11552,7 +11589,7 @@ function renderNoteDetail(noteId) {
       <div class="section-title">Compounds this note maps to (literature)</div>
       <ul>
         ${edges.length === 0
-          ? `<li><span class="cite">No compounds linked to this note in the current data.</span></li>`
+          ? `<li><span class="cite">${n.noCompoundNote || "No compounds linked to this note in the current data."}</span></li>`
           : edges.map(e => {
               const cpd = CPD_BY_ID[e.cpd];
               const refId = refIdForCite(e.cite);
