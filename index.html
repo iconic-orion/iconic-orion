@@ -23,10 +23,10 @@
     --grp-roasted: #b65b3d;
     --grp-spice:   #ee665e;
     --grp-nutty:   #d19456;
-    --grp-earthy:  #7fc275;
     --grp-sweet:   #dfa850;
     --grp-fermented: #6ebdab;
     --grp-vegetal: #5a9c4f;
+    --grp-herbal:  #7fc275;
 
     /* Pane widths — referenced both by the body grid and by the pane-toggle
        positions, so both stay in sync if these change. */
@@ -5255,8 +5255,8 @@ const GROUPS = [
   { id: "floral",    label: "Floral",    color: "var(--grp-floral)",    cssVar: "--grp-floral" },
   { id: "roasted",   label: "Roasted",   color: "var(--grp-roasted)",   cssVar: "--grp-roasted" },
   { id: "spice",     label: "Spice",     color: "var(--grp-spice)",     cssVar: "--grp-spice" },
+  { id: "herbal",    label: "Herbal",    color: "var(--grp-herbal)",    cssVar: "--grp-herbal" },
   { id: "nutty",     label: "Nutty",     color: "var(--grp-nutty)",     cssVar: "--grp-nutty" },
-  { id: "earthy",    label: "Earthy",    color: "var(--grp-earthy)",    cssVar: "--grp-earthy" },
   { id: "sweet",     label: "Sweet",     color: "var(--grp-sweet)",     cssVar: "--grp-sweet" },
   { id: "fermented", label: "Fermented", color: "var(--grp-fermented)", cssVar: "--grp-fermented" },
   { id: "vegetal",   label: "Vegetal",   color: "var(--grp-vegetal)",   cssVar: "--grp-vegetal" }
@@ -5356,8 +5356,8 @@ const NOTES = [
   // Honeysuckle is genuinely unrelated to jasmine too — different order.
   { id: "honeysuckle", label: "Honeysuckle",        group: "floral",   common: true,  subOf: "jasmine", genus: "Lonicera", family: "Caprifoliaceae", order: "Dipsacales" },
   { id: "lavender",    label: "Lavender",           group: "floral",   common: true,  family: "Lamiaceae", order: "Lamiales" },
-  { id: "sage",        label: "Sage",               group: "floral",   common: true,  subOf: "lavender", family: "Lamiaceae", order: "Lamiales" },
-  { id: "thyme",       label: "Thyme",              group: "floral",   common: true,  subOf: "lavender", family: "Lamiaceae", order: "Lamiales" },
+  { id: "sage",        label: "Sage",               group: "herbal",  common: true,  subOf: "lavender", family: "Lamiaceae", order: "Lamiales" },
+  { id: "thyme",       label: "Thyme",              group: "herbal",  common: true,  subOf: "lavender", family: "Lamiaceae", order: "Lamiales" },
   { id: "chamomile",   label: "Chamomile",          group: "floral",   common: true,  family: "Asteraceae", order: "Asterales" },
   { id: "violet",      label: "Violet",             group: "floral",   common: false, genus: "Viola", family: "Violaceae", order: "Malpighiales" },
   // roasted
@@ -5393,18 +5393,18 @@ const NOTES = [
   // two real notes instead — Anise now points to one real, single family
   // (matching its existing Eastern Mediterranean origin pin, seed anise's
   // native range) rather than staying deliberately ambiguous.
-  { id: "anise",       label: "Anise",              group: "spice",    common: true,  genus: "Pimpinella", family: "Apiaceae", order: "Apiales" },
+  { id: "anise",       label: "Anise",              group: "herbal",  common: true,  genus: "Pimpinella", family: "Apiaceae", order: "Apiales" },
   // Licorice has no standout compound of its own: Glycyrrhiza root's
   // signature (glycyrrhizin) is a sweet TASTE compound, not a volatile —
   // the recognizable "black licorice" smell people mean here is
   // conventionally anise-derived anethole (the same shared aroma the old
   // combined note was built on), same honest pattern as Peach under
   // Stonefruit above.
-  { id: "licorice",    label: "Licorice",           group: "spice",    common: true,  subOf: "anise", genus: "Glycyrrhiza", family: "Fabaceae", order: "Fabales",
+  { id: "licorice",    label: "Licorice",           group: "herbal",  common: true,  subOf: "anise", genus: "Glycyrrhiza", family: "Fabaceae", order: "Fabales",
     noStandoutNote: "Licorice root's own signature compound, glycyrrhizin, is a sweet TASTE compound (a saponin), not an aroma one. The smell people associate with black licorice is conventionally anise oil's anethole — the same compound Anise is built on — added as flavoring rather than something inherent to Glycyrrhiza itself." },
   { id: "ginger",      label: "Ginger",             group: "spice",    common: true,  genus: "Zingiber", family: "Zingiberaceae", order: "Zingiberales" },
   { id: "cardamom",    label: "Cardamom",           group: "spice",    common: true,  genus: "Elettaria", family: "Zingiberaceae", order: "Zingiberales" },
-  { id: "bayleaf",     label: "Bay leaf",           group: "spice",    common: true,  genus: "Laurus", family: "Lauraceae", order: "Laurales" },
+  { id: "bayleaf",     label: "Bay leaf",           group: "herbal",  common: true,  genus: "Laurus", family: "Lauraceae", order: "Laurales" },
   // nutty
   { id: "almond",      label: "Almond",             group: "nutty",    common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "hazelnut",    label: "Hazelnut",           group: "nutty",    common: false, genus: "Corylus", family: "Betulaceae", order: "Fagales" },
@@ -5417,13 +5417,13 @@ const NOTES = [
   // The note's own label calls out cedar specifically, so "Woody / cedar"
   // anchors to genus Cedrus rather than the umbrella bucket — same family
   // (Pinaceae) as Pine, different genus.
-  { id: "woody",       label: "Woody / cedar",      group: "earthy",   common: true,  genus: "Cedrus", family: "Pinaceae", order: "Pinales" },
-  { id: "pine",        label: "Pine / resin",       group: "earthy",   common: true,  genus: "Pinus", family: "Pinaceae", order: "Pinales" },
+  { id: "woody",       label: "Woody / cedar",      group: "herbal",  common: true,  genus: "Cedrus", family: "Pinaceae", order: "Pinales" },
+  { id: "pine",        label: "Pine / resin",       group: "herbal",  common: true,  genus: "Pinus", family: "Pinaceae", order: "Pinales" },
   // Eucalyptus is Myrtaceae, not even close to pine's Pinaceae — promoted to
   // its own standalone slider (it has its own real, sourced compounds and is
   // iconic enough on its own); the taxonomy tree/cross-group badges still
   // surface the honest "not actually related to pine" fact via family/order.
-  { id: "eucalyptus",  label: "Eucalyptus",         group: "earthy",   common: true,  genus: "Eucalyptus", family: "Myrtaceae", order: "Myrtales" },
+  { id: "eucalyptus",  label: "Eucalyptus",         group: "herbal",  common: true,  genus: "Eucalyptus", family: "Myrtaceae", order: "Myrtales" },
   // Mushroom was the one note that reached the Tree with an incomplete lineage:
   // Fungi and nothing below it, so it hung off the kingdom disc as an orphan
   // while every other branched note runs Kingdom → Order → Family → note. Placed
@@ -5433,14 +5433,14 @@ const NOTES = [
   // a kitchen. Edible fungi genuinely span many families, and 1-octen-3-ol (the
   // compound this note is built on) is common across most of them, so this is a
   // representative placement rather than a claim about all mushrooms.
-  { id: "mushroom",    label: "Mushroom",           group: "earthy",   common: false, kingdom: "Fungi", genus: "Agaricus", family: "Agaricaceae", order: "Agaricales" },
-  { id: "green",       label: "Green / grassy",     group: "earthy",   common: true,  taxonBucket: "umbrella" },
-  { id: "bellpepper",  label: "Bell pepper",        group: "earthy",   common: true,  family: "Solanaceae", order: "Solanales" },
-  { id: "mint",        label: "Mint",               group: "earthy",   common: true,  family: "Lamiaceae", order: "Lamiales" },
-  { id: "peppermint",  label: "Peppermint",         group: "earthy",   common: true,  subOf: "mint", family: "Lamiaceae", order: "Lamiales" },
-  { id: "spearmint",   label: "Spearmint",          group: "earthy",   common: true,  subOf: "mint", family: "Lamiaceae", order: "Lamiales" },
-  { id: "wintergreen", label: "Wintergreen",        group: "earthy",   common: true,  subOf: "mint", family: "Ericaceae", order: "Ericales" },
-  { id: "tobacco",     label: "Tobacco",            group: "earthy",   common: false, family: "Solanaceae", order: "Solanales" },
+  { id: "mushroom",    label: "Mushroom",           group: "herbal",  common: false, kingdom: "Fungi", genus: "Agaricus", family: "Agaricaceae", order: "Agaricales" },
+  { id: "green",       label: "Green / grassy",     group: "herbal",  common: true,  taxonBucket: "umbrella" },
+  { id: "bellpepper",  label: "Bell pepper",        group: "herbal",  common: true,  family: "Solanaceae", order: "Solanales" },
+  { id: "mint",        label: "Mint",               group: "herbal",  common: true,  family: "Lamiaceae", order: "Lamiales" },
+  { id: "peppermint",  label: "Peppermint",         group: "herbal",  common: true,  subOf: "mint", family: "Lamiaceae", order: "Lamiales" },
+  { id: "spearmint",   label: "Spearmint",          group: "herbal",  common: true,  subOf: "mint", family: "Lamiaceae", order: "Lamiales" },
+  { id: "wintergreen", label: "Wintergreen",        group: "herbal",  common: true,  subOf: "mint", family: "Ericaceae", order: "Ericales" },
+  { id: "tobacco",     label: "Tobacco",            group: "herbal",  common: false, family: "Solanaceae", order: "Solanales" },
   // sweet
   { id: "vanilla",     label: "Vanilla",            group: "sweet",    common: true,  genus: "Vanilla", family: "Orchidaceae", order: "Asparagales" },
   { id: "caramel",     label: "Caramel",            group: "sweet",    common: true,  taxonBucket: "process" },
@@ -7620,22 +7620,23 @@ const GUIDE_NARROW = {
     { key: "smoke",    label: "Smoke & char",               notes: ["smoky", "burnt"] }
   ]},
   spice: { question: "Which spice register?", options: [
-    { key: "baking",   label: "Warm baking spice",          notes: ["cinnamon", "clove"] },
-    { key: "pungent",  label: "Sharp / pungent",            notes: ["pepper", "ginger"] },
-    { key: "licorice", label: "Licorice / fennel",          notes: ["anise", "licorice"] }
+    { key: "baking",   label: "Warm baking spice",          notes: ["cinnamon", "clove", "cardamom"] },
+    { key: "pungent",  label: "Sharp / pungent",            notes: ["pepper", "ginger"] }
+  ]},
+  herbal: { question: "Which kind of herbal or earthy?", options: [
+    { key: "mint",     label: "Cool mint",                  notes: ["mint", "peppermint", "spearmint", "wintergreen", "eucalyptus"] },
+    { key: "licorice", label: "Licorice / anise",           notes: ["anise", "licorice"] },
+    { key: "savory",   label: "Savory herbs",               notes: ["sage", "thyme", "bayleaf"] },
+    { key: "forest",   label: "Forest / resin",             notes: ["pine", "woody"] },
+    { key: "soil",     label: "Soil & mushroom",            notes: ["mushroom"] },
+    { key: "green",    label: "Fresh-cut green",            notes: ["green", "bellpepper"] },
+    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] }
   ]},
   nutty: { question: "Closest nut?", options: [
     { key: "marzipan", label: "Marzipan / almond extract",  notes: ["almond"] },
     { key: "roastnut", label: "Roasted nuts",               notes: ["hazelnut", "peanut", "pecan"] },
     { key: "coconut",  label: "Coconut / creamy",           notes: ["coconut"] },
     { key: "greennut", label: "Green / buttery",            notes: ["pistachio"] }
-  ]},
-  earthy: { question: "Which kind of earthy?", options: [
-    { key: "forest",   label: "Forest / resin",             notes: ["pine", "woody", "eucalyptus"] },
-    { key: "soil",     label: "Soil & mushroom",            notes: ["mushroom"] },
-    { key: "green",    label: "Fresh-cut green",            notes: ["green", "bellpepper"] },
-    { key: "mint",     label: "Cool mint",                  notes: ["mint"] },
-    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] }
   ]},
   fermented: { question: "Which kind of funk?", options: [
     { key: "bready",   label: "Bready / yeasty",            notes: ["yeasty"] },
@@ -7661,9 +7662,9 @@ const GUIDE_FAMILY_HINTS = {
   floral:    "flowers, perfume",
   sweet:     "vanilla, caramel, honey, chocolate",
   roasted:   "coffee, bread, smoke, char",
-  spice:     "cinnamon, pepper, ginger",
+  spice:     "cinnamon, clove, pepper, ginger",
+  herbal:    "mint, sage, pine, soil, grass",
   nutty:     "almond, hazelnut, coconut",
-  earthy:    "soil, pine, grass, mint",
   fermented: "yeast, cheese, booze, funk",
   vegetal:   "onion, tomato, cooked veg"
 };
@@ -7766,8 +7767,8 @@ const NOTE_ICONS = {
   lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
   brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
 };
-const GROUP_ICON = { fruity:"🍑", floral:"🌸", roasted:"☕", spice:"🧂", nutty:"🥜",
-  earthy:"🍄", sweet:"🍬", fermented:"🫧", vegetal:"🥬" };
+const GROUP_ICON = { fruity:"🍑", floral:"🌸", roasted:"☕", spice:"🧂", herbal:"🌿", nutty:"🥜",
+  sweet:"🍬", fermented:"🫧", vegetal:"🥬" };
 function noteIcon(n) {
   const note = typeof n === "string" ? NOTE_BY_ID[n] : n;
   if (!note) return "";
