@@ -10853,6 +10853,10 @@ function closeGuide() {
   syncSliders();      // the notes list below the wheel picks up what was ticked
   recompute();
   drawNotes();
+  // A finished tasting should show its results: raise the phone's compound
+  // drawer from its minimized peek so users see what their notes point to.
+  if (isMobileViewport() && state.compoundsSnap === "peek"
+      && compoundNodes.some(n => n.intensity_raw > 0)) setCompoundsSnap("half");
   document.getElementById("guide-start").focus({ preventScroll: true });
 }
 document.getElementById("guide-start").addEventListener("click", openGuide);
