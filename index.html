@@ -394,6 +394,20 @@
   .legend.collapsed .legend-body { display: none; }
   .legend.collapsed .caret { transform: rotate(-90deg); }
   .legend-body { margin-top: 8px; }
+  /* Header placement: the legend is a tool-wide control, so it is a header
+     button with a popover panel (in-flow inside the phone tray, see below). */
+  .hud-legend { position: relative; }
+  .hud-legend .legend { background: none; border: 0; padding: 0; margin: 0; }
+  .hud-legend .legend-header { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font: inherit; font-size: 12px; cursor: pointer;
+    text-transform: none; letter-spacing: 0; gap: 8px; }
+  .hud-legend .legend-header:hover, .hud-legend .legend:not(.collapsed) .legend-header {
+    border-color: var(--accent); color: var(--accent); }
+  .hud-legend .legend-header:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .hud-legend .legend-body { position: absolute; top: calc(100% + 6px); left: 0; width: 300px;
+    max-height: min(72vh, 640px); overflow-y: auto; margin: 0; padding: 12px;
+    background: rgba(18,16,20,.97); border: 1px solid var(--line); border-radius: 6px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.48); z-index: 110; box-sizing: border-box; }
   .legend-section { margin-bottom: 10px; }
   .legend-section:last-child { margin-bottom: 0; }
   .legend-section-title { font-size: 10px; color: var(--ink-dim);
@@ -416,86 +430,6 @@
     overflow-y: auto; padding: 12px; }
   /* Subtle search field at the top of the notes pane (below the legend).
      Filters note rows as the user types. */
-  /* "Describe what you're tasting →" trigger button at the top of the notes
-     pane. Solid button, not a text-link, so it reads as a clear action. */
-  .wais-open-btn { width: 100%; background: var(--panel-2); color: var(--accent);
-    border: 1px solid var(--accent); border-radius: 6px;
-    padding: 9px 12px; font-size: 12px; font-family: inherit; cursor: pointer;
-    margin-bottom: 10px; text-align: center; font-weight: 600;
-    letter-spacing: 0.01em;
-    transition: background 0.15s, color 0.15s, border-color 0.15s; }
-  .wais-open-btn:hover { background: var(--accent); color: #1a1810; }
-
-  /* WAIS modal content */
-  .wais-content { max-width: 640px; max-height: 80vh; }
-  .wais-title { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: 0.01em; }
-  .wais-body { padding: 18px 22px; }
-  .wais-lede { font-size: 12px; color: var(--ink-dim); margin: 0 0 14px; line-height: 1.5; }
-  .wais-chips { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
-  .wais-category { display: flex; flex-direction: column; gap: 6px; }
-  .wais-category-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--ink-dim); padding-bottom: 2px; border-bottom: 1px dotted var(--line); }
-  .wais-category-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .wais-chip { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    border-radius: 14px; padding: 5px 12px; font-size: 12px; cursor: pointer;
-    font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s; }
-  .wais-chip:hover { border-color: var(--accent); color: var(--accent); }
-  .wais-chip.active { background: var(--accent); color: #1a1810; border-color: var(--accent); }
-  .wais-suggestions { font-size: 12px; color: var(--ink); line-height: 1.6; }
-  .wais-suggestions-empty { color: var(--ink-dim); font-style: italic; padding: 8px 0; }
-  .wais-suggestion-heading { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--ink-dim); margin-bottom: 8px; }
-  .wais-suggestion-list { list-style: none; padding: 0; margin: 0;
-    display: flex; flex-direction: column; gap: 4px; }
-  .wais-suggestion-item { display: grid; grid-template-columns: 10px 1fr auto;
-    gap: 8px; align-items: center; padding: 6px 10px;
-    background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px;
-    cursor: pointer; transition: border-color 0.15s; }
-  .wais-suggestion-item:hover { border-color: var(--accent); }
-  .wais-suggestion-item .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .wais-suggestion-item .name { color: var(--ink); }
-  .wais-suggestion-item .group { font-size: 10px; color: var(--ink-dim);
-    text-transform: uppercase; letter-spacing: 0.06em; }
-  /* Small info icon shown next to the group label when a note's grouping
-     isn't obvious from everyday perception (e.g. why is Buttery in Fermented).
-     Cursor:help signals "hover for explanation"; tooltip carries the answer. */
-  .rationale-info { background: transparent; border: none; padding: 0 0 0 4px;
-    color: var(--ink-dim); cursor: pointer; font-size: 11px; font-family: inherit; }
-  .rationale-info:hover { color: var(--accent); }
-  .wais-suggestion-item { grid-template-columns: 10px 1fr auto auto !important; }
-  .wais-suggestion-count { font-size: 10px; color: var(--accent); font-weight: 600;
-    font-variant-numeric: tabular-nums; margin-left: 6px;
-    border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
-    background: var(--bg); }
-
-  /* "Add suggested flavor notes" — the submit at the bottom of the
-     suggestions list. Prominent so the user sees it as the next action. */
-  .wais-add-all-btn { display: block; width: 100%; margin-top: 16px;
-    background: var(--accent); color: #1a1810; border: 1px solid var(--accent);
-    border-radius: 6px; padding: 10px 16px; font-size: 13px; font-weight: 600;
-    cursor: pointer; font-family: inherit;
-    transition: background 0.15s, border-color 0.15s; }
-  .wais-add-all-btn:hover { background: #e8b667; border-color: #e8b667; }
-
-  /* Guide me pane: stacked question blocks, each a bordered card so the
-     steps read as distinct questions rather than one undifferentiated chip
-     soup (the exact problem the guide exists to solve). */
-  .wais-mode-tabs { margin-bottom: 14px; }
-  .wais-mode-tabs button { font-size: 12px; padding: 6px 14px; cursor: pointer; font-family: inherit; }
-  .wais-guide-step { border: 1px solid var(--line); border-radius: 6px;
-    padding: 10px 12px; margin-bottom: 12px; background: var(--panel-2); }
-  .wais-guide-step-title { font-size: 12px; font-weight: 600; color: var(--ink);
-    margin-bottom: 2px; }
-  .wais-guide-step-sub { font-size: 11px; color: var(--ink-dim); line-height: 1.5;
-    margin-bottom: 8px; }
-  .wais-guide-step .wais-category-chips { margin-top: 2px; }
-  /* Guide chips sit on panel-2 cards, so give them the darker bg for contrast. */
-  .wais-guide-step .wais-chip { background: var(--bg); }
-  .wais-guide-step .wais-chip.active { background: var(--accent); }
-  /* The broad-family chips carry a small parenthetical hint after the label. */
-  .wais-chip .chip-hint { color: inherit; opacity: 0.65; font-size: 10px; margin-left: 4px; }
-  .wais-guide-nudge { font-size: 11px; color: var(--ink-dim); font-style: italic;
-    padding: 2px 0 10px; }
 
   .notes-search-field { position: relative; z-index: 6; margin-bottom: 10px; }
   .notes-search { width: 100%; background: var(--bg); color: var(--ink);
@@ -504,8 +438,14 @@
     margin: 0; }
   .notes-search:focus { outline: none; border-color: var(--accent); }
   .notes-search::placeholder { color: var(--ink-dim); }
-  .notes-search-opts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-  .notes-search-opts .delivery-opt { min-height: 30px; }
+  .notes-search-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 8px; }
+  .notes-search-opts .delivery-opt { min-height: 32px; font-size: 12px; font-weight: 600; padding: 5px 14px;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+  .notes-search-opts .delivery-opt:hover { border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 24%, transparent); }
+  .notes-search-opts .delivery-opt[aria-pressed="true"] { color: #1a1810; }
   .note-row.search-hidden, .group-header.search-hidden { display: none; }
   aside.detail { grid-area: detail; background: var(--panel); border-left: 1px solid var(--line);
     overflow-y: auto; padding: 16px; }
@@ -589,13 +529,6 @@
   .wheel-nudge .helper-dismiss { position: absolute; top: 2px; right: 3px; }
   .wheel-hint .helper-dismiss { align-self: flex-start; flex-shrink: 0;
     margin: -1px -5px 0 2px; }
-
-  /* Tap-revealed rationale text under a Note Suggester row (mobile-reachable
-     twin of the ⓘ hover tooltip). Spans the whole grid row below the item. */
-  .wais-rationale { grid-column: 1 / -1; margin-top: 4px; padding: 6px 8px;
-    font-size: 10px; line-height: 1.45; color: var(--ink-dim);
-    background: var(--bg); border-radius: 5px; }
-  .wais-rationale[hidden] { display: none; }
 
   /* ── Tasting Tray (persistent input HUD) ─────────────────────────────
      A pill bar pinned to the bottom of the wheel. Each chip is one entered
@@ -1016,6 +949,26 @@
   .wheel-seed-btn:hover, .wheel-seed-btn:focus-visible {
     border-color: var(--accent); transform: translateY(-1px);
     box-shadow: 0 7px 22px rgba(0, 0, 0, 0.46); }
+  /* Glimmer: hovering/focusing "Group by plant family" makes the seed shimmer,
+     a nudge that plant families are what Go Deeper opens up. */
+  .wheel-seed-btn { overflow: hidden; }
+  .wheel-seed-btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+    background: linear-gradient(105deg, transparent, rgba(255, 244, 200, 0.55), transparent);
+    transform: skewX(-18deg); opacity: 0; pointer-events: none; }
+  @keyframes seed-glimmer-sweep { 0% { left: -60%; opacity: 1; } 100% { left: 130%; opacity: 1; } }
+  @keyframes seed-glimmer-glow {
+    0%, 100% { box-shadow: 0 5px 18px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 16px 3px color-mix(in srgb, var(--accent) 65%, transparent); } }
+  body:has(#opt-group-family:hover, #opt-group-family:focus-visible) .wheel-seed-btn {
+    border-color: var(--accent); animation: seed-glimmer-glow 1.1s ease-in-out infinite; }
+  body:has(#opt-group-family:hover, #opt-group-family:focus-visible) .wheel-seed-btn::after {
+    animation: seed-glimmer-sweep 1.1s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    body:has(#opt-group-family:hover, #opt-group-family:focus-visible) .wheel-seed-btn,
+    body:has(#opt-group-family:hover, #opt-group-family:focus-visible) .wheel-seed-btn::after { animation: none; }
+    body:has(#opt-group-family:hover, #opt-group-family:focus-visible) .wheel-seed-btn {
+      box-shadow: 0 0 14px 2px color-mix(in srgb, var(--accent) 65%, transparent); }
+  }
   .wheel-seed-btn .seed-glyph { display: block; flex: 0 0 auto; }
   .wheel-seed-btn .seed-glyph svg { width: 18px; height: 18px; display: block; }
   /* Folded seed: leaves scaled to nothing, stem hidden, seed body sitting low. */
@@ -1500,7 +1453,6 @@
   body.reading-mode aside.notes,
   body.reading-mode aside.detail,
   body.reading-mode .info-overlay-body,
-  body.reading-mode .wais-body,
   body.reading-mode .tasting-tray,
   body.reading-mode #origins-detail-panel,
   body.reading-mode #taxonomy-legend-note {
@@ -2057,6 +2009,9 @@
        remains reachable instead of drawing over the wheel beneath the tray. */
     header.hud-open #hud-save-share { grid-row: 8; grid-column: 1 / -1;
       justify-self: stretch; margin-top: 6px; }
+    header.hud-open #hud-legend { grid-row: 9; grid-column: 1 / -1; justify-self: stretch; margin-top: 6px; }
+    header.hud-open .hud-legend .legend-header { width: 100%; min-height: 44px; justify-content: space-between; }
+    header.hud-open .hud-legend .legend-body { position: static; width: auto; max-height: none; margin-top: 8px; box-shadow: none; }
     header.hud-open #lap-save { width: 100%; min-height: 44px; }
     header.hud-open .lap-actions-menu { position: static; width: 100%; margin-top: 8px; }
     /* Dashboard is redundant on mobile (single-column layout shows same as Notes).
@@ -3366,7 +3321,6 @@
       radial-gradient(circle at 50% 50%, transparent 46%, rgba(216,166,87,.035) 70%, transparent 71%); }
     aside.notes { padding: 12px 12px 112px; background: rgba(15,19,22,.94); }
     .legend { margin-bottom: 8px; }
-    .wais-open-btn { border-radius: 14px; min-height: 46px; }
     .notes-search { min-height: 46px; border-radius: 14px; padding-left: 15px; }
     .mobile-scent-nav { display: flex; position: sticky; top: 52px; z-index: 45;
       gap: 7px; overflow-x: auto; margin: 0 -12px 10px; padding: 10px 12px;
@@ -4275,6 +4229,51 @@
       </span>
       <span id="taxonomy-compare-toggle-label">Compare notes</span>
     </button>
+    <!-- Legend & visibility: tool-wide filters, so it lives in the header
+         rather than the notes sidebar. Popover on desktop, in-flow in the tray. -->
+    <div class="hud-legend" id="hud-legend">
+      <div class="legend collapsed" id="legend">
+        <button type="button" class="legend-header" id="legend-toggle" aria-expanded="false" aria-controls="legend-body"
+          title="Choose which phases, note groups and compound classes show across the whole tool">
+          <span>Legend &amp; visibility</span>
+          <span class="caret">▼</span>
+        </button>
+        <div class="legend-body" id="legend-body">
+          <div class="legend-section">
+            <div class="legend-section-title">
+              <span>Phase (ortho / retro)</span>
+            </div>
+            <div id="legend-phases"></div>
+          </div>
+          <div class="legend-section">
+            <div class="legend-section-title">
+              <span>Note groups</span>
+              <span class="toggle-all" data-target="groups">toggle all</span>
+            </div>
+            <div id="legend-groups"></div>
+          </div>
+          <div class="legend-section">
+            <div class="legend-section-title">
+              <span>Irritant layer</span>
+            </div>
+            <label class="legend-item irritant-toggle" title="Highlight notes that also trigger the trigeminal nerve (cool, burn, sting), not just smell">
+              <input type="checkbox" id="irritant-layer-toggle" checked />
+              <span class="label">Highlight possible irritants</span>
+            </label>
+            <div class="irritant-key" aria-hidden="true">
+              <span>❄️ cooling</span><span>🔥 burning</span><span>⚡ stinging</span><span>💧 tearing</span>
+            </div>
+          </div>
+          <div class="legend-section">
+            <div class="legend-section-title">
+              <span>Compound classes</span>
+              <span class="toggle-all" data-target="classes">toggle all</span>
+            </div>
+            <div id="legend-classes"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Mobile-only divider between the wheel controls and the utilities
          (hidden on desktop; grid-placed in the mobile tray). -->
     <div class="hud-divider" aria-hidden="true"></div>
@@ -4367,50 +4366,6 @@
     <span class="guide-start-main">Do a tasting</span>
     <span class="guide-start-sub">A guided walk-through, one step at a time</span>
   </button>
-  <div class="legend collapsed" id="legend">
-    <div class="legend-header" id="legend-toggle">
-      <span>Legend &amp; visibility</span>
-      <span class="caret">▼</span>
-    </div>
-    <div class="legend-body">
-      <div class="legend-section">
-        <div class="legend-section-title">
-          <span>Phase (ortho / retro)</span>
-        </div>
-        <div id="legend-phases"></div>
-      </div>
-      <div class="legend-section">
-        <div class="legend-section-title">
-          <span>Note groups</span>
-          <span class="toggle-all" data-target="groups">toggle all</span>
-        </div>
-        <div id="legend-groups"></div>
-      </div>
-      <div class="legend-section">
-        <div class="legend-section-title">
-          <span>Irritant layer</span>
-        </div>
-        <label class="legend-item irritant-toggle" title="Highlight notes that also trigger the trigeminal nerve (cool, burn, sting), not just smell">
-          <input type="checkbox" id="irritant-layer-toggle" checked />
-          <span class="label">Highlight possible irritants</span>
-        </label>
-        <div class="irritant-key" aria-hidden="true">
-          <span>❄️ cooling</span><span>🔥 burning</span><span>⚡ stinging</span><span>💧 tearing</span>
-        </div>
-      </div>
-      <div class="legend-section">
-        <div class="legend-section-title">
-          <span>Compound classes</span>
-          <span class="toggle-all" data-target="classes">toggle all</span>
-        </div>
-        <div id="legend-classes"></div>
-      </div>
-    </div>
-  </div>
-  <!-- Discovery aid: opens a modal of evocative descriptors that suggest which
-       specific notes to try. Subtle text button so it's there for people who
-       want it without crowding the pane for people who don't. -->
-  <button type="button" id="wais-open-btn" class="wais-open-btn">Not sure what you're noticing? Use Note Suggester</button>
   <!-- Subtle search field at the top of the notes pane. Filters which note rows
        are visible as the user types. Empty query = show all. -->
   <div class="notes-search-field">
@@ -4419,10 +4374,8 @@
     <div id="notes-search-results" class="flavor-search-results" role="listbox"
       aria-label="Matching flavor notes" hidden></div>
     <div class="notes-search-opts" role="group" aria-label="Plant family finder">
-      <button type="button" id="opt-search-family" class="delivery-opt" aria-pressed="false"
-        title="Let the search also match plant families, like Rutaceae, citrus family or mint family">Search plant families</button>
       <button type="button" id="opt-group-family" class="delivery-opt" aria-pressed="false"
-        title="Cluster notes that share a plant family under a heading inside each category">Group by plant family</button>
+        title="Cluster notes that share a plant family under a heading inside each category">🌳 Group by plant family</button>
     </div>
   </div>
   <nav id="mobile-scent-nav" class="mobile-scent-nav" aria-label="Jump to aroma family"></nav>
@@ -4433,7 +4386,7 @@
        above the notes because it frames the whole tasting, not one note. -->
   <details id="delivery-strip" class="delivery-strip">
     <summary class="delivery-summary">
-      <span class="delivery-title">How you're tasting it</span>
+      <span class="delivery-title">How You're tasting</span>
       <span class="delivery-chips" id="delivery-chips" aria-live="polite"></span>
       <span class="caret">▼</span>
     </summary>
@@ -5130,37 +5083,6 @@
       <button type="button" id="info-close-btn" class="info-close" aria-label="Close info">✕</button>
     </div>
     <div class="info-overlay-body" id="info-body" role="tabpanel"></div>
-  </div>
-</div>
-
-<!-- "What am I smelling?" modal — translates evocative descriptors to suggested
-     notes from the existing vocabulary. Closed by ✕ button or Escape. -->
-<div id="wais-overlay" class="info-overlay" role="dialog" aria-modal="true" aria-labelledby="wais-title" hidden>
-  <div class="info-overlay-content wais-content">
-    <div class="info-overlay-header">
-      <span id="wais-title" class="wais-title">Note Suggester</span>
-      <button type="button" id="wais-close-btn" class="info-close" aria-label="Close">✕</button>
-    </div>
-    <div class="info-overlay-body wais-body">
-      <!-- Two entry points into the same suggestion mechanism: Browse words
-           is recognition ("I almost have the word — let me scan"), Guide me
-           is recall failure ("I don't know how to describe this — ask me
-           questions"). Both converge on the same suggestion list + add-all. -->
-      <div class="tabs wais-mode-tabs" id="wais-mode-tabs">
-        <button type="button" data-wais-mode="browse" class="active">Browse words</button>
-        <button type="button" data-wais-mode="guide">Guide me</button>
-      </div>
-      <div id="wais-browse-pane">
-        <p class="wais-lede">Click a word that describes what you're noticing. We'll suggest specific notes to try.</p>
-        <div id="wais-chips" class="wais-chips"></div>
-        <div id="wais-suggestions" class="wais-suggestions"></div>
-      </div>
-      <div id="wais-guide-pane" hidden>
-        <p class="wais-lede">A few quick questions to narrow things down. Everything is optional and multi-select — check whatever fits, skip whatever doesn't, and tap any suggestion below the moment it looks right. There are no wrong answers.</p>
-        <div id="wais-guide-steps"></div>
-        <div id="wais-guide-suggestions" class="wais-suggestions"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -7524,225 +7446,6 @@ function formatOriginRef(ref) {
   return `${ref.authors} (${ref.year}). ${ref.title} <em>${ref.journal}</em>, ${vi}, ${ref.pages}.`;
 }
 
-// "What am I smelling?" descriptor map. Translates evocative everyday words
-// (floral, cheesey, petting zoo, musty…) to specific notes from the existing
-// vocabulary. The tool surfaces these as suggested sliders to try — it does
-// NOT auto-set intensities; the user picks. Each descriptor maps to a curated
-// subset of NOTES ids. Add/edit freely as the note set grows.
-const WAIS_DESCRIPTORS = [
-  { category: "Fruity", entries: [
-    { word: "fruity",            notes: ["berry", "apple", "stonefruit", "banana", "mango", "lychee", "passionfruit", "cherry", "pineapple"] },
-    { word: "citrusy",           notes: ["lemon", "orange", "grapefruit"] },
-    { word: "lime",              notes: ["lemon"] },
-    { word: "yuzu",              notes: ["lemon"] },
-    { word: "meyer lemon",       notes: ["lemon"] },
-    { word: "tangerine / mandarin", notes: ["orange"] },
-    { word: "bergamot",          notes: ["bergamot", "lavender"] },
-    { word: "blood orange",      notes: ["orange"] },
-    { word: "pomelo / pummelo",  notes: ["grapefruit"] },
-    { word: "orange peel",       notes: ["orange"] },
-    { word: "blueberry",         notes: ["berry"] },
-    { word: "raspberry",         notes: ["berry", "violet"] },
-    { word: "grape / concord",   notes: ["grape"] },
-    { word: "melon",             notes: ["melon"] },
-    { word: "cucumber",          notes: ["melon", "green"] },
-    { word: "watermelon",        notes: ["melon"] },
-    { word: "honeydew",          notes: ["melon"] },
-    { word: "cantaloupe / muskmelon", notes: ["melon"] },
-    { word: "strawberry",        notes: ["berry"] },
-    { word: "blackberry",        notes: ["berry", "violet"] },
-    { word: "cranberry",         notes: ["berry"] },
-    { word: "red currant",       notes: ["berry"] },
-    { word: "black currant / cassis", notes: ["berry", "passionfruit"] },
-    { word: "pomegranate",       notes: ["berry", "winey"] },
-    { word: "red cherry",        notes: ["cherry", "berry"] },
-    { word: "black cherry",      notes: ["cherry", "winey"] },
-    { word: "plum",              notes: ["stonefruit", "berry"] },
-    { word: "fig",               notes: ["berry", "stonefruit"] },
-    { word: "pear",              notes: ["apple"] },
-    { word: "quince",            notes: ["apple", "stonefruit"] },
-    { word: "peach",             notes: ["stonefruit"] },
-    { word: "apricot",           notes: ["stonefruit"] },
-    { word: "nectarine",         notes: ["stonefruit"] },
-    { word: "tropical",          notes: ["mango", "lychee", "passionfruit", "banana", "pineapple"] },
-    { word: "lychee",             notes: ["lychee", "rose"] },
-    { word: "overripe fruit",    notes: ["berry", "stonefruit", "apple", "banana", "mango", "cherry"] },
-    { word: "dried fruit",       notes: ["stonefruit", "berry", "apple", "mango", "cherry"] },
-    { word: "raisin",            notes: ["winey", "stonefruit"] },
-    { word: "prune",             notes: ["stonefruit", "winey"] },
-    { word: "date",              notes: ["caramel", "honey", "stonefruit"] },
-    { word: "jammy fruit",       notes: ["berry", "stonefruit", "winey"] },
-    { word: "stewed fruit",      notes: ["apple", "stonefruit", "berry"] },
-    { word: "fruitcake",         notes: ["winey", "stonefruit", "honey", "vanilla"] }
-  ]},
-  { category: "Floral", entries: [
-    { word: "floral",            notes: ["rose", "gardenia", "jasmine", "lilac", "lavender", "chamomile", "violet"] },
-    { word: "gardenia",          notes: ["gardenia"] },
-    { word: "lilac",             notes: ["lilac"] },
-    { word: "tea rose",          notes: ["rose", "jasmine"] },
-    { word: "orange blossom",    notes: ["jasmine"] },
-    { word: "honeysuckle",       notes: ["jasmine"] }
-  ]},
-  { category: "Herbal / Vegetal", entries: [
-    { word: "herbal",            notes: ["lavender", "chamomile", "anise", "pine", "mint"] },
-    { word: "green / vegetal",   notes: ["green", "bellpepper"] },
-    { word: "fresh-cut grass",   notes: ["green"] },
-    { word: "tomato leaf",       notes: ["green", "bellpepper"] },
-    { word: "eucalyptus",        notes: ["eucalyptus"] },
-    { word: "sage",              notes: ["lavender"] },
-    { word: "thyme",             notes: ["lavender"] },
-    { word: "peppermint",        notes: ["mint"] },
-    { word: "spearmint / chewing gum mint", notes: ["mint"] },
-    { word: "wintergreen / medicated balm", notes: ["mint"] },
-    { word: "beetroot",          notes: ["beet"] },
-    { word: "olive",             notes: ["olive"] },
-    { word: "bay leaf",           notes: ["bayleaf"] },
-    { word: "green bean",        notes: ["green", "bellpepper"] },
-    { word: "artichoke",         notes: ["green", "mushroom"] },
-    { word: "fresh",             notes: ["lemon", "lavender", "pine", "mint"] }
-  ]},
-  { category: "Earthy", entries: [
-    { word: "earthy / dirt",     notes: ["mushroom", "woody", "bellpepper"] },
-    { word: "soil",              notes: ["mushroom", "woody", "tobacco", "bellpepper"] },
-    { word: "wet earth",         notes: ["mushroom", "woody"] },
-    { word: "musty",             notes: ["musty", "mushroom", "woody", "cardboard"] },
-    { word: "dusty",             notes: ["woody", "cardboard"] },
-    { word: "woody",             notes: ["woody", "pine", "tobacco"] },
-    { word: "resinous",          notes: ["pine", "woody"] }
-  ]},
-  { category: "Sweet", entries: [
-    { word: "sweet / dessert",   notes: ["vanilla", "caramel", "honey", "chocolate", "maple"] },
-    { word: "brown sugar",       notes: ["brownsugar", "maple", "caramel"] },
-    { word: "molasses",          notes: ["molasses", "caramel", "maple", "burnt"] },
-    { word: "toffee",            notes: ["caramel", "honey", "vanilla"] },
-    { word: "cotton candy",      notes: ["cottoncandy"] },
-    { word: "candy floss",       notes: ["cottoncandy"] },
-    { word: "spun sugar",        notes: ["cottoncandy", "caramel"] }
-  ]},
-  { category: "Confectionery / Artificial", entries: [
-    // Artificial flavors are made from real aroma compounds — these chips show
-    // which natural volatiles manufacturers are actually deploying.
-    { word: "blue raspberry",    notes: ["berry", "grape"] },
-    { word: "bubble gum",        notes: ["banana", "berry", "vanilla"] },
-    { word: "tutti frutti",      notes: ["cherry", "pineapple", "banana", "orange", "berry"] }
-  ]},
-  { category: "Nutty / Cocoa", entries: [
-    { word: "nutty",             notes: ["almond", "hazelnut", "peanut", "pistachio", "pecan", "walnut"] },
-    { word: "cocoa nib",         notes: ["chocolate", "coffee"] },
-    { word: "dark chocolate",    notes: ["chocolate", "coffee", "burnt"] },
-    { word: "milk chocolate",    notes: ["chocolate", "vanilla", "honey"] },
-    { word: "coconut",           notes: ["coconut"] },
-    { word: "pistachio",         notes: ["pistachio"] },
-    { word: "pecan",             notes: ["pecan"] },
-    { word: "walnut",            notes: ["walnut"] }
-  ]},
-  { category: "Roast / Spice", entries: [
-    { word: "roasty",            notes: ["coffee", "toast", "smoky", "burnt"] },
-    { word: "burnt / charred",   notes: ["smoky", "burnt"] },
-    { word: "smoky",             notes: ["smoky", "woody", "burnt", "tobacco"] },
-    { word: "toasted grain",     notes: ["toast", "yeasty", "cereal"] },
-    { word: "spicy / pungent",   notes: ["clove", "cinnamon", "pepper", "anise", "ginger", "cardamom", "bayleaf"] },
-    { word: "medicinal",         notes: ["clove", "anise"] },
-    { word: "gingery",           notes: ["ginger"] },
-    { word: "candied ginger / ginger ale", notes: ["ginger"] },
-    { word: "cardamom",          notes: ["cardamom"] },
-    { word: "popcorn",           notes: ["popcorn"] },
-    { word: "fresh bread",       notes: ["popcorn", "toast", "yeasty"] },
-    { word: "basmati / jasmine rice", notes: ["cereal", "popcorn"] },
-    { word: "boiled / steamed rice",  notes: ["cereal"] },
-    { word: "raw wheat dough / flour", notes: ["cereal", "green"] },
-    { word: "malty / malt",      notes: ["cereal", "toast"] },
-    { word: "oats / oatmeal",    notes: ["cereal"] },
-    { word: "millet",            notes: ["cereal"] },
-    { word: "quinoa",            notes: ["cereal"] },
-    { word: "licorice / fennel", notes: ["anise", "licorice"] }
-  ]},
-  { category: "Fermented / Funky", entries: [
-    { word: "fermented",         notes: ["winey", "yeasty", "buttery"] },
-    { word: "boozy",             notes: ["winey", "yeasty", "buttery"] },
-    { word: "funky",             notes: ["winey", "yeasty", "sulfury", "mushroom", "woody", "tobacco"] },
-    { word: "kombucha-like",     notes: ["winey", "yeasty", "sulfury"] },
-    { word: "lactic / yogurt",   notes: ["buttery", "yeasty"] },
-    { word: "cheesey / dairy",   notes: ["cheesy", "buttery"] },
-    { word: "sweaty / gym socks", notes: ["sweaty"] },
-    { word: "parmesan",          notes: ["cheesy"] },
-    { word: "petting zoo",       notes: ["sulfury", "yeasty", "mushroom", "woody"] },
-    { word: "stale / oxidized",  notes: ["cardboard", "mushroom"] },
-    { word: "corked / musty",    notes: ["musty"] },
-    { word: "wet cardboard / basement", notes: ["musty", "cardboard"] },
-    { word: "skunky / lightstruck", notes: ["skunky", "sulfury"] }
-  ]},
-  { category: "Vegetal / Savory", entries: [
-    { word: "onion",             notes: ["onion"] },
-    { word: "red onion",         notes: ["onion"] },
-    { word: "sweet onion",       notes: ["onion"] },
-    { word: "scallion / green onion", notes: ["onion"] },
-    { word: "garlic",            notes: ["garlic"] },
-    { word: "celery",            notes: ["celery"] },
-    { word: "carrot",            notes: ["carrot"] },
-    { word: "beet / beetroot",   notes: ["beet"] },
-    { word: "olive",             notes: ["olive"] },
-    { word: "tomato vine / leaf", notes: ["tomato", "green"] },
-    { word: "arugula / peppery greens", notes: ["arugula"] },
-    { word: "lettuce",           notes: ["lettuce"] },
-    { word: "cabbage",           notes: ["cabbage"] },
-    { word: "cooked cauliflower / sulfurous veg", notes: ["cabbage"] },
-    { word: "Brussels sprouts",  notes: ["brusselssprouts"] },
-    { word: "boiled / baked potato", notes: ["potato"] },
-    { word: "raw potato peel",   notes: ["potato"] },
-    { word: "sweet potato / yam", notes: ["sweetpotato"] },
-    { word: "ube / purple yam",  notes: ["ube"] },
-    { word: "taro",              notes: ["taro"] },
-    { word: "wasabi",            notes: ["wasabi"] },
-    { word: "horseradish",       notes: ["horseradish"] },
-    { word: "miso",              notes: ["miso"] },
-    { word: "soy sauce / shoyu", notes: ["soysauce"] }
-  ]}
-];
-
-// ---------- "GUIDE ME" QUESTION DATA ----------
-// The Note Suggester's second entry point: a short, forgiving question flow
-// for people who can't yet name what they're tasting. Design rules, learned
-// from how novices actually navigate aroma wheels:
-//   - Every question is multi-select and skippable. Answering nothing is a
-//     valid answer; "could be several things" is the normal case, not a
-//     failure. No answer ever dead-ends the flow.
-//   - Answers FILTER AND BOOST a live shortlist rather than walking a rigid
-//     tree — a wrong first instinct ("fruity" when it's really a floral
-//     ester) demotes but never eliminates the right answer.
-//   - Mouth/touch cues (tart, cooling, tingly) are used as narrowing clues
-//     and labeled honestly as tongue sensations, not aromas.
-// Weights: ingredient seed +1, broad family +1, mouth cue +1, narrowing
-// answer +2 (the most specific signal the user has given us).
-
-// Optional step 0: ingredients the menu/label already told you. Honest
-// framing matters here — an ingredient is the recipe, not the experience,
-// so each seeds *typical sensory directions* for that ingredient rather
-// than asserting "coffee in the cup = coffee note in the nose."
-const GUIDE_INGREDIENTS = [
-  { key: "coffee",     label: "Coffee / espresso",        notes: ["coffee", "chocolate", "caramel", "berry", "toast"] },
-  { key: "blacktea",   label: "Black tea",                notes: ["woody", "tobacco", "honey", "cereal"] },
-  { key: "greentea",   label: "Green tea",                notes: ["green", "jasmine", "cereal"] },
-  { key: "chocolate",  label: "Chocolate / cacao",        notes: ["chocolate", "berry", "winey", "hazelnut"] },
-  { key: "citrus",     label: "Citrus",                   notes: ["lemon", "orange", "grapefruit"] },
-  { key: "berries",    label: "Berries",                  notes: ["berry", "cherry"] },
-  { key: "stonefruit", label: "Peach / apricot / plum",   notes: ["stonefruit", "cherry"] },
-  { key: "tropical",   label: "Tropical fruit",           notes: ["mango", "passionfruit", "pineapple", "banana"] },
-  { key: "applepear",  label: "Apple / pear",             notes: ["apple"] },
-  { key: "grape",      label: "Grape / grape juice",      notes: ["grape", "winey"] },
-  { key: "herbs",      label: "Fresh herbs",              notes: ["mint", "green", "lavender"] },
-  { key: "spices",     label: "Baking spices",            notes: ["cinnamon", "clove", "ginger"] },
-  { key: "vanilla",    label: "Vanilla",                  notes: ["vanilla"] },
-  { key: "caramel",    label: "Caramel / brown sugar",    notes: ["caramel", "maple", "burnt"] },
-  { key: "honeyi",     label: "Honey",                    notes: ["honey"] },
-  { key: "nuts",       label: "Nuts",                     notes: ["almond", "hazelnut", "peanut", "pecan"] },
-  { key: "coconuti",   label: "Coconut",                  notes: ["coconut"] },
-  { key: "dairy",      label: "Cream / milk",             notes: ["buttery"] },
-  { key: "cultured",   label: "Yogurt / kefir / kombucha", notes: ["yeasty", "winey"] },
-  { key: "botanical",  label: "Floral syrup / botanicals", notes: ["rose", "lavender", "jasmine"] },
-  { key: "gingerbeer", label: "Ginger beer / ginger",     notes: ["ginger"] }
-];
-
 // Step 2: mouth and touch sensations. Not aromas — tartness is taste,
 // tingle and cooling are trigeminal — but each is a genuinely diagnostic
 // clue about which aroma families are in play.
@@ -7753,96 +7456,6 @@ const GUIDE_MOUTH = [
   { key: "warming", label: "Warming / tingly heat",      notes: ["pepper", "ginger", "cinnamon", "clove", "wasabi", "horseradish"] },
   { key: "creamy",  label: "Rich / creamy",              notes: ["buttery", "vanilla", "coconut"] }
 ];
-
-// Step 3: one narrowing question per broad family the user checked in
-// step 1. Options are experiential directions, not taxonomy — each boosts
-// a small subset of that family (weight 2). All notes referenced here are
-// top-level (visible) notes; varietal subOf children surface later via
-// their parent's disclosure toggle.
-const GUIDE_NARROW = {
-  fruity: { question: "Which way does the fruit lean?", options: [
-    { key: "citrus",   label: "Citrus-bright",              notes: ["lemon", "orange", "grapefruit"] },
-    { key: "berry",    label: "Berry / jammy",              notes: ["berry", "cherry", "grape"] },
-    { key: "orchard",  label: "Orchard (apple, pear, stone fruit)", notes: ["apple", "stonefruit", "cherry"] },
-    { key: "tropical", label: "Tropical",                   notes: ["banana", "mango", "passionfruit", "pineapple"] },
-    { key: "melon",    label: "Watery melon / cucumber",    notes: ["melon"] },
-    { key: "dried",    label: "Dried / cooked fruit",       notes: ["grape", "stonefruit", "winey"] }
-  ]},
-  floral: { question: "What kind of floral?", options: [
-    { key: "heady",    label: "Heady perfume",              notes: ["jasmine", "rose"] },
-    { key: "herbal",   label: "Herbal / dried flowers",     notes: ["lavender", "chamomile"] },
-    { key: "candied",  label: "Candied / powdery",          notes: ["violet", "rose"] }
-  ]},
-  sweet: { question: "Which dessert register?", options: [
-    { key: "caramelized", label: "Caramelized / burnt sugar", notes: ["caramel", "maple", "burnt"] },
-    { key: "vanilla",  label: "Vanilla / custard",          notes: ["vanilla"] },
-    { key: "honey",    label: "Honey",                      notes: ["honey"] },
-    { key: "cocoa",    label: "Chocolate / cocoa",          notes: ["chocolate"] },
-    { key: "candy",    label: "Spun sugar / candy",         notes: ["cottoncandy"] },
-    { key: "sugar",    label: "Plain sugar / sugar cane",   notes: ["sugarcane", "whitesugar", "beetsugar"] }
-  ]},
-  roasted: { question: "What's roasting?", options: [
-    { key: "coffee",   label: "Coffee / dark roast",        notes: ["coffee"] },
-    { key: "bread",    label: "Toast & popcorn",            notes: ["toast", "popcorn"] },
-    { key: "smoke",    label: "Smoke & char",               notes: ["smoky", "burnt"] },
-    { key: "canesugar", label: "Brown sugar / molasses",    notes: ["brownsugar", "molasses"] },
-    { key: "roastveg", label: "Roasted vegetables",         notes: ["roastedcarrot", "roastedonion"] },
-    { key: "roasttea", label: "Roasted tea",                notes: ["hojicha"] }
-  ]},
-  spice: { question: "Which kind of spicy?", options: [
-    { key: "baking",   label: "Warm baking spice",          notes: ["cinnamon", "clove", "cardamom"] },
-    { key: "pungent",  label: "Sharp / pungent",            notes: ["pepper", "ginger"] }
-  ]},
-  earthy: { question: "Which kind of grassy or earthy?", options: [
-    { key: "grain",    label: "Grain / cereal",             notes: ["cereal", "rice", "wheat", "barley", "oats", "millet", "quinoa"] },
-    { key: "green",    label: "Fresh-cut green",            notes: ["green", "bellpepper"] },
-    { key: "soil",     label: "Soil, mushroom & wood",      notes: ["mushroom", "woody"] },
-    { key: "leaf",     label: "Cured leaf",                 notes: ["tobacco"] },
-    { key: "tea",      label: "Green tea",                  notes: ["greentea"] }
-  ]},
-  herbal: { question: "Which kind of herb?", options: [
-    { key: "mint",     label: "Cool mint",                  notes: ["mint", "peppermint", "spearmint", "wintergreen", "eucalyptus"] },
-    { key: "licorice", label: "Licorice / anise",           notes: ["anise", "licorice"] },
-    { key: "savory",   label: "Savory herbs",               notes: ["sage", "thyme", "bayleaf"] },
-    { key: "forest",   label: "Forest / resin",             notes: ["pine"] }
-  ]},
-  nutty: { question: "Closest nut?", options: [
-    { key: "marzipan", label: "Marzipan / almond extract",  notes: ["almond"] },
-    { key: "roastnut", label: "Roasted nuts",               notes: ["hazelnut", "peanut", "pecan"] },
-    { key: "coconut",  label: "Coconut / creamy",           notes: ["coconut"] },
-    { key: "greennut", label: "Green / buttery",            notes: ["pistachio"] }
-  ]},
-  fermented: { question: "Which kind of funk?", options: [
-    { key: "bready",   label: "Bready / yeasty",            notes: ["yeasty"] },
-    { key: "dairyf",   label: "Dairy / cheesy",             notes: ["buttery", "cheesy"] },
-    { key: "winey",    label: "Wine-like / boozy",          notes: ["winey"] },
-    { key: "umami",    label: "Savory umami",               notes: ["miso", "soysauce"] },
-    { key: "off",      label: "Off / funky",                notes: ["sweaty", "musty", "skunky", "sulfury", "cardboard"] }
-  ]},
-  vegetal: { question: "Which vegetable register?", options: [
-    { key: "allium",   label: "Onion / garlic",             notes: ["onion", "garlic"] },
-    { key: "crunchy",  label: "Fresh & crunchy",            notes: ["celery", "lettuce", "arugula"] },
-    { key: "garden",   label: "Garden fruit & root",        notes: ["tomato", "carrot"] },
-    { key: "starchy",  label: "Cooked & starchy",           notes: ["potato", "sweetpotato", "taro", "ube"] },
-    { key: "brassica", label: "Mustard-hot / sulfurous",    notes: ["cabbage", "brusselssprouts", "wasabi", "horseradish"] }
-  ]}
-};
-
-// Experiential phrasing for the step-1 broad-family checkboxes; the GROUPS
-// labels alone ("Roasted", "Fermented") assume the user already thinks in
-// wheel categories, which is exactly what a guided user doesn't do yet.
-const GUIDE_FAMILY_HINTS = {
-  fruity:    "fresh fruit of any kind",
-  floral:    "flowers, perfume",
-  sweet:     "vanilla, caramel, honey, chocolate",
-  roasted:   "coffee, bread, smoke, char",
-  spice:     "cinnamon, clove, pepper, ginger",
-  herbal:    "mint, sage, thyme, pine, anise",
-  earthy:    "grain, grass, mushroom, soil",
-  nutty:     "almond, hazelnut, coconut",
-  fermented: "yeast, cheese, booze, funk",
-  vegetal:   "onion, tomato, cooked veg"
-};
 
 // Jargon glossary — words people have heard in tasting circles but might not own.
 // Per [[project-information-access]]: define jargon, NOT baseline chemistry.
@@ -12799,18 +12412,10 @@ const notesSearchDropdown = setupFlavorSearchDropdown({
   onSelect: note => jumpToNoteRow(note.id),
 });
 
-// Plant-family finders (both off by default).
+// Plant-family grouping toggle (off by default).
 function syncFamilyFinderUi() {
-  document.getElementById("opt-search-family").setAttribute("aria-pressed", String(state.searchFamily));
   document.getElementById("opt-group-family").setAttribute("aria-pressed", String(state.groupByFamily));
-  notesSearchEl.placeholder = state.searchFamily ? "Search notes or plant families…" : "Search notes…";
 }
-document.getElementById("opt-search-family").addEventListener("click", () => {
-  state.searchFamily = !state.searchFamily;
-  syncFamilyFinderUi();
-  applyNotesSearchFilter();
-  notesSearchDropdown.render();
-});
 document.getElementById("opt-group-family").addEventListener("click", () => {
   state.groupByFamily = !state.groupByFamily;
   syncFamilyFinderUi();
@@ -12927,8 +12532,18 @@ document.getElementById('callout-check').addEventListener('change', e => {
 });
 
 // Collapse / expand legend
+function setLegendOpen(open) {
+  document.getElementById("legend").classList.toggle("collapsed", !open);
+  document.getElementById("legend-toggle").setAttribute("aria-expanded", String(open));
+}
 document.getElementById("legend-toggle").addEventListener("click", () => {
-  document.getElementById("legend").classList.toggle("collapsed");
+  setLegendOpen(document.getElementById("legend").classList.contains("collapsed"));
+});
+document.addEventListener("pointerdown", e => {
+  if (!e.target.closest("#hud-legend")) setLegendOpen(false);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") setLegendOpen(false);
 });
 
 // "toggle all" links
@@ -15189,7 +14804,7 @@ function renderHowToUse() {
 
     <h3 id="use-controls">Controls</h3>
     <ul>
-      <li><strong>Wheel.</strong> The default tasting workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). Not sure what to log? The Note Suggester above the sliders turns everyday words ("tropical," "earthy," "boozy") into specific notes to try. The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Wheel.</strong> The default tasting workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
       <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed a tasting too.</li>
       <li><strong>Tree.</strong> Biologically placeable plant and fungal notes arranged by represented lineage. Culinary umbrellas and process/fault descriptors stay on the Wheel rather than becoming invented branches. Use relatives as comparison leads, then check their compound links; shared ancestry alone does not prove an aroma relationship.</li>
       <li><strong>Compare notes.</strong> Put any two notes side by side. Shared compounds give you a sensory crossover to investigate; culinary, botanical, and geographic cards provide context without treating correlation as causation.</li>
@@ -15359,342 +14974,6 @@ document.addEventListener("click", (e) => {
     e.preventDefault();
     openInfo(btn.dataset.openInfo);
   }
-});
-
-// ---------- "WHAT AM I SMELLING?" ----------
-// Vocabulary translator: user picks an evocative descriptor (floral, cheesey,
-// petting zoo...) and the tool suggests specific notes from the existing
-// vocabulary to try. Click a suggested note → modal closes, panel scrolls to
-// that slider with a flash highlight. No auto-set of intensity; the user
-// chooses how strong it actually is.
-const waisOverlayEl     = document.getElementById("wais-overlay");
-const waisChipsEl       = document.getElementById("wais-chips");
-const waisSuggestionsEl = document.getElementById("wais-suggestions");
-
-// Per-note rationale shown as a tooltip in the Note Suggester when a note's
-// group assignment isn't obvious from everyday perception. The chemistry
-// reason lives here so users who wonder "why is X in this group?" have a
-// one-hover answer without us having to restructure the groups themselves.
-const NOTE_GROUP_RATIONALE = {
-  buttery: "Buttery sits in the Fermented group because diacetyl, the compound responsible for the buttery smell, is produced by fermentation: malolactic in wines and beers, and dairy fermentation in cultured butter and yogurt. Tastes creamy, but the chemistry behind it is fermentation.",
-  cheesy: "Cheesy sits in Fermented because its primary compound — butyric acid — is a free fatty acid released by microbial fermentation and the breakdown of butterfat during cheese ripening. The sharp parmesan tang is essentially concentrated fermentation byproduct.",
-  sweaty: "Sweaty sits in Fermented because isovaleric acid, its primary compound, is produced by bacterial breakdown of leucine — the same metabolic path that makes fermented foods funky and unwashed gym clothes recognizable. Same chemistry, different context.",
-  musty: "Musty / corked sits in Fermented as the group's catch-all for microbial funk. Its marker, TCA, is made by molds methylating chlorophenols — not a fermentation you'd want, but a microbial origin all the same.",
-  skunky: "Skunky is grouped here alongside the other sulfur / funky notes for convenience, but its origin is unusual: MBT forms photochemically when light strikes hop compounds in beer, not by fermentation."
-};
-
-// Multi-select: which descriptor chips are currently active. Cleared each
-// time the modal opens fresh.
-let waisSelected = new Set();
-
-function openWais() {
-  waisSelected = new Set();
-  guideSel = { ingredients: new Set(), families: new Set(), mouth: new Set(), narrow: {} };
-  waisOverlayEl.hidden = false;
-  // Fresh open = fully fresh state: selections reset (both panes), and the
-  // tab resets to Browse to match — returning to a wiped Guide pane would
-  // read as lost work rather than a fresh start.
-  setWaisMode("browse");
-  renderWaisChips();
-  renderWaisSuggestionsMulti();
-  renderGuideSteps();
-  renderGuideSuggestions();
-}
-function closeWais() { waisOverlayEl.hidden = true; }
-
-function findWaisEntry(word) {
-  for (const cat of WAIS_DESCRIPTORS) {
-    const e = cat.entries.find(d => d.word === word);
-    if (e) return e;
-  }
-  return null;
-}
-
-function renderWaisChips() {
-  waisChipsEl.innerHTML = WAIS_DESCRIPTORS.map(cat => `
-    <div class="wais-category">
-      <div class="wais-category-title">${cat.category}</div>
-      <div class="wais-category-chips">
-        ${cat.entries.map(d =>
-          `<button type="button" class="wais-chip ${waisSelected.has(d.word) ? 'active' : ''}" data-wais-word="${d.word}">${d.word}</button>`
-        ).join('')}
-      </div>
-    </div>
-  `).join('');
-  waisChipsEl.querySelectorAll(".wais-chip").forEach(b => {
-    b.addEventListener("click", () => {
-      const word = b.dataset.waisWord;
-      if (waisSelected.has(word)) waisSelected.delete(word);
-      else waisSelected.add(word);
-      b.classList.toggle("active");
-      renderWaisSuggestionsMulti();
-    });
-  });
-}
-
-// Shared suggestion-list renderer for both Note Suggester panes. Takes a
-// Map(noteId → match count/score) and renders the sorted, visibility-
-// filtered list with the same click-to-jump items and "Add suggested
-// flavor notes" commit button in either container. opts:
-//   heading      — the list's title line
-//   itemTitle    — (count, intensity) => hover title per item
-//   intensityFor — count => starting intensity if added (capped at 10)
-//   maxItems     — cap the list (guide answers can match half the wheel;
-//                  an uncapped list would recreate the wall-of-chips
-//                  problem the guide exists to solve)
-function renderWaisSuggestionList(containerEl, counts, opts) {
-  const intensityFor = opts.intensityFor || (c => Math.min(10, c * 3));
-  let sorted = [...counts.entries()]
-    .filter(([nid]) => isNoteVisible(nid))
-    .sort((a, b) => b[1] - a[1] || NOTE_BY_ID[a[0]].label.localeCompare(NOTE_BY_ID[b[0]].label))
-    .map(([nid, count]) => ({ note: NOTE_BY_ID[nid], count, intensity: intensityFor(count) }));
-
-  if (sorted.length === 0) {
-    containerEl.innerHTML = `
-      <div class="wais-suggestion-heading">Notes to try</div>
-      <div class="wais-suggestions-empty">No matching notes are currently visible. Check the legend's visibility filters if you've hidden any note groups.</div>
-    `;
-    return;
-  }
-
-  let overflowNote = "";
-  if (opts.maxItems && sorted.length > opts.maxItems) {
-    overflowNote = `<div class="wais-suggestions-empty">Showing the strongest ${opts.maxItems} of ${sorted.length} matches — answer more above to sharpen the list.</div>`;
-    sorted = sorted.slice(0, opts.maxItems);
-  }
-
-  containerEl.innerHTML = `
-    <div class="wais-suggestion-heading">${opts.heading}</div>
-    <ul class="wais-suggestion-list">
-      ${sorted.map(({ note, count, intensity }) => {
-        const g = GROUP_BY_ID[note.group];
-        const color = getComputedStyle(document.documentElement).getPropertyValue(g.cssVar).trim();
-        const rationale = NOTE_GROUP_RATIONALE[note.id];
-        const rationaleIcon = rationale
-          ? `<button type="button" class="rationale-info" aria-expanded="false" title="${rationale.replace(/"/g, '&quot;')}" aria-label="Why is ${note.label} in ${g.label}?">ⓘ</button>`
-          : '';
-        // Tap-revealed twin of the ⓘ tooltip: a full-width row under the item,
-        // toggled by the icon's click handler below, so the rationale reaches
-        // touch users who never get the hover title.
-        const rationaleRow = rationale
-          ? `<div class="wais-rationale" hidden>${rationale}</div>`
-          : '';
-        return `<li class="wais-suggestion-item" data-note="${note.id}" title="${opts.itemTitle(count, intensity)}">
-          <span class="dot" style="background:${color}"></span>
-          <span class="name">${note.label}</span>
-          <span class="group">${g.label}${rationaleIcon}</span>
-          <span class="wais-suggestion-count">×${count} → ${intensity}</span>
-          ${rationaleRow}
-        </li>`;
-      }).join('')}
-    </ul>
-    ${overflowNote}
-    <button type="button" class="wais-add-all-btn">Add suggested flavor notes →</button>
-  `;
-
-  // Info-icon tap toggles the inline rationale row (and stops the click from
-  // bubbling to the item, which would scroll to the slider). The hover title
-  // still works for mouse users; this makes the same text reachable on touch.
-  containerEl.querySelectorAll(".rationale-info").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const row = btn.closest("li")?.querySelector(".wais-rationale");
-      if (!row) return;
-      row.hidden = !row.hidden;
-      btn.setAttribute("aria-expanded", String(!row.hidden));
-    });
-  });
-  // Clicking an individual suggestion still scrolls + focuses that slider
-  // (doesn't auto-set intensity — the explicit "Add suggested flavor notes"
-  // button does that for the whole set).
-  containerEl.querySelectorAll(".wais-suggestion-item").forEach(li => {
-    li.addEventListener("click", () => {
-      const noteId = li.dataset.note;
-      closeWais();
-      const row = document.querySelector(`.note-row[data-note="${noteId}"]`);
-      if (row) {
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
-        row.classList.add("flash");
-        setTimeout(() => row.classList.remove("flash"), 600);
-        const slider = row.querySelector("input[type=range]");
-        if (slider) slider.focus();
-      }
-    });
-  });
-
-  // "Add suggested flavor notes" → commits each suggested note as a default
-  // (null-phase) entry at its derived intensity, then closes and re-renders.
-  const addBtn = containerEl.querySelector(".wais-add-all-btn");
-  if (addBtn) addBtn.addEventListener("click", () => {
-    sorted.forEach(({ note, intensity }) => {
-      commitEntry(note.id, null, intensity);
-      state.pendingIntensity[note.id] = intensity;
-    });
-    closeWais();
-    // Rebuild the panel so slider positions reflect the new entries, then
-    // recompute the wheel and analysis pane.
-    buildNotesPanel();
-    recompute();
-  });
-}
-
-// Aggregate suggested notes across all selected word-bank chips. Each note's
-// count = how many of the active chips suggest it; starting intensity if
-// added is min(10, count × 3), so a note suggested by three chips ends up
-// at 9, a note from one chip at 3.
-function renderWaisSuggestionsMulti() {
-  if (waisSelected.size === 0) {
-    waisSuggestionsEl.innerHTML = `<div class="wais-suggestions-empty">Click chips above to see suggested notes. Select multiple to combine: the more descriptors suggest the same note, the higher its starting intensity if you add them.</div>`;
-    return;
-  }
-  const counts = new Map();
-  for (const word of waisSelected) {
-    const entry = findWaisEntry(word);
-    if (!entry) continue;
-    for (const noteId of entry.notes) {
-      counts.set(noteId, (counts.get(noteId) || 0) + 1);
-    }
-  }
-  renderWaisSuggestionList(waisSuggestionsEl, counts, {
-    heading: "Notes to try (sorted by how many of your selected descriptors suggest them)",
-    itemTitle: (count, intensity) => `${count} of your selected descriptors suggest this. Starting intensity if you add: ${intensity}.`
-  });
-}
-
-// ---------- "GUIDE ME" FLOW ----------
-// The Note Suggester's question-based entry point. See the GUIDE_* data
-// blocks for the design rules; the short version: every question is
-// multi-select and skippable, answers boost a live shortlist rather than
-// walking a rigid tree, and the shortlist is always one tap from bailing
-// out into a real slider.
-const waisGuideStepsEl       = document.getElementById("wais-guide-steps");
-const waisGuideSuggestionsEl = document.getElementById("wais-guide-suggestions");
-
-let guideSel = { ingredients: new Set(), families: new Set(), mouth: new Set(), narrow: {} };
-
-function guideChip(kind, key, label, active, hint) {
-  const hintHtml = hint ? `<span class="chip-hint">(${hint})</span>` : "";
-  return `<button type="button" class="wais-chip ${active ? 'active' : ''}" data-guide-kind="${kind}" data-guide-key="${key}">${label}${hintHtml}</button>`;
-}
-
-function renderGuideSteps() {
-  const familyBlocks = GROUPS
-    .filter(g => guideSel.families.has(g.id) && GUIDE_NARROW[g.id])
-    .map(g => {
-      const q = GUIDE_NARROW[g.id];
-      const sel = guideSel.narrow[g.id] || new Set();
-      return `<div class="wais-guide-step">
-        <div class="wais-guide-step-title">${g.label}: ${q.question}</div>
-        <div class="wais-guide-step-sub">Check any that fit — or none, if you can't tell yet. Skipping keeps the whole ${g.label} family in play.</div>
-        <div class="wais-category-chips">
-          ${q.options.map(o => guideChip(`narrow:${g.id}`, o.key, o.label, sel.has(o.key))).join('')}
-        </div>
-      </div>`;
-    }).join('');
-
-  waisGuideStepsEl.innerHTML = `
-    <div class="wais-guide-step">
-      <div class="wais-guide-step-title">Already know what's in it?</div>
-      <div class="wais-guide-step-sub">If the menu or label lists ingredients, tap them for a head start. But ingredients are the recipe, not the experience — a single-origin coffee can read as berries and flowers, and a "chocolate" stout can smell mostly of coffee. The questions below ask what <em>you're</em> actually getting. Skip this entirely if you'd rather go in blind.</div>
-      <div class="wais-category-chips">
-        ${GUIDE_INGREDIENTS.map(i => guideChip("ingredient", i.key, i.label, guideSel.ingredients.has(i.key))).join('')}
-      </div>
-    </div>
-    <div class="wais-guide-step">
-      <div class="wais-guide-step-title">What are you getting? Check everything, even faintly.</div>
-      <div class="wais-guide-step-sub">First impressions, no wrong answers — real things smell like several families at once.</div>
-      <div class="wais-category-chips">
-        ${GROUPS.map(g => guideChip("family", g.id, g.label, guideSel.families.has(g.id), GUIDE_FAMILY_HINTS[g.id])).join('')}
-      </div>
-    </div>
-    <div class="wais-guide-step">
-      <div class="wais-guide-step-title">Now your mouth, not your nose. Any of these?</div>
-      <div class="wais-guide-step-sub">These are tongue and touch sensations, not aromas — but they're honest clues that narrow the field.</div>
-      <div class="wais-category-chips">
-        ${GUIDE_MOUTH.map(m => guideChip("mouth", m.key, m.label, guideSel.mouth.has(m.key))).join('')}
-      </div>
-    </div>
-    ${familyBlocks || `<div class="wais-guide-nudge">Check a family above and follow-up questions will appear here.</div>`}
-  `;
-
-  waisGuideStepsEl.querySelectorAll(".wais-chip").forEach(b => {
-    b.addEventListener("click", () => {
-      const kind = b.dataset.guideKind, key = b.dataset.guideKey;
-      if (kind === "ingredient") toggleSet(guideSel.ingredients, key);
-      else if (kind === "mouth") toggleSet(guideSel.mouth, key);
-      else if (kind === "family") {
-        toggleSet(guideSel.families, key);
-        if (!guideSel.families.has(key)) delete guideSel.narrow[key];
-      } else if (kind.startsWith("narrow:")) {
-        const gid = kind.slice(7);
-        if (!guideSel.narrow[gid]) guideSel.narrow[gid] = new Set();
-        toggleSet(guideSel.narrow[gid], key);
-      }
-      renderGuideSteps();          // re-render so family blocks appear/disappear
-      renderGuideSuggestions();
-    });
-  });
-}
-
-function toggleSet(set, key) { set.has(key) ? set.delete(key) : set.add(key); }
-
-// Score accumulation: ingredient seed +1, broad family +1 (every top-level
-// note in the family), mouth cue +1, narrowing answer +2. Fractional
-// nuance isn't worth the opacity — integer weights keep the ×N badge and
-// the intensity mechanic legible.
-function renderGuideSuggestions() {
-  const counts = new Map();
-  const bump = (noteId, w) => counts.set(noteId, (counts.get(noteId) || 0) + w);
-
-  for (const key of guideSel.ingredients) {
-    const ing = GUIDE_INGREDIENTS.find(i => i.key === key);
-    if (ing) ing.notes.forEach(n => bump(n, 1));
-  }
-  for (const gid of guideSel.families) {
-    NOTES.filter(n => n.group === gid && !n.subOf).forEach(n => bump(n.id, 1));
-  }
-  for (const key of guideSel.mouth) {
-    const m = GUIDE_MOUTH.find(x => x.key === key);
-    if (m) m.notes.forEach(n => bump(n, 1));
-  }
-  for (const [gid, sel] of Object.entries(guideSel.narrow)) {
-    const q = GUIDE_NARROW[gid];
-    if (!q) continue;
-    for (const optKey of sel) {
-      const o = q.options.find(x => x.key === optKey);
-      if (o) o.notes.forEach(n => bump(n, 2));
-    }
-  }
-
-  if (counts.size === 0) {
-    waisGuideSuggestionsEl.innerHTML = `<div class="wais-suggestions-empty">Suggestions appear here as you answer — tap one the moment it looks right, no need to finish.</div>`;
-    return;
-  }
-  renderWaisSuggestionList(waisGuideSuggestionsEl, counts, {
-    heading: "Best matches from your answers (strongest first)",
-    itemTitle: (count, intensity) => `Match strength ${count} across your answers. Starting intensity if you add: ${intensity}.`,
-    intensityFor: c => Math.min(10, c * 2 + 1),
-    maxItems: 14
-  });
-}
-
-// Mode tabs: Browse words ↔ Guide me. Selections in each pane persist
-// while the modal stays open; openWais() resets both (and the tab) on
-// fresh open.
-function setWaisMode(mode) {
-  document.querySelectorAll("#wais-mode-tabs button").forEach(x =>
-    x.classList.toggle("active", x.dataset.waisMode === mode));
-  document.getElementById("wais-browse-pane").hidden = mode !== "browse";
-  document.getElementById("wais-guide-pane").hidden = mode !== "guide";
-}
-document.querySelectorAll("#wais-mode-tabs button").forEach(b => {
-  b.addEventListener("click", () => setWaisMode(b.dataset.waisMode));
-});
-
-document.getElementById("wais-open-btn").addEventListener("click", openWais);
-document.getElementById("wais-close-btn").addEventListener("click", closeWais);
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !waisOverlayEl.hidden) closeWais();
 });
 
 // ---------- INIT ----------
