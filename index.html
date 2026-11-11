@@ -1574,12 +1574,12 @@
   .info-overlay-body .formula ul:last-child { margin-bottom: 0; }
 
   /* ---- Share / export modal ---- */
-  .share-content { max-width: 940px; width: 94vw; max-height: 92vh; }
+  .share-content { max-width: 1280px; width: 96vw; max-height: 94vh; }
   .share-body { display: grid; grid-template-columns: 1fr 320px; gap: 0; overflow: hidden; flex: 1; min-height: 0; }
   .share-preview-wrap { background: #08070a; display: flex; align-items: center; justify-content: center;
-    padding: 20px; overflow: auto; border-right: 1px solid var(--line); }
+    padding: 16px; overflow: auto; border-right: 1px solid var(--line); }
   .share-preview { display: flex; align-items: center; justify-content: center; }
-  .share-preview svg { max-width: 100%; max-height: 68vh; height: auto; border-radius: 10px;
+  .share-preview svg { max-width: 100%; max-height: calc(94vh - 110px); height: auto; border-radius: 10px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
   .share-controls { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
   .share-field { display: flex; flex-direction: column; gap: 6px; }
@@ -20984,7 +20984,18 @@ updateTaxonomyLayerSummary();
     const vb = (src.getAttribute("viewBox") || "0 0 960 720").split(/\s+/).map(Number);
     const W = vb[2] || 960, H = vb[3] || 720;
     if (fill) {
-      const half = R_RING + 56, side = half * 2;
+      // Crop to the wheel plus whatever sticks out past the ring (note names can
+      // run long), measured from the live drawing so no label is clipped.
+      let half = R_RING + 56;
+      try {
+        ["g.notes", "g.group-arcs"].forEach(sel => {
+          const el = src.querySelector(sel); if (!el) return;
+          const b = el.getBBox(); if (!b.width) return;
+          half = Math.max(half, CX - b.x, b.x + b.width - CX, CY - b.y, b.y + b.height - CY);
+        });
+      } catch (e) {}
+      half += 14;
+      const side = half * 2;
       const s = Math.min(bw, bh) / side;
       const tx = bx + (bw - side * s) / 2 - (CX - half) * s, ty = by + (bh - side * s) / 2 - (CY - half) * s;
       const g = sEl("g", { transform: "translate(" + tx.toFixed(2) + "," + ty.toFixed(2) + ") scale(" + s.toFixed(4) + ")" });
@@ -21089,7 +21100,7 @@ updateTaxonomyLayerSummary();
     const mapItems = originItemsFor(notes);
     // The origin map is an optional section of the informative card. It gets its
     // own extra card height so it never covers or truncates the compounds list.
-    const showMapSection = !stunning && opts.showMap && mapItems.length > 0;
+    const showMapSection = opts.showMap && mapItems.length > 0;
     const mapExtra = showMapSection ? mapSectionHeight(mapItems) + 30 : 0;
     const W = 1080, H = (portrait ? 1350 : 1080) + mapExtra;
     const cap = "My tasting";
@@ -21115,13 +21126,13 @@ updateTaxonomyLayerSummary();
       svg.appendChild(sEl("text", { x: PAD, y: 126, fill: "#8a8579", "font-size": 22, "font-family": SANS }, subtitle));
     }
 
-    // "More stunning" = wheel is the hero — section labels dropped, map never shown,
+    // "More stunning" = wheel is the hero — section labels dropped, map optional,
     // defaults to wheel-only; user can opt in notes/compounds via checkboxes.
     // "More informative" = full content with compound bars and map readout.
     const showLabels = !stunning;
     // Both modes honor the checkbox; rendering differs (pills vs bars).
     const compsShown = opts.showCompounds ? comps : [];
-    // Stunning never shows the map (it's an informative detail).
+    // The map is optional in both styles; it gets its own extra card height.
     const contentBottom = footerTop - mapExtra;
 
     // Wheel size. Stunning starts at its maximum and shrinks only when the user
@@ -21129,7 +21140,7 @@ updateTaxonomyLayerSummary();
     const wheelTop = stunning ? 100 : 152;
     let wheelH;
     if (portrait) {
-      wheelH = stunning ? footerTop - wheelTop - 8 : 560;
+      wheelH = stunning ? footerTop - mapExtra - wheelTop - 8 : 560;
       if (stunning) {
         if (opts.showNotes && notes.length) wheelH -= 150;
         if (compsShown.length) wheelH -= 120;
@@ -21139,7 +21150,7 @@ updateTaxonomyLayerSummary();
       }
       if (!stunning) wheelH = Math.min(wheelH, 1000);
     } else {
-      wheelH = stunning ? footerTop - wheelTop - 8 : 500;
+      wheelH = stunning ? footerTop - mapExtra - wheelTop - 8 : 500;
       if (stunning) {
         if (opts.showNotes && notes.length) wheelH -= 80;
         if (compsShown.length) wheelH -= 80;
@@ -21441,7 +21452,7 @@ updateTaxonomyLayerSummary();
   function openShare() {
     overlay.hidden = false; syncTabs();
     showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds;
-    mapRowEl.hidden = opts.style === "stunning";
+    mapRowEl.hidden = false;
     renderCompoundList(); renderPreview();
     // A crowded tasting opens the picker so the choice is visible straight away.
     if (activeTasting().comps.length > 8 && compListEl.hidden) compToggleBtn.click();
@@ -21460,7 +21471,7 @@ updateTaxonomyLayerSummary();
       // Default to wheel-only; user can opt in anything they want.
       opts.showNotes = false; opts.showCompounds = false; opts.showMap = false;
       showNotesCb.checked = false; showCompCb.checked = false; showMapCb.checked = false;
-      mapRowEl.hidden = true;
+      mapRowEl.hidden = false;
     } else {
       opts.showNotes = true; opts.showCompounds = true;
       showNotesCb.checked = true; showCompCb.checked = true;
