@@ -10483,7 +10483,19 @@ function feltSensationsOverall() {
 // A soft halo around the whole wheel: the ring is split into one colored arc per
 // sensation felt (cooling, warming, tingling, stinging, tearing), so the wheel
 // shows how the experience felt as well as what it smelled like.
+// The summary chip beside "How you sense smell": the glyphs of every sensation
+// felt anywhere in the tasting (note rows, off-wheel triggers, or the guide's
+// whole-experience answer), so it always matches the halo on the wheel.
+function updateSenseChip() {
+  const felt = feltSensationsOverall();
+  const saidNothing = Object.values(state.sensations).some(r => r.none);
+  senseChips.textContent = felt.length ? `${felt.map(id => SENSATION_BY_ID[id].glyph).join(" ")} ${felt.length} felt`
+    : saidNothing ? "nothing felt" : "none reported";
+  senseChips.classList.toggle("empty", !felt.length && !saidNothing);
+}
+
 function drawSenseHalo() {
+  updateSenseChip();
   const felt = feltSensationsOverall();
   const sig = felt.join("|") + `@${Math.round(CX)},${Math.round(CY)},${Math.round(R_NOTE)}`;
   if (gHalo.attr("data-sig") === sig) return;
@@ -10611,9 +10623,7 @@ function buildSenseTracker() {
   addWrap.append(addLab, add);
   senseBody.appendChild(addWrap);
 
-  const reported = Object.values(state.sensations).filter(r => r.felt.length || r.none).length;
-  senseChips.textContent = reported ? `${reported} reported` : (keys.length ? "none reported" : "nothing to report");
-  senseChips.classList.toggle("empty", !reported);
+  updateSenseChip();
 
   // Source list: only the papers behind rows currently shown.
   const used = new Set();
