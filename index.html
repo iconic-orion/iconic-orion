@@ -5286,19 +5286,11 @@ const NOTES = [
   { id: "lychee",      label: "Lychee",              group: "fruity",   common: true,  genus: "Litchi", family: "Sapindaceae", order: "Sapindales" },
   { id: "passionfruit",label: "Passionfruit",       group: "fruity",   common: false, genus: "Passiflora", family: "Passifloraceae", order: "Malpighiales" },
   { id: "grape",       label: "Grape / concord",    group: "fruity",   common: true,  genus: "Vitis", family: "Vitaceae", order: "Vitales" },
-  { id: "melon",       label: "Melon / cucumber",   group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
-  // The umbrella default above is the green/watery cucumber-and-rind register
-  // (its own edges are literally nonadienal, "cucumber aldehyde") — not the
-  // sweet, ester-driven ripe-melon character. Cucumber and Melon rind are
-  // both honest "this IS the default" cases; Watermelon/Honeydew/Cantaloupe
-  // each get a real, sourced compound that the default genuinely lacks.
-  { id: "cucumber",    label: "Cucumber",           group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales",
-    noStandoutNote: "Cucumber IS the profile \"Melon / cucumber\" is modeled on above — (E,Z)-2,6-nonadienal is literally cucumber's defining compound, so there's no separate one to call out here." },
-  { id: "melonrind",   label: "Melon rind",         group: "fruity",   common: false, subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales",
-    noStandoutNote: "Melon rind shares the exact same green/watery base as Cucumber above — (E,Z)-2,6-nonadienal is described in the literature as a cucumber-AND-melon-rind compound, not a separate one." },
-  { id: "watermelon",  label: "Watermelon",         group: "fruity",   common: true,  subOf: "melon", genus: "Citrullus", family: "Cucurbitaceae", order: "Cucurbitales" },
-  { id: "honeydew",    label: "Honeydew",           group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
-  { id: "cantaloupe",  label: "Cantaloupe",         group: "fruity",   common: true,  subOf: "melon", genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "cucumber",    label: "Cucumber",           group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "melonrind",   label: "Melon rind",         group: "fruity",   common: false, genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "watermelon",  label: "Watermelon",         group: "fruity",   common: true,  genus: "Citrullus", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "honeydew",    label: "Honeydew",           group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
+  { id: "cantaloupe",  label: "Cantaloupe",         group: "fruity",   common: true,  genus: "Cucumis", family: "Cucurbitaceae", order: "Cucurbitales" },
   // floral
   { id: "rose",        label: "Rose",               group: "floral",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "gardenia",    label: "Gardenia",           group: "floral",   common: true,  genus: "Gardenia", family: "Rubiaceae", order: "Gentianales" },
@@ -5861,11 +5853,7 @@ const EDGES = [
   { note: "raspberry",  cpd: "furaneol",  w: 0.40, cite: "Schwab et al. 2008 (furaneol in Rubus berries)." },
   // Pear (rides the existing Apple / pear note)
   { note: "apple",      cpd: "pearester", w: 0.60, cite: "Jennings & Sevenants 1964 (ethyl 2,4-decadienoate, Bartlett pear)." },
-  // Melon / cucumber
-  { note: "melon",      cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, cucumber & muskmelon)." },
-  { note: "melon",      cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
-  // Cucumber and Melon rind reuse the parent's exact profile (see their
-  // noStandoutNote fields) rather than introducing a separate compound.
+  // Cucumber and melons (each its own note)
   { note: "cucumber",   cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, the determinant cucumber compound)." },
   { note: "cucumber",   cpd: "cishexenol", w: 0.35, cite: "Schieberle 1990 (C6 green note in melon)." },
   { note: "melonrind",  cpd: "nonadienal", w: 0.92, cite: "Schieberle 1990 (2,6-nonadienal, cucumber & muskmelon)." },
@@ -6269,7 +6257,7 @@ const NOTE_ORIGINS = {
   // Cucumber and Watermelon are real, distinct species (Cucumis sativus,
   // Citrullus lanatus) with their own well-documented origin points, unlike
   // Honeydew/Cantaloupe/Melon rind — those are all just Cucumis melo, the
-  // same species as the "melon" parent, which has no pin of its own here.
+  // same species (Cucumis melo), so none gets a pin of its own here.
   cucumber:     { region: "South Asia / India", lat: 23, lon: 80, certainty: "known",
                   modernNote: "Domesticated from wild Cucumis sativus var. hardwickii, still found growing wild in the Himalayan foothills. Cultivated for at least 3000 years." },
   watermelon:   { region: "Northeastern Africa", lat: 15, lon: 32, certainty: "approximate",
@@ -7530,7 +7518,7 @@ const NOTE_ICONS = {
   raspberry:"🫐", strawberry:"🍓", blueberry:"🫐", blackberry:"🫐",
   stonefruit:"🍑", peach:"🍑", plum:"🍑", apple:"🍎", banana:"🍌", pineapple:"🍍",
   cherry:"🍒", mango:"🥭", lychee:"🍒", grape:"🍇",
-  melon:"🍈", cucumber:"🥒", melonrind:"🍈", watermelon:"🍉", honeydew:"🍈", cantaloupe:"🍈",
+  cucumber:"🥒", melonrind:"🍈", watermelon:"🍉", honeydew:"🍈", cantaloupe:"🍈",
   // Floral
   rose:"🌹", gardenia:"🌼", jasmine:"🌼", lilac:"🪻", orangeblossom:"🌼", honeysuckle:"🌼",
   lavender:"🪻", sage:"🌿", thyme:"🌿", chamomile:"🌼", violet:"🌸",
