@@ -2209,7 +2209,7 @@
        this block's own overflow-y: auto actually take effect. */
     body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) .compounds-bar {
       display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 92; }
-    /* Flavor input (peek) shows the note list. Compound results (half) swaps
+    /* Aroma notes (peek) shows the note list. Compound results (half) swaps
        it for the compounds panel in the same cell under the wheel. */
     body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode) aside.detail { display: none; }
     body:not(.notes-hidden):not(.origins-mode):not(.taxonomy-mode).compounds-half aside.detail {
@@ -5267,8 +5267,8 @@
      render, so anything inside it gets wiped. Collapsed by default: the summary
      keeps the second half of the graph represented without spending the screen,
      and it stays live while collapsed. -->
-<div id="compounds-bar" class="compounds-bar" role="group" aria-label="Show flavor input or compound results">
-  <button type="button" id="compounds-switch-input" class="compounds-switch-btn" aria-pressed="true">Flavor input</button>
+<div id="compounds-bar" class="compounds-bar" role="group" aria-label="Show aroma notes or compound results">
+  <button type="button" id="compounds-switch-input" class="compounds-switch-btn" aria-pressed="true">Aroma notes</button>
   <button type="button" id="compounds-switch-results" class="compounds-switch-btn" aria-pressed="false" aria-controls="detail-panel">Compound results<span class="compounds-bar-summary" id="compounds-bar-summary" hidden></span></button>
 </div>
 <aside class="detail" id="detail-panel">
@@ -10269,10 +10269,10 @@ function recompute() {
 // buffer — only the settled end state gets spoken.
 const resultsAnnouncerEl = document.getElementById("results-announcer");
 let announceResultsTimer = null;
-// The phone's two-way switch between the halves of the graph: Flavor input (the
+// The phone's two-way switch between the halves of the graph: Aroma notes (the
 // note list) and Compound results (what those notes point to). It swaps the
 // panel under the wheel rather than stacking a drawer over it. "peek" is the
-// Flavor input side and "half" is the Compound results side; the names are kept
+// Aroma notes side and "half" is the Compound results side; the names are kept
 // so the body classes and the tasting tray rules that key off them still apply.
 const compoundsBarEl = document.getElementById("compounds-bar");
 const compoundsBarSummaryEl = document.getElementById("compounds-bar-summary");
@@ -10293,7 +10293,7 @@ function updateCompoundsBar() {
 function setCompoundsSnap(snap) {
   if (!COMPOUNDS_SNAPS.includes(snap) || state.compoundsSnap === snap) return;
   if (isMobileViewport()) {
-    // Results open at the top, under the wheel; Flavor input returns you to the
+    // Results open at the top, under the wheel; Aroma notes returns you to the
     // place in the note list you left.
     if (snap === "half") { compoundsInputScrollY = window.scrollY; window.scrollTo({ top: 0 }); }
     else requestAnimationFrame(() => window.scrollTo({ top: compoundsInputScrollY }));
