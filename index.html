@@ -1584,9 +1584,6 @@
   .share-controls { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
   .share-field { display: flex; flex-direction: column; gap: 6px; }
   .share-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); }
-  #share-caption { background: var(--bg); color: var(--ink); border: 1px solid var(--line);
-    border-radius: 6px; padding: 8px 10px; font-size: 13px; font-family: inherit; }
-  #share-caption:focus { outline: none; border-color: var(--accent); }
   .share-seg { align-self: flex-start; flex-wrap: wrap; }
   .share-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); cursor: pointer; }
   .share-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1599,6 +1596,11 @@
     gap: 5px; padding: 9px 10px; margin-top: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
   .share-compound-list[hidden] { display: none; }
   .share-compound-list.dim { opacity: 0.4; pointer-events: none; }
+  .share-compound-help { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--line); }
+  .share-compound-help p { margin: 0; font-size: 11px; line-height: 1.45; color: var(--ink-dim); }
+  .share-compound-quick { display: flex; gap: 6px; }
+  .share-compound-quick button { font-size: 11px; padding: 3px 10px; border-radius: 999px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); cursor: pointer; font-family: inherit; }
+  .share-compound-quick button:hover { border-color: var(--accent); color: var(--accent); }
   .share-compound-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink); cursor: pointer; }
   .share-compound-item .cc-conf { margin-left: auto; color: var(--ink-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
   .share-hint { font-size: 11px; color: var(--ink-dim); margin: 0; line-height: 1.5; }
@@ -1607,6 +1609,10 @@
     font-family: inherit; margin-top: 2px; }
   .share-primary:hover { background: #e7bd7d; }
   .share-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .share-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .share-secondary:hover { background: rgba(216,166,87,.12); }
+  .share-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
   .share-output { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
   .share-output[hidden] { display: none; }
   .share-link-row { display: flex; gap: 6px; }
@@ -3584,7 +3590,7 @@
   .radial-svg { display: none; position: absolute; inset: 0; width: 100%; height: 100%; }
   body.shape-radial .radial-svg { display: block; }
   body.shape-radial #svg { visibility: hidden; pointer-events: none; }
-  body.shape-radial #organize-tabs { display: none; }
+  body.shape-radial #organize-tabs, body.shape-radial #bubble-size-tabs { display: none; }
   #radial-layer-tabs { display: none; }
   body.shape-radial #radial-layer-tabs { display: flex; }
   .rd-bar { stroke: none; transition: fill-opacity .15s; }
@@ -4498,6 +4504,11 @@
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
     </div>
+    <div class="tabs" id="bubble-size-tabs" title="Make the note and compound bubbles on the wheel smaller or larger, to give crowded bubbles more room.">
+      <span class="tabs-label">Size</span>
+      <button type="button" id="bubble-minus" aria-label="Smaller bubbles">&minus;</button>
+      <button type="button" id="bubble-plus" aria-label="Larger bubbles">+</button>
+    </div>
     <button id="compass-toggle" aria-label="Toggle Wheel Radar"
       title="Wheel Radar: a draggable profile of your strongest notes or compounds. This is separate from the Map's geographic bearing compass.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
@@ -5104,16 +5115,10 @@
     <div class="share-body">
       <div class="share-preview-wrap">
         <div class="share-preview-col">
-          <button type="button" id="share-flip-btn" class="share-flip-btn" aria-label="Flip card to see the other side">⟳ Flip card</button>
           <div id="share-preview" class="share-preview" aria-live="polite"></div>
         </div>
       </div>
       <div class="share-controls">
-        <label class="share-field">
-          <span class="share-label">Caption</span>
-          <input type="text" id="share-caption" maxlength="60" placeholder="My tasting" autocomplete="off" />
-        </label>
-
         <div class="share-field">
           <span class="share-label">Shape</span>
           <div class="tabs share-seg" id="share-format">
@@ -5131,10 +5136,10 @@
         </div>
 
         <div class="share-field">
-          <span class="share-label">Layout</span>
-          <div class="tabs share-seg" id="share-layout">
-            <button type="button" data-layout="one" class="active">One card</button>
-            <button type="button" data-layout="flip">Front &amp; back</button>
+          <span class="share-label">Chart</span>
+          <div class="tabs share-seg" id="share-visual">
+            <button type="button" data-visual="wheel" class="active">Wheel</button>
+            <button type="button" data-visual="radial">Radial</button>
           </div>
         </div>
 
@@ -5152,7 +5157,8 @@
 
         <p class="share-hint" id="share-hint">Customize above — the preview updates live. When it looks right, generate a link or download the image.</p>
 
-        <button type="button" id="share-generate" class="share-primary">Generate share link</button>
+        <button type="button" id="share-download" class="share-primary">Download image</button>
+        <button type="button" id="share-generate" class="share-secondary">Generate share link</button>
 
         <div id="share-output" class="share-output" hidden>
           <div class="share-link-row">
@@ -7622,7 +7628,7 @@ function bloomFactor(signalSum) { return 1 - Math.exp(-1.7 * Math.max(0, signalS
 function noteGlyphSize(signal) {
   const base = Math.max(12, R_COMPOUND_MAX * 0.21);
   const range = Math.max(18, R_COMPOUND_MAX * 0.38);
-  return base + Math.min(range, Math.max(0, signal) * range);
+  return (base + Math.min(range, Math.max(0, signal) * range)) * state.bubbleScale;
 }
 // Compound marker size. Compound scores run smaller than note signals, so this
 // curve is steeper; floored a touch below notes so molecules read as the
@@ -7630,7 +7636,7 @@ function noteGlyphSize(signal) {
 function compoundGlyphSize(score) {
   const base = Math.max(10, R_COMPOUND_MAX * 0.174);
   const range = Math.max(14, R_COMPOUND_MAX * 0.298);
-  return base + Math.min(range, Math.max(0, score) * range);
+  return (base + Math.min(range, Math.max(0, score) * range)) * state.bubbleScale;
 }
 // Per-group summed note signal — "how much evidence sits in this flavor family."
 function groupActivity() {
@@ -7749,6 +7755,7 @@ const state = {
   searchFamily: false,        // let the search box also match family / genus / order / common name
   wheelShape: "wheel",        // "wheel" | "radial": which projection fills the main area
   radialLayer: "notes",       // radial view: "notes" | "compounds" | "both"
+  bubbleScale: 1,             // wheel bubble size multiplier (the − / + on the wheel)
   irritantLayer: true,        // highlight notes that can engage the trigeminal nerve
   // Saved laps — immutable snapshots of {entries, delivery}, oldest first.
   // previewingLap holds the lap number currently being viewed (null = live).
@@ -8314,6 +8321,21 @@ function computeNotePositions() {
     n._x = CX + Math.cos(a) * R_NOTE;
     n._y = CY + Math.sin(a) * R_NOTE;
   });
+  // Spread, don't glue: the wheel only draws notes you have entered, so each
+  // category's entered notes share the category's WHOLE arc evenly (keeping their
+  // usual order) instead of sitting at their fixed slots, where neighbours can be
+  // cramped. One entered note sits mid-arc. Re-run on every input change.
+  const activeByGroup = {};
+  visible.forEach(n => { if (hasAnyEntry(n.id)) (activeByGroup[n.group] = activeByGroup[n.group] || []).push(n); });
+  Object.keys(activeByGroup).forEach(gid => {
+    const list = activeByGroup[gid], g = groupAngles[gid];
+    list.forEach((n, j) => {
+      const a = g.start + (j + 0.5) / list.length * g.span;
+      n._angle = a;
+      n._x = CX + Math.cos(a) * R_NOTE;
+      n._y = CY + Math.sin(a) * R_NOTE;
+    });
+  });
   // Hidden notes get null positions (and won't render)
   NOTES.forEach(n => { if (!isNoteVisible(n.id)) { n._angle = null; n._x = null; n._y = null; } });
   GROUPS.forEach(g => { g._arc = groupAngles[g.id]; });
@@ -8635,6 +8657,20 @@ function computeCompoundPositions() {
     node._angle = a;
     node._x = CX + Math.cos(a) * R_NOTE;
     node._y = CY + Math.sin(a) * R_NOTE;
+  });
+  // Same idea as notes: the compounds a tasting lights up share their class's
+  // whole arc evenly rather than sitting at fixed slots.
+  const activeByClass = {};
+  visible.forEach(c => { if ((CPD_NODE_BY_ID[c.id].intensity_raw || 0) > 0) (activeByClass[c.class] = activeByClass[c.class] || []).push(c); });
+  Object.keys(activeByClass).forEach(cid => {
+    const list = activeByClass[cid], ca = classAngles[cid];
+    list.forEach((c, j) => {
+      const a = ca.start + (j + 0.5) / list.length * ca.span;
+      const node = CPD_NODE_BY_ID[c.id];
+      node._angle = a;
+      node._x = CX + Math.cos(a) * R_NOTE;
+      node._y = CY + Math.sin(a) * R_NOTE;
+    });
   });
   COMPOUNDS.forEach(c => { if (!isCompoundVisible(c.id)) {
     const n = CPD_NODE_BY_ID[c.id]; n._angle = null; n._x = null; n._y = null;
@@ -9839,7 +9875,8 @@ function recompute() {
 
   // Redraw the anchor set — it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
-  if (inChemistry()) drawCompoundAnchors(); else drawNotes();
+  // Positions depend on which notes/compounds are active, so refresh them first.
+  if (inChemistry()) { computeCompoundPositions(); drawCompoundAnchors(); } else { computeNotePositions(); drawNotes(); }
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
   updateOriginsClearTasting();     // map-local bulk clear mirrors the same live input count
@@ -12036,13 +12073,28 @@ document.querySelectorAll("#organize-tabs button").forEach(b => {
   b.addEventListener("click", () => setOrganizeBy(b.dataset.organize));
 });
 
+// Bubble size: − / + on the wheel scale every note and compound bubble, so a
+// crowded wheel can be eased by shrinking them (or enlarged for readability).
+const BUBBLE_SCALE_STEPS = [0.5, 0.65, 0.8, 1, 1.2, 1.45];
+function setBubbleScale(dir) {
+  let i = BUBBLE_SCALE_STEPS.findIndex(v => Math.abs(v - state.bubbleScale) < 0.001);
+  if (i < 0) i = BUBBLE_SCALE_STEPS.indexOf(1);
+  i = Math.max(0, Math.min(BUBBLE_SCALE_STEPS.length - 1, i + dir));
+  state.bubbleScale = BUBBLE_SCALE_STEPS[i];
+  document.getElementById("bubble-minus").disabled = i === 0;
+  document.getElementById("bubble-plus").disabled = i === BUBBLE_SCALE_STEPS.length - 1;
+  recompute();   // re-sizes the glyphs and the collide radii in one pass
+}
+document.getElementById("bubble-minus").addEventListener("click", () => setBubbleScale(-1));
+document.getElementById("bubble-plus").addEventListener("click", () => setBubbleScale(1));
+
 // ── Radial bars view ─────────────────────────────────────────────────────
 // A second projection of the same tasting: a circular bar chart. Every bar
 // starts at the centre and reaches outward, sitting at the same angle the item
 // has on the wheel (notes at their wheel slot inside their flavor family,
 // compounds at the weighted average angle of the notes that feed them). Bar
 // length is strength. Category wedges ring the edge, as on the wheel.
-const radialSvg = d3.select("#radial-svg");
+const radialSvgLive = d3.select("#radial-svg");
 
 function radialAngleOfNote(n) {          // wheel angle, 0 = right, clockwise
   return n._angle == null ? null : n._angle;
@@ -12062,10 +12114,14 @@ function radialCompoundAngle(cpdId, activeNotes) {
   return (sx || sy) ? Math.atan2(sy, sx) : null;
 }
 
-function renderRadial() {
+// Draws the radial chart. With no argument it renders into the live #radial-svg
+// sized to the wheel pane; the share card passes {svg, w, h} to draw a detached
+// copy at a fixed size (works from any workspace, without the selection ring).
+function renderRadial(target) {
   const el = document.querySelector("main.wheel");
-  const w = el.clientWidth, h = el.clientHeight;
+  const w = target ? target.w : el.clientWidth, h = target ? target.h : el.clientHeight;
   if (!w || !h) return;
+  const radialSvg = target ? target.svg : radialSvgLive;
   radialSvg.attr("viewBox", `0 0 ${w} ${h}`);
   radialSvg.selectAll("*").remove();
 
@@ -12121,7 +12177,7 @@ function renderRadial() {
     .outerRadius(d => len(d.f / top))
     .startAngle(d => toArcAngle(d.a - d.half)).endAngle(d => toArcAngle(d.a + d.half));
   const sel = g.selectAll("path.rd-bar").data(items).join("path").attr("class", d =>
-      "rd-bar sb-click" + ((d.kind === "note" && d.id === state.selectedNote) || (d.kind === "compound" && d.id === state.selectedCompound) ? " rd-selected" : ""))
+      "rd-bar sb-click" + (!target && ((d.kind === "note" && d.id === state.selectedNote) || (d.kind === "compound" && d.id === state.selectedCompound)) ? " rd-selected" : ""))
     .attr("d", bar)
     .attr("fill", d => d.kind === "compound" ? (COMPOUND_CLASS_COLOR[d.cls] || "#aaa") : groupColor(d.group))
     .attr("fill-opacity", d => d.op).attr("role", "button").attr("tabindex", 0)
@@ -12139,8 +12195,8 @@ function renderRadial() {
   const cName = g.append("text").attr("class", "sb-center-name").attr("y", -2).style("font-size", "13px");
   const cMeta = g.append("text").attr("class", "sb-center-meta").attr("y", 12).style("font-size", "10px");
   const idle = () => {
-    cName.text("Your tasting");
-    cMeta.text(items.length ? `${active.length} note${active.length === 1 ? "" : "s"}` : "add a note");
+    cName.text("");
+    cMeta.text("");
   };
   idle();
   sel.on("mouseenter focus", (e, d) => {
@@ -20797,11 +20853,10 @@ updateTaxonomyLayerSummary();
   const SVGNS = "http://www.w3.org/2000/svg";
   const overlay = document.getElementById("share-overlay");
   const previewEl = document.getElementById("share-preview");
-  const captionInput = document.getElementById("share-caption");
   const formatTabs = document.getElementById("share-format");
   const styleTabs = document.getElementById("share-style");
-  const layoutTabs = document.getElementById("share-layout");
-  const flipBtn = document.getElementById("share-flip-btn");
+  const visualTabs = document.getElementById("share-visual");
+  const dlMainBtn = document.getElementById("share-download");
   const showMapCb = document.getElementById("share-show-map");
   const mapHintEl = document.getElementById("share-map-hint");
   const mapRowEl = document.getElementById("share-show-map-row");
@@ -20810,10 +20865,9 @@ updateTaxonomyLayerSummary();
   const linkInput = document.getElementById("share-link");
   const hintEl = document.getElementById("share-hint");
 
-  const opts = { format: "portrait", style: "informative", layout: "one", showNotes: true, showCompounds: true, showMap: true, hiddenCompounds: new Set(), compoundIcons: false };
+  const opts = { format: "portrait", style: "informative", visual: "wheel", showNotes: true, showCompounds: true, showMap: true, hiddenCompounds: new Set(), compoundIcons: false };
   let lastCanvas = null;         // last rasterized full-res canvas (front/single face — feeds all downloads)
-  let lastCanvasBack = null;     // back face's canvas, only set in flip layout
-  let cardFlipped = false;       // which face the flip-card preview is currently showing
+  let lastCanvasBack = null;     // unused now that the card is a single face; kept null so stackedCanvas()/PDF stay simple
   let previewTimer = null;
 
   function sEl(tag, attrs, text) {
@@ -20843,42 +20897,136 @@ updateTaxonomyLayerSummary();
     catch (e) { return ""; }
   }
 
+  // The card's hero chart: the live wheel, or the radial bar chart drawn fresh
+  // into a detached square SVG (so it works whichever workspace is open).
+  function chartGroup(bx, by, bw, bh, fill) {
+    if (opts.visual !== "radial") return wheelGroup(bx, by, bw, bh, fill);
+    const RS = 1000;
+    const tmp = sEl("svg", { viewBox: "0 0 " + RS + " " + RS });
+    renderRadial({ svg: d3.select(tmp), w: RS, h: RS });
+    const s = Math.min(bw / RS, bh / RS);
+    const tx = bx + (bw - RS * s) / 2, ty = by + (bh - RS * s) / 2;
+    const g = sEl("g", { transform: "translate(" + tx.toFixed(2) + "," + ty.toFixed(2) + ") scale(" + s.toFixed(4) + ")" });
+    for (const child of tmp.children) g.appendChild(child.cloneNode(true));
+    return g;
+  }
+
   // Clone the live wheel's drawn content into a <g> scaled to fit a box, centered.
-  function wheelGroup(bx, by, bw, bh) {
+  // Card-only compound tidy. On the live wheel compounds can pile into the middle
+  // (the sim lets them overlap, and hover reveals the detail). On a still image
+  // there is no hover, so for the clone we (1) drop compounds the user unticked in
+  // the share picker, (2) push the rest apart until no bubbles overlap, shrinking
+  // them a little if the arena is too crowded to fit them all at full size, and
+  // (3) re-draw the note-to-compound lines to the new positions. The live wheel
+  // is never touched. Scent mode only: Chemistry mode's compounds are fixed
+  // anchors on the ring, not a pile.
+  function tidyCardCompounds(src, gClone) {
+    if (inChemistry()) return;
+    const srcEls = [...src.querySelectorAll("g.compounds g.compound")];
+    const clEls = [...gClone.querySelectorAll("g.compounds g.compound")];
+    if (!srcEls.length || srcEls.length !== clEls.length) return;
+    const moved = new Map();       // compound id -> { x, y }
+    const items = [];
+    srcEls.forEach((el, i) => {
+      const d = el.__data__;
+      if (!d) return;
+      if (opts.hiddenCompounds.has(d.id)) { clEls[i].remove(); moved.set(d.id, null); return; }
+      const circ = clEls[i].querySelector("circle.cpd-token");
+      items.push({ el: clEls[i], d, ox: d.x, oy: d.y, x: d.x, y: d.y, r: (+circ?.getAttribute("r") || 10) + 3 });
+    });
+    if (items.length > 1) {
+      const zone = Math.min(R_NOTE - 46, FLOAT_ZONE_R() * 1.3);
+      // Shrink factor so the bubbles' total area fits about half the arena.
+      const area = items.reduce((s, it) => s + it.r * it.r, 0);
+      const k = Math.min(1, Math.sqrt(0.5 * zone * zone / area));
+      items.forEach(it => { it.k = k; it.rr = it.r * k; });
+      for (let iter = 0; iter < 260; iter++) {
+        for (let a = 0; a < items.length; a++) {
+          for (let b = a + 1; b < items.length; b++) {
+            const A = items[a], B = items[b];
+            let dx = B.x - A.x, dy = B.y - A.y, dist = Math.hypot(dx, dy);
+            const need = A.rr + B.rr + 2;
+            if (dist >= need) continue;
+            if (dist < 0.01) { const ang = (a * 2.399 + b) % (2 * Math.PI); dx = Math.cos(ang); dy = Math.sin(ang); dist = 1; }
+            const push = (need - dist) / 2 / dist;
+            A.x -= dx * push; A.y -= dy * push; B.x += dx * push; B.y += dy * push;
+          }
+        }
+        items.forEach(it => {
+          // a gentle pull home keeps related bubbles near their notes
+          it.x += (it.ox - it.x) * 0.012; it.y += (it.oy - it.y) * 0.012;
+          const dx = it.x - CX, dy = it.y - CY, lim = Math.max(12, zone - it.rr);
+          const rr = Math.hypot(dx, dy);
+          if (rr > lim) { it.x = CX + dx / rr * lim; it.y = CY + dy / rr * lim; }
+        });
+      }
+    }
+    items.forEach(it => {
+      it.el.setAttribute("transform", "translate(" + it.x.toFixed(1) + "," + it.y.toFixed(1) + ") scale(" + (it.k || 1).toFixed(3) + ")");
+      moved.set(it.d.id, { x: it.x, y: it.y });
+    });
+    // Lines follow the bubbles that moved (or go away with the ones removed).
+    const srcEdges = [...src.querySelectorAll("g.edges path.edge")];
+    const clEdges = [...gClone.querySelectorAll("g.edges path.edge")];
+    if (srcEdges.length === clEdges.length) srcEdges.forEach((el, i) => {
+      const d = el.__data__; if (!d) return;
+      if (!moved.has(d.cpd)) return;
+      const p = moved.get(d.cpd);
+      if (!p) { clEdges[i].remove(); return; }
+      clEdges[i].setAttribute("d", edgePath({ ...d, c: { ...d.c, x: p.x, y: p.y } }, false));
+    });
+  }
+
+  // With `fill`, crop tightly around the ring (not the whole landscape pane) so
+  // the wheel itself fills the box.
+  function wheelGroup(bx, by, bw, bh, fill) {
     const src = document.getElementById("svg");
     const vb = (src.getAttribute("viewBox") || "0 0 960 720").split(/\s+/).map(Number);
     const W = vb[2] || 960, H = vb[3] || 720;
+    if (fill) {
+      const half = R_RING + 56, side = half * 2;
+      const s = Math.min(bw, bh) / side;
+      const tx = bx + (bw - side * s) / 2 - (CX - half) * s, ty = by + (bh - side * s) / 2 - (CY - half) * s;
+      const g = sEl("g", { transform: "translate(" + tx.toFixed(2) + "," + ty.toFixed(2) + ") scale(" + s.toFixed(4) + ")" });
+      for (const child of src.children) g.appendChild(child.cloneNode(true));
+      tidyCardCompounds(src, g);
+      return g;
+    }
     const s = Math.min(bw / W, bh / H);
     const tx = bx + (bw - W * s) / 2, ty = by + (bh - H * s) / 2;
     const g = sEl("g", { transform: "translate(" + tx.toFixed(2) + "," + ty.toFixed(2) + ") scale(" + s.toFixed(4) + ")" });
     for (const child of src.children) g.appendChild(child.cloneNode(true));
+    tidyCardCompounds(src, g);
     return g;
   }
 
-  // Origin-map inset: a minimal dot-plot, deliberately NOT the real Origins
-  // map's country geometry. Two reasons: (1) it stays crisp at card-inset
-  // size instead of turning into an illegible tangle of tiny path data, and
-  // (2) every card uses the exact same fixed world frame (full -180..180 /
-  // -90..90, via the same lat/lon math as the live map) rather than
-  // auto-zooming to each user's own pins — so a pin's position means the same
-  // thing on any two people's cards, which is the whole point of a card
-  // that's meant to be compared side by side.
+  // Origin-map inset: the same world map the Origins workspace uses (its country
+  // geometry, same lat/lon math), drawn at a fixed full-world frame rather than
+  // auto-zooming to each user's own pins, so a pin means the same thing on any
+  // two people's cards. Numbered pins + a two-column numbered legend beat text
+  // labels on the plot, which collide badly at this scale.
   const MAP_W = 2000, MAP_H = 857;
   function mapLatLonToXY(lat, lon) { return [(lon + 180) / 360 * MAP_W, (90 - lat) / 180 * MAP_H]; }
+  const MAP_LEGEND_MAX = 12;
+  function mapSectionHeight(items) {
+    // Plot at full card width + legend rows + padding, so it never needs to
+    // borrow room from the compounds list above it.
+    const plotW = 1008 - 40;
+    const rows = Math.min(items.length, MAP_LEGEND_MAX);
+    return Math.round(plotW * MAP_H / MAP_W) + (rows ? rows * 28 + 24 : 0) + 36 + 30;
+  }
 
   function originItemsFor(notes) {
     return notes.map(({ n, total }) => ({ n, total, origin: NOTE_ORIGINS[n.id] })).filter(x => x.origin);
   }
 
-  // legend: "compact" (one-card inset, short list) or "full" (dedicated back
-  // face, room to breathe). Numbered pins + a numbered legend beats trying to
-  // fit text labels directly on the plot, which collide badly at this scale.
-  function mapInsetGroup(bx, by, bw, bh, items, legend) {
+  function mapInsetGroup(bx, by, bw, bh, items) {
     const g = sEl("g", {});
     g.appendChild(sEl("rect", { x: bx, y: by, width: bw, height: bh, rx: 18, fill: "#141216" }));
     const padX = 20, padY = 18;
-    const maxRows = legend === "full" ? Math.min(items.length, 12) : Math.min(items.length, 6);
-    const legendH = maxRows ? (legend === "full" ? maxRows * 30 + 14 : maxRows * 24 + 14) : 0;
+    const maxRows = Math.min(items.length, MAP_LEGEND_MAX);
+    const legendRows = maxRows;
+    const legendH = legendRows ? legendRows * 28 + 14 : 0;
     const plotX = bx + padX, plotY = by + padY;
     const plotW = bw - padX * 2, plotH = bh - padY * 2 - legendH - (legendH ? 10 : 0);
 
@@ -20887,62 +21035,64 @@ updateTaxonomyLayerSummary();
       g.appendChild(sEl("text", { x: plotX + plotW / 2, y: plotY + plotH / 2, "text-anchor": "middle", fill: "#8a8579", "font-size": 20, "font-family": SANS }, "No origin data for your current notes yet"));
       return g;
     }
-    const frame = sEl("g", { opacity: 0.6 });
-    for (let lon = -180; lon <= 180; lon += 30) {
-      const px = plotX + ((lon + 180) / 360) * plotW;
-      frame.appendChild(sEl("line", { x1: px, y1: plotY, x2: px, y2: plotY + plotH, stroke: "#26242b", "stroke-width": 1 }));
-    }
-    for (let lat = -60; lat <= 60; lat += 30) {
-      const py = plotY + ((90 - lat) / 180) * plotH;
-      const isEq = lat === 0;
-      frame.appendChild(sEl("line", { x1: plotX, y1: py, x2: plotX + plotW, y2: py, stroke: isEq ? "#3d3a30" : "#26242b", "stroke-width": isEq ? 1.5 : 1 }));
-    }
-    g.appendChild(frame);
+    // World geometry, uniformly scaled and centered in the plot.
+    const s = Math.min(plotW / MAP_W, plotH / MAP_H);
+    const ox = plotX + (plotW - MAP_W * s) / 2, oy = plotY + (plotH - MAP_H * s) / 2;
+    const land = sEl("g", { transform: "translate(" + ox.toFixed(2) + "," + oy.toFixed(2) + ") scale(" + s.toFixed(4) + ")", fill: "#2c2a32", stroke: "#3d3a46", "stroke-width": 0.8 });
+    const tplSvg = document.getElementById("world-svg-tpl")?.content.querySelector("svg");
+    if (tplSvg) for (const child of tplSvg.children) land.appendChild(child.cloneNode(true));
+    g.appendChild(land);
 
     items.forEach((it, i) => {
       const [gx, gy] = mapLatLonToXY(it.origin.lat, it.origin.lon);
-      const px = plotX + (gx / MAP_W) * plotW, py = plotY + (gy / MAP_H) * plotH;
+      const px = ox + gx * s, py = oy + gy * s;
       const col = vividColor(groupColor(it.n.group));
       const approx = it.origin.certainty === "approximate";
-      const r = legend === "full" ? 10 : 8;
-      const pin = sEl("circle", { cx: px, cy: py, r, fill: approx ? "none" : col, stroke: col, "stroke-width": approx ? 2 : 0 });
-      if (approx) pin.setAttribute("stroke-dasharray", "2 2");
+      const r = 11;
+      const pin = sEl("circle", { cx: px, cy: py, r, fill: approx ? "#0e0d10" : col, stroke: col, "stroke-width": 2.5 });
+      if (approx) pin.setAttribute("stroke-dasharray", "3 3");
       g.appendChild(pin);
-      g.appendChild(sEl("text", { x: px, y: py + r * 0.42, "text-anchor": "middle", "font-size": r * 1.15, "font-weight": 700, "font-family": SANS, fill: approx ? col : "#0e0d10" }, String(i + 1)));
+      g.appendChild(sEl("text", { x: px, y: py + r * 0.4, "text-anchor": "middle", "font-size": r * 1.1, "font-weight": 700, "font-family": SANS, fill: approx ? col : "#0e0d10" }, String(i + 1)));
     });
 
     if (legendH) {
-      const rowH = legend === "full" ? 30 : 24;
-      const fs = legend === "full" ? 20 : 16;
-      let ly = plotY + plotH + 26;
+      const rowH = 28, avail = plotW - 16 - 17 * 1.1;
+      const top = plotY + plotH + 28;
       for (let i = 0; i < maxRows; i++) {
         const it = items[i];
         const col = vividColor(groupColor(it.n.group));
-        g.appendChild(sEl("circle", { cx: plotX + 8, cy: ly - fs * 0.32, r: fs * 0.4, fill: col }));
-        g.appendChild(sEl("text", { x: plotX + 8, y: ly, "text-anchor": "middle", "font-size": fs * 0.62, "font-weight": 700, "font-family": SANS, fill: "#0e0d10" }, String(i + 1)));
-        const region = it.origin.country || (it.origin.region || "").split("/")[0].split("(")[0].trim();
-        g.appendChild(sEl("text", { x: plotX + 8 + fs * 0.9, y: ly, "font-size": fs, fill: "#e9e6df", "font-family": SANS }, it.n.label.split(" / ")[0] + (region ? " · " + region : "")));
-        ly += rowH;
+        const lx = plotX + 8, ly = top + i * rowH;
+        const dotFs = 17;
+        g.appendChild(sEl("circle", { cx: lx + 8, cy: ly - dotFs * 0.32, r: dotFs * 0.55, fill: col }));
+        g.appendChild(sEl("text", { x: lx + 8, y: ly, "text-anchor": "middle", "font-size": dotFs * 0.62, "font-weight": 700, "font-family": SANS, fill: "#0e0d10" }, String(i + 1)));
+        // Full location, never truncated: shrink the text to fit if it has to.
+        const region = it.origin.region || it.origin.country || "";
+        const label = it.n.label.split(" / ")[0] + (region ? " · " + region : "");
+        let fs = 17;
+        while (fs > 11 && textW(label, fs) > avail) fs -= 0.5;
+        g.appendChild(sEl("text", { x: lx + 8 + dotFs * 1.1, y: ly, "font-size": fs, fill: "#e9e6df", "font-family": SANS }, label));
       }
       if (items.length > maxRows) {
-        g.appendChild(sEl("text", { x: plotX + 8, y: ly, "font-size": fs * 0.85, fill: "#8a8579", "font-family": SANS }, "+" + (items.length - maxRows) + " more"));
+        g.appendChild(sEl("text", { x: plotX + plotW - 8, y: plotY + plotH + 28 + (legendRows - 1) * rowH + 22, "text-anchor": "end", "font-size": 14, fill: "#8a8579", "font-family": SANS }, "+" + (items.length - maxRows) + " more"));
       }
     }
     return g;
   }
 
-  // face: "single" (one-card layout, the default), "front" or "back" (flip
-  // layout — front carries everything except the map, back is a dedicated
-  // map face so it stands on its own if someone shares just that side).
-  function buildShareCard(face) {
-    face = face || "single";
+  // The card is one face. Stunning: the chart fills it. Informative: chart + notes,
+  // compounds and an optional origin map.
+  function buildShareCard() {
     const portrait = opts.format === "portrait";
     const stunning = opts.style === "stunning";
-    const W = 1080, H = portrait ? 1350 : 1080;
     const { notes, comps: allComps } = activeTasting();
     const comps = allComps.filter(c => !opts.hiddenCompounds.has(c.id));
     const mapItems = originItemsFor(notes);
-    const cap = (captionInput.value || "My tasting").trim() || "My tasting";
+    // The origin map is an optional section of the informative card. It gets its
+    // own extra card height so it never covers or truncates the compounds list.
+    const showMapSection = !stunning && opts.showMap && mapItems.length > 0;
+    const mapExtra = showMapSection ? mapSectionHeight(mapItems) + 30 : 0;
+    const W = 1080, H = (portrait ? 1350 : 1080) + mapExtra;
+    const cap = "My tasting";
     const PAD = 64, footerTop = H - 104;
 
     const svg = sEl("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
@@ -20954,20 +21104,16 @@ updateTaxonomyLayerSummary();
       svg.appendChild(sEl("text", { x: PAD, y: footerTop + 68, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "Sensory exploration only. Not medical advice."));
     }
 
-    // Title
-    svg.appendChild(sEl("text", { x: PAD, y: 92, fill: "#e9e6df", "font-size": 46, "font-weight": 700, "font-family": SANS }, cap));
-    const subtitle = face === "back" ? "Where it comes from" : dateStr() + " · " + notes.length + " note" + (notes.length === 1 ? "" : "s");
-    svg.appendChild(sEl("text", { x: PAD, y: 126, fill: "#8a8579", "font-size": 22, "font-family": SANS }, subtitle));
-
-    if (face === "back") {
-      svg.appendChild(mapInsetGroup(PAD - 16, 152, W - 2 * (PAD - 16), footerTop - 152 - 24, mapItems, "full"));
-      appendFooter();
-      return { svg };
+    // Title. "More stunning" is full-bleed art, so its title is a quiet one-liner
+    // and the chart gets the rest of the card.
+    const subtitle = dateStr() + " · " + notes.length + " note" + (notes.length === 1 ? "" : "s");
+    if (stunning) {
+      svg.appendChild(sEl("text", { x: PAD, y: 78, fill: "#e9e6df", "font-size": 34, "font-weight": 700, "font-family": SANS }, cap));
+      svg.appendChild(sEl("text", { x: W - PAD, y: 78, "text-anchor": "end", fill: "#8a8579", "font-size": 20, "font-family": SANS }, subtitle));
+    } else {
+      svg.appendChild(sEl("text", { x: PAD, y: 92, fill: "#e9e6df", "font-size": 46, "font-weight": 700, "font-family": SANS }, cap));
+      svg.appendChild(sEl("text", { x: PAD, y: 126, fill: "#8a8579", "font-size": 22, "font-family": SANS }, subtitle));
     }
-
-    // Map only lives on a section of the single card in "one card" layout —
-    // in flip layout it's exclusive to the back face above.
-    const showMapSection = face === "single" && opts.showMap && mapItems.length > 0;
 
     // "More stunning" = wheel is the hero — section labels dropped, map never shown,
     // defaults to wheel-only; user can opt in notes/compounds via checkboxes.
@@ -20976,39 +21122,42 @@ updateTaxonomyLayerSummary();
     // Both modes honor the checkbox; rendering differs (pills vs bars).
     const compsShown = opts.showCompounds ? comps : [];
     // Stunning never shows the map (it's an informative detail).
-    const contentBottom = showMapSection ? footerTop - 230 : footerTop;
+    const contentBottom = footerTop - mapExtra;
 
     // Wheel size. Stunning starts at its maximum and shrinks only when the user
     // has opted in sections; informative starts smaller with all sections included.
-    const wheelTop = 152;
+    const wheelTop = stunning ? 100 : 152;
     let wheelH;
     if (portrait) {
-      wheelH = stunning ? 900 : 560;
+      wheelH = stunning ? footerTop - wheelTop - 8 : 560;
       if (stunning) {
         if (opts.showNotes && notes.length) wheelH -= 150;
         if (compsShown.length) wheelH -= 120;
       } else {
         if (!opts.showCompounds || !allComps.length) wheelH += 210;
         if (!opts.showNotes) wheelH += 150;
-        if (showMapSection) wheelH -= 260;
       }
-      wheelH = Math.min(wheelH, 1000);
+      if (!stunning) wheelH = Math.min(wheelH, 1000);
     } else {
-      wheelH = stunning ? 720 : 500;
+      wheelH = stunning ? footerTop - wheelTop - 8 : 500;
       if (stunning) {
         if (opts.showNotes && notes.length) wheelH -= 80;
         if (compsShown.length) wheelH -= 80;
       } else {
         if (!opts.showCompounds || !allComps.length) wheelH += 150;
         if (!opts.showNotes) wheelH += 110;
-        if (showMapSection) wheelH -= 200;
       }
-      wheelH = Math.min(wheelH, 840);
+      if (!stunning) wheelH = Math.min(wheelH, 840);
     }
     wheelH = Math.max(wheelH, portrait ? 260 : 220);
-    const panelX = PAD - 16, panelW = W - 2 * (PAD - 16);
-    svg.appendChild(sEl("rect", { x: panelX, y: wheelTop, width: panelW, height: wheelH, rx: 18, fill: "#141216" }));
-    svg.appendChild(wheelGroup(panelX + 10, wheelTop + 10, panelW - 20, wheelH - 20));
+    const panelX = stunning ? 12 : PAD - 16, panelW = W - 2 * panelX;
+    if (stunning) {
+      // Full-bleed: no panel, the chart fills the card.
+      svg.appendChild(chartGroup(panelX, wheelTop, panelW, wheelH, true));
+    } else {
+      svg.appendChild(sEl("rect", { x: panelX, y: wheelTop, width: panelW, height: wheelH, rx: 18, fill: "#141216" }));
+      svg.appendChild(chartGroup(panelX + 10, wheelTop + 10, panelW - 20, wheelH - 20));
+    }
 
     let y = wheelTop + wheelH + 42;
 
@@ -21076,12 +21225,12 @@ updateTaxonomyLayerSummary();
       }
     }
 
-    // Origin map — one-card layout only (flip layout puts it on the back face).
+    // Origin map: its own reserved area below the content (mapExtra), so the
+    // compounds list above keeps all of its room.
     if (showMapSection) {
-      if (y < contentBottom) y = contentBottom;
-      if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "WHERE IT COMES FROM")); y += 20; }
-      const mh = Math.max(140, footerTop - y - 10);
-      svg.appendChild(mapInsetGroup(panelX, y, panelW, mh, mapItems, "compact"));
+      const my = contentBottom + 10;
+      svg.appendChild(sEl("text", { x: PAD, y: my + 14, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "WHERE IT COMES FROM"));
+      svg.appendChild(mapInsetGroup(panelX, my + 30, panelW, footerTop - (my + 30) - 14, mapItems));
     }
 
     appendFooter();
@@ -21090,21 +21239,14 @@ updateTaxonomyLayerSummary();
 
   function invalidateOutput() { outputEl.hidden = true; lastCanvas = null; lastCanvasBack = null; if (hintEl) hintEl.textContent = "Customize above — the preview updates live. When it looks right, generate a link or download the image."; }
 
-  // The map checkbox means different things depending on layout: in "one card"
-  // it's a real toggle (and disables itself if none of the active notes have
-  // origin data); in "flip" the map always lives on the back, so the checkbox
-  // just reflects that rather than offering a redundant choice.
+  // The map checkbox is a real toggle, disabled when none of the active notes
+  // have origin data.
   function syncMapCheckboxState(notes) {
     const has = originItemsFor(notes).length > 0;
-    if (opts.layout === "flip") {
-      showMapCb.checked = true; showMapCb.disabled = true;
-      mapHintEl.textContent = has ? "(on the back)" : "(no origin data yet)";
-    } else {
-      showMapCb.disabled = !has;
-      if (!has) opts.showMap = false;
-      showMapCb.checked = has && opts.showMap;
-      mapHintEl.textContent = has ? "" : "(no origin data for your current notes)";
-    }
+    showMapCb.disabled = !has;
+    if (!has) opts.showMap = false;
+    showMapCb.checked = has && opts.showMap;
+    mapHintEl.textContent = has ? "" : "(no origin data for your current notes)";
     mapRowEl.classList.toggle("disabled", showMapCb.disabled);
   }
 
@@ -21113,25 +21255,11 @@ updateTaxonomyLayerSummary();
     const { notes } = activeTasting();
     if (!notes.length) {
       previewEl.innerHTML = '<div class="share-empty">Add a few notes to your tasting first — your shareable card is built from what you noticed.</div>';
-      genBtn.disabled = true; flipBtn.classList.remove("visible"); invalidateOutput(); return;
+      genBtn.disabled = true; dlMainBtn.disabled = true; invalidateOutput(); return;
     }
-    genBtn.disabled = false;
+    genBtn.disabled = false; dlMainBtn.disabled = false;
     syncMapCheckboxState(notes);
-    if (opts.layout === "flip") {
-      flipBtn.classList.add("visible");
-      const stage = document.createElement("div"); stage.className = "share-flip-stage";
-      const inner = document.createElement("div"); inner.className = "share-flip-inner" + (cardFlipped ? " flipped" : "");
-      const front = document.createElement("div"); front.className = "share-face-front";
-      front.appendChild(buildShareCard("front").svg);
-      const back = document.createElement("div"); back.className = "share-face-back";
-      back.appendChild(buildShareCard("back").svg);
-      inner.append(front, back);
-      stage.appendChild(inner);
-      previewEl.appendChild(stage);
-    } else {
-      flipBtn.classList.remove("visible");
-      previewEl.appendChild(buildShareCard("single").svg);
-    }
+    previewEl.appendChild(buildShareCard().svg);
     invalidateOutput();
   }
 
@@ -21167,19 +21295,17 @@ updateTaxonomyLayerSummary();
     params.set("t", t);
     params.set("fmt", opts.format[0]);
     params.set("sty", opts.style[0]);
-    if (opts.layout === "flip") params.set("lay", "f");
+    if (opts.visual === "radial") params.set("vis", "r");
     if (!opts.showNotes) params.set("n", "0");
     if (!opts.showCompounds) params.set("cp", "0");
     if (!opts.showMap) params.set("m", "0");
-    const cap = (captionInput.value || "").trim();
-    if (cap) params.set("c", cap);
     return location.origin + location.pathname + "?" + params.toString();
   }
 
   async function generate() {
     genBtn.disabled = true; hintEl.textContent = "Building your card…";
-    const flip = opts.layout === "flip";
-    const svgs = flip ? [buildShareCard("front").svg, buildShareCard("back").svg] : [buildShareCard("single").svg];
+    const flip = false;
+    const svgs = [buildShareCard().svg];
     svgs.forEach(s => { s.setAttribute("style", "position:fixed;left:-99999px;top:0;opacity:0;pointer-events:none"); document.body.appendChild(s); });
     try {
       lastCanvas = await rasterize(svgs[0], 2);
@@ -21198,7 +21324,7 @@ updateTaxonomyLayerSummary();
   }
 
   function safeName() {
-    return ((captionInput.value || "tasting").trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "tasting").slice(0, 40);
+    return "tasting";
   }
   // Front/back downloads default to "one practical image" over "two separate
   // files" — most sharing (texting, social) is a single image, so front and
@@ -21254,7 +21380,7 @@ updateTaxonomyLayerSummary();
   function syncTabs() {
     formatTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.format === opts.format));
     styleTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.style === opts.style));
-    layoutTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.layout === opts.layout));
+    visualTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.visual === opts.visual));
   }
 
   // Per-compound checklist, ordered by prominence (confidence). All checked by
@@ -21271,7 +21397,7 @@ updateTaxonomyLayerSummary();
     const { comps } = activeTasting();
     const shown = comps.filter(c => !opts.hiddenCompounds.has(c.id)).length;
     compCountEl.textContent = comps.length ? "(" + shown + " of " + comps.length + ")" : "";
-    compListEl.classList.toggle("dim", !opts.showCompounds);
+    compListEl.classList.remove("dim");   // the picker also governs the wheel bubbles, so it is always usable
   }
   function renderCompoundList() {
     const { comps } = activeTasting();
@@ -21279,6 +21405,22 @@ updateTaxonomyLayerSummary();
     // Drop selections for compounds no longer present so the count stays honest.
     const ids = new Set(comps.map(c => c.id));
     [...opts.hiddenCompounds].forEach(id => { if (!ids.has(id)) opts.hiddenCompounds.delete(id); });
+    // Picker header: a note plus one-tap "top N" choices (the list is already in
+    // order of confidence), since a crowded card is hard to read.
+    const help = document.createElement("div"); help.className = "share-compound-help";
+    const tip = document.createElement("p");
+    tip.textContent = "Lots of compounds can crowd the card. Pick just the ones you want to show. They appear on the wheel and in the list.";
+    const quick = document.createElement("div"); quick.className = "share-compound-quick";
+    [["Top 5", 5], ["Top 8", 8], ["All", Infinity]].forEach(([label, n]) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = label;
+      b.addEventListener("click", () => {
+        opts.hiddenCompounds = new Set(comps.slice(n === Infinity ? comps.length : n).map(c => c.id));
+        renderCompoundList(); renderPreview();
+      });
+      quick.appendChild(b);
+    });
+    help.append(tip, quick);
+    compListEl.appendChild(help);
     comps.forEach(c => {
       const item = document.createElement("label");
       item.className = "share-compound-item";
@@ -21297,10 +21439,12 @@ updateTaxonomyLayerSummary();
   }
 
   function openShare() {
-    overlay.hidden = false; cardFlipped = false; syncTabs();
+    overlay.hidden = false; syncTabs();
     showNotesCb.checked = opts.showNotes; showCompCb.checked = opts.showCompounds;
     mapRowEl.hidden = opts.style === "stunning";
     renderCompoundList(); renderPreview();
+    // A crowded tasting opens the picker so the choice is visible straight away.
+    if (activeTasting().comps.length > 8 && compListEl.hidden) compToggleBtn.click();
   }
   function closeShare() { overlay.hidden = true; }
 
@@ -21308,7 +21452,6 @@ updateTaxonomyLayerSummary();
   document.getElementById("share-close-btn").addEventListener("click", closeShare);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeShare(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !overlay.hidden) closeShare(); });
-  captionInput.addEventListener("input", () => { clearTimeout(previewTimer); previewTimer = setTimeout(renderPreview, 200); });
   formatTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.format = b.dataset.format; syncTabs(); renderPreview(); });
   styleTabs.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
@@ -21326,11 +21469,11 @@ updateTaxonomyLayerSummary();
     }
     syncTabs(); renderPreview();
   });
-  layoutTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.layout = b.dataset.layout; cardFlipped = false; syncTabs(); renderPreview(); });
-  flipBtn.addEventListener("click", () => {
-    cardFlipped = !cardFlipped;
-    const inner = previewEl.querySelector(".share-flip-inner");
-    if (inner) inner.classList.toggle("flipped", cardFlipped);
+  visualTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.visual = b.dataset.visual; syncTabs(); renderPreview(); });
+  // One-tap download: build the card if needed, then save the PNG.
+  dlMainBtn.addEventListener("click", async () => {
+    if (!lastCanvas) await generate();
+    if (lastCanvas) downloadCanvas("png");
   });
   showMapCb.addEventListener("change", () => { opts.showMap = showMapCb.checked; renderPreview(); });
   showNotesCb.addEventListener("change", () => { opts.showNotes = showNotesCb.checked; renderPreview(); });
@@ -21367,10 +21510,9 @@ updateTaxonomyLayerSummary();
       if (m && NOTE_BY_ID[m[1]]) entries.push({ note: m[1], intensity: Math.max(0, Math.min(10, +m[2])) });
     });
     if (entries.length) setNotes(entries);
-    if (p.get("c")) captionInput.value = p.get("c");
     if (p.get("fmt") === "s") opts.format = "square";
     if (p.get("sty") === "s") opts.style = "stunning";
-    if (p.get("lay") === "f") opts.layout = "flip";
+    if (p.get("vis") === "r") opts.visual = "radial";
     if (p.get("n") === "0") opts.showNotes = false;
     if (p.get("cp") === "0") opts.showCompounds = false;
     if (p.get("m") === "0") opts.showMap = false;
