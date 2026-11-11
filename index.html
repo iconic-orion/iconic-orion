@@ -3763,6 +3763,12 @@
   .sb-center-name { font: 400 17px Georgia, serif; fill: var(--ink); text-anchor: middle; }
   .sb-center-meta { font-size: 11px; fill: var(--ink-dim); text-anchor: middle; }
   @media (prefers-reduced-motion: reduce) { .rd-bar { transition: none; } }
+  .sense-halo text { pointer-events: none; }
+  body.no-irritant-layer .sense-halo { display: none; }
+  .guide-overall { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--panel-2); }
+  .guide-overall h3 { margin: 0 0 4px; font-size: 13px; }
+  .guide-overall p { margin: 0 0 8px; color: var(--ink-dim); font-size: 11.5px; line-height: 1.45; }
   .sense-diagram { margin-top: 10px; font-size: 11px; }
   .sense-diagram > summary { cursor: pointer; color: var(--accent-2); }
   .sense-diagram-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
@@ -7373,6 +7379,8 @@ const SENSATIONS = [
     feel: "Heat or burn in the mouth, throat or nose, the capsaicin kind of warmth." },
   { id: "stinging", label: "Stinging / sharp",  glyph: "⚡", color: "#c9a21a", channel: "TRPA1",
     feel: "A sharp, prickly sting in the nose or sinuses, like fresh horseradish or fizz." },
+  { id: "tingling", label: "Tingling / buzzing", glyph: "✨", color: "#9a6fd1", channel: "TRPA1 / KCNK",
+    feel: "A light fizzing, buzzing or numbing tingle on the lips and tongue, like Sichuan pepper or carbonation." },
   { id: "tearing",  label: "Tearing / watering", glyph: "💧", color: "#5b8fb9", channel: "TRPA1",
     feel: "Eyes or nose start to water, as when cutting an onion." }
 ];
@@ -7433,6 +7441,10 @@ function irritantInfo(noteId) {
 }
 // Sensation key -> info. Notes use their id, extras use "x:<id>".
 function sensationTarget(key) {
+  // "overall" is the whole-experience report from the guide's "How does it
+  // feel?" step. It has no tracker row (senseKeys() skips it); it only feeds the
+  // halo around the wheel and the guide summary.
+  if (key === "overall") return { label: "Whole experience", info: { sens: [], agent: "", channel: "", level: "mild", refs: [] }, extra: false, overall: true };
   if (key.startsWith("x:")) {
     const x = IRRITANT_EXTRA_BY_ID[key.slice(2)];
     return x ? { label: x.label, info: x, extra: true } : null;
@@ -8393,6 +8405,9 @@ let R_RING = R_NOTE - 18; // group-arc ring radius
 let R_COMPOUND_MAX = R_NOTE * 0.6;
 
 const root = svg.append("g");
+// Behind everything: the halo that rings the wheel for the sensations the user
+// reported feeling across the whole tasting (see drawSenseHalo()).
+const gHalo   = root.append("g").attr("class", "sense-halo").attr("pointer-events", "none");
 const gArcs   = root.append("g").attr("class", "group-arcs");
 const gEdges  = root.append("g").attr("class", "edges");
 const gComps  = root.append("g").attr("class", "compounds");
@@ -8480,6 +8495,7 @@ function layout() {
   _calloutSetKey = '';   // force callout re-layout on next tick (W/H/R changed)
   renderClassBin();
   updateSimulationCenter();
+  drawSenseHalo();
 }
 
 // Distribute visible notes around the ring, grouped contiguously
@@ -10453,6 +10469,44 @@ function senseKeys() {
 function refreshSenseTracker() {
   const sig = senseKeys().join("|");
   if (sig !== _senseSig) buildSenseTracker();
+  drawSenseHalo();
+}
+
+// Every sensation the user reported anywhere in this tasting (per note, per
+// off-wheel trigger, or the whole-experience answer), in the fixed SENSATIONS order.
+function feltSensationsOverall() {
+  const set = new Set();
+  Object.values(state.sensations).forEach(r => r.felt.forEach(id => set.add(id)));
+  return SENSATIONS.map(s => s.id).filter(id => set.has(id));
+}
+
+// A soft halo around the whole wheel: the ring is split into one colored arc per
+// sensation felt (cooling, warming, tingling, stinging, tearing), so the wheel
+// shows how the experience felt as well as what it smelled like.
+function drawSenseHalo() {
+  const felt = feltSensationsOverall();
+  const sig = felt.join("|") + `@${Math.round(CX)},${Math.round(CY)},${Math.round(R_NOTE)}`;
+  if (gHalo.attr("data-sig") === sig) return;
+  gHalo.attr("data-sig", sig);
+  gHalo.selectAll("*").remove();
+  if (!felt.length) return;
+  const room = Math.min(CX, W - CX, CY, H - CY) - 10;
+  const r = Math.max(R_NOTE * 0.9, Math.min(R_NOTE + 24, room));
+  const n = felt.length, span = (Math.PI * 2) / n, gap = n > 1 ? 0.12 : 0;
+  const arc = d3.arc().innerRadius(r - 5).outerRadius(r + 5).cornerRadius(5);
+  const g = gHalo.append("g").attr("transform", `translate(${CX},${CY})`);
+  felt.forEach((id, i) => {
+    const s = SENSATION_BY_ID[id];
+    const a0 = i * span + gap / 2, a1 = (i + 1) * span - gap / 2;
+    const seg = g.append("path").attr("d", arc({ startAngle: a0, endAngle: a1 }))
+      .attr("fill", s.color).attr("fill-opacity", 0.55)
+      .style("filter", `drop-shadow(0 0 8px ${s.color})`);
+    seg.append("title").text(`${s.label}: felt during this tasting`);
+    const mid = (a0 + a1) / 2 - Math.PI / 2;   // d3.arc measures from 12 o'clock
+    g.append("text").attr("x", Math.cos(mid) * r).attr("y", Math.sin(mid) * r)
+      .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+      .attr("font-size", 13).text(s.glyph);
+  });
 }
 
 function senseRecord(key) {
@@ -10557,6 +10611,7 @@ function buildSenseTracker() {
   used.add("doty1978");
   document.getElementById("sense-sources-list").innerHTML =
     [...used].filter(r => REFERENCES[r]).map(r => `<li>${formatRefFull(REFERENCES[r])}</li>`).join("");
+  drawSenseHalo();
 }
 
 // Irritant layer on a wheel note: a dashed ring (solid once the user reports a
@@ -10615,7 +10670,7 @@ const GUIDE_STEPS = [
   // deliveryControls/deliveryReadout below (shifting the other indices by one),
   // the "How you're tasting it" block in guideRenderSummary(), and un-hide #delivery-strip.
   { title: "Flavor notes", intro: "Tick every note you taste or smell. Ticking one reveals a slider for how strong it is." },
-  { title: "How you sense smell", intro: "Some things are felt more than smelled. Cooling, warming and stinging come from the trigeminal nerve. Tell the wheel what you noticed." },
+  { title: "How does it feel?", intro: "Some things are felt more than smelled. Cooling, warming, tingling and stinging come from the trigeminal nerve. Tell the wheel what you felt and it rings the wheel in a halo." },
   { title: "Your tasting", intro: "Here is what you recorded. Go back to any step to change it." }
 ];
 let guideStep = 0;
@@ -10673,6 +10728,38 @@ function guideNoteRow(n) {
   });
   slider.addEventListener("input", () => { out.textContent = slider.value; guideSetIntensity(n.id, +slider.value); });
   return row;
+}
+
+// "Overall, the whole experience felt..." The headline answer of the feel step:
+// one tap per sensation, stored under the "overall" key, drawn as the wheel's halo.
+function guideRenderOverallFeel() {
+  const wrap = document.createElement("div"); wrap.className = "guide-overall";
+  wrap.innerHTML = `<h3>Across the whole tasting</h3>
+    <p>Pick every sensation you felt. Each one rings the wheel in its own color.</p>`;
+  const opts = document.createElement("div"); opts.className = "delivery-opts";
+  opts.setAttribute("role", "group"); opts.setAttribute("aria-label", "What the whole tasting felt like");
+  const paint = () => {
+    const rec = state.sensations.overall || { felt: [], none: false };
+    opts.innerHTML = "";
+    const mk = (html, pressed, onClick) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "delivery-opt"; b.innerHTML = html;
+      b.setAttribute("aria-pressed", String(pressed));
+      b.addEventListener("click", onClick); opts.appendChild(b);
+    };
+    SENSATIONS.forEach(s => mk(`${s.glyph} ${s.label}`, rec.felt.includes(s.id), () => {
+      const r = senseRecord("overall"); r.none = false;
+      r.felt = r.felt.includes(s.id) ? r.felt.filter(x => x !== s.id) : r.felt.concat(s.id);
+      pruneSense("overall"); paint(); drawSenseHalo(); buildSenseTracker();
+    }));
+    mk("Nothing", rec.none, () => {
+      const r = senseRecord("overall"); r.none = !r.none; if (r.none) r.felt = [];
+      pruneSense("overall"); paint(); drawSenseHalo(); buildSenseTracker();
+    });
+  };
+  paint();
+  wrap.appendChild(opts);
+  return wrap;
 }
 
 function guideRenderNotes() {
@@ -10750,10 +10837,14 @@ function renderGuideStep() {
   document.getElementById("guide-kicker").textContent = `Step ${guideStep + 1} of ${GUIDE_STEPS.length}`;
   document.getElementById("guide-title").textContent = s.title;
   document.getElementById("guide-intro").textContent = s.intro;
-  if (guideStep === 0) guideMount.appendChild(guideRenderNotes());
-  else if (guideStep === 1) {
-    buildSenseTracker();
+  if (guideStep === 0) {
+    // The "how you smell" diagram leads the notes step: two routes of smell
+    // (orthonasal, retronasal) frame what the notes below are describing.
     guideBorrow(document.querySelector(".sense-diagram"));
+    guideMount.appendChild(guideRenderNotes());
+  } else if (guideStep === 1) {
+    buildSenseTracker();
+    guideMount.appendChild(guideRenderOverallFeel());
     guideBorrow(senseBody);
     guideBorrow(document.querySelector(".sense-sources"));
   } else guideMount.appendChild(guideRenderSummary());
