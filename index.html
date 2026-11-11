@@ -1463,7 +1463,170 @@
     display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
   #compass-toggle svg { width: 13px; height: 13px; flex-shrink: 0; display: block; }
   #compass-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  body.compass-on #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  body.radar-floating #compass-toggle { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+
+  /* Draggable pane edges (desktop). The handles sit on the wheel's own left and
+     right edges; dragging sets --notes-pane-w / --detail-pane-w, and each pane's
+     text scales with its width (see wirePaneResizers: 0.75x at the narrowest). */
+  .pane-resizer { position: absolute; top: 0; bottom: 0; width: 9px; z-index: 17;
+    cursor: col-resize; touch-action: none; }
+  .pane-resizer.left { left: 0; } .pane-resizer.right { right: 0; }
+  .pane-resizer::after { content: ""; position: absolute; top: 50%; left: 3px; width: 3px; height: 38px;
+    margin-top: -19px; border-radius: 3px; background: var(--line); opacity: .7; transition: background .15s, opacity .15s; }
+  .pane-resizer:hover::after, .pane-resizer:focus-visible::after, .pane-resizer.dragging::after {
+    background: var(--accent); opacity: 1; }
+  .pane-resizer:focus-visible { outline: none; }
+  body.notes-hidden .pane-resizer.left, body.detail-hidden .pane-resizer.right { display: none; }
+  @media (max-width: 760px) { .pane-resizer { display: none; } }
+  @media (min-width: 761px) {
+    aside.notes { zoom: var(--notes-zoom, 1); }
+    aside.detail { zoom: var(--detail-zoom, 1); }
+  }
+
+  /* Radar docked as the top card of the compounds pane. The same #compass-content
+     element is moved here from the floating widget, so it is rendered once. */
+  .radar-dock { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel-2); overflow: hidden; }
+  .radar-dock-head { display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 6px 12px; font-size: 11px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--line); }
+  .radar-popout-btn { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-dim);
+    padding: 3px 10px; font-size: 10.5px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .radar-popout-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .radar-dock .compass-content { width: auto; transform: none !important; }
+  .radar-dock .compass-header { display: none; }
+  .radar-dock #compass-svg { height: 220px; }
+  body.origins-mode .radar-dock, body.taxonomy-mode .radar-dock { display: none; }
+  #compass-close-btn { white-space: nowrap; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
+
+  /* Chemistry classes your experience doesn't produce wait here, off the ring. */
+  .class-bin { position: absolute; left: 10px; bottom: 58px; z-index: 16; max-width: 240px;
+    display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .class-bin[hidden] { display: none; }
+  .class-bin-toggle { background: rgba(29, 27, 23, 0.6); color: var(--ink-dim); border: 1px solid var(--line);
+    border-radius: 999px; padding: 5px 11px; font-size: 11px; cursor: pointer; white-space: nowrap;
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+  .class-bin-toggle:hover, .class-bin-toggle[aria-expanded="true"] { border-color: var(--accent); color: var(--ink); }
+  .class-bin-body { background: rgba(23, 22, 27, 0.66); border: 1px solid var(--line); border-radius: 12px;
+    padding: 8px 10px; max-height: min(40vh, 300px); overflow-y: auto; box-sizing: border-box;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .class-bin-body[hidden] { display: none; }
+  .class-bin-note { margin: 0 0 6px; font-size: 10.5px; line-height: 1.4; color: var(--ink-dim); }
+  .class-bin-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .class-bin-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--ink-dim);
+    padding: 2px 8px 2px 3px; border-radius: 999px; border: 1px solid var(--line); cursor: help;
+    background: color-mix(in srgb, var(--ck-color, #888) 8%, transparent); }
+  .class-bin-chip .ck-icon { width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 10px; border: 1.3px solid var(--ck-color, var(--line)); opacity: .8; }
+  @media (max-width: 760px) {
+    .class-bin { left: auto; right: 8px; bottom: 8px; align-items: flex-end; flex-direction: column-reverse; }
+    .class-bin-toggle { min-height: 44px; padding: 8px 14px; }
+  }
+
+  /* Scent / Chemistry as one sliding switch: the two choices are one control,
+     so a single thumb moves between them instead of two separate tabs. The
+     thumb follows body.organize-chemistry (set by the same handler as the tabs). */
+  #organize-tabs { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr;
+    padding: 3px; border-radius: 999px; background: rgba(12, 11, 14, .7); }
+  #organize-tabs::before { content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px;
+    width: calc(50% - 3px); border-radius: 999px; background: var(--accent);
+    box-shadow: 0 1px 5px rgba(0,0,0,.35); transition: transform .22s cubic-bezier(.3,.9,.4,1); }
+  body.organize-chemistry #organize-tabs::before { transform: translateX(100%); }
+  #organize-tabs .tabs-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  #organize-tabs button { position: relative; z-index: 1; border-radius: 999px; background: transparent !important;
+    padding: 6px 14px; text-align: center; transition: color .18s; }
+  #organize-tabs button.active { color: #1a1810; }
+  #organize-tabs button:not(.active):hover { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { #organize-tabs::before { transition: none; } }
+
+  /* Compound-icon key: a collapsed pill under the wheel tools (top left on
+     desktop), semi-transparent so the ring behind it still reads. Phones move it
+     to the bottom-right of the wheel band, in the strip reserved for hints. */
+  .class-key { position: absolute; left: 10px; top: 58px; z-index: 17;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    max-width: calc(100% - 20px); }
+  .class-key-toggle { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .class-key-toggle:hover, .class-key-toggle[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  .class-key-body { background: rgba(23, 22, 27, 0.72); border: 1px solid var(--line);
+    border-radius: 12px; padding: 9px 11px; width: 250px; max-width: 100%;
+    max-height: min(60vh, 460px); overflow-y: auto; box-sizing: border-box;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .class-key-body[hidden] { display: none; }
+  .class-key-intro { font-size: 10.5px; color: var(--ink-dim); line-height: 1.4; margin: 0 0 7px; }
+  .class-key-head { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-dim); margin: 8px 0 4px; }
+  .class-key-row { display: grid; grid-template-columns: 22px 1fr; column-gap: 6px;
+    align-items: center; padding: 2px 0; font-size: 11px; line-height: 1.3; }
+  .class-key-row .ck-icon { width: 20px; height: 20px; border-radius: 50%; display: grid;
+    place-items: center; font-size: 12px; border: 1.5px solid var(--ck-color, var(--line));
+    background: color-mix(in srgb, var(--ck-color, #888) 16%, transparent); }
+  .class-key-row .ck-name { color: var(--ink); }
+  .class-key-row .ck-hint { color: var(--ink-dim); }
+  .class-key-row.dim { opacity: .6; }
+  @media (max-width: 760px) {
+    .class-key { left: 10px; right: auto; top: 64px; flex-direction: column;
+      align-items: flex-start; }
+    .wheel-view-tools .class-key-toggle { min-height: 40px; padding: 8px; font-size: 11px; }
+    .class-key-body { max-height: 30vh; width: 236px; }
+  }
+
+  /* Full-screen wheel: the wheel lifts out of the page grid and takes the whole
+     viewport, with pan/zoom (d3.zoom on #svg, see wheelZoom). Everything that
+     normally floats over the wheel steps aside so nothing can cover the ring,
+     leaving only the display tools, the Radar and the zoom controls. */
+  .wheel-fs-btn { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; }
+  .wheel-fs-btn svg { width: 14px; height: 14px; display: block; }
+  .wheel-fs-btn:hover { border-color: var(--accent); color: var(--accent); }
+  body.wheel-fullscreen .wheel-fs-btn { background: var(--accent); color: #1a1810; border-color: var(--accent); }
+  .wheel-zoom-ctl { position: absolute; right: 10px; bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index: 19; display: none; flex-direction: column; gap: 6px; }
+  body.wheel-fullscreen .wheel-zoom-ctl { display: flex; }
+  .wheel-zoom-ctl button { width: 44px; height: 44px; border-radius: 10px; font-size: 20px; line-height: 1;
+    background: rgba(29, 27, 23, 0.78); color: var(--ink); border: 1px solid var(--line);
+    cursor: pointer; -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+  .wheel-zoom-ctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .wheel-zoom-ctl .zoom-reset { font-size: 11px; }
+  body.wheel-fullscreen { overflow: hidden; }
+  body.wheel-fullscreen main.wheel { position: fixed; inset: 0; z-index: 150;
+    width: 100vw; height: 100vh; height: 100dvh; background-color: var(--bg);
+    --wheel-bottom-reserve: 0px; }
+  body.wheel-fullscreen main.wheel #svg { cursor: grab; touch-action: none !important; }
+  body.wheel-fullscreen main.wheel #svg:active { cursor: grabbing; }
+  body.wheel-fullscreen .wheel-hint, body.wheel-fullscreen .wheel-seed-btn,
+  body.wheel-fullscreen #relation-hint, body.wheel-fullscreen #pin-hint,
+  body.wheel-fullscreen #wheel-nudge, body.wheel-fullscreen .lap-rail,
+  body.wheel-fullscreen #tasting-tray, body.wheel-fullscreen #callout-toggle,
+  body.wheel-fullscreen .prototype-watermark { display: none !important; }
+  /* Zoomed in there is room to name the compound dots, which phones otherwise hide. */
+  body.wheel-zoomed g.compound text.node-label { display: block; }
+  /* Semantic zoom: the map spreads at the full zoom factor k but each note and
+     compound glyph is drawn at k^-0.5 of that (--wheel-s), so it only grows as
+     the square root of k. Zooming in therefore pulls crowded neighbors apart
+     instead of just enlarging the pile. Labels are drawn at a steady size. */
+  body.wheel-zoomed-in #svg g.note > *, body.wheel-zoomed-in #svg g.compound > * {
+    transform: scale(var(--wheel-s, 1)); }
+  body.wheel-zoomed-in #svg path.edge { vector-effect: non-scaling-stroke; }
+  body.wheel-zoomed-in #svg text.node-label, body.wheel-zoomed-in #svg text.note-label {
+    font-size: calc(10px * var(--wheel-s, 1)) !important; }
+  /* Not full screen: the zoom behavior is inert, so leave touch scrolling alone. */
+  body:not(.wheel-fullscreen) #svg { touch-action: auto !important; }
+  /* Once zoomed in outside full screen (toolbar +/- or desktop scroll), dragging pans. */
+  body.wheel-zoomed-in #svg { touch-action: none !important; cursor: grab; }
+  body.wheel-zoomed-in #svg:active { cursor: grabbing; }
+  /* Toolbar zoom pair: desktop only; phones get pinch and the full-screen controls. */
+  .wheel-zoom-pair { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .wheel-zoom-pair button { background: var(--panel-2); color: var(--ink); border: none; width: 30px;
+    padding: 5px 0; font-size: 15px; line-height: 1; cursor: pointer; }
+  .wheel-zoom-pair button + button { border-left: 1px solid var(--line); }
+  .wheel-zoom-pair button:hover:not(:disabled) { color: var(--accent); }
+  .wheel-zoom-pair button:disabled { opacity: .35; cursor: default; }
+  @media (max-width: 760px) { .wheel-zoom-pair { display: none; } }
 
   /* Constellation — Go Deeper's subjective hemisphere, promoted to a direct
      header toggle (was reachable only via the Sixth-lens depth card, which
@@ -1822,6 +1985,7 @@
      note-halo is the soft same-color disc behind it (group cue + selection
      ring); its stroke/fill are driven inline so they win over the generic
      .note/.compound circle rules above without a specificity fight. */
+  .node-glyph-img { transition: scale 0.34s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .node-glyph { pointer-events: none; text-anchor: middle; dominant-baseline: central;
     paint-order: stroke; stroke: var(--bg); stroke-width: 0.5px; stroke-linejoin: round;
     font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
@@ -1937,7 +2101,7 @@
          row 5   ──────────── divider ────────────
          row 6   Share card                 Start Over
          row 7   Feedback
-         row 8   Save or share tasting
+         row 8   Save or share experience
        Wheel organization and the Radar now live on the Wheel
        itself, so they intentionally do not appear in this global tray.
        Items are placed explicitly so DOM order (kept desktop-friendly) doesn't
@@ -2091,6 +2255,11 @@
     /* Sliders are below the wheel now, so the nudge's leftward arrow would mislead. */
     .wheel-nudge .nudge-arrow { display: none; }
 
+    /* Bottom strip of the wheel band reserved for the relationship hint and the
+       Go Deeper button. layout() keeps the ring out of it; 112px matches the
+       the later mobile skin block grows the wheel row by this plus 120px of ring room. */
+    main.wheel { --wheel-bottom-reserve: 112px; }
+
     /* On mobile the wheel is a fixed band with overflow:hidden. Centering the
        (tall) nudge pushed its top — and its × — above the band, clipped and
        impossible to close. Anchor it to the TOP of the band so the header row
@@ -2127,6 +2296,7 @@
       gap: 5px; padding: 4px; justify-content: space-between; }
     .wheel-view-tools .tabs-label { display: none; }
     .wheel-view-tools .tabs button { min-height: 40px; padding: 8px 9px; }
+    .wheel-view-tools #organize-tabs button { min-height: 36px; padding: 6px 9px; }
     .wheel-view-tools #compass-toggle { min-height: 40px; padding: 8px;
       font-size: 11px; }
     /* A saved-lap ribbon owns the very top of the mobile Wheel. Keep the tools
@@ -2134,6 +2304,7 @@
     .lap-rail:not(.is-empty) ~ .wheel-view-tools { top: 50px; }
     .lap-rail:not(.is-empty) ~ .wheel-hint { top: 142px; }
     .lap-rail:not(.is-empty) ~ #callout-toggle { top: 106px; }
+    .lap-rail:not(.is-empty) ~ .class-key { top: 106px; }
 
     /* Drop the context hint below the wheel-local tools and the mobile-only
        "Show compound labels" toggle so the three layers never overlap. */
@@ -2156,7 +2327,7 @@
        (applyCompassScale) from the handle's actual rendered size, so it
        automatically picks up this bigger mobile touch target — no override
        needed here. */
-    #compass-close-btn { width: 44px; height: 44px; display: flex;
+    #compass-close-btn { min-width: 44px; height: 44px; padding: 0 8px; display: flex;
       align-items: center; justify-content: center; }
 
     /* Chemistry mode only: the ring anchors are compounds, whose long names run
@@ -2418,7 +2589,7 @@
   /* A fruit in this canopy is a note you actually tasted. The specular dot is
      what turns a flat disc into something ripe and picked-looking; untasted
      notes keep their aroma-group hue but stay matte and smaller, so the
-     canopy shows your tasting at a glance instead of an even field of dots.
+     canopy shows your experience at a glance instead of an even field of dots.
      Solid fill, no alpha — the highlight is a shape, not a wash. */
   .tx-fruit-gloss { display: none; fill: #f3f8ef; pointer-events: none; stroke: none; }
   .tx-node.tx-tasted .tx-fruit-gloss { display: block; }
@@ -2471,7 +2642,7 @@
      collapse taxa above them. */
   .tx-node.tx-family circle { stroke: none; }
   .tx-node.tx-family:hover text { fill: var(--accent); }
-  /* In the current tasting. Opaque emphasis only (brighter stroke + weight) —
+  /* In the current experience. Opaque emphasis only (brighter stroke + weight) —
      the size and group-color of the dot itself carry the signal, set in JS. */
   .tx-node.tx-tasted .tx-node-core { stroke: var(--ink); stroke-width: 2.5; }
   .tx-node.tx-tasted text { fill: var(--ink); font-weight: 600; }
@@ -3311,7 +3482,7 @@
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body > header, body > main, body > aside, body > footer { min-width: 0; width: 100%; }
     body:not(.origins-mode):not(.taxonomy-mode) {
-      grid-template-rows: auto 43svh auto;
+      grid-template-rows: auto calc(43svh + 232px) auto;
       background: linear-gradient(180deg, #0a0d0f 0, #101519 52%, #0c1012 100%); }
     header { min-height: 52px; padding-left: 16px; border-color: rgba(214,230,222,.1); }
     header h1 { font-size: 16px; }
@@ -3375,7 +3546,7 @@
       letter-spacing: .055em; pointer-events: none; }
   }
 
-  /* Lap rail — the tasting stopwatch. A narrow column pinned to the right edge
+  /* Lap rail — the experience stopwatch. A narrow column pinned to the right edge
      of the wheel area on desktop; a horizontal strip on phones. Strata reading:
      newest layer on top, first lap at the bottom of the pile. */
   /* Absolute inside main.wheel (which is position:relative), NOT fixed to the
@@ -3452,7 +3623,7 @@
   .lap-empty[hidden] { display: none; }
 
   /* Delivery strip — the third sensory dimension. Sits above the note list and
-     stays collapsed by default so it frames the tasting without competing with
+     stays collapsed by default so it frames the experience without competing with
      the primary input. */
   .delivery-strip { border: 1px solid var(--line); border-radius: 5px;
     background: var(--panel); margin: 0 0 10px; }
@@ -4001,6 +4172,12 @@
       width: 44px; height: 44px; }
     .site-footer { top: 34px; left: calc(17px + env(safe-area-inset-left)); right: auto;
       font-size: 8px; letter-spacing: .07em; color: rgba(241,238,231,.42); }
+    /* The corner badge used to sit on the compounds bar's "in play" counts.
+       On a phone it rides the header, on the copyright's line, so it never
+       covers a control, the wheel, or the drawer. */
+    .prototype-watermark { top: 31px; bottom: auto; right: auto;
+      left: calc(70px + env(safe-area-inset-left)); padding: 1px 6px;
+      font-size: 7px; letter-spacing: 1.5px; }
     header.hud-open .hud-extra { top: 56px; max-height: calc(100svh - 56px);
       padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
 
@@ -4176,7 +4353,7 @@
 <header>
   <div class="brand">
     <h1>Aroma Wheel</h1>
-    <p class="tagline">Describe what you notice. Explore the chemistry it may point to.</p>
+    <p class="tagline">Describe your experience. Explore the chemistry it may point to.</p>
   </div>
   <!-- Go Deeper now lives at the root of the wheel's corner vine, not here.
        See #godeeper-toggle inside main.wheel. -->
@@ -4186,8 +4363,8 @@
   <div class="hud-extra" id="hud-extra">
     <!-- Workspace switch (primary nav): Wheel is always present; Go Deeper
          reveals the Map and Tree explanatory lenses. -->
-    <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the tasting wheel, the world map of ingredient origins, and the plant/fungus ancestry tree with optional ecological visitors.">
-      <button data-workspace="wheel" class="active" title="The tasting wheel">
+    <div class="tabs workspace-tabs" id="workspace-tabs" title="Switch between the wheel, the world map of ingredient origins, and the plant/fungus ancestry tree with optional ecological visitors.">
+      <button data-workspace="wheel" class="active" title="The wheel">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3" stroke-linecap="round"/></svg>
         Wheel
       </button>
@@ -4202,20 +4379,11 @@
     </div>
     <!-- Desktop-only divider separating the workspace switch from wheel controls. -->
     <div class="hud-vdivider" aria-hidden="true"></div>
-    <!-- Notes and compounds are two ends of one graph, not input and output, so
-         the panel names the object on each side rather than calling one of them
-         "Results". -->
-    <div class="tabs" id="view-tabs" title="Which side of the graph is open around the wheel.">
-      <span class="tabs-label">Panels</span>
-      <button data-view="note-input" class="active">Notes</button>
-      <button data-view="dashboard" title="Show the notes and the compounds side by side">Both</button>
-      <button data-view="analysis">Compounds</button>
-    </div>
     <!-- Constellation: Go Deeper's subjective hemisphere, opened directly —
          see #constellation-overlay. The Sixth-lens depth card still exists as
          a narrative on-ramp, but this is the fast path Nolan asked for after
          not finding it behind the Go Deeper warp. -->
-    <button id="constellation-toggle" title="Constellation: the same tasting notes re-aligned by chemistry, taxonomy, geography, or how they actually hit you.">
+    <button id="constellation-toggle" title="Constellation: the same notes re-aligned by chemistry, taxonomy, geography, or how they actually hit you.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="18" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="8" r="1" fill="currentColor" stroke="none"/><path d="M12 12L12 4M12 12L19 9M12 12L16 19M12 12L6 18M12 12L4 8" stroke-width="1.1"/></svg>
       Constellation
     </button>
@@ -4285,7 +4453,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z"/></svg>
       Feedback
     </a>
-    <button id="share-open-btn" title="Preview and share your tasting as an image or link">
+    <button id="share-open-btn" title="Preview and share your experience as an image or link">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6" r="2.4"/><circle cx="17" cy="18" r="2.4"/><path d="M8.1 10.9 14.9 7.1M8.1 13.1 14.9 16.9"/></svg>
       Share
     </button>
@@ -4296,10 +4464,10 @@
          every workspace, rather than attached to the wheel artwork. -->
     <div id="hud-save-share" class="hud-save-share">
       <button type="button" id="lap-save" aria-haspopup="menu" aria-expanded="false"
-        aria-controls="lap-actions-menu" title="Save a snapshot or copy a link to this tasting">Save or share tasting ▾</button>
+        aria-controls="lap-actions-menu" title="Save a snapshot or copy a link to this experience">Save or share experience ▾</button>
       <div id="lap-actions-menu" class="lap-actions-menu" role="menu" hidden>
         <button type="button" id="lap-save-action" class="lap-menu-action" role="menuitem">＋ Save a snapshot in this session</button>
-        <div class="lap-share-label">Keep or share this tasting</div>
+        <div class="lap-share-label">Keep or share this experience</div>
         <p class="lap-share-help">Copy this link to return to this exact view later, or send it to someone else.</p>
         <div class="lap-share-row">
           <input type="text" id="lap-share-link" readonly aria-label="Shareable link to this exact view" />
@@ -4389,7 +4557,7 @@
        see the note above GUIDE_STEPS to bring the guide step back. -->
   <details id="delivery-strip" class="delivery-strip" hidden>
     <summary class="delivery-summary">
-      <span class="delivery-title">How You're tasting</span>
+      <span class="delivery-title">How you're experiencing it</span>
       <span class="delivery-chips" id="delivery-chips" aria-live="polite"></span>
       <span class="caret">▼</span>
     </summary>
@@ -4448,6 +4616,10 @@
        the centre and reaches out to the angle the note (or compound) has on the
        wheel; length is strength. Shown instead of #svg when body.shape-radial is set. -->
   <svg id="radial-svg" class="radial-svg" role="group" aria-label="Radial bar chart of your tasting: each note or compound is a bar at its place on the wheel"></svg>
+  <div class="pane-resizer left" id="resizer-notes" role="separator" aria-orientation="vertical" tabindex="0"
+    aria-label="Resize the notes pane (arrow keys work too, double-click resets)" title="Drag to resize. Double-click resets."></div>
+  <div class="pane-resizer right" id="resizer-detail" role="separator" aria-orientation="vertical" tabindex="0"
+    aria-label="Resize the compounds pane (arrow keys work too, double-click resets)" title="Drag to resize. Double-click resets."></div>
   <!-- Lap stack — a stopwatch for tasting. Save lap freezes the current notes and
        delivery conditions as a layer; keep adjusting, save again, and the layers
        accumulate. Oldest sits at the BOTTOM, newest on top, read like a geological
@@ -4458,7 +4630,7 @@
        detail panel whenever it opened.
        Selecting a lap PREVIEWS it and never overwrites live work; branching is a
        separate, labeled action. -->
-  <div id="lap-rail" class="lap-rail" aria-label="Saved tasting snapshots">
+  <div id="lap-rail" class="lap-rail" aria-label="Saved experience snapshots">
     <div class="lap-rail-head">
       <!-- Ribbon toggle, phones only. Collapsed the strip shows just lap numbers
            so it costs one compact row; expanded it unfurls each layer's note
@@ -4469,8 +4641,8 @@
     </div>
     <div class="lap-preview-bar" id="lap-preview-bar" hidden>
       <span id="lap-preview-label">Previewing</span>
-      <button type="button" id="lap-continue" title="Make this lap the live tasting and keep editing from here">Continue from here</button>
-      <button type="button" id="lap-return" title="Discard the preview and return to your live tasting">Back to live</button>
+      <button type="button" id="lap-continue" title="Make this lap the live experience and keep editing from here">Continue from here</button>
+      <button type="button" id="lap-return" title="Discard the preview and return to your live experience">Back to live</button>
     </div>
     <!-- column-reverse: DOM order is chronological, visual order puts newest on
          top and the first lap at the bottom of the pile. -->
@@ -4492,7 +4664,7 @@
       <button data-layer="compounds">Compounds</button>
       <button data-layer="both">Both</button>
     </div>
-    <div class="tabs" id="organize-tabs" title="Organize the Wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
+    <div class="tabs" id="organize-tabs" role="group" aria-label="Organize the wheel by" title="Organize the Wheel by scent family (note groups on the ring) or by chemistry (compound classes on the ring).">
       <span class="tabs-label">Organize</span>
       <button data-organize="scent" class="active">Scent</button>
       <button data-organize="chemistry">Chemistry</button>
@@ -4503,10 +4675,43 @@
       <button type="button" id="bubble-plus" aria-label="Larger bubbles">+</button>
     </div>
     <button id="compass-toggle" aria-label="Toggle Wheel Radar"
-      title="Wheel Radar: a draggable profile of your strongest notes or compounds. This is separate from the Map's geographic bearing compass.">
+      title="Radar: a profile of your strongest notes or compounds. Docked in the compounds pane; press to float it over the wheel (or dock it back). Separate from the Map bearing compass.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><path d="M12 5v3.5M12 19v-3.5M5 12h3.5M19 12h-3.5M7.4 7.4l2 2M16.6 16.6l-2-2M7.4 16.6l2-2M16.6 7.4l-2 2" stroke-linecap="round"/></svg>
       Radar
     </button>
+    <button type="button" class="class-key-toggle" id="class-key-toggle" aria-expanded="false" aria-controls="class-key-body"
+      title="Key: what each compound icon means">
+      <span aria-hidden="true">🍐</span> Key
+    </button>
+    <div class="wheel-zoom-pair" role="group" aria-label="Icon size">
+      <button type="button" id="wheel-tb-zoom-out" aria-label="Smaller floating icons" title="Smaller floating icons (the compounds in the middle of the ring)">−</button>
+      <button type="button" id="wheel-tb-zoom-in" aria-label="Larger floating icons" title="Larger floating icons (the compounds in the middle of the ring)">+</button>
+    </div>
+    <button type="button" id="wheel-fs-toggle" class="wheel-fs-btn" aria-pressed="false"
+      aria-label="Expand the wheel to full screen" title="Full screen: pinch, scroll or drag to zoom and pan into clusters of notes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fs-open" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-close" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" style="display:none"/></svg>
+    </button>
+  </div>
+  <!-- Key to the compound icons: each emoji inside a ringed token stands for a
+       chemical CLASS (🌲 terpene, 🍐 ester...), not a single compound. Collapsed
+       by default, semi-transparent; lists the classes in play first. -->
+  <div class="class-key" id="class-key">
+    <div class="class-key-body" id="class-key-body" hidden></div>
+  </div>
+  <!-- Chemistry mode only: classes that none of your notes produce are parked
+       here instead of taking up ring space. They rejoin the ring on their own as
+       soon as a note brings one in. -->
+  <div class="class-bin" id="class-bin" hidden>
+    <button type="button" class="class-bin-toggle" id="class-bin-toggle" aria-expanded="false" aria-controls="class-bin-body">
+      Not in this experience <span id="class-bin-count"></span>
+    </button>
+    <div class="class-bin-body" id="class-bin-body" hidden></div>
+  </div>
+  <!-- Zoom controls for the full-screen wheel (hidden otherwise, see CSS). -->
+  <div class="wheel-zoom-ctl" id="wheel-zoom-ctl">
+    <button type="button" id="wheel-zoom-in" aria-label="Zoom in">+</button>
+    <button type="button" id="wheel-zoom-out" aria-label="Zoom out">−</button>
+    <button type="button" id="wheel-zoom-reset" class="zoom-reset" aria-label="Reset zoom">Fit</button>
   </div>
   <!-- Go Deeper "vines" — a decorative climbing vine grown into the wheel's
        empty bottom-left corner only while body.go-deeper is on. Ecobrutalism:
@@ -4521,7 +4726,7 @@
        and Tree, which follows the pattern already set for Organize and Radar,
        controls that disappear with the wheel rather than lingering inert. -->
   <button id="godeeper-toggle" class="wheel-seed-btn"
-    title="Plant this tasting deeper. Grows the vine, and opens ortho and retro tagging on every note.">
+    title="Plant this experience deeper. Grows the vine, and opens ortho and retro tagging on every note.">
     <span class="seed-glyph" aria-hidden="true">
       <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
         <path class="seed-sprout-stem" d="M9 15.5V9"/>
@@ -4627,7 +4832,6 @@
        visible whether the corresponding side pane is shown or hidden. Click to
        collapse the pane against the screen edge; click again to bring it back. -->
   <button type="button" id="toggle-notes"  class="pane-toggle left"  title="Hide / show the sliders pane" aria-label="Toggle sliders pane">‹</button>
-  <button type="button" id="toggle-detail" class="pane-toggle right" title="Hide or show the Compounds panel" aria-label="Toggle Compounds panel">›</button>
   <!-- Radar: a small draggable, resizable aroma profile, toggled from the
        Wheel-local display toolbar. Three axis modes (see #compass-mode-tabs): Notes /
        Compounds — the user's own top-10 active items, live — and Class, a
@@ -4642,7 +4846,7 @@
     <div id="compass-content" class="compass-content">
       <div class="compass-header" id="compass-drag-handle">
         <span title="Wheel Radar">Radar</span>
-        <button type="button" id="compass-close-btn" aria-label="Hide Radar" title="Hide Radar">×</button>
+        <button type="button" id="compass-close-btn" aria-label="Dock the Radar back into the compounds pane" title="Dock back into the compounds pane">Dock ↘</button>
       </div>
       <div class="tabs compass-mode-tabs" id="compass-mode-tabs" title="Notes/Compounds: your own top-10 active items, live. Class: a fixed set over one chemical class, same axes for everyone.">
         <button data-compass-mode="notes" class="active">Notes</button>
@@ -4667,12 +4871,12 @@
   <!-- One-time discoverability cloud for pinning: floats can be dragged to a
        fixed spot and double-tapped to release. Shown once the wheel has floats,
        dismissible, and auto-dismissed the first time the user actually drags a
-       float (they've discovered it). Sits just above the tasting tray. -->
+       float (they've discovered it). Sits just above the experience tray. -->
   <!-- The live relationship line. Shares the pin-hint's slot just above the
        tasting tray and outranks it: a fact about the notes you actually entered
        beats a generic tip about dragging. Full cards with routes live in the
        Results panel, which is closed on first load, so this is what carries the
-       finding in real time while someone is still building the tasting. -->
+       finding in real time while someone is still building the experience. -->
   <button type="button" id="relation-hint" class="pin-hint relation-hint" hidden
     aria-label="How your notes connect. Opens the results panel.">
     <span class="pin-hint-icon" id="relation-hint-icon" aria-hidden="true">🌿</span>
@@ -4684,9 +4888,9 @@
     <span>Something stand out? <strong>Drag</strong> it to pin it where you want — double-tap to free it.</span>
     <button type="button" class="helper-dismiss" data-dismiss-helper="pin" aria-label="Dismiss this tip" title="Dismiss">×</button>
   </div>
-  <div id="tasting-tray" class="tasting-tray" hidden aria-label="Your current tasting inputs">
+  <div id="tasting-tray" class="tasting-tray" hidden aria-label="Your current experience inputs">
     <div class="tray-head">
-      <span class="tray-title">Your tasting</span>
+      <span class="tray-title">Your experience</span>
       <span class="tray-count" id="tray-count">0</span>
     </div>
     <div class="tray-chips" id="tray-chips"></div>
@@ -4702,12 +4906,12 @@
      wandered -- shown whenever the Notes panel currently isn't the thing on
      screen, kept in sync by syncEnterTastingBtn(). -->
 <button id="enter-tasting-btn" type="button" hidden
-  aria-label="Enter tasting: return to the Wheel to add or edit notes" title="Enter tasting">
+  aria-label="Enter experience: return to the Wheel to add or edit notes" title="Enter experience">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path d="M4 20l1.1-4.2L15.5 5.4l3.1 3.1L8.2 19 4 20z" stroke-linejoin="round" stroke-linecap="round"/>
     <path d="M13.2 7.2l3.1 3.1" stroke-linecap="round"/>
   </svg>
-  Enter tasting
+  Enter experience
 </button>
 <section id="mobile-note-sheet" class="mobile-note-sheet" aria-label="Adjust aroma intensity" aria-hidden="true">
   <div class="mobile-sheet-head">
@@ -4773,7 +4977,7 @@
     </nav>
     <div class="cx-stage-wrap">
       <div class="cx-stage-frame">
-        <svg class="cx-stage" viewBox="0 0 900 680" role="img" aria-label="Constellation of tasting notes">
+        <svg class="cx-stage" viewBox="0 0 900 680" role="img" aria-label="Constellation of notes">
           <g id="cxChromeA" class="cx-chrome-layer"></g>
           <g id="cxChromeB" class="cx-chrome-layer" style="opacity:0"></g>
           <g id="cxEdgesA" class="cx-edges-layer"></g>
@@ -4839,13 +5043,13 @@
         <span id="origins-search-count" role="status" aria-live="polite" aria-atomic="true"></span>
       </div>
       <button type="button" id="origins-reset-view" title="Reset map view">Reset view</button>
-      <!-- Drops the bearing compass on the geographic center of your tasting —
+      <!-- Drops the bearing compass on the geographic center of your experience —
            the point its notes fan out from evenly. Lives out here rather than
            inside the compass because the compass is itself a <button> and
            cannot nest one. Only meaningful in the Origin lens, so it hides with
            the compass. -->
       <button type="button" id="compass-center-notes" hidden
-        title="Move the compass to the geographic center of your tasting notes">◎ Center on notes</button>
+        title="Move the compass to the geographic center of your notes">◎ Center on notes</button>
       <div id="origins-map-controls">
         <div class="omc-pan">
           <button type="button" id="pan-up" aria-label="Pan up" title="Pan up">&#9650;</button>
@@ -4868,7 +5072,7 @@
           <path class="map-bearing-mini-s-half" d="M20 35 L15 20 L20 20 Z"></path>
           <text class="map-bearing-mini-label" x="20" y="4.5">N</text>
         </svg>
-        <svg class="map-bearing-full" viewBox="0 0 120 120" role="img" aria-label="Geographic tasting-note bearings from this point">
+        <svg class="map-bearing-full" viewBox="0 0 120 120" role="img" aria-label="Geographic note bearings from this point">
           <circle class="map-bearing-ring" cx="60" cy="60" r="49"></circle>
           <circle class="map-bearing-inner" cx="60" cy="60" r="30"></circle>
           <line class="map-bearing-cross" x1="60" y1="9" x2="60" y2="111"></line>
@@ -4880,7 +5084,7 @@
           <g id="map-bearing-dynamic"></g>
           <circle class="map-bearing-center" cx="60" cy="60" r="4"></circle>
         </svg>
-        <span id="map-bearing-caption">Add tasting notes to orient the compass</span>
+        <span id="map-bearing-caption">Add notes to orient the compass</span>
       </button>
       <!-- A separate control, not a tap-the-dial toggle: the compass is a
            <button> already handling drag and cannot nest one, and a whole-dial
@@ -4903,14 +5107,14 @@
       <span class="ol-item"><svg width="24" height="10"><line x1="2" y1="5" x2="22" y2="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="4" cy="5" r="3.5" fill="currentColor"/></svg>Approximate</span>
       <span class="ol-sep">·</span>
       <!-- Map-local visibility filters (see buildOriginsLegendFilters()): the
-           master "only my tasting" declutter switch plus one checkbox per flavor
+           master "only my experience" declutter switch plus one checkbox per flavor
            group. Display filters only — no effect on the wheel or scoring. -->
       <label class="ol-filter" id="origins-only-tasting-wrap">
         <input type="checkbox" id="origins-only-tasting">
-        Only notes in my tasting
+        Only notes in my experience
       </label>
-      <button type="button" class="ol-clear-tasting" id="origins-clear-tasting">Clear tasting</button>
-      <span id="origins-filter-empty" hidden>— nothing in your tasting yet; add notes on the Wheel</span>
+      <button type="button" class="ol-clear-tasting" id="origins-clear-tasting">Clear experience</button>
+      <span id="origins-filter-empty" hidden>— nothing in your experience yet; add notes on the Wheel</span>
       <span id="origins-tasting-coverage" aria-live="polite"></span>
       <span class="ol-sep">·</span>
       <span class="ol-toggle-all" id="origins-toggle-all" role="button" tabindex="0" title="Turn every flavor group off so you can switch on just the ones you want (click again to turn all back on)">toggle groups</span>
@@ -5074,6 +5278,17 @@
   <span class="compounds-bar-summary" id="compounds-bar-summary"></span>
 </button>
 <aside class="detail" id="detail-panel">
+  <!-- Radar lives here by default, as the top card of the compounds pane. The
+       #compass-content block is moved between this dock and the floating
+       #aroma-compass on the wheel (see setCompassVisible). Re-attached at the
+       top whenever the pane re-renders its contents. -->
+  <section class="radar-dock" id="radar-dock" aria-label="Radar">
+    <div class="radar-dock-head">
+      <span>Radar</span>
+      <button type="button" id="radar-popout-btn" class="radar-popout-btn" aria-label="Pop the Radar out onto the wheel" title="Pop out: float the Radar over the wheel">Pop out ↗</button>
+    </div>
+    <div class="radar-dock-body" id="radar-dock-body"></div>
+  </section>
   <div class="empty">Click a compound to see linked notes and citations. Slide notes on the left to register what you're noticing. The results are literature-guided possibilities, not a chemical measurement.</div>
 </aside>
 
@@ -5094,7 +5309,7 @@
   </div>
 </div>
 
-<!-- Share / export: preview + customize a screenshot-able tasting card, then
+<!-- Share / export: preview + customize a screenshot-able experience card, then
      generate a shareable link (which is also the bookmark) and download the
      image (PNG/JPG/PDF). All client-side — no backend, no accounts. The card
      is built as an SVG (buildShareCard) that embeds a clone of the live wheel;
@@ -5102,7 +5317,7 @@
 <div id="share-overlay" class="info-overlay share-overlay" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
   <div class="info-overlay-content share-content">
     <div class="info-overlay-header">
-      <span id="share-title">Share your tasting</span>
+      <span id="share-title">Share your experience</span>
       <button type="button" id="share-close-btn" class="info-close" aria-label="Close">✕</button>
     </div>
     <div class="share-body">
@@ -5146,7 +5361,7 @@
 
         <div class="share-field">
           <span class="share-label">Include on card</span>
-          <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Tasting notes</span></label>
+          <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Notes</span></label>
           <div class="share-row">
             <label class="share-check"><input type="checkbox" id="share-show-compounds" checked /><span>Compounds <span id="share-compound-count" class="share-count"></span></span></label>
             <button type="button" id="share-compound-toggle" class="share-disclosure" aria-expanded="false" title="Choose which compounds to show">▸</button>
@@ -6022,9 +6237,22 @@ const COMPOUND_CLASS_COLOR = {
 };
 
 // Chemical classes as ring sectors — the dual of GROUPS, used when the wheel is
-// organized "by chemistry." Order follows COMPOUND_CLASS_COLOR. Long class names
-// get a short ring label so the 12 arc labels don't collide.
-const CLASS_ORDER = Object.keys(COMPOUND_CLASS_COLOR);
+// organized "by chemistry." Ring order is NOT the color-table order: wedge width
+// is proportional to compound count, so the many one- and two-compound classes
+// used to pile up in one quadrant with unreadable labels. This order alternates
+// big and tiny wedges around the circle (and keeps similar hues from touching).
+// Nothing else depends on the order: colors, icons and info are keyed by id.
+const CLASS_RING_ORDER = [
+  // Six repeats of: one big wedge, a tiny one, a mid-size one (and sometimes a second tiny).
+  "terpene", "furanone", "pyrazine", "haloanisole",
+  "aldehyde", "phenylpropene", "phenol",
+  "ester", "pyrroline", "alcohol", "acid",
+  "ketone", "thiazole", "isothiocyanate",
+  "lactone", "phenolic-aldehyde", "sulfide",
+  "thiol", "norisoprenoid", "furan", "pyranone"
+];
+const CLASS_ORDER = CLASS_RING_ORDER.filter(id => id in COMPOUND_CLASS_COLOR)
+  .concat(Object.keys(COMPOUND_CLASS_COLOR).filter(id => !CLASS_RING_ORDER.includes(id)));
 // Short labels exist ONLY so the 12 Chemistry-mode ring-arc sectors don't
 // collide — don't reuse them anywhere with room for the full class name
 // (e.g. the "Main aroma compound class" headline uses CLASS_FULL instead).
@@ -7575,6 +7803,9 @@ function evidenceColor(base, t) {
 // Diminishing-returns bloom: one solid note already lifts a family clearly off
 // the resting floor; more (or stronger) signal deepens it toward full.
 function bloomFactor(signalSum) { return 1 - Math.exp(-1.7 * Math.max(0, signalSum)); }
+// Chemistry classes sum raw compound evidence (typically 0.2-1.5 per class), so
+// they use a gentler curve that only nears full glow with several strong notes.
+function chemBloomFactor(evidenceSum) { return 1 - Math.exp(-0.8 * Math.max(0, evidenceSum)); }
 // Emoji-marker size (px) for a note on the wheel, scaled by its signal. The
 // ingredient's icon IS the marker now, so this is what literally swells as you
 // taste a note more strongly and shrinks as it fades. Floored at a legible,
@@ -7585,6 +7816,9 @@ function bloomFactor(signalSum) { return 1 - Math.exp(-1.7 * Math.max(0, signalS
 // proportionally on a widescreen desktop's much larger wheel. A fixed-px
 // glyph would read as a legible marker on a phone and a nearly-invisible
 // speck lost in a huge desktop float zone, or vice versa.
+// User size multiplier for the FLOATING icons in the middle of the ring (the compounds that appear in Scent mode, the notes in Chemistry mode). The icons on the rim are untouched. Set by the toolbar - / +.
+const GLYPH_SCALE_STEPS = [0.6, 0.75, 0.9, 1, 1.2, 1.45, 1.75, 2.1];
+const GLYPH_SCALE = { index: 3, get value() { return GLYPH_SCALE_STEPS[this.index]; } };
 function noteGlyphSize(signal) {
   const base = Math.max(12, R_COMPOUND_MAX * 0.21);
   const range = Math.max(18, R_COMPOUND_MAX * 0.38);
@@ -7684,7 +7918,7 @@ const state = {
   selectedOriginNote: null,         // map: note whose detail is open — highlighted (spinning ring + white), not an entry change
   expandedOriginCluster: null,      // map: crowded-region glyph currently expanded into its member notes
   geographyLens: "origin",          // "origin" | "production" | "traditions"; only one mark system renders at once
-  geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the tasting
+  geographyPilotNote: "coffee",     // selected note for the two pilot-only lenses; does not alter the experience
   mapCompassPos: null,              // {left,top} in map-wrap CSS pixels; null chooses a responsive default
   mapCompassMinimized: true,        // Map: bearing compass starts as a small fixed north-arrow badge, expands on tap
   hiddenClasses: new Set(),  // compound-class names hidden via legend
@@ -7693,7 +7927,7 @@ const state = {
   // float (today's default). "chemistry": chemical-class arcs on the ring, the
   // entered notes float toward the compound neighborhoods they evoke (the dual).
   organizeBy: "scent",       // "scent" | "chemistry"
-  compassVisible: true,    // Wheel Radar widget shown/hidden
+  compassVisible: false,   // true = Radar popped out as a floater on the wheel; false = docked atop the compounds pane
   compassMode: "notes",      // "notes" | "compounds" | "class" — which axis set the compass shows
   compassClass: "terpene",  // chemical class shown in "class" mode (dropdown-selectable)
   compassPos: null,         // {x,y} once dragged; null = default corner position
@@ -7702,7 +7936,7 @@ const state = {
   spotlight: null,           // null | { kind: "group" | "class", id }
   showCallouts: false,       // mobile callout labels toggle
   taxonomySheetSnap: "half", // mobile Tree detail: "peek" | "half" | "full"
-  // Delivery conditions for the current tasting (see DELIVERY_CONDITIONS).
+  // Delivery conditions for the current experience (see DELIVERY_CONDITIONS).
   // null = not stated, which is different from "neutral" — we don't assume.
   delivery: { temperature: null, effervescence: null, agitation: null, breath: null },
   // Trigeminal sensations the user reported, keyed by note id or "x:<extra id>":
@@ -8065,7 +8299,7 @@ function taxonomyTastingCoverageText() {
     if (note.kingdom === "Animalia") return `${note.label} appears as ecology, not a plant or fungal branch`;
     return `${note.label} has no organism branch here`;
   });
-  return `${placed.length} of ${active.length} tasting notes have organism branches here.`
+  return `${placed.length} of ${active.length} notes have organism branches here.`
     + (omittedText.length ? ` ${omittedText.join("; ")}.` : "")
     + " Related branches are context for comparison, not proof that ancestry caused an aroma.";
 }
@@ -8172,17 +8406,59 @@ const gNotes  = root.append("g").attr("class", "notes");
 const gLabels   = root.append("g").attr("class", "labels");
 const gCallouts = root.append("g").attr("class", "callouts");
 
+// Pan/zoom for the full-screen wheel. The zoom transform lives on `root`, and
+// the float drags use their parent group as the d3.drag container, so pointer
+// coordinates stay in wheel space at any zoom. The filter keeps the behavior
+// inert outside full screen so page scrolling on a phone is untouched.
+let wheelZoomT = d3.zoomIdentity;
+const wheelZoom = d3.zoom()
+  .scaleExtent([1, 20])
+  // User gestures zoom/pan in full screen, anywhere on a desktop-width wheel, and
+  // on a phone once the wheel is already zoomed in (so page scrolling stays free
+  // until then). The toolbar and full-screen buttons zoom programmatically.
+  .filter(e => (document.body.classList.contains("wheel-fullscreen")
+      || window.matchMedia("(min-width: 761px)").matches || wheelZoomT.k > 1.001)
+    && (!e.ctrlKey || e.type === "wheel") && !e.button)
+  .on("zoom", e => {
+    wheelZoomT = e.transform;
+    root.attr("transform", wheelZoomT.toString());
+    document.body.classList.toggle("wheel-zoomed-in", wheelZoomT.k > 1.001);
+    document.body.classList.toggle("wheel-zoomed", wheelZoomT.k >= 2);
+    document.body.style.setProperty("--wheel-s", Math.pow(wheelZoomT.k, -0.5).toFixed(4));
+  });
+svg.call(wheelZoom).on("dblclick.zoom", null);
+
 function layout() {
+  const prevCX = CX, prevCY = CY, prevR = R_COMPOUND_MAX;
   W = wheelEl.clientWidth; H = wheelEl.clientHeight;
   CX = W / 2; CY = H / 2;
+  // On a phone the ring owns a clear window of the band: everything the page
+  // overlays on the wheel (tools bar, labels toggle, lap rail on top; the
+  // relationship/pin hint and Go Deeper on the bottom) lives OUTSIDE that
+  // window, so nothing but the first-run nudge can sit on the ring. The top
+  // inset is measured from the real controls, the bottom is a fixed reserve
+  // (--wheel-bottom-reserve) so the ring does not jump when a hint appears.
+  let ringH = H;
+  if (window.matchMedia("(max-width: 760px)").matches && H > 0) {
+    const wTop = wheelEl.getBoundingClientRect().top;
+    let top = 0;
+    wheelEl.querySelectorAll(".wheel-view-tools, #callout-toggle, .lap-rail").forEach(el => {
+      if (el.offsetParent === null) return;
+      top = Math.max(top, el.getBoundingClientRect().bottom - wTop + 6);
+    });
+    const bottom = parseFloat(getComputedStyle(wheelEl).getPropertyValue("--wheel-bottom-reserve")) || 0;
+    ringH = Math.max(H - top - bottom, 160);
+    CY = top + ringH / 2;
+  }
   // Tighter ring on narrow viewports: the note/compound anchor labels extend
   // outward from the ring, and on a phone-width wheel a 0.38 radius pushes them
   // past the viewport edge (main.wheel clips). Pulling the ring in leaves room.
-  R_NOTE = Math.min(W, H) * (W < 560 ? 0.36 : 0.38);
+  R_NOTE = ringH === H ? Math.min(W, H) * (W < 560 ? 0.36 : 0.38) : Math.min(W * 0.35, ringH * 0.4);
   R_RING = R_NOTE - 18;
   R_COMPOUND_MAX = R_NOTE * 0.55;
   svg.attr("viewBox", `0 0 ${W} ${H}`);
-  root.attr("transform", `translate(0,0)`);
+  wheelZoom.extent([[0, 0], [W, H]]).translateExtent([[0, 0], [W, H]]);
+  root.attr("transform", wheelZoomT.toString());
   if (inChemistry()) {
     // Dual layout: chemical-class arcs on the ring, compounds anchored in them;
     // the entered notes float (rendered from the sim tick / recompute).
@@ -8194,7 +8470,21 @@ function layout() {
     drawGroupArcs();
     drawNotes();
   }
+  // The wheel's box or ring just changed (resize, full screen, rotation): carry
+  // every float and pin along with it, so dots stay where they were relative to
+  // the ring instead of sitting at the old coordinates (outside the new ring)
+  // and crawling home. Skipped on the first layout, before anything is placed.
+  if (prevR > 0 && (prevCX !== CX || prevCY !== CY || prevR !== R_COMPOUND_MAX)) {
+    const k = R_COMPOUND_MAX / prevR;
+    const carry = n => {
+      n.x = CX + (n.x - prevCX) * k; n.y = CY + (n.y - prevCY) * k;
+      if (n.fx != null) n.fx = CX + (n.fx - prevCX) * k;
+      if (n.fy != null) n.fy = CY + (n.fy - prevCY) * k;
+    };
+    compoundNodes.forEach(carry); noteNodes.forEach(carry);
+  }
   _calloutSetKey = '';   // force callout re-layout on next tick (W/H/R changed)
+  renderClassBin();
   updateSimulationCenter();
 }
 
@@ -8246,10 +8536,11 @@ function computeNotePositions() {
 // scales with the wheel (a fixed pixel inset looks fine small but cramped on a
 // big full-width wheel). Stays well clear of the central floating dots.
 function arcLabelRadius() {
-  const band = R_RING - R_COMPOUND_MAX;          // open space between ring and floats
+  const inner = inChemistry() ? R_COMPOUND_MAX : FLOAT_ZONE_R();
+  const band = R_RING - inner;                   // open space between ring and floats
   // Center the labels in that open band (clamped clear of the floats on a tiny
   // wheel) so the gap from the ring scales with the wheel and never reads cramped.
-  return Math.max(R_COMPOUND_MAX + 12, R_RING - Math.max(50, band * 0.5));
+  return Math.max(inner + 16, R_RING - Math.max(26, band * 0.5));
 }
 
 // Color a section label by its category: group color in scent mode, chemical-
@@ -8315,10 +8606,83 @@ function drawArcLabels(items) {
     .attr("xlink:href", d => `#arclbl-${d.id}`)
     .text(d => d.label.toUpperCase());
 
+  // Wide wheels stack crowded chemistry labels into extra rows instead of
+  // dropping them: the single-compound slivers on the upper left are far
+  // narrower than their names, so each label takes the outermost row where it
+  // clears the previous label in that row, and gets a short leader back to its
+  // wedge. Phones keep the fit-test + glyph fallback below.
+  const stacked = W >= 560 && items.length && !items[0].cssVar;
+  items.forEach(d => { d._rl = RL; d._tier = 0; });
+  gArcs.selectAll("line.arc-leader").remove();
+  if (stacked) {
+    const TIER_STEP = 18, MAX_TIERS = 5, GAP = 14;
+    const w = new Map();
+    texts.each(function(d) {
+      this.style.display = "";
+      const tp = this.querySelector("textPath");
+      w.set(d.id, tp ? tp.getComputedTextLength() : 0);
+    });
+    const mid = d => (d._arc.start + d._arc.end) / 2;
+    const lastInTier = [];
+    [...items].sort((a, b) => mid(a) - mid(b)).forEach(d => {
+      let t = 0;
+      for (; t < MAX_TIERS - 1; t++) {
+        const prev = lastInTier[t];
+        if (!prev) break;
+        const need = (w.get(prev.id) + w.get(d.id)) / 2 + GAP;
+        if ((mid(d) - mid(prev)) * (RL - t * TIER_STEP) >= need) break;
+      }
+      d._tier = t; d._rl = RL - t * TIER_STEP;
+      lastInTier[t] = d;
+    });
+    gArcs.selectAll("path.arc-label-path").attr("d", d => arcLabelPath(d, d._rl));
+    gArcs.selectAll("line.arc-leader").data(items, d => d.id)
+      .join("line").attr("class", "arc-leader")
+      .attr("x1", d => CX + (R_RING - 4) * Math.cos(mid(d))).attr("y1", d => CY + (R_RING - 4) * Math.sin(mid(d)))
+      .attr("x2", d => CX + (d._rl + 8) * Math.cos(mid(d))).attr("y2", d => CY + (d._rl + 8) * Math.sin(mid(d)))
+      .attr("stroke", d => d.color).attr("stroke-opacity", 0.5).attr("stroke-width", 1)
+      .style("pointer-events", "none");
+  }
+
+  // Phones: the ring is far too small for 21 curved class names, so they sit
+  // OUTSIDE the ring as small horizontal labels with leader lines, fanned apart
+  // vertically on each side so no two overlap.
+  const outside = W < 560 && items.length && !items[0].cssVar;
+  gArcs.selectAll("g.arc-outside").remove();
+  if (outside) {
+    const SHORT = { "phenolic-aldehyde": "phenol-ald.", "phenylpropene": "phenylprop.",
+      "haloanisole": "haloanis.", "isothiocyanate": "isothiocy.", "norisoprenoid": "norisopr." };
+    const MIN_GAP = 11, mid = d => (d._arc.start + d._arc.end) / 2;
+    const rows = items.map(d => {
+      const a = mid(d), right = Math.cos(a) >= 0;
+      return { d, a, right, x0: CX + (R_RING + 3) * Math.cos(a), y0: CY + (R_RING + 3) * Math.sin(a),
+        x: CX + (R_RING + 14) * Math.cos(a) + (right ? 3 : -3), y: CY + (R_RING + 12) * Math.sin(a) };
+    });
+    [true, false].forEach(side => {
+      const col = rows.filter(r => r.right === side).sort((p, q) => p.y - q.y);
+      for (let i = 1; i < col.length; i++) col[i].y = Math.max(col[i].y, col[i - 1].y + MIN_GAP);
+      const over = col.length ? col[col.length - 1].y - (H - 10) : 0;
+      if (over > 0) col.forEach(r => { r.y -= over; });
+      for (let i = col.length - 2; i >= 0; i--) col[i].y = Math.min(col[i].y, col[i + 1].y - MIN_GAP);
+      col.forEach(r => { r.y = Math.max(r.y, 10); });
+    });
+    const g = gArcs.append("g").attr("class", "arc-outside");
+    g.selectAll("line").data(rows).join("line")
+      .attr("x1", r => r.x0).attr("y1", r => r.y0).attr("x2", r => r.x + (r.right ? -2 : 2)).attr("y2", r => r.y)
+      .attr("stroke", r => r.d.color).attr("stroke-opacity", 0.55).attr("stroke-width", 0.8);
+    g.selectAll("text").data(rows).join("text")
+      .attr("x", r => r.x).attr("y", r => r.y).attr("dominant-baseline", "central")
+      .attr("text-anchor", r => r.right ? "start" : "end")
+      .attr("fill", r => r.d.color)
+      .style("font-size", "8.5px").style("letter-spacing", "0.03em").style("text-transform", "uppercase")
+      .text(r => SHORT[r.d.id] || r.d.label);
+  }
+
   // Fit-test each chemistry-class label against its actual wedge; collect the
   // ones that don't fit for glyph fallback. Measured while still visible.
   const glyphData = [];
   texts.each(function(d) {
+    if (stacked || outside) { if (outside) this.style.display = "none"; return; }
     if (d.cssVar) { this.style.display = ""; return; }   // groups: always text
     const avail = Math.abs(d._arc.end - d._arc.start) * RL;   // arc length of the wedge
     const tp = this.querySelector("textPath");
@@ -8372,7 +8736,7 @@ function drawGroupArcs() {
   // center decorative ring
   gArcs.selectAll("circle.center-ring").data([0]).join("circle")
     .attr("class", "center-ring")
-    .attr("cx", CX).attr("cy", CY).attr("r", R_COMPOUND_MAX + 12);
+    .attr("cx", CX).attr("cy", CY).attr("r", FLOAT_ZONE_R() + 12);
 }
 
 // Shared by wheel-note click and Enter/Space keyboard activation: scroll the
@@ -8494,9 +8858,11 @@ function applyArcEvidence() {
     compoundNodes.forEach(node => {
       if (node.intensity_raw > 0) {
         const cls = CPD_BY_ID[node.id].class;
-        // 0.5 floor per active compound guarantees a class visibly lifts the
-        // moment any of its compounds light up, then deepens with intensity.
-        if (activity[cls] !== undefined) activity[cls] += 0.5 + Math.min(1, node.intensity);
+        // A class's glow is the summed evidence of its active compounds, with
+        // no free floor: one faint compound barely lifts its wedge, and the glow
+        // deepens as more notes feed the class or feed it harder. (A 0.5 floor
+        // per compound used to saturate nearly every active class at ~100%.)
+        if (activity[cls] !== undefined) activity[cls] += node.intensity_raw;
       }
     });
     baseFor = d => d.color;
@@ -8506,7 +8872,7 @@ function applyArcEvidence() {
   }
   gArcs.selectAll("path.group-arc").each(function(d) {
     const base = baseFor(d);
-    const bloom = bloomFactor(activity[d.id] || 0);
+    const bloom = (chem ? chemBloomFactor : bloomFactor)(activity[d.id] || 0);
     const col = evidenceColor(base, bloom);
     d3.select(this)
       .attr("stroke", col)
@@ -8516,7 +8882,7 @@ function applyArcEvidence() {
   });
   gArcs.selectAll("text.group-arc-label").each(function(d) {
     const base = baseFor(d);
-    const bloom = bloomFactor(activity[d.id] || 0);
+    const bloom = (chem ? chemBloomFactor : bloomFactor)(activity[d.id] || 0);
     d3.select(this)
       .attr("fill", bloom > 0.05 ? vividColor(base) : (chem ? base : "var(--ink-dim)"))
       .attr("opacity", (0.45 + 0.5 * bloom).toFixed(3))
@@ -8524,7 +8890,7 @@ function applyArcEvidence() {
   });
   // Thin-class glyph fallbacks dim/brighten with their wedge, same as the text.
   gArcs.selectAll("text.arc-glyph").each(function(d) {
-    const bloom = bloomFactor(activity[d.id] || 0);
+    const bloom = (chem ? chemBloomFactor : bloomFactor)(activity[d.id] || 0);
     d3.select(this).attr("opacity", (0.5 + 0.45 * bloom).toFixed(3));
   });
 }
@@ -8536,7 +8902,13 @@ function applyArcEvidence() {
 
 // Distribute visible compounds around the ring, grouped contiguously by class.
 function computeCompoundPositions() {
-  const visible = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+  // Only classes the current experience actually produces take ring space (wedge
+  // width follows the number of active compounds); the rest wait in the side bin
+  // (see renderClassBin). With nothing entered yet, show the full structure.
+  const allVisible = COMPOUNDS.filter(c => isCompoundVisible(c.id));
+  const active = allVisible.filter(c => CPD_NODE_BY_ID[c.id].intensity_raw > 0);
+  const visible = active.length ? active : allVisible;
+  const onRing = new Set(visible.map(c => c.id));
   const counts = {};
   CLASSES.forEach(cl => counts[cl.id] = visible.filter(c => c.class === cl.id).length);
   const total = visible.length || 1;
@@ -8558,21 +8930,7 @@ function computeCompoundPositions() {
     node._x = CX + Math.cos(a) * R_NOTE;
     node._y = CY + Math.sin(a) * R_NOTE;
   });
-  // Same idea as notes: the compounds a tasting lights up share their class's
-  // whole arc evenly rather than sitting at fixed slots.
-  const activeByClass = {};
-  visible.forEach(c => { if ((CPD_NODE_BY_ID[c.id].intensity_raw || 0) > 0) (activeByClass[c.class] = activeByClass[c.class] || []).push(c); });
-  Object.keys(activeByClass).forEach(cid => {
-    const list = activeByClass[cid], ca = classAngles[cid];
-    list.forEach((c, j) => {
-      const a = ca.start + (j + 0.5) / list.length * ca.span;
-      const node = CPD_NODE_BY_ID[c.id];
-      node._angle = a;
-      node._x = CX + Math.cos(a) * R_NOTE;
-      node._y = CY + Math.sin(a) * R_NOTE;
-    });
-  });
-  COMPOUNDS.forEach(c => { if (!isCompoundVisible(c.id)) {
+  COMPOUNDS.forEach(c => { if (!onRing.has(c.id)) {
     const n = CPD_NODE_BY_ID[c.id]; n._angle = null; n._x = null; n._y = null;
   }});
   CLASSES.forEach(cl => { cl._arc = classAngles[cl.id]; });
@@ -8910,7 +9268,9 @@ function updateSimulationCenter() {
 // collide would shove them apart arbitrarily every time.
 // Molecules occupy the dotted center arena; the flavor notes and category
 // labels remain attached to their outer shell.
-const FLOAT_ZONE_R = () => R_COMPOUND_MAX * (W < 760 ? 0.82 : 0.72);
+// 1.5x the original arena (0.82 / 0.72 of R_COMPOUND_MAX): glyph size, collide
+// padding and drift stay tied to R_COMPOUND_MAX, so only the room grows.
+const FLOAT_ZONE_R = () => R_COMPOUND_MAX * (W < 760 ? 1.23 : 1.08);
 
 function clampToFloatArena(x, y, node) {
   if (inChemistry()) return { x, y }; // Chemistry's established free-pin behavior stays untouched.
@@ -9220,10 +9580,104 @@ function tick() {
 function updateFloatPositions() {
   gComps.selectAll("g.compound").attr("transform", d => `translate(${d.x},${d.y})`);
 }
+// Floating dots move every animation frame, and a color-emoji <text> at 30-120px
+// is re-rasterized each time it shifts by a sub-pixel (measured: ~10 fps with 17
+// floats on a desktop wheel, vs 60 fps with the glyphs hidden). Floats draw their
+// emoji as a cached bitmap <image> instead, which the compositor just
+// translates. The bitmap is rendered once per emoji; size is a CSS `scale` on the
+// element so the pop-in ease still animates and the separate `transform` stays
+// free for the full-screen zoom's counter-scale.
+const GLYPH_BITMAP_PX = 160;
+const _glyphBitmaps = new Map();
+function glyphBitmapURL(emoji) {
+  let url = _glyphBitmaps.get(emoji);
+  if (url) return url;
+  const c = document.createElement("canvas");
+  c.width = c.height = GLYPH_BITMAP_PX;
+  const ctx = c.getContext("2d");
+  ctx.font = `${Math.round(GLYPH_BITMAP_PX * 0.8)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(emoji, GLYPH_BITMAP_PX / 2, GLYPH_BITMAP_PX / 2 + GLYPH_BITMAP_PX * 0.04);
+  url = c.toDataURL("image/png");
+  _glyphBitmaps.set(emoji, url);
+  return url;
+}
+// Draw `emoji` at `size` px inside float group `g` (a d3 selection of one <g>),
+// replacing the live <text> glyph.
+function setFloatGlyph(g, emoji, size) {
+  g.select("text.node-glyph").style("display", "none");
+  let img = g.select("image.node-glyph-img");
+  if (img.empty()) {
+    img = g.insert("image", "text.node-label").attr("class", "node-glyph-img")
+      .attr("x", -GLYPH_BITMAP_PX / 2).attr("y", -GLYPH_BITMAP_PX / 2)
+      .attr("width", GLYPH_BITMAP_PX).attr("height", GLYPH_BITMAP_PX)
+      .style("pointer-events", "none");
+  }
+  img.attr("href", glyphBitmapURL(emoji)).style("scale", size / GLYPH_BITMAP_PX);
+}
+
 // Full float rebuild for the active mode — data join, styles, labels.
 function syncFloats() {
   if (inChemistry()) renderNoteFloats(); else renderCompoundFloats();
+  renderClassKey();
 }
+
+// Key to the compound icons. Classes fed by your current experience come first;
+// the rest follow dimmed, so the key doubles as a reference for the whole set.
+const CLASS_KEY_HINT = {
+  "terpene": "pine, citrus, herbs", "pyrazine": "roasted, nutty", "furan": "caramel, bready",
+  "thiol": "tropical fruit, fresh coffee", "ester": "fruity, sweet", "lactone": "creamy, peachy, coconut",
+  "phenolic-aldehyde": "vanilla", "aldehyde": "green, grassy, almond", "ketone": "buttery",
+  "norisoprenoid": "violet, cooked apple", "phenol": "smoky, clove", "alcohol": "mushroom, forest floor",
+  "phenylpropene": "anise, clove, warm spice", "pyranone": "caramel, honey", "pyrroline": "popcorn, bread crust",
+  "acid": "cheesy, sharp, sour", "haloanisole": "musty, cork taint", "sulfide": "cooked onion or corn",
+  "thiazole": "tomato", "isothiocyanate": "mustard, wasabi heat", "furanone": "strawberry, sweet caramel"
+};
+const classKeyBody = document.getElementById("class-key-body");
+const classKeyToggle = document.getElementById("class-key-toggle");
+function renderClassKey() {
+  if (classKeyBody.hidden) return;   // only built while open; opening renders it
+  const active = new Set(COMPOUNDS.filter(c => CPD_NODE_BY_ID[c.id] && CPD_NODE_BY_ID[c.id].intensity_raw > 0).map(c => c.class));
+  const row = (cls, dim) => `<div class="class-key-row${dim ? " dim" : ""}" style="--ck-color:${COMPOUND_CLASS_COLOR[cls]}">`
+    + `<span class="ck-icon" aria-hidden="true">${classIcon(cls)}</span>`
+    + `<span><span class="ck-name">${CLASS_FULL[cls] || cls}</span> <span class="ck-hint">${CLASS_KEY_HINT[cls] || ""}</span></span></div>`;
+  const on = CLASS_ORDER.filter(c => active.has(c)), off = CLASS_ORDER.filter(c => !active.has(c));
+  classKeyBody.innerHTML =
+    `<p class="class-key-intro">Each ringed icon is a chemical class of aroma compound, not one compound. Food icons on the wheel are your notes.</p>`
+    + (on.length ? `<div class="class-key-head">In your experience</div>` + on.map(c => row(c, false)).join("") : "")
+    + `<div class="class-key-head">${on.length ? "Other classes" : "All classes"}</div>` + off.map(c => row(c, on.length > 0)).join("");
+}
+// Side bin for chemistry classes that no entered note produces.
+const classBinEl = document.getElementById("class-bin");
+const classBinBody = document.getElementById("class-bin-body");
+const classBinToggle = document.getElementById("class-bin-toggle");
+let classBinOpen = null;   // null = follow the default (open on wide screens)
+function renderClassBin() {
+  const active = new Set(COMPOUNDS.filter(c => isCompoundVisible(c.id) && CPD_NODE_BY_ID[c.id].intensity_raw > 0).map(c => c.class));
+  const off = CLASS_ORDER.filter(c => !active.has(c) && !state.hiddenClasses.has(c));
+  if (!inChemistry() || !active.size || !off.length) { classBinEl.hidden = true; return; }
+  classBinEl.hidden = false;
+  document.getElementById("class-bin-count").textContent = "(" + off.length + ")";
+  classBinBody.innerHTML =
+    `<p class="class-bin-note">No note you've entered produces these compound classes, so they sit out of the ring. Add a note that does and its class returns to the wheel.</p>`
+    + `<div class="class-bin-chips">` + off.map(cls =>
+      `<span class="class-bin-chip" style="--ck-color:${COMPOUND_CLASS_COLOR[cls]}" title="${CLASS_KEY_HINT[cls] || ""}">`
+      + `<span class="ck-icon" aria-hidden="true">${classIcon(cls)}</span>${CLASS_FULL[cls] || cls}</span>`).join("") + `</div>`;
+  const open = classBinOpen === null ? W >= 560 : classBinOpen;
+  classBinBody.hidden = !open;
+  classBinToggle.setAttribute("aria-expanded", String(open));
+}
+classBinToggle.addEventListener("click", () => {
+  classBinOpen = classBinBody.hidden;   // flip from what is showing now
+  classBinBody.hidden = !classBinOpen;
+  classBinToggle.setAttribute("aria-expanded", String(classBinOpen));
+});
+classKeyToggle.addEventListener("click", () => {
+  const open = classKeyBody.hidden;
+  classKeyBody.hidden = !open;
+  classKeyToggle.setAttribute("aria-expanded", String(open));
+  if (open) renderClassKey();
+});
 
 // Scent mode: compounds float toward their active notes. Render those with
 // non-trivial evidence only — the empty wheel shows just the group arcs, and
@@ -9319,7 +9773,7 @@ function renderCompoundFloats() {
   // chemical-class emoji inside. Shape (the glyph) reads the class; the ring's
   // color carries the scent-home tint, exactly as the old orb did.
   merged.each(function(d) {
-    const sz = compoundGlyphSize(d.score);
+    const sz = compoundGlyphSize(d.score) * GLYPH_SCALE.value;   // floats only: the toolbar - / + size these
     const half = sz * 0.5;
     const col = compoundColor(d);
     const seld = d.id === state.selectedCompound;
@@ -9337,9 +9791,7 @@ function renderCompoundFloats() {
       .style("stroke", seld ? "var(--accent)" : col)
       .style("stroke-opacity", seld ? 1 : 0.75)
       .style("stroke-width", seld ? 2 : 1.3);
-    g.select("text.node-glyph")
-      .style("font-size", sz + "px")
-      .text(classIcon(d.class));
+    setFloatGlyph(g, classIcon(d.class), sz);
     g.select("text.node-label")
       .attr("x", half + 5)
       .attr("y", 3)
@@ -9410,7 +9862,7 @@ function renderNoteFloats() {
   // Same scaling-emoji marker as the Scent-mode ring anchors, here drifting
   // through the center toward the chemical neighborhoods each note evokes.
   merged.each(function(d) {
-    const sz = noteGlyphSize(d.score);
+    const sz = noteGlyphSize(d.score) * GLYPH_SCALE.value;   // floats only: the toolbar - / + size these
     const half = sz * 0.5;
     const g = d3.select(this);
     g.select("circle.note-halo")
@@ -9420,9 +9872,7 @@ function renderNoteFloats() {
       .style("stroke", d.id === state.selectedNote ? "var(--accent)" : "none")
       .style("stroke-width", 2);
     paintIrritantMark(g, d.id, sz);
-    g.select("text.node-glyph")
-      .style("font-size", sz + "px")
-      .text(noteIcon(d));
+    setFloatGlyph(g, noteIcon(d), sz);
     g.select("text.node-label")
       .attr("x", half + 5)
       .attr("y", 3)
@@ -9670,7 +10120,7 @@ function updateEdges() {
     // permanent thicket of faint lines to notes you never entered — and it's
     // already spelled out, with citations, in the panel's "Contributing notes"
     // list. So a selected compound keeps only its LIT edges (to notes actually
-    // in the tasting); the "also appears in…" discovery lives in the panel, not
+    // in the experience); the "also appears in…" discovery lives in the panel, not
     // as wheel clutter. Selected lit edges still render focused (emphasized).
     const isHovered = state.hoveredNote === e.note || state.hoveredCompound === e.cpd;
     const isSelected = state.selectedCompound === e.cpd;
@@ -9755,13 +10205,13 @@ function recompute() {
     // radius now feeds only the collide force (the visible mark is the glyph
     // token, not a circle of this radius), so track the glyph's actual footprint
     // — otherwise the bigger emoji tokens overlap their neighbors.
-    node.radius = compoundGlyphSize(node.score) * 0.55;
+    node.radius = compoundGlyphSize(node.score) * GLYPH_SCALE.value * 0.55;
   });
   // Score the note float-nodes too (used as their size/opacity when they're the
   // floating set in chemistry mode). Cheap; harmless in scent mode.
   noteNodes.forEach(nn => {
     nn.score = noteSignal(nn.id);
-    nn.radius = noteGlyphSize(nn.score) * 0.55;   // collide spacing tracks the emoji size
+    nn.radius = noteGlyphSize(nn.score) * GLYPH_SCALE.value * 0.55;   // collide spacing tracks the emoji size
   });
   // Clear stale selections: if the selected compound or note has lost all evidence
   // it's no longer on the wheel, and keeping it selected leaves ghost edges drawn
@@ -9775,8 +10225,16 @@ function recompute() {
 
   // Redraw the anchor set — it changes whenever entries are added/removed (scent:
   // which notes show; chemistry: compound-anchor brightness tracks score).
-  // Positions depend on which notes/compounds are active, so refresh them first.
-  if (inChemistry()) { computeCompoundPositions(); drawCompoundAnchors(); } else { computeNotePositions(); drawNotes(); }
+  if (inChemistry()) {
+    // The set of active classes may have changed, which changes every wedge.
+    computeCompoundPositions();
+    drawClassArcs();
+    drawCompoundAnchors();
+  } else {
+    computeNotePositions();   // entered notes re-space within their wedge
+    drawNotes();
+  }
+  renderClassBin();
   applyArcEvidence();              // re-bloom the ring for the new evidence picture
   renderTastingTray();            // keep the always-on input HUD in sync
   updateOriginsClearTasting();     // map-local bulk clear mirrors the same live input count
@@ -9798,7 +10256,7 @@ function recompute() {
   if (typeof renderMapBearingCompass === "function") renderMapBearingCompass();
   if (typeof updateNudge === "function") updateNudge();
   if (originsLoaded) refreshOriginMarkers();
-  // Keep the tree in step with the tasting, but only while it's the visible
+  // Keep the tree in step with the experience, but only while it's the visible
   // workspace: unlike refreshOriginMarkers (which just sets attributes), a
   // tree render recomputes the whole d3 layout and measures the container, so
   // running it on every slider tick from the wheel would be wasted work.
@@ -11330,12 +11788,12 @@ function detectFlavorCombos(activeSet) {
   return matches.slice(0, 3);
 }
 // ---------- TASTING RELATIONSHIPS ----------
-// One engine, several surfaces. "How do the notes in this tasting relate?" was
+// One engine, several surfaces. "How do the notes in this experience relate?" was
 // being answered in five places with five implementations and five vocabularies:
 // the bouquet knew compound classes, Constellation knew compound overlap, the
 // Compare panel knew botany and geography, the Map and Tree knew their own
 // coverage. None of them could see the others' answer, and the Wheel -- where
-// the tasting is actually built -- could see none of it.
+// the experience is actually built -- could see none of it.
 //
 // The axes below deliberately mirror Constellation's lenses, so a relationship
 // reads the same wherever the user meets it, and each one carries the route to
@@ -11883,11 +12341,14 @@ document.getElementById("enter-tasting-btn").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
 });
 
+// There is no panel switcher any more: the compound details are always on
+// screen, beside the wheel on desktop and in the bottom drawer on a phone (whose
+// bar is always visible). `v` is accepted for the old call sites and links but
+// no longer changes which panes show; the wheel's full-screen mode is the way to
+// give the wheel more room.
 function setView(v) {
-  if (isMobileViewport() && v === "dashboard") v = "note-input";
-  if (v === "dashboard")        { state.notesHidden = false; state.detailHidden = false; }
-  else if (v === "note-input")  { state.notesHidden = false; state.detailHidden = true;  }
-  else if (v === "analysis")    { state.notesHidden = true;  state.detailHidden = false; }
+  state.notesHidden = false;
+  state.detailHidden = isMobileViewport();   // phones use the drawer, not the side pane
   applyPaneState();
 }
 
@@ -11897,7 +12358,8 @@ function setView(v) {
 // Compounds view — otherwise the tap would select a compound you can't see.
 function ensureDetailVisible() {
   if (window.matchMedia("(max-width: 760px)").matches) {
-    setView("analysis");
+    // Open the compounds drawer rather than swapping panels.
+    if (state.compoundsSnap === "peek") setCompoundsSnap("half");
   } else if (state.detailHidden) {
     state.detailHidden = false;
     applyPaneState();
@@ -12184,10 +12646,6 @@ updateWheelHint();
 // Per-pane toggle handlers — independent of the view presets.
 document.getElementById("toggle-notes").addEventListener("click", () => {
   state.notesHidden = !state.notesHidden;
-  applyPaneState();
-});
-document.getElementById("toggle-detail").addEventListener("click", () => {
-  state.detailHidden = !state.detailHidden;
   applyPaneState();
 });
 
@@ -12562,7 +13020,7 @@ const lapStackEl    = document.getElementById("lap-stack");
 const lapEmptyEl    = document.getElementById("lap-empty");
 const lapPreviewBar = document.getElementById("lap-preview-bar");
 const lapPreviewLbl = document.getElementById("lap-preview-label");
-let _liveStash = null;   // live tasting parked while previewing a lap
+let _liveStash = null;   // live experience parked while previewing a lap
 
 function currentWorkspace() {
   if (document.body.classList.contains("taxonomy-mode")) return "tree";
@@ -12675,9 +13133,7 @@ function hydrateExactView(encoded) {
     if (workspace === "wheel" && ["dashboard", "note-input", "analysis"].includes(payload.p)) {
       setView(payload.p);
     } else if (workspace === "wheel" && payload.p === "wheel-only") {
-      state.notesHidden = true;
-      state.detailHidden = true;
-      applyPaneState();
+      setView("dashboard");   // old link that hid both panes; compounds stay on screen now
     }
 
     if (workspace === "map") {
@@ -12768,7 +13224,7 @@ function returnToLive() {
   renderLapStack();
 }
 
-// Branch: the previewed lap becomes the live tasting. The stash is dropped, so
+// Branch: the previewed lap becomes the live experience. The stash is dropped, so
 // this is the one path that discards unsaved work — and it takes an explicit
 // click on a labeled button to get here.
 function continueFromLap() {
@@ -12788,7 +13244,7 @@ function renderLapStack() {
     b.innerHTML = `<span class="lap-chip-n">Lap ${lap.n}</span>
       <span class="lap-chip-meta">${noteCount} note${noteCount === 1 ? "" : "s"}</span>
       ${cond ? `<span class="lap-chip-cond">${cond}</span>` : ``}`;
-    b.title = `Preview lap ${lap.n}${cond ? ` — ${cond}` : ""}. Your live tasting is kept.`;
+    b.title = `Preview lap ${lap.n}${cond ? ` — ${cond}` : ""}. Your live experience is kept.`;
     b.addEventListener("click", () => previewLap(lap));
     lapStackEl.appendChild(b);
   });
@@ -12971,7 +13427,7 @@ function updateNudge() {
 // Pin-hint cloud: show once the wheel has floats (so there's something to pin),
 // until the user dismisses it or drags a float for the first time.
 const pinHintEl = document.getElementById("pin-hint");
-// The top relationship, shown live above the tasting tray while the user is
+// The top relationship, shown live above the experience tray while the user is
 // still entering notes. Clicking it opens the Results panel, where the full set
 // of rows carries the routes into Tree, Map, and Constellation.
 const relationHintEl = document.getElementById("relation-hint");
@@ -13505,15 +13961,15 @@ const CX_CAPTIONS = {
 };
 function cxBadgeText(lens, L) {
   const activeN = cxActiveCount();
-  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin · ${activeN} active in your tasting`;
+  if (lens === "geography") return `${NOTES.length - L.trayIds.length} of ${NOTES.length} have a recorded origin · ${activeN} active in your experience`;
   if (lens === "embodied") {
     const tagged = NOTES.filter(n => cxEffectiveTag(n.id)).length;
-    return `${tagged} of ${NOTES.length} placed (${activeN} active in your tasting)`;
+    return `${tagged} of ${NOTES.length} placed (${activeN} active in your experience)`;
   }
-  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${activeN} active in your tasting`;
+  return `${NOTES.length} notes · ${COMPOUNDS.length} compounds · ${activeN} active in your experience`;
 }
 function cxLegendFor(lens) {
-  const activeNote = `<div style="margin-top:2px;">Brighter + bigger = active in your current tasting; dim = in the graph but not entered.</div>`;
+  const activeNote = `<div style="margin-top:2px;">Brighter + bigger = active in your current experience; dim = in the graph but not entered.</div>`;
   if (lens === "chemistry") {
     const wt = cxState.minWeight <= 0;
     return `<div>Compound sectors, alphabetical by chemical class — the sector layout <em>is</em> the key.</div>
@@ -13525,7 +13981,7 @@ function cxLegendFor(lens) {
       groups.map(k => `<div><span class="legend-swatch" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-2);margin-right:6px;"></span>${k}</div>`).join("") + activeNote;
   }
   if (lens === "geography") return `<div>Equirectangular reference grid, not a sourced coastline.</div><div>Chips below are notes with no recorded cultivation origin.</div>${activeNote}`;
-  return `<div>Y = felt temperature, from the cooling and warming tags in the Guide me flow.</div><div>X = orthonasal or retronasal. Real phase tags from your actual tasting are locked in. Chips let you place anything else hypothetically for this session only.</div>`;
+  return `<div>Y = felt temperature, from the cooling and warming tags in the Guide me flow.</div><div>X = orthonasal or retronasal. Real phase tags from your actual experience are locked in. Chips let you place anything else hypothetically for this session only.</div>`;
 }
 
 function cxCurrentLayout() {
@@ -13579,7 +14035,7 @@ function cxWireStar(id, circle) {
   circle.addEventListener("blur", cxHideFloat);
 }
 function cxCycleTag(noteId) {
-  if (cxTagIsReal(noteId)) { cxSelect(noteId); return; } // already a real fact from the tasting -- not editable here
+  if (cxTagIsReal(noteId)) { cxSelect(noteId); return; } // already a real fact from the experience -- not editable here
   const cur = cxState.tags[noteId];
   const next = cur === "ortho" ? "retro" : cur === "retro" ? "both" : cur === "both" ? undefined : "ortho";
   if (next) cxState.tags[noteId] = next; else delete cxState.tags[noteId];
@@ -13705,17 +14161,17 @@ function cxRenderOverlapGraph() {
   let tastingHtml;
   if (!active.length) {
     tastingHtml = `<section class="cx-tasting-links">
-      <h3>Start with your tasting</h3>
+      <h3>Start with your experience</h3>
       <p>Add two or more notes on the Wheel. Their shared, literature-linked compounds will appear here before the full system view.</p>
     </section>`;
   } else if (active.length === 1) {
     tastingHtml = `<section class="cx-tasting-links">
-      <h3>Your tasting · 1 note</h3>
+      <h3>Your experience · 1 note</h3>
       <p>${noteIcon(active[0].note)} ${active[0].note.label} is active. Add another note to look for crossover, or open the whole graph below.</p>
     </section>`;
   } else {
     tastingHtml = `<section class="cx-tasting-links">
-      <h3>Your tasting connections</h3>
+      <h3>Your experience connections</h3>
       <p>${active.length} active notes · ${tastingPairs.length} pair${tastingPairs.length === 1 ? "" : "s"} share at least one linked compound. These are clues for sensory comparison, not proof that the compound is present or that one note caused another.</p>
       <div class="cx-overlap-list">
         ${tastingPairs.length ? tastingPairs.slice(0, 8).map(tastingPairHtml).join("")
@@ -13920,13 +14376,13 @@ function cxRenderSide() {
   cxEls.side.innerHTML = `
     <button class="cx-side-close" id="cxCloseBtn">← Overlap spectrum</button>
     <h3>${n.label}</h3>
-    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}${active ? ' · <span style="color:var(--accent)">active in your tasting</span>' : ""}</span>
+    <span class="cx-grp-chip"><span class="cx-grp-dot" style="background:var(--grp-${n.group})"></span>${n.group}${active ? ' · <span style="color:var(--accent)">active in your experience</span>' : ""}</span>
     <div class="cx-lineage"><span class="cx-rank">Lineage</span>${path.join(" → ")}</div>
     ${o ? `<div class="cx-origin">${o.region}<br><span class="cx-coord">${o.lat}°, ${o.lon}°</span></div>` : `<div class="cx-origin">No origin on record in the app.</div>`}
     ${cxNoteOverlapHtml(n.id)}
     <div class="cx-cpd-list">${rows || '<div class="cx-cpd-row" style="color:var(--ink-dim)">No edges for this note yet.</div>'}</div>
     ${cxState.lens === "embodied" ? (tagLocked ? `
-      <div class="cx-lineage"><span class="cx-rank">Phase</span>Tagged ${tag} in your actual tasting — not editable here.</div>` : `
+      <div class="cx-lineage"><span class="cx-rank">Phase</span>Tagged ${tag} in your actual experience — not editable here.</div>` : `
       <div class="cx-tag-row">
         <button class="cx-tag-btn" data-tag="ortho" aria-pressed="${tag === "ortho"}">Ortho</button>
         <button class="cx-tag-btn" data-tag="retro" aria-pressed="${tag === "retro"}">Retro</button>
@@ -13997,7 +14453,7 @@ function cxApplyLayout(L, animate) {
   const from = {};
   Object.keys(cxStarEls).forEach(id => { from[id] = cxCurrentTransform(cxStarEls[id]); });
   const to = {};
-  // Active-in-your-tasting notes read brighter and bigger everywhere -- the
+  // Active-in-your-notes read brighter and bigger everywhere -- the
   // one constant thread across all four lenses tying Constellation back to
   // what's actually in the Wheel right now, not a static reference chart.
   NOTES.forEach(n => {
@@ -14072,7 +14528,7 @@ function cxInit() {
 function openConstellation() {
   cxOverlayEl.hidden = false;
   if (!cxInitialized) { cxInit(); return; }
-  // Re-sync to whatever's actually in the tasting now -- a prior open
+  // Re-sync to whatever's actually in the experience now -- a prior open
   // shouldn't leave the view stale if notes changed while it was closed.
   cxSwitchLens(cxState.lens, true, true);
 }
@@ -14300,7 +14756,6 @@ compassClassSelectEl.addEventListener("change", () => {
 // axes, and Notes/Compounds need the axis SET itself to update live, not
 // just the data on it, so there's no real "static part" left to cache.
 function renderCompass() {
-  if (!state.compassVisible) return;
   compassCaptionEl.textContent = typeof COMPASS_CAPTION[state.compassMode] === "function"
     ? COMPASS_CAPTION[state.compassMode](state.compassClass)
     : COMPASS_CAPTION[state.compassMode];
@@ -14351,14 +14806,34 @@ function renderCompass() {
   applyCompassScale(state.compassWidth || compassDefaultWidth());
 }
 
+// "Visible" now means POPPED OUT: the Radar is always on screen, docked as the
+// top card of the compounds pane unless it has been floated over the wheel. The
+// same #compass-content element is moved between the two hosts.
+const radarDockEl = document.getElementById("radar-dock");
+const radarDockBodyEl = document.getElementById("radar-dock-body");
 function setCompassVisible(visible) {
   state.compassVisible = !!visible;
-  compassEl.hidden = !state.compassVisible;
-  document.body.classList.toggle("compass-on", state.compassVisible);
-  if (state.compassVisible) renderCompass();
+  const floating = state.compassVisible;
+  compassEl.hidden = !floating;
+  radarDockEl.hidden = floating;
+  // Some wheel overlays (compound-labels toggle, context caption) have always
+  // stayed out of the way of the Radar; the Radar is always present now, so
+  // they keep doing so.
+  document.body.classList.add("compass-on");
+  document.body.classList.toggle("radar-floating", floating);
+  if (floating) compassEl.insertBefore(compassContentEl, compassEl.firstChild);
+  else radarDockBodyEl.appendChild(compassContentEl);
+  if (!floating) { compassContentEl.style.transform = ""; compassContentEl.querySelector(".compass-header").style.paddingLeft = ""; }
+  renderCompass();
+  if (typeof layout === "function") layout();   // the floater's top-inset / dock height can change the ring box
 }
 compassToggleBtn.addEventListener("click", () => setCompassVisible(!state.compassVisible));
 document.getElementById("compass-close-btn").addEventListener("click", () => setCompassVisible(false));
+document.getElementById("radar-popout-btn").addEventListener("click", () => setCompassVisible(true));
+// Every pane re-render replaces the compounds pane's contents; keep the dock on top.
+new MutationObserver(() => {
+  if (detailPanel.firstElementChild !== radarDockEl) detailPanel.prepend(radarDockEl);
+}).observe(detailPanel, { childList: true });
 
 function setCompassMode(mode) {
   if (mode === state.compassMode) return;
@@ -14407,6 +14882,7 @@ const COMPASS_MIN_W = 140;
 function compassDefaultWidth() { return Math.max(COMPASS_MIN_W, Math.min(COMPASS_BASE_W, wheelEl.clientWidth * 0.4)); }
 
 function applyCompassScale(widthPx) {
+  if (!state.compassVisible) return;   // docked: the pane sets the size, no scaling
   const scale = widthPx / COMPASS_BASE_W;
   compassContentEl.style.transform = "none";
   const naturalH = compassContentEl.getBoundingClientRect().height;
@@ -14445,6 +14921,7 @@ function applyCompassScale(widthPx) {
     // × becomes unclickable. Any future interactive control added to the
     // header (e.g. a resize/expand button) needs the same exclusion.
     if (e.target.closest("#compass-close-btn")) return;
+    if (!state.compassVisible) return;   // docked: nothing to drag
     dragging = true;
     handle.classList.add("dragging");
     handle.setPointerCapture(e.pointerId);
@@ -14605,9 +15082,10 @@ function renderAbout() {
 
     <h3 id="about-choices">The design decisions</h3>
     <p>This tool comes from a background in UI/UX design, museum education, science communication, GIS and systems analysis, and creative engineering. That background shapes a few choices here that differ from how a professional tasting wheel usually works.</p>
+<p>More about the person behind this tool, and other projects, lives at <a href="https://nolanaeckhart.fyi/" target="_blank" rel="noopener">nolanaeckhart.fyi</a>.</p>
     <p>Before this had any code, it was a spreadsheet: aromas listed against eight terpenes, each cell a 1 to 10 guess at how strongly that terpene would need to show up to produce that smell. The current compound graph grew out of checking that early guesswork against real GC-MS literature, keeping what held up and replacing what the literature contradicted.</p>
     <p>Confidence here is a convergence score: how many of your own independently-reported notes point at the same compound, and how strong those links are in the literature. Two sittings of the same coffee can produce different notes, each reflecting what was perceived in that moment.</p>
-    <p>The wheel, the Tree, the Map, the Radar, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, botanical lineage in the Tree, cultivation origins on the Map, a fixed set of axes in the Radar so two tastings sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
+    <p>The wheel, the Tree, the Map, the Radar, and Constellation all draw from the same underlying notes, compounds, families, and origins, organized a few different ways: Scent or Chemistry on the wheel, botanical lineage in the Tree, cultivation origins on the Map, a fixed set of axes in the Radar so two experiences sit on directly comparable ground, or chemistry, taxonomy, geography, and session tags in Constellation. Re-projecting the same data across several layouts comes from GIS and systems-analysis habits.</p>
     <p>Terms like retronasal, odor threshold, and furanone stay in the copy because they are the words the literature actually uses. The reference points lean toward things most people have tasted, since a lot of this audience is sober or non-drinking. Citations point to real published sources, and Methodology → What counts as a source here lists the exact criteria.</p>
     <p>Expert tasting skill comes from years of repetition and calibration against a shared vocabulary. What this tool maps is closer to precision: how well a personal, in-the-moment perception lines up with what is published about a compound's known aroma. That gap, between perceiving something and pinning down its chemistry, is what makes sensory perception worth paying attention to.</p>
 
@@ -14722,7 +15200,7 @@ function renderHowToUse() {
       ["use-controls", "Controls"],
       ["use-deeper", "Go Deeper"],
       ["use-explore", "Try a sensory question"],
-      ["use-repeat", "Repeat-tasting"]
+      ["use-repeat", "Repeat experiences"]
     ])}
 
     <h3 id="use-ladder">The inference chain</h3>
@@ -14754,23 +15232,23 @@ function renderHowToUse() {
 
     <h3 id="use-controls">Controls</h3>
     <ul>
-      <li><strong>Wheel.</strong> The default tasting workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
-      <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed a tasting too.</li>
+      <li><strong>Wheel.</strong> The default workspace. Sliders log your notes, one per descriptor, and the note registers the moment you slide (sliding to 0 removes it). The Compounds pane shows the same evidence as a sortable grid, and the Organize toggle flips the wheel itself between the Scent and Chemistry layouts described above.</li>
+      <li><strong>Map.</strong> Where each ingredient was first cultivated, plotted on a world map. Selecting a note there commits it at intensity 5, so exploring geography can seed an experience too.</li>
       <li><strong>Tree.</strong> Biologically placeable plant and fungal notes arranged by represented lineage. Culinary umbrellas and process/fault descriptors stay on the Wheel rather than becoming invented branches. Use relatives as comparison leads, then check their compound links; shared ancestry alone does not prove an aroma relationship.</li>
       <li><strong>Compare notes.</strong> Put any two notes side by side. Shared compounds give you a sensory crossover to investigate; culinary, botanical, and geographic cards provide context without treating correlation as causation.</li>
-      <li><strong>Constellation.</strong> Starts with crossover inside your current tasting, then lets you open the whole note system through chemistry, taxonomy, geography, or embodied perception. Brighter stars are notes you actually entered.</li>
-      <li><strong>Radar.</strong> A small draggable, resizable profile of your tasting, pinned to the wheel. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different tastings are directly comparable. The Map has its own separate bearing compass.</li>
-      <li><strong>Share.</strong> Opens a tasting-card preview with image and PDF downloads and a URL that preserves the current tasting.</li>
+      <li><strong>Constellation.</strong> Starts with crossover inside your current experience, then lets you open the whole note system through chemistry, taxonomy, geography, or embodied perception. Brighter stars are notes you actually entered.</li>
+      <li><strong>Radar.</strong> A small draggable, resizable profile of your experience, pinned to the wheel. Switch its axes between your top notes, your top compounds, or every compound in one chemical class. That last mode uses the same fixed axes for everyone, so different experiences are directly comparable. The Map has its own separate bearing compass.</li>
+      <li><strong>Share.</strong> Opens an experience-card preview with image and PDF downloads and a URL that preserves the current experience.</li>
       <li><strong>Legend.</strong> Visibility filters and a spotlight: toggle note groups, compound classes, or ortho/retro entries on and off, and hover any row to halo just those items on the wheel and fade the rest.</li>
     </ul>
 
     <h3 id="use-deeper">Go Deeper</h3>
-    <p><strong>Go Deeper</strong> keeps the Wheel and your tasting intact, then reveals Compare notes, Constellation, Map, and Tree. It also adds optional phase controls to the note rows: <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (after swallowing, exhale through the nose). Use them when timing matters; you do not need them for a useful tasting.</p>
+    <p><strong>Go Deeper</strong> keeps the Wheel and your experience intact, then reveals Compare notes, Constellation, Map, and Tree. It also adds optional phase controls to the note rows: <em>Add</em>, <em>Ortho</em> (sniff), and <em>Retro</em> (after swallowing, exhale through the nose). Use them when timing matters; you do not need them for a useful tasting.</p>
 
     <h3 id="use-explore">Turn a crossover into a sensory question</h3>
     <p>When two notes share a linked compound, treat that as an invitation to test your perception. Open the compound and read its sensory description. Smell or taste the two ingredients separately, then together. Ask whether the shared character becomes easier to name, disappears under a stronger note, or changes with temperature, bubbles, swirling, or retronasal exhalation. Record what <em>you</em> notice; the app supplies a hypothesis and vocabulary, not a correct answer.</p>
 
-    <h3 id="use-repeat">Repeat-tasting</h3>
+    <h3 id="use-repeat">Repeat experiences</h3>
     <p>Taste the same coffee tomorrow and report something different? Expected. The tool is built to make those moment-to-moment comparisons legible, not flatten them.</p>
   `;
 }
@@ -14937,6 +15415,110 @@ startSim();
 recompute();
 autoDetectViewMode();  // pick Dashboard or Notes based on viewport width
 
+// ---------- Resizable side panes (desktop) ----------
+// Drag the wheel's left or right edge to resize the notes or compounds pane. Each
+// pane's text scales with its width (CSS zoom): 0.75x at the narrowest, 1x at the
+// default width, up to 1.15x when widened. Widths persist per browser.
+(function wirePaneResizers() {
+  const rootStyle = document.documentElement.style;
+  const MIN_W = 220, KEY = "aw.paneWidths";
+  const maxW = () => Math.max(MIN_W + 40, Math.min(620, window.innerWidth * 0.4));
+  const defaults = {
+    notes: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--notes-pane-w")) || 320,
+    detail: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--detail-pane-w")) || 360
+  };
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) { return {}; } })();
+  const widths = { notes: saved.notes || null, detail: saved.detail || null };
+  const clampW = w => Math.round(Math.max(MIN_W, Math.min(maxW(), w)));
+  let rafPending = false;
+  function apply(which) {
+    const w = widths[which];
+    const cssVar = which === "notes" ? "--notes-pane-w" : "--detail-pane-w";
+    const zoomVar = which === "notes" ? "--notes-zoom" : "--detail-zoom";
+    if (w == null) { rootStyle.removeProperty(cssVar); rootStyle.removeProperty(zoomVar); }
+    else {
+      rootStyle.setProperty(cssVar, w + "px");
+      rootStyle.setProperty(zoomVar, Math.max(0.75, Math.min(1.15, w / defaults[which])).toFixed(3));
+    }
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(() => { rafPending = false; window.dispatchEvent(new Event("resize")); });
+    }
+  }
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(widths)); } catch (_) {} };
+  function current(which) {
+    return widths[which] != null ? widths[which]
+      : parseFloat(getComputedStyle(document.documentElement).getPropertyValue(which === "notes" ? "--notes-pane-w" : "--detail-pane-w")) || defaults[which];
+  }
+  function wire(el, which) {
+    let startX = 0, startW = 0, dragging = false;
+    const dir = which === "notes" ? 1 : -1;   // dragging right grows the left pane, shrinks the right one
+    el.addEventListener("pointerdown", e => {
+      dragging = true; startX = e.clientX; startW = current(which);
+      el.setPointerCapture(e.pointerId); el.classList.add("dragging"); e.preventDefault();
+    });
+    el.addEventListener("pointermove", e => {
+      if (!dragging) return;
+      widths[which] = clampW(startW + dir * (e.clientX - startX));
+      apply(which);
+    });
+    const end = e => { if (!dragging) return; dragging = false; el.classList.remove("dragging"); persist(); };
+    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    el.addEventListener("dblclick", () => { widths[which] = null; apply(which); persist(); });
+    el.addEventListener("keydown", e => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const step = (e.key === "ArrowRight" ? 1 : -1) * dir * 16;
+      widths[which] = clampW(current(which) + step); apply(which); persist();
+    });
+  }
+  wire(document.getElementById("resizer-notes"), "notes");
+  wire(document.getElementById("resizer-detail"), "detail");
+  if (widths.notes) apply("notes");
+  if (widths.detail) apply("detail");
+  window.addEventListener("resize", () => {   // keep a saved width legal when the window shrinks
+    ["notes", "detail"].forEach(k => { if (widths[k] != null && widths[k] > maxW()) { widths[k] = clampW(widths[k]); apply(k); } });
+  });
+})();
+
+// ---------- Full-screen wheel (pan / zoom) ----------
+const wheelFsBtn = document.getElementById("wheel-fs-toggle");
+function setWheelFullscreen(on) {
+  on = !!on && !document.body.classList.contains("origins-mode") && !document.body.classList.contains("taxonomy-mode");
+  document.body.classList.toggle("wheel-fullscreen", on);
+  wheelFsBtn.setAttribute("aria-pressed", String(on));
+  wheelFsBtn.setAttribute("aria-label", on ? "Exit full screen" : "Expand the wheel to full screen");
+  wheelFsBtn.querySelector(".fs-open").style.display = on ? "none" : "";
+  wheelFsBtn.querySelector(".fs-close").style.display = on ? "" : "none";
+  if (!on) {
+    svg.call(wheelZoom.transform, d3.zoomIdentity);
+    document.body.classList.remove("wheel-zoomed");
+  }
+  // The wheel's box just changed size: re-run the same path as a window resize.
+  window.dispatchEvent(new Event("resize"));
+}
+wheelFsBtn.addEventListener("click", () => setWheelFullscreen(!document.body.classList.contains("wheel-fullscreen")));
+document.getElementById("wheel-zoom-in").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1.6));
+document.getElementById("wheel-zoom-out").addEventListener("click", () => svg.transition().duration(200).call(wheelZoom.scaleBy, 1 / 1.6));
+// Toolbar - / + resize the note and compound icons only (the view zoom lives in
+// full screen and on scroll / pinch). Remembered per browser.
+(function wireGlyphScale() {
+  const KEY = "aw.glyphScaleIndex", dec = document.getElementById("wheel-tb-zoom-out"), inc = document.getElementById("wheel-tb-zoom-in");
+  try { const i = parseInt(localStorage.getItem(KEY), 10); if (i >= 0 && i < GLYPH_SCALE_STEPS.length) GLYPH_SCALE.index = i; } catch (_) {}
+  function sync() { dec.disabled = GLYPH_SCALE.index === 0; inc.disabled = GLYPH_SCALE.index === GLYPH_SCALE_STEPS.length - 1; }
+  function bump(d) {
+    GLYPH_SCALE.index = Math.max(0, Math.min(GLYPH_SCALE_STEPS.length - 1, GLYPH_SCALE.index + d));
+    try { localStorage.setItem(KEY, String(GLYPH_SCALE.index)); } catch (_) {}
+    sync(); recompute();
+  }
+  dec.addEventListener("click", () => bump(-1)); inc.addEventListener("click", () => bump(1)); sync();
+  if (GLYPH_SCALE.index !== 3) recompute();   // a remembered size applies from the first frame
+})();
+document.getElementById("wheel-zoom-reset").addEventListener("click", () => svg.transition().duration(250).call(wheelZoom.transform, d3.zoomIdentity));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.classList.contains("wheel-fullscreen")) setWheelFullscreen(false);
+});
+
 window.addEventListener("resize", () => {
   layout();
   // Homes are derived from the note/compound anchor positions, which layout()
@@ -14970,7 +15552,7 @@ function initialBearingDegrees(a, b) {
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-// Every note in the current tasting that has a mapped origin, strongest first.
+// Every note in the current experience that has a mapped origin, strongest first.
 // Split out from mapCompassTastingItems so the compass's 8-mark display cap
 // doesn't silently become the sample the geography stats are computed from.
 function placedTastingNotes() {
@@ -15206,7 +15788,7 @@ function openTastingGeographyPanel(items, centroid, spread, totalPlaced) {
   content.innerHTML = "";
 
   const h3 = document.createElement("h3");
-  h3.textContent = "Where this tasting comes from";
+  h3.textContent = "Where this experience comes from";
   const where = document.createElement("p");
   where.className = "origin-region";
   const latL = `${Math.abs(centroid.lat).toFixed(1)}°${centroid.lat >= 0 ? "N" : "S"}`;
@@ -15246,7 +15828,7 @@ function centerCompassOnTasting() {
     // Honest empty state: no notes placed, or no meaningful center exists.
     if (btn) btn.title = items.length
       ? "These notes have no meaningful center — they're spread near-antipodally."
-      : "Add tasting notes with a mapped origin first.";
+      : "Add notes with a mapped origin first.";
     return;
   }
 
@@ -15305,10 +15887,10 @@ function renderMapBearingCompass() {
     const centroid = tastingGeoCentroid(items);
     centerBtn.disabled = !centroid;
     centerBtn.title = centroid
-      ? "Move the compass to the geographic center of your tasting notes"
+      ? "Move the compass to the geographic center of your notes"
       : (items.length
         ? "These notes have no meaningful center — they're spread near-antipodally."
-        : "Add tasting notes with a mapped origin first.");
+        : "Add notes with a mapped origin first.");
   }
   const layer = document.getElementById("map-bearing-dynamic");
   layer.innerHTML = "";
@@ -15343,15 +15925,15 @@ function renderMapBearingCompass() {
   const latLabel = `${Math.abs(anchor.lat).toFixed(0)}°${anchor.lat >= 0 ? "N" : "S"}`;
   const lonLabel = `${Math.abs(anchor.lon).toFixed(0)}°${anchor.lon >= 0 ? "E" : "W"}`;
   caption.textContent = items.length
-    ? `${latLabel}, ${lonLabel} · ${items.length} tasting note${items.length === 1 ? "" : "s"}`
-    : `${latLabel}, ${lonLabel} · add tasting notes`;
+    ? `${latLabel}, ${lonLabel} · ${items.length} note${items.length === 1 ? "" : "s"}`
+    : `${latLabel}, ${lonLabel} · add notes`;
   const summary = items.slice(0, 4).map(item => {
     const bearing = initialBearingDegrees(anchor, item.origin);
     return `${item.note.label} ${compassCardinal(bearing)}`;
   }).join(", ");
   compass.setAttribute("aria-label", items.length
     ? `Move Map bearing compass. ${summary}${items.length > 4 ? `, and ${items.length - 4} more` : ""}. Arrow keys reposition it.`
-    : "Move Map bearing compass. Add tasting notes to show their directions. Arrow keys reposition it.");
+    : "Move Map bearing compass. Add notes to show their directions. Arrow keys reposition it.");
   compass.title = "Map bearing compass · drag to move, tap to minimize; arrow keys reposition";
 }
 
@@ -16047,7 +16629,7 @@ document.querySelectorAll("#geography-pilot-picker button").forEach(button => {
 });
 
 function loadOrigins() {
-  // Already loaded: full rebuild, not just a refresh — the tasting may have
+  // Already loaded: full rebuild, not just a refresh — the experience may have
   // changed on the Wheel since the last visit, and under the "only my
   // tasting" filter that changes which markers exist at all.
   if (originsLoaded) { rebuildOriginMarkers(); return; }
@@ -16084,7 +16666,7 @@ function rebuildOriginMarkers() {
   updateOriginsFilterEmpty();
 }
 
-// "— nothing in your tasting yet" note next to the only-my-tasting checkbox:
+// "— nothing in your experience yet" note next to the only-my-tasting checkbox:
 // shown only when that filter is on AND it filtered the map down to nothing,
 // so an empty map is explained rather than looking broken.
 function updateOriginsFilterEmpty() {
@@ -16099,7 +16681,7 @@ function updateOriginsFilterEmpty() {
   }
   const mapped = active.filter(note => NOTE_ORIGINS[note.id]);
   const missing = active.filter(note => !NOTE_ORIGINS[note.id]);
-  coverage.textContent = `${mapped.length} of ${active.length} tasting notes have a mapped origin.`
+  coverage.textContent = `${mapped.length} of ${active.length} notes have a mapped origin.`
     + (missing.length ? ` Not mapped here: ${missing.map(note => note.label).join(", ")}.` : "")
     + " Missing means no defensible single origin is recorded in this app—not that the note lacks a history.";
 }
@@ -16109,10 +16691,10 @@ function updateOriginsClearTasting() {
   if (!btn) return;
   const noteCount = new Set(Array.from(state.entries.keys(), key => key.split(":")[0])).size;
   btn.disabled = noteCount === 0;
-  btn.textContent = noteCount ? `Clear tasting · ${noteCount}` : "Clear tasting";
+  btn.textContent = noteCount ? `Clear experience · ${noteCount}` : "Clear experience";
   btn.setAttribute("aria-label", noteCount
-    ? `Clear all ${noteCount} tasting note${noteCount === 1 ? "" : "s"}`
-    : "No tasting notes to clear");
+    ? `Clear all ${noteCount} note${noteCount === 1 ? "" : "s"}`
+    : "No notes to clear");
 }
 
 function clearOriginsTasting() {
@@ -16127,7 +16709,7 @@ function clearOriginsTasting() {
 }
 
 // The map legend's visibility checkboxes: one per flavor group (colored dot +
-// name, all checked by default) plus the "only my tasting" master filter.
+// name, all checked by default) plus the "only my experience" master filter.
 // These write the map-local state.origins* fields — never state.hiddenGroups,
 // which belongs to the wheel legend and affects scoring.
 function buildOriginsLegendFilters() {
@@ -16639,7 +17221,7 @@ function buildOriginMarkers() {
       const activateMarker = () => {
         // Selecting a marker is a non-destructive VIEW action — it never removes
         // the note (that surprised users: clicking an entered note deleted it and
-        // it vanished under "only my tasting"). A not-yet-entered note is added,
+        // it vanished under "only my experience"). A not-yet-entered note is added,
         // so the map is still a way to build a tasting; an already-entered note is
         // just highlighted. Removal now lives on the sliders. After a rebuild the
         // markers are recreated, so re-apply the selection to the fresh nodes.
@@ -16775,7 +17357,7 @@ function refreshOriginMarkers() {
 
 // ---------- MAP MARKER SELECTION ----------
 // Selecting a marker highlights it (spinning ring + white dot/label) and opens
-// its detail; it does not change the tasting entries. Deselecting reverts.
+// its detail; it does not change the experience entries. Deselecting reverts.
 function selectOriginNote(id) {
   const collapsedCluster = Array.from(document.querySelectorAll("#markers-svg .origin-region-cluster"))
     .find(g => g.dataset.expanded !== "true" && (g.dataset.noteIds || "").split("|").includes(id));
@@ -16820,6 +17402,7 @@ function setWorkspace(mode) {
     _preTreeDetailHidden = null;
     applyPaneState();
   }
+  if (mode === "wheel") setView("dashboard");   // wheel workspace: notes, wheel and compounds all on screen
   document.body.classList.toggle("origins-mode", mode === "map");
   document.body.classList.toggle("taxonomy-mode", mode === "tree");
   syncTaxonomySheetState();
@@ -16990,7 +17573,7 @@ function countTaxonomyLeaves(d) {
   if (!kids) return 1;
   return kids.reduce((sum, k) => sum + countTaxonomyLeaves(k), 0);
 }
-// How many leaves under `d` are in the current tasting. Walks _children too,
+// How many leaves under `d` are in the current experience. Walks _children too,
 // so a collapsed Family still reports what's hidden inside it — otherwise
 // collapsing a branch would silently zero out its count.
 function countTastedLeaves(d) {
@@ -17481,7 +18064,7 @@ function renderTaxonomyCompareResult(result) {
     taxonomyCompareExpanded && taxonomyCompareChartOrientation === "columns");
   if (!aId && !bId) {
     const activeCount = NOTES.filter(note => hasAnyEntry(note.id)).length;
-    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two aroma notes. ${activeCount >= 2 ? `Start with two of the ${activeCount} notes in your tasting, or reach beyond it.` : "The active workspace adds chemistry, botanical, or geographic context."} Shared links are questions to explore—not proof of causation.</div>`;
+    result.innerHTML = `<div class="taxonomy-compare-empty">Choose any two aroma notes. ${activeCount >= 2 ? `Start with two of the ${activeCount} notes in your experience, or reach beyond it.` : "The active workspace adds chemistry, botanical, or geographic context."} Shared links are questions to explore—not proof of causation.</div>`;
     return;
   }
   if (!aId || !bId) {
@@ -17851,7 +18434,7 @@ function taxonomyOriginRegion(origin) {
   if (origin.lon > 110 && origin.lat < -10) return "oceania";
   // West Asia has to be claimed before the broad lon >= 45 sweep, or Iran, the
   // Caucasus, and Central Asia all get filed as "South / East Asia". That was
-  // tolerable while this only tinted Tree pips, but the tasting-relationship
+  // tolerable while this only tinted Tree pips, but the experience-relationship
   // readout now names the region in copy the user reads, so Rose and Almond
   // were being reported as first cultivated in South / East Asia.
   if (origin.lon >= 45 && origin.lon < 75 && origin.lat >= 25) return "europe-west-asia";
@@ -19162,7 +19745,7 @@ function renderTaxonomyWreath(svg, scrollEl, familyName) {
   // wood, the leaves are what this family actually puts out. Blade points
   // radially outward, so the whole rim reads as foliage on a trunk.
   //
-  // Color carries the tasting, same as everywhere else: an untasted leaf is
+  // Color carries the experience, same as everywhere else: an untasted leaf is
   // dormant foliage (the app's own vine green), a tasted one takes its
   // aroma-group color and grows longer. Deliberately NOT the dendrogram's gray
   // for untasted - a wreath of gray leaves reads as dead rather than dormant -
@@ -20064,7 +20647,7 @@ function renderTaxonomyTree() {
   // Internal nodes report how much of themselves you actually tasted, which is
   // the whole point of wiring entries in here: it turns "Rutaceae (12)" — a
   // fact about the dataset — into "Rutaceae (3 of 12 tasted)", a fact about
-  // YOUR cup. That's the answer to "which families does this tasting
+  // YOUR cup. That's the answer to "which families does this experience
   // implicate," which is the question the tree's own caption ("Family is the
   // chemistry clue") has always posed without being able to answer.
   const labelFor = d => {
@@ -20178,7 +20761,7 @@ function renderTaxonomyTree() {
       return `Open family ${TAXON_COMMON[d.data.name] || d.data.name}, ${d.data.name}, ${total} note${total === 1 ? "" : "s"}`;
     });
   // A tasted leaf is bigger and carries its aroma-group color — the exact
-  // convention the Map already uses for "this note is in your tasting"
+  // convention the Map already uses for "this note is in your experience"
   // (.origin-marker.active grows its dot; origin dots are group-colored), so
   // the two geography/lineage workspaces now read the same way. Radius and hue
   // are both unused channels here (fill = collapse state, stroke = family /
@@ -20647,7 +21230,7 @@ document.getElementById("taxonomy-compare-toggle").addEventListener("click", () 
   if (taxonomyCompareActive) {
     // Opening cold (no pair chosen yet, none carried over from elsewhere,
     // e.g. Constellation's own Compare button) used to just show two empty
-    // pickers -- a detached lookup with no connection to the tasting you
+    // pickers -- a detached lookup with no connection to the experience you
     // just built. Seed from it instead: the strongest-sharing pair among
     // your active notes if one exists, otherwise the two strongest by
     // intensity so there's still a real starting comparison, not a blank form.
@@ -20743,10 +21326,10 @@ updateTaxonomyLayerSummary();
 
 // refreshOriginMarkers() is called from recompute() whenever originsLoaded is true.
 
-// ---------- SHARE / EXPORT: the shareable tasting card ----------
+// ---------- SHARE / EXPORT: the shareable experience card ----------
 // Build a screenshot-able card as an SVG that embeds a clone of the live wheel,
 // show it in a live preview, and (on Generate) rasterize it to a canvas for
-// PNG/JPG/PDF download + a share link that encodes the tasting in the URL (so
+// PNG/JPG/PDF download + a share link that encodes the experience in the URL (so
 // the link is also the bookmark). Entirely client-side: no backend, no accounts.
 (function () {
   const SVGNS = "http://www.w3.org/2000/svg";
@@ -21003,7 +21586,7 @@ updateTaxonomyLayerSummary();
     const showMapSection = opts.showMap && mapItems.length > 0;
     const mapExtra = showMapSection ? mapSectionHeight(mapItems) + 30 : 0;
     const W = 1080, H = (portrait ? 1350 : 1080) + mapExtra;
-    const cap = "My tasting";
+    const cap = "My experience";
     const PAD = 64, footerTop = H - 104;
 
     const svg = sEl("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
@@ -21257,7 +21840,7 @@ updateTaxonomyLayerSummary();
   }
 
   function safeName() {
-    return "tasting";
+    return "experience";
   }
   // Front/back downloads default to "one practical image" over "two separate
   // files" — most sharing (texting, social) is a single image, so front and
@@ -21319,7 +21902,7 @@ updateTaxonomyLayerSummary();
 
   // Per-compound checklist, ordered by prominence (confidence). All checked by
   // default — uncheck down to a favorite few, or leave them all for the full
-  // aroma soup. Rebuilt each time the modal opens (the tasting can't change
+  // aroma soup. Rebuilt each time the modal opens (the experience can't change
   // while it's open).
   const compListEl = document.getElementById("share-compound-list");
   const compCountEl = document.getElementById("share-compound-count");
