@@ -707,13 +707,6 @@
     border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
     color: var(--ink-dim); font-size: 10.5px; line-height: 1.5; }
   .note-umbrella-explainer strong { color: var(--accent); font-weight: 700; }
-  /* Ghost row: a read-only, low-opacity mirror of a note that keeps its own
-     top-level row elsewhere (e.g. Cherry inside the Stonefruit dropdown) —
-     informational only, not a second independently-scoreable entry. */
-  .note-row.ghost-row { opacity: 0.5; cursor: pointer; }
-  .note-row.ghost-row:hover { opacity: 0.8; }
-  .note-row.ghost-row input { pointer-events: none; }
-
   /* Note row: label + slider + two phase-confirm buttons (ortho/retro).
      Each note can have up to two confirmed entries — one per phase —
      each with its own intensity. Confirming requires intensity > 0.
@@ -4413,7 +4406,7 @@
        triggers you add by hand. -->
   <details id="sense-strip" class="delivery-strip sense-strip">
     <summary class="delivery-summary">
-      <span class="delivery-title">What you're feeling</span>
+      <span class="delivery-title">How you sense smell</span>
       <span class="delivery-chips empty" id="sense-chips" aria-live="polite"></span>
       <span class="caret">▼</span>
     </summary>
@@ -5243,7 +5236,7 @@ const GROUPS = [
 // still want to introspect it.
 const NOTES = [
   // fruity
-  // Citrus varietals (lime/yuzu/meyerlemon/mandarin/bergamot/bloodorange/pomelo)
+  // Citrus varietals (lime/yuzu/meyerlemon/mandarin/bergamot/bloodorange)
   // are subOf lemon/orange/grapefruit — same pattern as the cereal grains:
   // present in the data (own compound, citation, map origin) but no slider of
   // their own. Go Deeper on lemon/orange/grapefruit surfaces the comparison
@@ -5258,7 +5251,6 @@ const NOTES = [
   { id: "bloodorange", label: "Blood orange",       group: "fruity",   common: false, subOf: "orange", genus: "Citrus", family: "Rutaceae", order: "Sapindales",
     noStandoutNote: "Blood orange's defining trait is anthocyanin pigment in the flesh, not a distinct aroma compound — its volatile profile largely tracks regular sweet orange. The red color is a taste/visual identity, not a smell one." },
   { id: "grapefruit",  label: "Grapefruit",         group: "fruity",   common: true,  genus: "Citrus", family: "Rutaceae", order: "Sapindales" },
-  { id: "pomelo",      label: "Pomelo / pummelo",   group: "fruity",   common: false, subOf: "grapefruit", genus: "Citrus", family: "Rutaceae", order: "Sapindales" },
   { id: "berry",       label: "Berry",              group: "fruity",   common: true,  taxonBucket: "umbrella",
     umbrellaNote: "Culinary ‘berry’ groups small, juicy fruits used similarly. In this wheel: blueberry and cranberry are Ericaceae; currants are Grossulariaceae; pomegranate is Lythraceae; and strawberry, raspberry, and blackberry are Rosaceae. Botanically, blueberries, cranberries, and currants are berries; pomegranate is a specialized berry (balausta); strawberry is an aggregate accessory fruit; and raspberry and blackberry are aggregates of drupelets. Botanical berries also include grape, banana, and tomato, which culinary language places elsewhere." },
   // Cranberry, redcurrant/cassis, and pomegranate are real plants in three
@@ -5283,18 +5275,7 @@ const NOTES = [
   { id: "strawberry",  label: "Strawberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
   { id: "blueberry",   label: "Blueberry",          group: "fruity",   common: true,  subOf: "berry", genus: "Vaccinium", family: "Ericaceae", order: "Ericales" },
   { id: "blackberry",  label: "Blackberry",         group: "fruity",   common: true,  subOf: "berry", family: "Rosaceae", order: "Rosales" },
-  // ghostRefs: Cherry is genuinely the same genus (Prunus) as stonefruit, but
-  // it's iconic enough to keep its own full top-level slider rather than
-  // become a subOf child like Peach/Plum. ghostRefs surfaces that kinship
-  // anyway — a read-only, low-opacity mirror of Cherry's live value appears
-  // in this dropdown alongside Peach/Plum, without creating a second,
-  // independently-scoreable entry for the same note (see renderGhostRow()).
-  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales", ghostRefs: ["cherry"] },
-  // Peach has no standout compound of its own because the parent slider is
-  // already modeled directly on peach (see gdecal's own cite text below) —
-  // an honest "they're the same" rather than the usual distinguishing case.
-  { id: "peach",       label: "Peach",              group: "fruity",   common: true,  subOf: "stonefruit", genus: "Prunus", family: "Rosaceae", order: "Rosales",
-    noStandoutNote: "Peach IS the profile \"Peach / stonefruit\" is modeled on above — there's no separate compound to distinguish, since this is the default the umbrella slider already represents." },
+  { id: "stonefruit",  label: "Peach / stonefruit", group: "fruity",   common: true,  genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "plum",        label: "Plum",               group: "fruity",   common: true,  subOf: "stonefruit", genus: "Prunus", family: "Rosaceae", order: "Rosales" },
   { id: "apple",       label: "Apple / pear",       group: "fruity",   common: true,  family: "Rosaceae", order: "Rosales" },
   { id: "banana",      label: "Banana",             group: "fruity",   common: true,  genus: "Musa", family: "Musaceae", order: "Zingiberales" },
@@ -5354,11 +5335,7 @@ const NOTES = [
   // hides any subOf note from the slider panel, legend, search, and wheel
   // floats; Go Deeper's note detail for "cereal" is the only place they surface,
   // as the distinguishing-compound table (see CEREAL_VARIETAL_TABLE).
-  // ghostRefs: Toast, Burnt sugar, and Popcorn are all genuinely Poaceae too
-  // (wheat, sugarcane, and corn respectively — see their own family/order
-  // above) but are iconic enough flavor notes to keep their own top-level
-  // sliders, same situation as Cherry under Stonefruit.
-  { id: "cereal",      label: "Cereal / grain",     group: "earthy",  common: true,  family: "Poaceae", order: "Poales", ghostRefs: ["toast", "burnt", "popcorn"] },
+  { id: "cereal",      label: "Cereal / grain",     group: "earthy",  common: true,  family: "Poaceae", order: "Poales" },
   { id: "rice",        label: "Rice",               group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
   { id: "wheat",       label: "Wheat",              group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
   { id: "barley",      label: "Barley / malt",      group: "earthy",  common: true,  subOf: "cereal", family: "Poaceae", order: "Poales" },
@@ -5380,8 +5357,8 @@ const NOTES = [
   // signature (glycyrrhizin) is a sweet TASTE compound, not a volatile —
   // the recognizable "black licorice" smell people mean here is
   // conventionally anise-derived anethole (the same shared aroma the old
-  // combined note was built on), same honest pattern as Peach under
-  // Stonefruit above.
+  // combined note was built on), same honest
+  // no-standout pattern used elsewhere in this list.
   { id: "licorice",    label: "Licorice",           group: "herbal",  common: true,  subOf: "anise", genus: "Glycyrrhiza", family: "Fabaceae", order: "Fabales",
     noStandoutNote: "Licorice root's own signature compound, glycyrrhizin, is a sweet TASTE compound (a saponin), not an aroma one. The smell people associate with black licorice is conventionally anise oil's anethole — the same compound Anise is built on — added as flavoring rather than something inherent to Glycyrrhiza itself." },
   { id: "ginger",      label: "Ginger",             group: "spice",    common: true,  genus: "Zingiber", family: "Zingiberaceae", order: "Zingiberales" },
@@ -5430,17 +5407,14 @@ const NOTES = [
   { id: "chocolate",   label: "Chocolate / cocoa",  group: "sweet",    common: true,  genus: "Theobroma", family: "Malvaceae", order: "Malvales" },
   { id: "maple",       label: "Maple",             group: "sweet",    common: true,  genus: "Acer", family: "Sapindaceae", order: "Sapindales" },
   { id: "cottoncandy", label: "Cotton candy",       group: "sweet",    common: true,  taxonBucket: "process" },
-  // Sugar cane is the fresh stalk or juice. White sugar is refined and has next
-  // to no aroma of its own: its sweetness is taste, and the note exists so a
-  // sweet-only impression can be recorded without inventing chemistry for it.
+  // Sugar cane is the fresh stalk or juice. Plain refined white sugar has next
+  // to no aroma of its own, so it has no note here.
   { id: "sugarcane",   label: "Sugar cane",         group: "sweet",    common: true,  genus: "Saccharum", family: "Poaceae", order: "Poales" },
   // Beet sugar comes from the sugar beet (Beta vulgaris) rather than cane, but
   // once refined it is the same molecule, sucrose, so it carries the same
   // honest "no odorant" treatment. No study of its trace aroma was found.
   { id: "beetsugar",   label: "Beet sugar",         group: "sweet",    common: true,  genus: "Beta", family: "Amaranthaceae", order: "Caryophyllales",
     noCompoundNote: "Refined beet sugar is chemically the same sucrose as refined cane sugar and has almost no aroma of its own, so no odorant is linked here. No study of its trace aroma was found. What you notice is sweetness, which is a taste, not a smell." },
-  { id: "whitesugar",  label: "White sugar",        group: "sweet",    common: true,  taxonBucket: "process",
-    noCompoundNote: "Refined white sugar has almost no aroma of its own, so no odorant is linked here. What you notice is sweetness, which is a taste, not a smell. Any aroma in a sugary food comes from other ingredients or from browning, which is what Brown sugar, Caramel and Burnt sugar cover." },
   // fermented — virtually all of these are chemical/microbial process or
   // fault descriptors rather than a single organism's flavor identity; see
   // the repo's design notes for the reasoning behind each "process" call here.
@@ -5609,7 +5583,6 @@ const COMPOUNDS = [
   { id: "yuzunone",      label: "Yuzunone",          class: "ketone",    commonName: "(6Z,8E)-undeca-6,8,10-trien-3-one", threshold: "low", specificity: "signature", thresholdSrc: "Identified for the first time in yuzu and not detected in other citrus species studied (Miyazawa et al. 2009).", note: "Found nowhere else in citrus when first characterized — about as close to a one-fruit signature compound as aroma chemistry gets." },
   { id: "nmeanthr",      label: "Methyl N-methylanthranilate", class: "ester", threshold: "low", specificity: "signature", thresholdSrc: "Key contributor to mandarin cold-pressed oil aroma, alongside thymol (Wilson & Shaw 1981).", note: "The N-methylated cousin of methyl anthranilate (grape's 'foxy' note) — a sharper, more pungent compound unique to mandarin/tangerine peel oil." },
   { id: "nootkatone",    label: "Nootkatone",        class: "ketone",    threshold: "low", specificity: "signature", thresholdSrc: "Detectable to ~1 ppm in water; identified as grapefruit's defining flavor constituent (MacLeod & Buigues 1964).", note: "The grapefruit compound — woody, bitter, unmistakably grapefruit even at trace levels. Forms naturally from the oxidation of valencene." },
-  { id: "sinensal",      label: "α/β-Sinensal",      class: "aldehyde",  threshold: "low", specificity: "signature", thresholdSrc: "Found specifically in white pomelo peel in GC-MS profiling (Gupta, Dhua, Sahu, Abate & Mastinu 2021).", note: "A sesquiterpene aldehyde pair distinguishing pomelo from its own descendant, grapefruit, even though the two share most of their other chemistry." },
   // ---- Berry varietal expansion ----
   { id: "acetoin",       label: "Acetoin",           class: "ketone",    commonName: "3-hydroxybutan-2-one", threshold: "medium", specificity: "shared", thresholdSrc: "Confirmed by aroma recombination/omission as a key pomegranate aroma compound, alongside β-myrcene and (Z)-3-hexen-1-ol (Zhang et al. 2025).", note: "A milder, sweeter cousin of diacetyl's buttery note. In pomegranate it contributes a soft creamy facet underneath the fruit's sharper green/floral top notes." },
   // ---- Mint varietal expansion ----
@@ -5662,8 +5635,6 @@ const EDGES = [
   { note: "mandarin",    cpd: "nmeanthr",  w: 0.65, cite: "Wilson & Shaw 1981 (methyl N-methylanthranilate, key mandarin cold-pressed-oil odorant)." },
   { note: "bergamot",    cpd: "linalylacetate", w: 0.70, cite: "Bergamot's principal aroma component, the same lavender-defining ester on the citrus side." },
   { note: "bergamot",    cpd: "limonene",  w: 0.50, cite: "Shared limonene base typical of citrus peel oils." },
-  { note: "pomelo",      cpd: "limonene",  w: 0.80, cite: "Gupta et al. 2021 (limonene-dominant base, shared with descendant grapefruit)." },
-  { note: "pomelo",      cpd: "sinensal",  w: 0.50, cite: "Gupta et al. 2021 (α/β-sinensal found specifically in white pomelo peel)." },
   // Berry
   { note: "berry",       cpd: "ethex",     w: 0.60, cite: "Klesk & Qian 2003 (blackberry esters incl. ethyl hexanoate)." },
   { note: "berry",       cpd: "bdam",      w: 0.55, cite: "Sefton et al. 2011 (β-damascenone in wine/fruit)." },
@@ -5678,10 +5649,6 @@ const EDGES = [
   // Stonefruit / apple
   { note: "stonefruit",  cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
   { note: "stonefruit",  cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
-  // Peach reuses the parent's own profile exactly (see noStandoutNote on its
-  // NOTES entry) rather than introducing a separate compound.
-  { note: "peach",       cpd: "gdecal",    w: 0.85, cite: "Schwab et al. 2008 (γ-decalactone in peach)." },
-  { note: "peach",       cpd: "bdam",      w: 0.50, cite: "Sefton et al. 2011." },
   { note: "plum",        cpd: "gddecal",   w: 0.75, cite: "Pino & Quijano 2012 (γ-dodecalactone, key odor-active plum compound by OAV)." },
   { note: "plum",        cpd: "e2mb",      w: 0.65, cite: "Pino & Quijano 2012 (ethyl 2-methylbutanoate, top character-impact plum ester)." },
   { note: "plum",        cpd: "e2non",     w: 0.45, cite: "Pino & Quijano 2012 ((E)-2-nonenal among plum's key odor-active compounds)." },
@@ -6214,10 +6181,6 @@ const NOTE_ORIGINS = {
                   cultivationDate: "First documented in Giovanni Battista Ferrari's 1646 botanical treatise Hesperides, describing red-fleshed oranges; the spontaneous bud mutation that produces the anthocyanin pigmentation is generally placed in 17th–18th century Sicily.",
                   modernNote: "Blood orange isn't a domesticated species at all — it's a spontaneous pigment mutation in already-domesticated sweet orange, favored by Sicily's volcanic soil and sharp autumn temperature swings, which is why classic blood-orange varieties still concentrate around Mount Etna.",
                   citeKeys: ["ferrari1646orange"] },
-  pomelo:       { region: "Southeast Asia (Thailand / Malaysia / Indonesia)", lat: 5, lon: 102, certainty: "known",
-                  cultivationDate: "One of the small number of true wild Citrus species (alongside citron and mandarin) that all other cultivated citrus descend from as hybrids; cultivated in China for over two thousand years.",
-                  modernNote: "Pomelo is grapefruit's own ancestor — roughly 63% of the grapefruit genome traces back to it — making this the rare case on the map where a 'varietal' actually predates the thing it's being compared against.",
-                  citeKeys: ["wu2018citrus"] },
   cranberry:    { region: "Northeastern North America", lat: 42, lon: -71, certainty: "known", country: "United States",
                   cultivationDate: "Foraged by the Wampanoag and other Indigenous peoples for roughly 8000 years before European contact; first commercially cultivated in 1816 on Cape Cod.",
                   modernNote: "Cranberry is one of the most recently domesticated fruits on this map — genomic analysis places its breeding history almost entirely within the last two centuries, a sharp contrast to crops with millennia of selection behind them.",
@@ -6257,8 +6220,6 @@ const NOTE_ORIGINS = {
                   cultivationDate: "Archaeobotanical remains in South America date to roughly 3500 years ago, with genetic evidence pointing to domestication well before that.",
                   modernNote: "Commercial cultivars like Smooth Cayenne descend from a narrow set of clonal lines, much narrower than the genetic base indigenous breeders worked from.",
                   citeKeys: ["chen2019pineapple"] },
-  // Peach has no separate pin — its origin story is the same one already
-  // told under "stonefruit" above (the parent slider is modeled on peach).
   plum:         { region: "Caucasus / Western Asia", lat: 42, lon: 44, certainty: "approximate",
                   modernNote: "European plum (Prunus domestica) is itself believed to be a natural hybrid of two wild species, cherry plum and sloe — Japanese plum (Prunus salicina), a separate domestication in China, is a different species entirely despite the shared English name." },
   cherry:       { region: "Anatolia", lat: 41, lon: 36, certainty: "known", country: "Turkey",
@@ -6870,13 +6831,6 @@ const REFERENCES = {
     journal: "Flavour and Fragrance Journal",
     volume: "18", pages: "106–115"
   },
-  "gupta2021pomelo": {
-    authors: "Gupta, A.K., Dhua, S., Sahu, P.P., Abate, G., & Mastinu, A.",
-    year: 2021,
-    title: "Variation in phytochemical, antioxidant and volatile composition of pomelo fruit (Citrus grandis (L.) Osbeck) during seasonal growth and development.",
-    journal: "Plants",
-    volume: "10", issue: "9", pages: "1941"
-  },
   "zhu2016cranberry": {
     authors: "Zhu, J., Chen, F., Wang, L., Niu, Y., Chen, H., Wang, H., & Xiao, Z.",
     year: 2016,
@@ -7134,8 +7088,6 @@ const CITE_TO_REF = [
   ["Wilson & Shaw 1981",          "wilson1981mandarin"],
   ["MacLeod & Buigues 1964",      "macleod1964nootkatone"],
   ["Chisholm et al. 2003",        "chisholm2003lime"],
-  ["Gupta, Dhua, Sahu, Abate & Mastinu 2021", "gupta2021pomelo"],
-  ["Gupta et al. 2021",           "gupta2021pomelo"],
   ["Zhu et al. 2016",             "zhu2016cranberry"],
   ["Zhang et al. 2025",           "zhang2025pomegranate"],
   ["Buleandră et al. 2016",       "buleandra2016mint"],
@@ -7531,10 +7483,10 @@ function compoundIcon(id) { return COMPOUND_ICON[id] || ""; }
 const NOTE_ICONS = {
   // Fruity — citrus, berries, stone/orchard, melon
   lemon:"🍋", lime:"🍋", yuzu:"🍋", meyerlemon:"🍋",
-  orange:"🍊", mandarin:"🍊", bergamot:"🍊", bloodorange:"🍊", grapefruit:"🍊", pomelo:"🍊",
+  orange:"🍊", mandarin:"🍊", bergamot:"🍊", bloodorange:"🍊", grapefruit:"🍊",
   berry:"🫐", cranberry:"🫐", redcurrant:"🫐", cassis:"🫐", pomegranate:"🫐",
   raspberry:"🫐", strawberry:"🍓", blueberry:"🫐", blackberry:"🫐",
-  stonefruit:"🍑", peach:"🍑", plum:"🍑", apple:"🍎", banana:"🍌", pineapple:"🍍",
+  stonefruit:"🍑", plum:"🍑", apple:"🍎", banana:"🍌", pineapple:"🍍",
   cherry:"🍒", mango:"🥭", lychee:"🍒", grape:"🍇",
   cucumber:"🥒", melonrind:"🍈", watermelon:"🍉", honeydew:"🍈", cantaloupe:"🍈",
   // Floral
@@ -7556,7 +7508,7 @@ const NOTE_ICONS = {
   winey:"🍷", buttery:"🧈", yeasty:"🍞", sulfury:"🥚", cardboard:"📦", cheesy:"🧀",
   sweaty:"🧦", musty:"🍂", skunky:"🦨", miso:"🍜", soysauce:"🍶",
   // Vegetal
-  sugarcane:"🎋", whitesugar:"🧊", beetsugar:"🫜", greentea:"🍵", hojicha:"🫖", brownsugar:"🥄", molasses:"🫙", roastedonion:"🧅", roastedcarrot:"🥕", onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
+  sugarcane:"🎋", beetsugar:"🫜", greentea:"🍵", hojicha:"🫖", brownsugar:"🥄", molasses:"🫙", roastedonion:"🧅", roastedcarrot:"🥕", onion:"🧅", redonion:"🧅", whiteonion:"🧅", sweetonion:"🧅", greenonion:"🧅",
   garlic:"🧄", celery:"🥬", carrot:"🥕", beet:"🫜", olive:"🫒", tomato:"🍅", arugula:"🥬",
   lettuce:"🥬", romaine:"🥬", iceberg:"🥬", cabbage:"🥬", potato:"🥔",
   brusselssprouts:"🥬", sweetpotato:"🍠", ube:"🍠", taro:"🥔", wasabi:"🌿", horseradish:"🌿"
@@ -7872,15 +7824,6 @@ function getVisibleNotes() {
 function varietalChildrenOf(parentId) {
   return NOTES.filter(n => n.subOf === parentId).sort((a, b) => a.label.localeCompare(b.label));
 }
-// A parent's "ghost" references: notes that are genuinely related (e.g.
-// Cherry is the same genus as stonefruit) but iconic enough to keep their
-// own independent top-level row rather than become a real subOf child. These
-// render as a read-only, low-opacity mirror of that note's live value inside
-// the dropdown — informational only, not a second independent score.
-function ghostChildrenOf(parentId) {
-  const n = NOTE_BY_ID[parentId];
-  return (n && n.ghostRefs || []).map(id => NOTE_BY_ID[id]).filter(Boolean);
-}
 function fillVarietalWrap(wrap, parentId) {
   const parent = NOTE_BY_ID[parentId];
   if (parent?.umbrellaNote) {
@@ -7890,7 +7833,6 @@ function fillVarietalWrap(wrap, parentId) {
     wrap.appendChild(explanation);
   }
   varietalChildrenOf(parentId).forEach(c => wrap.appendChild(renderNoteRow(c)));
-  ghostChildrenOf(parentId).forEach(g => wrap.appendChild(renderGhostRow(g, parentId)));
 }
 // Appends a note's row, and — if it's expanded — its varietal children's
 // rows right after it. Shared by buildNotesPanel() and the toggle handler so
@@ -7918,56 +7860,6 @@ function toggleVarietalExpansion(parentId, row) {
     if (toggleBtn) toggleBtn.classList.add("expanded");
   }
 }
-// Read-only mirror row: shows a ghost-referenced note's live intensity
-// without its own slider — clicking scrolls/flashes to the note's real row.
-// Kept in sync by refreshGhostRows(), called at the end of recompute().
-function renderGhostRow(n, parentId) {
-  const row = document.createElement("div");
-  row.className = "note-row ghost-row" + (hasAnyEntry(n.id) ? " has-entries" : "");
-  row.dataset.ghostOf = n.id;
-  row.title = `${n.label} is botanically related to this group too, but keeps its own row above since it's iconic enough on its own. This is a live read-only copy — click to jump to the real one.`;
-
-  const lbl = document.createElement("label");
-  lbl.className = "note-label-text";
-  lbl.textContent = n.label;
-
-  const val = document.createElement("input");
-  val.type = "number"; val.className = "val"; val.disabled = true;
-  val.value = state.pendingIntensity[n.id] || 0;
-  val.tabIndex = -1;
-
-  const slider = document.createElement("input");
-  slider.type = "range"; slider.min = 0; slider.max = 10; slider.disabled = true;
-  slider.value = state.pendingIntensity[n.id] || 0;
-  slider.tabIndex = -1;
-
-  row.appendChild(lbl);
-  row.appendChild(val);
-  row.appendChild(slider);
-  row.addEventListener("click", () => {
-    const targetRow = document.querySelector(`.note-row:not(.ghost-row)[data-note="${n.id}"]`);
-    if (targetRow) {
-      targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
-      targetRow.classList.add("flash");
-      setTimeout(() => targetRow.classList.remove("flash"), 600);
-    }
-  });
-  return row;
-}
-// Keeps any rendered ghost rows showing the note's current value — called
-// from recompute() so they stay live without per-row change instrumentation.
-function refreshGhostRows() {
-  document.querySelectorAll(".note-row.ghost-row").forEach(row => {
-    const id = row.dataset.ghostOf;
-    const v = state.pendingIntensity[id] || 0;
-    const val = row.querySelector(".val");
-    const slider = row.querySelector("input[type=range]");
-    if (val) val.value = v;
-    if (slider) slider.value = v;
-    row.classList.toggle("has-entries", hasAnyEntry(id));
-  });
-}
-
 // Plant taxonomy: an additive, non-exhaustive layer alongside the flavor-category
 // GROUPS above. Seeded only for notes with a real, well-documented family — not a
 // full sweep of every note. The cluster key is always `family` (the broadest unit
@@ -9913,7 +9805,6 @@ function recompute() {
   // Entering the tree always re-renders anyway (setWorkspace -> loadTaxonomyTree),
   // so an off-screen tree can never go stale.
   if (taxonomyTreeLoaded && document.body.classList.contains("taxonomy-mode")) renderTaxonomyTree();
-  refreshGhostRows();
   if (typeof refreshSenseTracker === "function") refreshSenseTracker();
   if (state.wheelShape === "radial" && typeof renderRadial === "function") renderRadial();
   updateCompoundsBar();
@@ -10326,7 +10217,7 @@ const GUIDE_STEPS = [
   // deliveryControls/deliveryReadout below (shifting the other indices by one),
   // the "How you're tasting it" block in guideRenderSummary(), and un-hide #delivery-strip.
   { title: "Flavor notes", intro: "Tick every note you taste or smell. Ticking one reveals a slider for how strong it is." },
-  { title: "What you're feeling", intro: "Some things are felt more than smelled. Cooling, warming and stinging come from the trigeminal nerve. Tell the wheel what you noticed." },
+  { title: "How you sense smell", intro: "Some things are felt more than smelled. Cooling, warming and stinging come from the trigeminal nerve. Tell the wheel what you noticed." },
   { title: "Your tasting", intro: "Here is what you recorded. Go back to any step to change it." }
 ];
 let guideStep = 0;
@@ -11260,7 +11151,7 @@ function renderNoteDetail(noteId) {
     irritantHtml = `
     <div class="section">
       <div class="section-title">Possible irritant</div>
-      <div class="note-umbrella-explainer"><strong>${sensTxt}</strong> (${IRRITANT_LEVEL_LABEL[irr.level]}). ${irr.agent.charAt(0).toUpperCase() + irr.agent.slice(1)} also activates the trigeminal nerve (${irr.channel}), so part of this note is felt in the nose and mouth rather than smelled. Use "What you're feeling" to record what you notice.</div>
+      <div class="note-umbrella-explainer"><strong>${sensTxt}</strong> (${IRRITANT_LEVEL_LABEL[irr.level]}). ${irr.agent.charAt(0).toUpperCase() + irr.agent.slice(1)} also activates the trigeminal nerve (${irr.channel}), so part of this note is felt in the nose and mouth rather than smelled. Use "How you sense smell" to record what you notice.</div>
     </div>`;
   }
 
@@ -11379,7 +11270,7 @@ const CLASS_CHARACTER = {
   furanone: "caramel, strawberry, sweet"
 };
 // Semantic slot groups reused across combos (any one member satisfies the slot).
-const _CITRUS = ["lemon","lime","orange","grapefruit","mandarin","bergamot","yuzu","meyerlemon","bloodorange","pomelo"];
+const _CITRUS = ["lemon","lime","orange","grapefruit","mandarin","bergamot","yuzu","meyerlemon","bloodorange"];
 // Each combo: slots are AND-ed (a slot is met if ANY of its notes is active);
 // it surfaces once `min` slots are met, so a partial match still fires but a
 // single stray note never does.
