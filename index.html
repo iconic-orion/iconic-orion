@@ -5143,6 +5143,14 @@
           </div>
         </div>
 
+        <div class="share-field" id="share-compound-view-field">
+          <span class="share-label">Compounds shown as</span>
+          <div class="tabs share-seg" id="share-compound-view">
+            <button type="button" data-cview="labels">Labels</button>
+            <button type="button" data-cview="graph" class="active">With graph</button>
+          </div>
+        </div>
+
         <div class="share-field">
           <span class="share-label">Include on card</span>
           <label class="share-check"><input type="checkbox" id="share-show-notes" checked /><span>Tasting notes</span></label>
@@ -20856,6 +20864,7 @@ updateTaxonomyLayerSummary();
   const formatTabs = document.getElementById("share-format");
   const styleTabs = document.getElementById("share-style");
   const visualTabs = document.getElementById("share-visual");
+  const cviewTabs = document.getElementById("share-compound-view");
   const dlMainBtn = document.getElementById("share-download");
   const showMapCb = document.getElementById("share-show-map");
   const mapHintEl = document.getElementById("share-map-hint");
@@ -20865,7 +20874,7 @@ updateTaxonomyLayerSummary();
   const linkInput = document.getElementById("share-link");
   const hintEl = document.getElementById("share-hint");
 
-  const opts = { format: "portrait", style: "informative", visual: "wheel", showNotes: true, showCompounds: true, showMap: true, hiddenCompounds: new Set(), compoundIcons: false };
+  const opts = { format: "portrait", style: "informative", visual: "wheel", compoundView: "graph", showNotes: true, showCompounds: true, showMap: true, hiddenCompounds: new Set(), compoundIcons: false };
   let lastCanvas = null;         // last rasterized full-res canvas (front/single face — feeds all downloads)
   let lastCanvasBack = null;     // unused now that the card is a single face; kept null so stackedCanvas()/PDF stay simple
   let previewTimer = null;
@@ -21135,6 +21144,26 @@ updateTaxonomyLayerSummary();
     // The map is optional in both styles; it gets its own extra card height.
     const contentBottom = footerTop - mapExtra;
 
+    // Compound label chips: how many rows the picked compounds need, so the
+    // wheel can make room for all of them instead of a fixed guess. Capped at 6 rows.
+    const PILL_H = 38, PILL_GAP = 10, PILL_ROW_GAP = 8, PILL_MAX_ROWS = 6;
+    function pillRowsNeeded(list) {
+      if (!list.length) return 0;
+      let cx = PAD, rows = 1;
+      for (const c of list) {
+        const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
+        const w = (ic ? 28 : 0) + textW(c.label, 19, 500) + 28;
+        if (cx + w > W - PAD) { rows++; cx = PAD; }
+        cx += w + PILL_GAP;
+      }
+      return Math.min(rows, PILL_MAX_ROWS);
+    }
+    const graphView = opts.compoundView === "graph";
+    const GRAPH_MAX_ROWS = stunning ? 8 : 12;
+    // Room the stunning card reserves under the wheel for the compounds block.
+    const stunningPillBlock = stunning && compsShown.length
+      ? (graphView ? Math.min(compsShown.length, GRAPH_MAX_ROWS) * 38 + 44 : pillRowsNeeded(compsShown) * (PILL_H + PILL_ROW_GAP) + 36) : 0;
+
     // Wheel size. Stunning starts at its maximum and shrinks only when the user
     // has opted in sections; informative starts smaller with all sections included.
     const wheelTop = stunning ? 100 : 152;
@@ -21143,7 +21172,7 @@ updateTaxonomyLayerSummary();
       wheelH = stunning ? footerTop - mapExtra - wheelTop - 8 : 560;
       if (stunning) {
         if (opts.showNotes && notes.length) wheelH -= 150;
-        if (compsShown.length) wheelH -= 120;
+        wheelH -= stunningPillBlock;
       } else {
         if (!opts.showCompounds || !allComps.length) wheelH += 210;
         if (!opts.showNotes) wheelH += 150;
@@ -21153,7 +21182,7 @@ updateTaxonomyLayerSummary();
       wheelH = stunning ? footerTop - mapExtra - wheelTop - 8 : 500;
       if (stunning) {
         if (opts.showNotes && notes.length) wheelH -= 80;
-        if (compsShown.length) wheelH -= 80;
+        wheelH -= stunningPillBlock;
       } else {
         if (!opts.showCompounds || !allComps.length) wheelH += 150;
         if (!opts.showNotes) wheelH += 110;
@@ -21199,40 +21228,42 @@ updateTaxonomyLayerSummary();
       y = cy + chipH + 40;
     }
 
-    // Likely compounds — checkbox-controlled, ordered by prominence.
-    // Stunning: elegant name-only pill chips (no bars, no numbers).
-    // Informative: full confidence bar chart.
+    // Likely compounds — checkbox-controlled, ordered by prominence. Two looks,
+    // chosen separately (opts.compoundView): "labels" = name-only pill chips,
+    // "graph" = confidence bar chart.
     if (compsShown.length && y < contentBottom - 40) {
-      if (stunning) {
-        const pillH = 38, gap = 10, rowGap = 8, maxX = W - PAD;
-        let cx = PAD, cy = y, rows = 0;
+      if (!graphView) {
+        let cx = PAD, cy = y, rows = 0, drawn = 0;
         for (const c of compsShown) {
           const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
           const iconOff = ic ? 28 : 0;
           const w = iconOff + textW(c.label, 19, 500) + 28;
-          if (cx + w > maxX) { cx = PAD; cy += pillH + rowGap; rows++; if (rows >= 2) break; }
-          if (cy + pillH > contentBottom) break;
+          if (cx + w > W - PAD) { cx = PAD; cy += PILL_H + PILL_ROW_GAP; rows++; if (rows >= PILL_MAX_ROWS) break; }
+          if (cy + PILL_H > contentBottom) break;
           const g = sEl("g", { transform: "translate(" + cx + "," + cy + ")" });
-          g.appendChild(sEl("rect", { x: 0, y: 0, width: w, height: pillH, rx: pillH / 2, fill: "#1e1c21" }));
-          if (ic) g.appendChild(sEl("text", { x: 12, y: pillH / 2 + 7, "font-size": 18 }, ic));
-          g.appendChild(sEl("text", { x: 12 + iconOff, y: pillH / 2 + 7, fill: "#c8c0b4", "font-size": 19, "font-family": SANS }, c.label));
+          g.appendChild(sEl("rect", { x: 0, y: 0, width: w, height: PILL_H, rx: PILL_H / 2, fill: "#1e1c21" }));
+          if (ic) g.appendChild(sEl("text", { x: 12, y: PILL_H / 2 + 7, "font-size": 18 }, ic));
+          g.appendChild(sEl("text", { x: 12 + iconOff, y: PILL_H / 2 + 7, fill: "#c8c0b4", "font-size": 19, "font-family": SANS }, c.label));
           svg.appendChild(g);
-          cx += w + gap;
+          cx += w + PILL_GAP; drawn++;
         }
-        y = cy + pillH + 32;
+        if (drawn < compsShown.length) svg.appendChild(sEl("text", { x: W - PAD, y: cy + PILL_H + 26, "text-anchor": "end", fill: "#8a8579", "font-size": 18, "font-family": SANS }, "+" + (compsShown.length - drawn) + " more"));
+        y = cy + PILL_H + 32;
       } else {
         if (showLabels) { svg.appendChild(sEl("text", { x: PAD, y: y, fill: "#8a8579", "font-size": 17, "font-family": SANS }, "LIKELY COMPOUNDS · BY CONFIDENCE")); y += 28; }
         const barW = 280, barX = W - PAD - barW;
+        let drawn = 0;
         for (const c of compsShown) {
-          if (y + 30 > contentBottom) break;
+          if (y + 30 > contentBottom || drawn >= GRAPH_MAX_ROWS) break;
           const ic = opts.compoundIcons ? compoundIcon(c.id) : "";
           if (ic) svg.appendChild(sEl("text", { x: PAD, y: y + 17, "font-size": 22 }, ic));
           svg.appendChild(sEl("text", { x: PAD + (ic ? 34 : 0), y: y + 16, fill: "#e9e6df", "font-size": 22, "font-family": SANS }, c.label));
           svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: barW, height: 15, rx: 7, fill: "#26242b" }));
           svg.appendChild(sEl("rect", { x: barX, y: y + 3, width: Math.max(6, barW * Math.min(1, c.conf)), height: 15, rx: 7, fill: "#d8a657" }));
           svg.appendChild(sEl("text", { x: barX - 12, y: y + 16, fill: "#8a8579", "font-size": 16, "text-anchor": "end", "font-family": SANS }, Math.round(c.conf * 100) + "%"));
-          y += 38;
+          y += 38; drawn++;
         }
+        if (drawn < compsShown.length) svg.appendChild(sEl("text", { x: W - PAD, y: y + 14, "text-anchor": "end", fill: "#8a8579", "font-size": 18, "font-family": SANS }, "+" + (compsShown.length - drawn) + " more"));
       }
     }
 
@@ -21392,6 +21423,7 @@ updateTaxonomyLayerSummary();
     formatTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.format === opts.format));
     styleTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.style === opts.style));
     visualTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.visual === opts.visual));
+    cviewTabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.cview === opts.compoundView));
   }
 
   // Per-compound checklist, ordered by prominence (confidence). All checked by
@@ -21468,12 +21500,12 @@ updateTaxonomyLayerSummary();
     const b = e.target.closest("button"); if (!b) return;
     opts.style = b.dataset.style;
     if (opts.style === "stunning") {
-      // Default to wheel-only; user can opt in anything they want.
-      opts.showNotes = false; opts.showCompounds = false; opts.showMap = false;
-      showNotesCb.checked = false; showCompCb.checked = false; showMapCb.checked = false;
+      // Wheel plus its compounds as name labels; notes and map are opt-in.
+      opts.showNotes = false; opts.showCompounds = true; opts.showMap = false; opts.compoundView = "labels";
+      showNotesCb.checked = false; showCompCb.checked = true; showMapCb.checked = false;
       mapRowEl.hidden = false;
     } else {
-      opts.showNotes = true; opts.showCompounds = true;
+      opts.showNotes = true; opts.showCompounds = true; opts.compoundView = "graph";
       showNotesCb.checked = true; showCompCb.checked = true;
       mapRowEl.hidden = false;
       // showMap restored by syncMapCheckboxState in renderPreview
@@ -21481,6 +21513,7 @@ updateTaxonomyLayerSummary();
     syncTabs(); renderPreview();
   });
   visualTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.visual = b.dataset.visual; syncTabs(); renderPreview(); });
+  cviewTabs.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; opts.compoundView = b.dataset.cview; if (!opts.showCompounds) { opts.showCompounds = true; showCompCb.checked = true; updateCompoundCount(); } syncTabs(); renderPreview(); });
   // One-tap download: build the card if needed, then save the PNG.
   dlMainBtn.addEventListener("click", async () => {
     if (!lastCanvas) await generate();
