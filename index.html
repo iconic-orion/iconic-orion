@@ -4384,7 +4384,11 @@
        the same liquid reaches you. Temperature, bubbles, swirling and breath all
        change what gets to your nose without changing what is in the cup. It sits
        above the notes because it frames the whole tasting, not one note. -->
-  <details id="delivery-strip" class="delivery-strip">
+  <!-- Hidden for now (out of the way of the notes), and its step in "Do a tasting"
+       is switched off too. Kept in the DOM, not deleted, so the delivery state and
+       controls still build and can be restored: remove the `hidden` attribute and
+       see the note above GUIDE_STEPS to bring the guide step back. -->
+  <details id="delivery-strip" class="delivery-strip" hidden>
     <summary class="delivery-summary">
       <span class="delivery-title">How You're tasting</span>
       <span class="delivery-chips" id="delivery-chips" aria-live="polite"></span>
@@ -10272,7 +10276,10 @@ function irritantBadge(noteId) {
 const guideEl = document.getElementById("tasting-guide");
 const guideMount = document.getElementById("guide-mount");
 const GUIDE_STEPS = [
-  { title: "How you're tasting it", intro: "Same drink, different conditions, different aroma. Set whatever applies and skip the rest." },
+  // Delivery step ("How you're tasting it") is switched off for now. To restore:
+  // re-add its entry here, then re-add the `guideStep === 0` borrow of
+  // deliveryControls/deliveryReadout below (shifting the other indices by one),
+  // the "How you're tasting it" block in guideRenderSummary(), and un-hide #delivery-strip.
   { title: "Flavor notes", intro: "Tick every note you taste or smell. Ticking one reveals a slider for how strong it is." },
   { title: "What you're feeling", intro: "Some things are felt more than smelled. Cooling, warming and stinging come from the trigeminal nerve. Tell the wheel what you noticed." },
   { title: "Your tasting", intro: "Here is what you recorded. Go back to any step to change it." }
@@ -10387,16 +10394,17 @@ function guideRenderSummary() {
     <div><h3>Notes</h3>${scored.length
       ? `<ul>${scored.map(x => `<li>${noteIcon(x.n)} ${x.n.label} · ${x.v}</li>`).join("")}</ul>`
       : `<p>No notes ticked yet. Go back to Flavor notes to add some.</p>`}</div>
-    <div><h3>How you're tasting it</h3><p>${deliveryChips.textContent}</p></div>
     ${felt.length ? `<div><h3>What you felt</h3><ul>${felt.map(f => `<li>${f}</li>`).join("")}</ul></div>` : ""}
     ${top.length ? `<div><h3>Compounds your notes point to</h3><ul>${top.map(c => `<li>${CPD_BY_ID[c.id].label}</li>`).join("")}</ul></div>` : ""}
     <div class="guide-actions">
       <button type="button" class="guide-btn guide-btn-primary" id="guide-see">See it on the wheel</button>
-      <button type="button" class="guide-btn" id="guide-save">Save a snapshot</button>
+      <button type="button" class="guide-btn" id="guide-save">Save or share</button>
     </div>`;
   div.querySelector("#guide-see").addEventListener("click", closeGuide);
-  div.querySelector("#guide-save").addEventListener("click", e => {
-    saveLap(); e.target.textContent = scored.length ? "Snapshot saved" : "Nothing to save yet";
+  // Same opener as the header Share button (preview, image, link).
+  div.querySelector("#guide-save").addEventListener("click", () => {
+    closeGuide();
+    document.getElementById("share-open-btn").click();
   });
   return div;
 }
@@ -10408,9 +10416,8 @@ function renderGuideStep() {
   document.getElementById("guide-kicker").textContent = `Step ${guideStep + 1} of ${GUIDE_STEPS.length}`;
   document.getElementById("guide-title").textContent = s.title;
   document.getElementById("guide-intro").textContent = s.intro;
-  if (guideStep === 0) { guideBorrow(deliveryControls); guideBorrow(deliveryReadout); }
-  else if (guideStep === 1) guideMount.appendChild(guideRenderNotes());
-  else if (guideStep === 2) {
+  if (guideStep === 0) guideMount.appendChild(guideRenderNotes());
+  else if (guideStep === 1) {
     buildSenseTracker();
     guideBorrow(document.querySelector(".sense-diagram"));
     guideBorrow(senseBody);
